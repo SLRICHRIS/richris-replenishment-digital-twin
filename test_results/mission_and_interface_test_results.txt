@@ -1,0 +1,17 @@
+REORGANIZED PROJECT CHECK — 9 October 2026
+Command: npm test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> richris-replenishment-twin-checks@1.0.0 test
+> node automated_tests/mission_approval_and_route_checks.mjs && node automated_tests/robot_telemetry_checks.mjs && node automated_tests/interface_animation_checks.cjs && node automated_tests/dashboard_interaction_checks.cjs && node automated_tests/streamlit_window_connection_checks.cjs
+
+PASS: staged routes, full-trip energy, shared-aisle timing, duplicate/reservation gates, stopped and paused queues, and approved-delivery inventory projection.
+PASS: five-second projection integrates both directions across the restricted-speed boundary.
+PASS: module-worker forecast preserves request identity and reports stockouts and paused aisle reservations.
+PASS: all 3 slots, null/zero readings, freshness, monotonic expiry, retained/duplicate/out-of-order/reboot rejection, UTF-8/size/schema validation, topic identity and secure connection settings.
+PASS: measured cadence/P95, sequence gaps, reboot boundaries, zero-valued sensor readiness, rejection history, rolling expiry and bounded diagnostics.
+PASS: persistent DOM rows/bars/charts, focus and select preservation, immediate mission actions, modal close/reopen races, stable animation counts, both themes, saved and device reduced-motion preferences, graceful fallback, and live/simulation isolation.
+PASS: dispatch review, approval revalidation, exclusive aisle and bay separation, queued states, pause/stop retention, complete delivery cycles, cancellation, reassignment, congestion, mission guidance, theme switching and live/simulation isolation.
+PASS: rendered motion projection agrees with simulation across the aisle speed boundary.
+PASS: Streamlit handshake, origin/source validation, viewport resize, resize-loop prevention, and listener cleanup.

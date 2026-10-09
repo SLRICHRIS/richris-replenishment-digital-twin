@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Development checks only; Streamlit deployment does not need Node.js.",
   "scripts": {
-    "test": "node tests/dispatch.test.mjs && node tests/telemetry.test.mjs && node tests/motion.test.cjs && node tests/workspace.test.cjs && node tests/streamlit-host.test.cjs"
+    "test": "node automated_tests/mission_approval_and_route_checks.mjs && node automated_tests/robot_telemetry_checks.mjs && node automated_tests/interface_animation_checks.cjs && node automated_tests/dashboard_interaction_checks.cjs && node automated_tests/streamlit_window_connection_checks.cjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

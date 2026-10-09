@@ -1,94 +1,61 @@
-# Replenish · S L RICHRIS
+# Three-Robot Warehouse Digital Twin
 
-The existing three-AMR digital twin, packaged for **GitHub and Streamlit Community Cloud**.
+**Project overview and documentation.**  
+**Project owner: S L RICHRIS**  
+**Purpose: Educational demonstration of warehouse replenishment with human-approved robot missions.**
 
-The 3D warehouse, mission review, exclusive shared-aisle queue, forecasts, dark/bright appearance, motion preference, and optional ESP32 telemetry workspace are preserved. The app serves its own assets; it does not embed or depend on the previous ChatGPT-hosted website.
+AMR means **Autonomous Mobile Robot**. This application shows three virtual robots, shelf stock, mission approval, route timing, battery estimates and optional measurements received from three ESP32 devices.
 
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
-## Deploy from your GitHub
+## Recommended reading order
 
-1. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) using your GitHub account **SLRICHRIS**.
-2. Give Streamlit access to this private repository if prompted. GitHub access in ChatGPT and GitHub access in Streamlit are separate connections.
-3. Choose **Create app**, then select these settings:
+| Order | Guide | What it explains |
+|---|---|---|
+| 1 | [Project overview](project_guides/01_project_overview.md) | Objective, implemented features and limitations |
+| 2 | [How the system works](project_guides/02_how_the_digital_twin_works.md) | Approval, robot movement, forecasting and ESP32 measurements |
+| 3 | [Demonstration steps](project_guides/03_demonstration_steps.md) | What to demonstrate and what to observe |
+| 4 | [Deployment and startup](project_guides/04_streamlit_deployment_instructions.md) | Hosting on Streamlit and running on a computer |
+| Reference | [File and folder guide](project_guides/05_file_and_folder_guide.md) | Literal file purposes and previous-to-current filenames |
+| Evidence | [Verification summary](test_results/verification_summary.md) | Recorded checks and their limitations |
 
-   | Setting | Value |
-   |---|---|
-   | Repository | `SLRICHRIS/richris-replenishment-digital-twin` |
-   | Branch | `main` |
-   | Main file path | `streamlit_app.py` |
-   | Python version | `3.12` |
-   | App URL | Choose an available name |
-   | Secrets | None needed for the simulation |
+## Folder meanings
 
-4. Deploy. Streamlit installs the pinned dependency and supplies your actual `streamlit.app` URL. Future commits to the selected branch update the deployment.
-
-This source is in the private repository [SLRICHRIS/richris-replenishment-digital-twin](https://github.com/SLRICHRIS/richris-replenishment-digital-twin). A Streamlit Cloud deployment is still required; uploading code to GitHub does not launch the app. Keep the repository and app private unless you deliberately choose to share them.
-
-## Run locally
-
-Use Python 3.12. In a terminal in this folder:
-
-```sh
-python -m venv .venv
-```
-
-On Windows:
-
-```powershell
-.venv\Scripts\python -m pip install -r requirements.txt
-.venv\Scripts\python -m streamlit run streamlit_app.py
-```
-
-On macOS/Linux:
-
-```sh
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m streamlit run streamlit_app.py
-```
-
-## Three ESP32 robot slots
-
-The **Hardware** view retains `amr-01`, `amr-02`, and `amr-03`. Enter your secure MQTT WebSocket address, topic prefix, and a telemetry subscriber account there. The browser connects to the broker; Streamlit does not need a background MQTT process.
-
-Use a `wss://` endpoint reachable from the viewer's browser. `localhost` means the viewer's device, not an ESP32 or the Streamlit cloud server. See `frontend/hardware/SETUP.md` for the existing firmware and telemetry format.
-
-Keep broker passwords out of GitHub. A browser subscriber account should be allowed to read only the intended telemetry topics. The app has no physical motor-command publisher. The simulation and hardware measurements remain separate data sources.
-
-## Session behavior and LabVIEW
-
-Simulation state belongs to the current browser workspace and resets on reload. Use **Activity → Export CSV** to retain the decision log. Appearance and motion preferences remain local browser settings. Different visitors do not share a fleet simulation or operator authority.
-
-The LabVIEW supervision kit remains a separate project. This hosting port does not deploy the Python coordinator or automatically connect to a LabVIEW station. The included simulation retains the twin's existing local approval workflow.
-
-## Project files
-
-| Path | Purpose |
+| Folder | Meaning in plain English |
 |---|---|
-| `streamlit_app.py` | Streamlit entry point |
-| `requirements.txt` | Pinned Streamlit dependency |
-| `.streamlit/config.toml` | Host configuration |
-| `frontend/` | Complete digital twin and bundled assets |
-| `frontend/streamlit-host.js` | Component handshake and viewport sizing |
-| `tests/` | Existing simulation, telemetry, motion, and workspace checks |
-| `VALIDATION.md` | Verification record and remaining deployment checks |
+| [project_guides/](project_guides/) | Project explanations, demonstration steps and setup instructions |
+| [digital_twin_application/](digital_twin_application/) | Working dashboard, simulation, 3D models and ESP32 connection files |
+| [automated_tests/](automated_tests/) | Programs that check mission logic, measurements and interface interactions |
+| [test_results/](test_results/) | Recorded test outputs and the file-integrity record |
 
-No Node.js build is required to deploy. Node.js is only used for development checks (tested with Node.js 24):
+## Standard files kept in the main folder
 
-```sh
-npm ci
-npm test
-python -m unittest discover -s tests
-python tests/http_smoke.py
-```
+| File or folder | Literal purpose |
+|---|---|
+| [streamlit_app.py](streamlit_app.py) | Starts Streamlit and displays the digital twin |
+| [requirements.txt](requirements.txt) | Lists the Python package to install |
+| [.streamlit/config.toml](.streamlit/config.toml) | Streamlit display and server settings |
+| [package.json](package.json) | JavaScript test commands and development dependency |
+| [package-lock.json](package-lock.json) | Exact JavaScript dependency versions for repeatable installation |
+| [.gitignore](.gitignore) | Files Git must exclude, including private connection settings |
+| [README.md](README.md) | This automatically displayed introduction |
 
-## Troubleshooting
+These conventional filenames support the deployment and development tools. Their names and purposes are explained rather than changed.
 
-- **Missing frontend:** upload the complete folder tree, including fonts and vendor scripts.
-- **Blank component:** check browser console and Streamlit logs; verify the `frontend/streamlit-host.js` file is present. Blocking JavaScript prevents the app from running.
-- **Fallback rendering:** the original app includes a canvas fallback when WebGL is unavailable. Try a browser with WebGL enabled for the full 3D scene.
-- **Offline robots:** verify WSS connectivity, broker permissions, topic prefix, fixed IDs, and fresh telemetry. Simulation motion is not evidence of a physical connection.
+## Hosting settings
 
-Primary deployment guidance: [Streamlit deployment](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy) and [local custom components](https://docs.streamlit.io/develop/api-reference/custom-components/st.components.v1.declare_component).
+| Setting | Value |
+|---|---|
+| GitHub repository | SLRICHRIS/richris-replenishment-digital-twin |
+| Branch | main |
+| Streamlit main file | streamlit_app.py |
+| Python | 3.12 |
+| Simulation secrets | None required |
 
-Third-party software and fonts retain their respective licenses. See `frontend/NOTICE.txt` and the license files alongside the bundled assets.
+The launcher now points to digital_twin_application. The existing Streamlit main-file setting stays **streamlit_app.py**.
+
+## Scope
+
+The simulation and forecasts use a deterministic model. ESP32 integration receives measurements; it does not send physical driving or emergency-stop commands. LabVIEW remains a separate project.
+
+Original project work belongs to S L RICHRIS. External software and fonts retain their own licenses: [ownership and software-license notice](digital_twin_application/ownership_and_external_software_licenses.txt).

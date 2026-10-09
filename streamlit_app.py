@@ -11,11 +11,11 @@ from streamlit.components.v1 import declare_component
 
 
 ROOT = Path(__file__).resolve().parent
-FRONTEND = ROOT / "frontend"
+APPLICATION_FOLDER = ROOT / "digital_twin_application"
 
 st.set_page_config(
     page_title="Replenish | S L RICHRIS",
-    page_icon=str(FRONTEND / "favicon.svg"),
+    page_icon=str(APPLICATION_FOLDER / "application_icon.svg"),
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items={
@@ -48,13 +48,13 @@ st.html(
     """
 )
 
-if not (FRONTEND / "index.html").is_file():
-    st.error("The frontend folder is missing. Upload the complete project, including frontend/.")
+if not (APPLICATION_FOLDER / "index.html").is_file():
+    st.error("The digital_twin_application folder is missing. Upload the complete project, including that folder.")
     st.stop()
 
 # A local component serves HTML, module scripts, workers, fonts, firmware
 # downloads and license notices from this repository. No remote iframe or
 # ChatGPT session is required. The stable key preserves the browser workspace
 # during ordinary Streamlit reruns.
-workspace = declare_component("replenish_workspace", path=str(FRONTEND))
+workspace = declare_component("replenish_workspace", path=str(APPLICATION_FOLDER))
 workspace(key="warehouse-workspace", default=None)

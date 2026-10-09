@@ -1,7 +1,0 @@
-test_workspace_registers_and_keeps_its_identity_on_rerun (test_streamlit_app.StreamlitHostTests.test_workspace_registers_and_keeps_its_identity_on_rerun) ... 2026-10-08 11:12:12.620 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.175s
-
-OK

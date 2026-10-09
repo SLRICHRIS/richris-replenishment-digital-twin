@@ -12,4 +12,7 @@ node_modules/
 *.pem
 *.key
 runtime/
+digital_twin_application/esp32_robot_firmware/ESP32_Robot_Telemetry/robot_connection_settings.h
+
+# Also exclude configured credentials from the earlier layout.
 frontend/hardware/ReplenishESP32/config.h
