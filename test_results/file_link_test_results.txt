@@ -1,5 +1,5 @@
-REORGANIZED PROJECT CHECK — 9 October 2026
+DOCUMENTATION AND ASSET CLEANUP CHECK — 9 October 2026
 Command: python automated_tests/check_project_file_links.py
 
-PASS: 120 local application/guide references; Arduino sketch naming; 4 firmware-download files match their sources; configured credentials excluded; Streamlit entry files retained.
-PASS: 11 application JavaScript modules parse successfully (node --check).
+PASS: 82 local application/guide references; Arduino sketch naming; 4 firmware-download files match their sources; configured credentials excluded; Streamlit entry files retained.
+PASS: 41 runtime, configuration and test files are byte-identical to the preceding repository version.

@@ -1,4 +1,4 @@
-REORGANIZED PROJECT CHECK — 9 October 2026
+DOCUMENTATION AND ASSET CLEANUP CHECK — 9 October 2026
 Command: python automated_tests/check_served_application_files.py
 
-PASS: actual Streamlit startup and WebSocket session; 47 digital twin application files served byte-for-byte with valid script/style/document MIME types.
+PASS: actual Streamlit startup and WebSocket session; 40 digital twin application files served byte-for-byte with valid script/style/document MIME types.

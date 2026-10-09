@@ -1,13 +1,23 @@
-# Recorded Test Results
+# Verification Results
 
-Start with the [verification summary](verification_summary.md) for dates, the environment and evidence limits.
+**Recorded:** 9 October 2026  
+**Environment:** Python 3.12.14 · Streamlit 1.65.0 · Node.js 24.19.0
 
-| File | Meaning |
-|---|---|
-| mission_and_interface_test_results.txt | JavaScript behavior check output |
-| streamlit_startup_test_results.txt | Python Streamlit startup check output |
-| served_application_file_test_results.txt | Real-server file delivery check output |
-| file_link_test_results.txt | Renamed-file and guide-link check output |
-| file_integrity_sha256.txt | SHA-256 fingerprints for detecting changed or missing files |
+| Check | Result | Evidence |
+|---|---|---|
+| Mission, telemetry and interface behavior | Passed across five JavaScript suites | [JavaScript results](mission_and_interface_test_results.txt) |
+| Streamlit startup and rerun identity | Passed | [Python results](streamlit_startup_test_results.txt) |
+| Real server and application-file delivery | Passed; all 40 application files served byte-for-byte | [Server results](served_application_file_test_results.txt) |
+| Local references and firmware download | Passed | [File-link results](file_link_test_results.txt) |
 
-The integrity record is not a performance benchmark or a signature proving authorship. Its paths are relative to the repository's main folder.
+Runtime source is unchanged from the behavioral test run. File-link and server checks were repeated after the documentation and asset cleanup.
+
+## Evidence boundaries
+
+The interface tests use a test renderer. Deployed-browser WebGL behavior, physical ESP32 operation, sensor calibration and a real broker connection require separate verification. The hardware guide records an earlier reference compilation, not a new physical-device test.
+
+## File integrity
+
+[file_integrity_sha256.txt](file_integrity_sha256.txt) records file fingerprints relative to the repository root. It helps detect changed or missing files.
+
+Commands are in the [testing guide](../automated_tests/README.md).
