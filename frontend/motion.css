@@ -1,0 +1,113 @@
+/* © 2026 S L RICHRIS. A shared, interruptible motion language. */
+:root {
+  --motion-fast: 140ms;
+  --motion-base: 240ms;
+  --motion-slow: 380ms;
+  --motion-ease: cubic-bezier(.22,1,.36,1);
+}
+.motion-toggle {
+  flex: none;
+  min-height: 36px;
+  gap: 7px;
+  padding: 6px 9px;
+  font-size: .8125rem;
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--line);
+}
+.motion-toggle .icon { width: 16px; height: 16px; }
+.motion-toggle[aria-pressed=true] { color: var(--text-secondary); }
+.motion-toggle:disabled { opacity: .75; }
+.workspace-nav { position: relative; }
+.navigation-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--blue);
+  border-radius: 1px;
+  transition: transform var(--motion-slow) var(--motion-ease), width var(--motion-base), height var(--motion-base);
+}
+html[data-motion-ready=true] .workspace-nav>button.active { border-left-color: transparent; border-top-color: transparent; }
+html[data-motion=full] :is(button,select,input,a.hardware-download) {
+  transition: background-color var(--motion-base), color var(--motion-fast), border-color var(--motion-base), box-shadow var(--motion-base), opacity var(--motion-fast), transform var(--motion-fast) var(--motion-ease);
+}
+html[data-motion=full] button:not(:disabled):active { transform: translateY(1px); }
+html[data-motion=full] :is(.workspace-nav>button,.robot-card,.theme-switch button,.source-switch button):active { transform: none; }
+html[data-motion=full] :is(.panel,.operation-brief,.mission-summary,.review-card,.bin,.hardware-slot,.measurement-readiness>span,.masthead,.navigation-rail,.statusbar,.scene-state,.state-chip,.hardware-state,.readiness-tag) {
+  transition: background-color var(--motion-base), color var(--motion-base), border-color var(--motion-base), box-shadow var(--motion-base);
+}
+html[data-motion=full] body { transition: background-color var(--motion-slow), color var(--motion-base); }
+html[data-motion=full] :is(.mini-bar i,.stock-bar i,.task-progress i,.robot-card-track i,.journey-line>i) {
+  transition: width 180ms linear, background-color var(--motion-base);
+}
+html[data-motion=full] :is(.workspace-nav .icon,.theme-switch .icon,.layer-controls button i,.robot-card-indicator) {
+  transition: color var(--motion-base), transform var(--motion-base) var(--motion-ease), background-color var(--motion-base), border-color var(--motion-base);
+}
+html[data-motion=full] .workspace-nav>button.active .icon { transform: translateY(-1px); }
+html[data-motion=full] .theme-switch button[aria-pressed=true] .icon { transform: rotate(-12deg); }
+html[data-motion=full] .robot-card.selected .robot-card-indicator { transform: rotate(45deg); background: var(--robot-ink); border-color: var(--robot-ink); }
+html[data-motion=full] .layer-controls button.active i:after { animation: check-in 180ms var(--motion-ease); }
+.robot-card { position: relative; }
+html[data-motion=full] .robot-card.selected:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--robot-ink);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: selection-settle 550ms var(--motion-ease) both;
+}
+.journey-line { isolation: isolate; }
+html[data-motion=full] .inspector[data-state=Delivering] .journey-line:after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--unit-ink);
+  background: var(--panel);
+  border-radius: 50%;
+  top: -2px;
+  left: calc(var(--journey-position,0%) - 3px);
+  pointer-events: none;
+  box-shadow: 0 0 0 3px var(--panel);
+  transition: left 180ms linear;
+}
+/* Finite indicators mark a state change. No decorative infinite pulsing. */
+html[data-motion=full] .hardware-slot[data-status=live] .hardware-state { animation: connected-settle 650ms var(--motion-ease); }
+html[data-motion=full] .hardware-slot[data-status=stale] .hardware-state { animation: warning-settle 450ms var(--motion-ease); }
+html[data-motion=full] dialog[open]::backdrop { animation: backdrop-enter 200ms ease-out both; }
+html[data-motion=full] dialog[data-closing=true]::backdrop { animation: backdrop-exit 130ms ease-in both; }
+html[data-motion=full] .toast {
+  transition: opacity 180ms ease, transform 240ms var(--motion-ease);
+  border-left-color: var(--blue);
+}
+html[data-motion=full] .scene-empty {
+  transition: opacity var(--motion-base), visibility var(--motion-base), transform var(--motion-base) var(--motion-ease);
+}
+html[data-motion=full] .scene-empty.hidden { display: flex; visibility: hidden; opacity: 0; transform: translateY(4px); }
+html[data-motion=full] .stream-diagnostics summary:before { transition: color var(--motion-base); }
+@media (hover:hover) and (pointer:fine) {
+  html[data-motion=full] .robot-card:hover:not(:disabled) { border-color: var(--robot-ink); }
+  html[data-motion=full] :is(.scene-tools button,.inspector-actions button):hover:not(:disabled) .icon { transform: scale(1.08); }
+  html[data-motion=full] .hardware-download:hover { transform: translateY(-1px); }
+}
+@media (max-width:899px) { .motion-toggle span { display: none; } .motion-toggle { min-width:36px; } }
+@media (max-width:380px) { .header-right { gap:3px; } .motion-toggle { padding:6px; min-width:30px; } }
+@keyframes check-in { from { opacity:0; } to { opacity:1; } }
+@keyframes selection-settle { from { opacity:.8; box-shadow:0 0 0 2px var(--robot-ink); } to { opacity:0; box-shadow:0 0 0 0 transparent; } }
+@keyframes connected-settle { from { box-shadow:0 0 0 3px var(--success-bg); } to { box-shadow:0 0 0 0 transparent; } }
+@keyframes warning-settle { from { box-shadow:0 0 0 3px var(--warning-bg); } to { box-shadow:0 0 0 0 transparent; } }
+@keyframes backdrop-enter { from { opacity:0; } to { opacity:1; } }
+@keyframes backdrop-exit { from { opacity:1; } to { opacity:0; } }
+html[data-motion=reduced] *, html[data-motion=reduced] *::before, html[data-motion=reduced] *::after {
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+html[data-motion=reduced] { scroll-behavior:auto; }
+html[data-motion-paused=true] *, html[data-motion-paused=true] *::before, html[data-motion-paused=true] *::after { animation-play-state:paused!important; }
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+}

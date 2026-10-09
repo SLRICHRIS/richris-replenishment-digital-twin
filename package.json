@@ -1,0 +1,13 @@
+{
+  "name": "richris-replenishment-twin-checks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Development checks only; Streamlit deployment does not need Node.js.",
+  "scripts": {
+    "test": "node tests/dispatch.test.mjs && node tests/telemetry.test.mjs && node tests/motion.test.cjs && node tests/workspace.test.cjs && node tests/streamlit-host.test.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}

@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+runtime/
+frontend/hardware/ReplenishESP32/config.h
