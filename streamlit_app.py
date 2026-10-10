@@ -29,6 +29,8 @@ st.set_page_config(
 
 # The workspace supplies its own responsive navigation and appearance controls.
 # Keep all application styling inside the component's document.
+# Important: allow vertical scrolling in the browser because the workspace can
+# exceed the initial viewport height, especially on smaller/zoomed displays.
 st.html(
     """
     <style>
@@ -36,12 +38,20 @@ st.html(
       [data-testid="stMainBlockContainer"] {
         padding: 0 !important;
         max-width: none !important;
+        overflow: visible !important;
       }
       [data-testid="stVerticalBlock"] { gap: 0; }
-      [data-testid="stAppViewContainer"] { overflow: hidden; }
+      [data-testid="stAppViewContainer"] {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      [data-testid="stMain"] {
+        overflow: visible !important;
+      }
       iframe[title*="replenish_workspace"] {
         display: block;
         width: 100%;
+        min-height: 100vh;
         border: 0;
       }
     </style>
