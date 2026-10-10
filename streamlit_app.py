@@ -29,8 +29,6 @@ st.set_page_config(
 
 # The workspace supplies its own responsive navigation and appearance controls.
 # Keep all application styling inside the component's document.
-# Important: allow vertical scrolling in the browser because the workspace can
-# exceed the initial viewport height, especially on smaller/zoomed displays.
 st.html(
     """
     <style>
@@ -38,20 +36,12 @@ st.html(
       [data-testid="stMainBlockContainer"] {
         padding: 0 !important;
         max-width: none !important;
-        overflow: visible !important;
       }
       [data-testid="stVerticalBlock"] { gap: 0; }
-      [data-testid="stAppViewContainer"] {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-      }
-      [data-testid="stMain"] {
-        overflow: visible !important;
-      }
+      [data-testid="stAppViewContainer"] { overflow: hidden; }
       iframe[title*="replenish_workspace"] {
         display: block;
         width: 100%;
-        min-height: 100vh;
         border: 0;
       }
     </style>
@@ -65,6 +55,6 @@ if not (APPLICATION_FOLDER / "index.html").is_file():
 # A local component serves HTML, module scripts, workers, fonts, firmware
 # downloads and license notices from this repository. No remote iframe or
 # ChatGPT session is required. The stable key preserves the browser workspace
-# during ordinary Streamlit reruns.
+during ordinary Streamlit reruns.
 workspace = declare_component("replenish_workspace", path=str(APPLICATION_FOLDER))
 workspace(key="warehouse-workspace", default=None)
