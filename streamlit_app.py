@@ -55,6 +55,6 @@ if not (APPLICATION_FOLDER / "index.html").is_file():
 # A local component serves HTML, module scripts, workers, fonts, firmware
 # downloads and license notices from this repository. No remote iframe or
 # ChatGPT session is required. The stable key preserves the browser workspace
-during ordinary Streamlit reruns.
+# during ordinary Streamlit reruns.
 workspace = declare_component("replenish_workspace", path=str(APPLICATION_FOLDER))
 workspace(key="warehouse-workspace", default=None)
