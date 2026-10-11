@@ -54,3 +54,4 @@
   send('streamlit:componentReady', { apiVersion: 1 });
   scheduleFit();
 })();
+

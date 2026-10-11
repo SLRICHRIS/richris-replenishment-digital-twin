@@ -23,4 +23,8 @@ and are governed by the licenses supplied with them:
 - Hanken Grotesk by Alfredo Marco Pradil / Hanken Design Co.:
   SIL Open Font License, display_fonts/hankengrotesk-OFL.txt
   The variable font is locally served in WOFF2 format.
+- Bundled IBM Plex Sans font files: SIL Open Font License,
+  display_fonts/ibmplexsans-OFL.txt (not used by the current interface)
 - IBM Plex Mono: SIL Open Font License, display_fonts/ibmplexmono-OFL.txt
+- Bundled Barlow Condensed font files: SIL Open Font License,
+  display_fonts/barlowcondensed-OFL.txt (not used by the current interface)

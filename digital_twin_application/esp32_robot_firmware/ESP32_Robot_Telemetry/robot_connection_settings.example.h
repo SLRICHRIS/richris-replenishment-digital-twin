@@ -1,4 +1,4 @@
-// Copy this file to robot_connection_settings.h inside the ESP32_Robot_Telemetry sketch folder.
+// Copy this file to robot_connection_settings.h inside the ReplenishESP32 sketch folder.
 // Keep robot_connection_settings.h private. Never upload real credentials with the Site source.
 #pragma once
 

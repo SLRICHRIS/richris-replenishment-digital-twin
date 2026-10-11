@@ -96,6 +96,17 @@ def check():
             assert expected.is_file(), name
             assert archive.read(name) == expected.read_bytes(), name
 
+    edge_kit = APP / "engineering/replenish-edge-kit.zip"
+    with zipfile.ZipFile(edge_kit) as archive:
+        assert archive.testzip() is None
+        edge_entries = archive.namelist()
+        assert len(edge_entries) == 9, edge_entries
+        for name in edge_entries:
+            assert not Path(name).is_absolute() and ".." not in Path(name).parts
+            expected = edge_kit.parent / name
+            assert expected.is_file(), name
+            assert archive.read(name) == expected.read_bytes(), name
+
     ignored = (ROOT / ".gitignore").read_text()
     private_settings = sketch.parent.relative_to(ROOT).as_posix() + "/robot_connection_settings.h"
     assert private_settings in ignored
@@ -104,10 +115,11 @@ def check():
     assert (ROOT / "requirements.txt").is_file()
     assert not errors, "Broken local references:\n" + "\n".join(errors)
     print(f"PASS: {checked} local application/guide references; Arduino sketch naming; "
-          f"{len(entries)} firmware-download files match their sources; "
+          f"{len(entries)} firmware and {len(edge_entries)} edge-download files match their sources; "
           "configured credentials excluded; Streamlit entry files retained.")
 
 
 if __name__ == "__main__":
     check()
+
 

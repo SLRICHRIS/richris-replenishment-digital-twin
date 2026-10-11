@@ -1,33 +1,40 @@
 # System Architecture
 
-## Runtime
+## Runtime and data flow
 
-Streamlit serves the application files. The browser runs the simulation, draws the warehouse and receives optional hardware measurements. Python does not calculate each animation frame.
+Streamlit registers one local component from `digital_twin_application/`. Its stable key preserves the workspace during ordinary Python reruns. Browser modules own simulation state, visualization, route search, MQTT reception and experiment workers. The host bridge sends only readiness and viewport height to Streamlit; it does not return robot telemetry or credentials.
 
-| Data source | Processing | Display |
-|---|---|---|
-| Simulation | Mission scheduling, modeled movement and forecasts | Virtual fleet, stock and battery estimates |
-| ESP32 devices | Secure MQTT broker → browser WebSocket connection → measurement validation | Three live device slots and available measured poses |
+| Input | Processing | Output |
+| --- | --- | --- |
+| Virtual fleet and four bins | Approved journey reservations, motion and charging-aware forecasts | Simulated positions, stock and battery |
+| ESP32 MQTT over secure WebSockets | Fixed three-slot identity, schema, sequence, capture-age and monotonic-age validation | Fresh measured device fields; unknown values stay unknown |
+| Optional inventory topic | Source, map frame, capture age, sequence and per-bin freshness gates | Measured A–D counts and eligible demand evidence |
+| Measurements and recordings | Observer residual gates, chronological calibration and deterministic replay | Measured, estimated and predicted state with provenance |
+| Frozen experiment snapshot | Isolated paired worker using identical graph, conditions and demand settings | Scenario-specific policy outcomes; no dispatch authority |
+| Route-map endpoints and closures | The same production Dijkstra solver and actual search trace | Shortest-distance or fastest-time preview with both journey legs |
 
-The [source map](../digital_twin_application/README.md) identifies the files responsible for each part.
+## Shared reference geometry
 
-## Mission flow
+Twelve racks surround three cross aisles and four connecting lanes. Four racks have monitored A–D bins; eight are reserve decoration. The route graph contains 22 nodes and 27 bidirectional links. The interactive map, simulator and Twin lab reference facility use this geometry.
 
-1. The operator proposes a destination and robot.
-2. The model checks robot availability, duplicate shelf assignments, route timing and estimated return battery.
-3. Approval rechecks feasibility and places accepted missions in the ordered queue.
-4. One robot reserves the shared aisle for its complete delivery-and-return journey.
-5. The simulation updates position, stock and battery; the interface displays the resulting state.
-6. Returning to the bay releases the aisle for the next eligible mission.
+Dijkstra defaults to shortest permitted aisle distance. Fastest-time mode accounts for the configured speed zone. Equal distances prefer lower time, then fewer links and a deterministic node sequence. These are per-journey results, not a globally optimal fleet schedule.
 
-Pausing retains the reservation. Reassignment requires fresh approval. The minimum modeled return reserve is 15%.
+## Virtual mission lifecycle
 
-## Forecasting
+1. Review the assigned unit, bin, outward route, return route, queue wait and minimum return battery.
+2. Recheck availability, source data, graph reachability, own bay and the full-trip 15% modeled reserve on approval.
+3. Keep approved geometry and FIFO approval order while one complete journey reserves the shared aisle.
+4. Advance movement and charging to exact event boundaries; deliver up to 30 units within bin capacity.
+5. Return to the assigned unit's own bay before releasing the reservation.
+6. Require fresh approval after reassignment. Pausing or stopping retains the reservation.
 
-A browser worker calculates stock depletion, feasible approved deliveries and battery reserve over the chosen horizon. Estimates use defined consumption, movement and energy rates. They are deterministic calculations, not a trained machine-learning model.
+Route settings remain locked while approved reservations or moving journeys exist. Route map and paired comparisons are separate previews and cannot alter approved missions.
 
-## State and scope
+## Authority and evidence
 
-Simulation state belongs to one browser workspace and resets on reload. Activity export saves its decision record. Appearance and motion preferences are stored locally.
+Hardware is read-only. The observer can withhold prediction for missing, stale, inconsistent-frame or divergent data. Calibration uses a chronological training/holdout split; synthetic recordings remain explicitly labeled. The optional edge historian stores observations in SQLite and supplies a LabVIEW inventory adapter.
 
-ESP32 integration receives measurements only. Physical position, speed, battery and controller state require sensors and calibration. The warehouse is an illustrative coordinate model. Physical driving, camera streaming and the separate LabVIEW supervisor are outside this application.
+The graph-only paired study starts eligible units at their own bays and assumes no charger or pickup dwell. The operating simulator has its own charging-aware queue model. Physical AMRs, the Coordinator, calibrated ground truth and the LabVIEW command/acknowledgment channel need separate commissioning.
+
+See the [application source map](../digital_twin_application/README.md), [detailed architecture](../digital_twin_application/engineering/ARCHITECTURE.md) and [final feature audit](../digital_twin_application/engineering/FINAL_AUDIT.md).
+

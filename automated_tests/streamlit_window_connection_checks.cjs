@@ -46,3 +46,4 @@ assert.equal(messages.at(-1).message.height, 360);
 events.get('pagehide')();
 assert.equal(parentEvents.size, 0);
 console.log('PASS: Streamlit handshake, origin/source validation, viewport resize, resize-loop prevention, and listener cleanup.');
+

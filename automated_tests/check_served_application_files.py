@@ -66,7 +66,7 @@ def check():
                 count = 0
                 assets = ROOT / "digital_twin_application"
                 for path in sorted(assets.rglob("*")):
-                    if not path.is_file():
+                    if not path.is_file() or "__pycache__" in path.parts:
                         continue
                     relative = path.relative_to(assets).as_posix()
                     with http.open(BASE + "/component/" + component + "/" + relative, timeout=5) as response:
@@ -95,3 +95,4 @@ def check():
 
 if __name__ == "__main__":
     check()
+

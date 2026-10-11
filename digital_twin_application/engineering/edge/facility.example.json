@@ -1,0 +1,286 @@
+{
+  "schema": "replenish-facility/v1",
+  "frameId": "warehouse-01",
+  "widthM": 12,
+  "heightM": 6.6667,
+  "verified": false,
+  "slowBoundaryXM": 4,
+  "nodes": [
+    {
+      "id": "bay01",
+      "role": "bay",
+      "x_m": 1.6,
+      "y_m": 2.2666666666666666,
+      "assetId": "amr-01"
+    },
+    {
+      "id": "bay02",
+      "role": "bay",
+      "x_m": 1.6,
+      "y_m": 3.3333333333333335,
+      "assetId": "amr-02"
+    },
+    {
+      "id": "bay03",
+      "role": "bay",
+      "x_m": 1.6,
+      "y_m": 4.4,
+      "assetId": "amr-03"
+    },
+    {
+      "id": "stage01",
+      "role": "junction",
+      "x_m": 2.933333333333333,
+      "y_m": 2.2666666666666666
+    },
+    {
+      "id": "entry",
+      "role": "junction",
+      "x_m": 2.933333333333333,
+      "y_m": 3.3333333333333335
+    },
+    {
+      "id": "stage03",
+      "role": "junction",
+      "x_m": 2.933333333333333,
+      "y_m": 4.4
+    },
+    {
+      "id": "lane00",
+      "role": "junction",
+      "x_m": 3.066666666666667,
+      "y_m": 1.6
+    },
+    {
+      "id": "lane01",
+      "role": "junction",
+      "x_m": 5.866666666666666,
+      "y_m": 1.6
+    },
+    {
+      "id": "lane02",
+      "role": "junction",
+      "x_m": 8.666666666666666,
+      "y_m": 1.6
+    },
+    {
+      "id": "lane03",
+      "role": "junction",
+      "x_m": 11.466666666666667,
+      "y_m": 1.6
+    },
+    {
+      "id": "lane10",
+      "role": "junction",
+      "x_m": 3.066666666666667,
+      "y_m": 3.3333333333333335
+    },
+    {
+      "id": "lane11",
+      "role": "junction",
+      "x_m": 5.866666666666666,
+      "y_m": 3.3333333333333335
+    },
+    {
+      "id": "lane12",
+      "role": "junction",
+      "x_m": 8.666666666666666,
+      "y_m": 3.3333333333333335
+    },
+    {
+      "id": "lane13",
+      "role": "junction",
+      "x_m": 11.466666666666667,
+      "y_m": 3.3333333333333335
+    },
+    {
+      "id": "lane20",
+      "role": "junction",
+      "x_m": 3.066666666666667,
+      "y_m": 5.066666666666666
+    },
+    {
+      "id": "lane21",
+      "role": "junction",
+      "x_m": 5.866666666666666,
+      "y_m": 5.066666666666666
+    },
+    {
+      "id": "lane22",
+      "role": "junction",
+      "x_m": 8.666666666666666,
+      "y_m": 5.066666666666666
+    },
+    {
+      "id": "lane23",
+      "role": "junction",
+      "x_m": 11.466666666666667,
+      "y_m": 5.066666666666666
+    },
+    {
+      "id": "binA",
+      "role": "bin",
+      "x_m": 4.466666666666667,
+      "y_m": 1.6,
+      "binId": "A"
+    },
+    {
+      "id": "binB",
+      "role": "bin",
+      "x_m": 10.066666666666666,
+      "y_m": 1.6,
+      "binId": "B"
+    },
+    {
+      "id": "binC",
+      "role": "bin",
+      "x_m": 4.466666666666667,
+      "y_m": 5.066666666666666,
+      "binId": "C"
+    },
+    {
+      "id": "binD",
+      "role": "bin",
+      "x_m": 10.066666666666666,
+      "y_m": 5.066666666666666,
+      "binId": "D"
+    }
+  ],
+  "edges": [
+    {
+      "from": "bay01",
+      "to": "stage01",
+      "bidirectional": true
+    },
+    {
+      "from": "stage01",
+      "to": "entry",
+      "bidirectional": true
+    },
+    {
+      "from": "bay02",
+      "to": "entry",
+      "bidirectional": true
+    },
+    {
+      "from": "bay03",
+      "to": "stage03",
+      "bidirectional": true
+    },
+    {
+      "from": "stage03",
+      "to": "entry",
+      "bidirectional": true
+    },
+    {
+      "from": "entry",
+      "to": "lane10",
+      "bidirectional": true
+    },
+    {
+      "from": "lane00",
+      "to": "binA",
+      "bidirectional": true
+    },
+    {
+      "from": "binA",
+      "to": "lane01",
+      "bidirectional": true
+    },
+    {
+      "from": "lane01",
+      "to": "lane02",
+      "bidirectional": true
+    },
+    {
+      "from": "lane02",
+      "to": "binB",
+      "bidirectional": true
+    },
+    {
+      "from": "binB",
+      "to": "lane03",
+      "bidirectional": true
+    },
+    {
+      "from": "lane10",
+      "to": "lane11",
+      "bidirectional": true
+    },
+    {
+      "from": "lane11",
+      "to": "lane12",
+      "bidirectional": true
+    },
+    {
+      "from": "lane12",
+      "to": "lane13",
+      "bidirectional": true
+    },
+    {
+      "from": "lane20",
+      "to": "binC",
+      "bidirectional": true
+    },
+    {
+      "from": "binC",
+      "to": "lane21",
+      "bidirectional": true
+    },
+    {
+      "from": "lane21",
+      "to": "lane22",
+      "bidirectional": true
+    },
+    {
+      "from": "lane22",
+      "to": "binD",
+      "bidirectional": true
+    },
+    {
+      "from": "binD",
+      "to": "lane23",
+      "bidirectional": true
+    },
+    {
+      "from": "lane00",
+      "to": "lane10",
+      "bidirectional": true
+    },
+    {
+      "from": "lane01",
+      "to": "lane11",
+      "bidirectional": true
+    },
+    {
+      "from": "lane02",
+      "to": "lane12",
+      "bidirectional": true
+    },
+    {
+      "from": "lane03",
+      "to": "lane13",
+      "bidirectional": true
+    },
+    {
+      "from": "lane10",
+      "to": "lane20",
+      "bidirectional": true
+    },
+    {
+      "from": "lane11",
+      "to": "lane21",
+      "bidirectional": true
+    },
+    {
+      "from": "lane12",
+      "to": "lane22",
+      "bidirectional": true
+    },
+    {
+      "from": "lane13",
+      "to": "lane23",
+      "bidirectional": true
+    }
+  ]
+}

@@ -9,7 +9,7 @@ const html = fs.readFileSync(base + '/index.html', 'utf8');
 
 function workspace({ savedMotion = null, osReduced = false, animationsSupported = true } = {}) {
   const dom = new JSDOM(html, { url: 'https://test.invalid/', runScripts: 'outside-only', pretendToBeVisual: true });
-  const w = dom.window, doc = w.document, frames = [], effects = [], listeners = new Map();
+  const w = dom.window, doc = w.document, frames = [], effects = [], listeners = new Map(),intervals=new Map(),workers=[];
   const media = { matches: osReduced, addEventListener(type, fn) { listeners.set(type, fn); } };
   w.matchMedia = () => media;
   if (savedMotion) w.localStorage.setItem('replenish.motion', savedMotion);
@@ -28,23 +28,25 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   w.HTMLDialogElement.prototype.close = function (value = '') { this.returnValue = value; this.open = false; this.dispatchEvent(new w.Event('close')); returnFocus.get(this)?.focus(); };
   w.ResizeObserver = class { constructor(fn) { this.fn = fn; } observe() { this.fn(); } };
   w.requestAnimationFrame = fn => { frames.push(fn); return frames.length; };
-  w.setInterval = () => 1; w.clearInterval = () => {};
+  let intervalId=0;w.setInterval=fn=>{intervals.set(++intervalId,fn);return intervalId;};w.clearInterval=id=>intervals.delete(id);
   w.setTimeout = () => 1; w.clearTimeout = () => {};
   w.scrollTo = () => {};
   w.TextDecoder = TextDecoder; w.TextEncoder = TextEncoder;
-  w.Worker = class { postMessage() {} };
+  w.Worker = class {constructor(url){this.url=url;workers.push(this);}postMessage(data){this.data=data;}terminate(){this.terminated=true;} };
   w.TwinScene = class {
     constructor() { this.camera = { yaw: 0, elevation: .7, zoom: 1 }; this.layers = { routes: true, grid: true }; this.width = 1000; this.rendererKind = 'DOM fixture'; }
     setView() {} setTheme() {} resize() {} draw() {} focus() {} zoomBy() {} cameraChanged() {}
   };
   const context = dom.getInternalVMContext();
   const run = source => vm.runInContext(source, context);
-  for (const name of ['robot_measurement_validation', 'mission_scheduling_and_routes', 'esp32_connection_controls', 'interface_motion_and_transitions', 'warehouse_simulation_controller']) {
+  run('Object.assign(window,(()=>{'+fs.readFileSync(base+'/warehouse_racks_and_aisle_layout.js','utf8').replace(/export /g,'')+';return{WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})())');
+  run('Object.assign(window,(()=>{'+fs.readFileSync(base+'/warehouse_graph_and_pathfinding.js','utf8').replace(/^import[^\n]*\n/gm,'').replace(/export /g,'')+';return{referenceFacility,checkedFacility,graphRoute,graphRouteTrace,graphRouteFromPose,checkedRouting,routeEdgeKey,edgeSegments,travelledMetres};})())');
+  for (const name of ['robot_measurement_validation', 'robot_state_estimation_and_calibration', 'mission_scheduling_and_routes', 'interactive_route_map', 'esp32_connection_controls', 'interface_motion_and_transitions', 'twin_model_validation_workspace', 'warehouse_simulation_controller']) {
     run(fs.readFileSync(base + '/' + name + '.js', 'utf8').replace(/^import[^\n]*\n/gm, '').replace(/export /g, '').replace('if(document.fonts)await document.fonts.ready;', ''));
   }
   function flush() { const batch = frames.splice(0); for (const fn of batch) fn(100); }
   async function settle() { for (const effect of effects) effect.finish(); await Promise.resolve(); await Promise.resolve(); }
-  return { dom, w, doc, run, flush, settle, effects, media, changeOS(value) { media.matches = value; listeners.get('change')?.(); } };
+  return { dom, w, doc, run, flush, settle, effects, media,workers,tickIntervals(){for(const fn of [...intervals.values()])fn();},changeOS(value) { media.matches = value; listeners.get('change')?.(); } };
 }
 
 (async () => {
@@ -118,6 +120,53 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   run('activatePage("environment");setFloorSource("hardware")');
   assert($('stop').disabled); assert.equal($('unit-battery').textContent, '—');
   assert.equal(doc.querySelectorAll('.navigation-cursor').length, 1);
+  const dispatchBeforeMap=run('JSON.stringify({routing,tasks,robots})');
+  $('expand').click();assert(doc.body.classList.contains('scene-expanded'));
+  $('tab-routes').click();
+  assert(!doc.body.classList.contains('scene-expanded'),'leaving Floor must restore document scrolling');
+  assert.equal(doc.body.dataset.view,'routes');assert(!$('routes').hidden);
+  assert.equal($('tab-routes').getAttribute('aria-selected'),'true');
+  assert.equal($('page-mode').textContent,'Route preview');
+  assert.equal($('source-badge').textContent,'Reference route preview');
+  assert(run('routeMap.getSnapshot().state.visible'));
+  $('map-destination').value='binA';$('map-destination').dispatchEvent(new ui.w.Event('change'));
+  $('map-tool-lanes').click();doc.querySelector('[data-map-edge="lane00~lane10"]').dispatchEvent(new ui.w.MouseEvent('click',{bubbles:true}));
+  assert.equal(run('JSON.stringify({routing,tasks,robots})'),dispatchBeforeMap,'map edits must leave dispatch state intact');
+  $('map-mode-algorithm').click();$('map-search-play').click();
+  assert(run('routeMap.getSnapshot().state.playing'));
+  run('activatePage("engineering")');$('lab-reference').click();
+  assert(!run('routeMap.getSnapshot().state.visible'));assert(!run('routeMap.getSnapshot().state.playing'),'page navigation pauses route playback');
+  doc.querySelector('[data-lab-tab="calibration"]').click();
+  assert(doc.querySelector('[data-lab-panel="state"]').hidden);
+  assert(!doc.querySelector('[data-lab-panel="calibration"]').hidden);
+  const liveProfiles=run('JSON.stringify(engineering.liveEngine.profiles)');
+  $('lab-fit').click();assert(!$('lab-apply-fit').disabled);$('lab-apply-fit').click();
+  assert.equal(run('JSON.stringify(engineering.liveEngine.profiles)'),liveProfiles);
+  doc.querySelector('[data-lab-tab="state"]').click();
+  assert.equal(doc.querySelectorAll('#lab-assets tr').length,3);
+  assert.equal(doc.querySelectorAll('#lab-map polyline').length,2);
+  $('theme-bright').click();assert.equal(doc.documentElement.dataset.theme,'bright');
+  $('lab-source').value='live';$('lab-source').dispatchEvent(new ui.w.Event('change'));
+  assert.equal($('lab-frame-confirmed').checked,false);assert($('lab-replay').hidden);
+  // Restore the reference source and verify one frame convention across both maps.
+  $('lab-reference').click();
+  const binY=id=>+([...$('lab-map').querySelectorAll('text')].find(e=>e.textContent===id).getAttribute('y'));
+  assert(binY('A')<binY('C'),'Twin lab and Route map must both place smaller reference Y above larger Y');
+  assert($('lab-map-note').textContent.includes('+Y down'));
+  const experimentWorker=ui.workers.find(x=>x.url==='dispatch_experiment_worker.js');
+  $('lab-run-experiment').click();const oldRequest=experimentWorker.data;
+  $('lab-sim-source').click();experimentWorker.onmessage({data:{requestId:oldRequest.requestId,error:'obsolete source response'}});
+  assert(!$('lab-experiment-message').textContent.includes('obsolete source response'));assert($('lab-export-experiment').disabled);
+  $('lab-source').value='recording';$('lab-source').dispatchEvent(new ui.w.Event('change'));
+  $('lab-play').click();ui.tickIntervals();const replayCursor=+$('lab-cursor').value;assert(replayCursor>0);
+  $('tab-routes').click();ui.tickIntervals();assert.equal(+$('lab-cursor').value,replayCursor,'leaving Twin lab pauses replay');
+  $('tab-engineering').click();assert.equal($('lab-play').getAttribute('aria-pressed'),'false');
+  ui.changeOS(true);ui.tickIntervals();assert($('lab-play').disabled);$('lab-cursor').value='3';$('lab-cursor').dispatchEvent(new ui.w.Event('input'));assert.equal(+$('lab-cursor').value,3);
+  ui.changeOS(false);ui.tickIntervals();assert(!$('lab-play').disabled);
+  ui.w.dispatchEvent(new ui.w.Event('pagehide'));ui.w.dispatchEvent(new ui.w.Event('pageshow'));
+  $('lab-play').click();ui.tickIntervals();assert(+$('lab-cursor').value>3,'replay resumes correctly after page restoration');
+  const restoredWorker=ui.workers.at(-1);assert.equal(typeof restoredWorker.onerror,'function');assert.equal(typeof restoredWorker.onmessageerror,'function');
+  restoredWorker.onmessageerror();assert($('lab-run-experiment').disabled);assert($('lab-experiment-message').textContent.includes('service unavailable'));
   await ui.settle(); ui.dom.window.close();
 
   const saved = workspace({ savedMotion: 'reduced' }); saved.flush();
@@ -127,5 +176,5 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   const fallback = workspace({ animationsSupported: false });
   fallback.doc.getElementById('demo').click(); fallback.doc.getElementById('confirm-dispatch').click();
   assert.equal(fallback.run('tasks.filter(t=>t.status==="Active").length'), 1); fallback.dom.window.close();
-  console.log('PASS: persistent DOM rows/bars/charts, focus and select preservation, immediate mission actions, modal close/reopen races, stable animation counts, both themes, saved and device reduced-motion preferences, graceful fallback, and live/simulation isolation.');
+  console.log('PASS: persistent DOM rows/bars/charts, focus and select preservation, immediate mission actions, modal close/reopen races, stable animation counts, both themes, saved/device reduced motion, graceful fallback, source isolation, Route map navigation/isolation/pause and Twin lab DOM navigation/calibration/plots.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -16,7 +16,7 @@ export function connectionConfig({ url, username, password, prefix }) {
   }
   if (!username.trim() || !password) throw new Error('Enter the broker’s read-only username and password.');
   return { url: endpoint.href, username: username.trim(), password, prefix: topicPrefix,
-    topics: SLOT_IDS.map(id => `${topicPrefix}/${id}/telemetry`) };
+    topics: SLOT_IDS.map(id => `${topicPrefix}/${id}/telemetry`), inventoryTopic: `${topicPrefix}/inventory` };
 }
 
 function measurement(value, min, max, field) {
@@ -48,11 +48,17 @@ export function decodeTelemetry(payload, expectedId, now = Date.now()) {
       heading_deg: measurement(p.pose.heading_deg, -360, 360, 'Heading') };
     if (Object.values(pose).includes(null)) throw new Error('A pose requires X, Y and heading; use null until localization is ready.');
   }
+  if (p.frame_id != null && (typeof p.frame_id !== 'string' || !/^[a-zA-Z0-9_-]{1,48}$/.test(p.frame_id))) throw new Error('Map frame identifier is invalid.');
+  if (p.pose_source != null && !['encoder_odometry', 'overhead_camera', 'uwb', 'external'].includes(p.pose_source)) throw new Error('Pose source is invalid.');
+  const poseSigma = p.pose_sigma_m === undefined ? null : measurement(p.pose_sigma_m, .001, 2, 'Pose uncertainty');
+  const angular = p.angular_speed_rps === undefined ? null : measurement(p.angular_speed_rps, -10, 10, 'Angular speed');
   return { v: 1, device_id: p.device_id, boot_id: p.boot_id, seq: p.seq, sent_at_ms: p.sent_at_ms,
     uptime_ms: p.uptime_ms, state: p.state, firmware: p.firmware, pose,
     battery_pct: measurement(p.battery_pct, 0, 100, 'Battery'),
     speed_mps: measurement(p.speed_mps, 0, 10, 'Speed'),
-    wifi_rssi_dbm: measurement(p.wifi_rssi_dbm, -127, 0, 'Wi-Fi signal') };
+    wifi_rssi_dbm: measurement(p.wifi_rssi_dbm, -127, 0, 'Wi-Fi signal'),
+    frame_id: p.frame_id ?? null, pose_source: p.pose_source ?? null,
+    pose_sigma_m: poseSigma, angular_speed_rps: angular };
 }
 
 export class TelemetryStore {

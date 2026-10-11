@@ -11,7 +11,7 @@ This starter connects **three ESP32 boards** to the digital twin’s Hardware wo
 - A private MQTT broker with a trusted TLS certificate, an MQTT TLS listener for the boards, and a **WSS listener for the browser**. These are usually different ports. Use the exact addresses supplied by your broker operator.
 - Your network must allow the board to reach the broker and an NTP time server. Both the ESP32 and browser clocks must be accurate to within a few seconds.
 
-The digital twin application provides the viewer and firmware, **not a provisioned MQTT broker**. The boards may share one Wi-Fi network; the browser can use any network that can reach the broker. Browser access to a local broker also depends on its trusted certificate and local-network permissions.
+The Site provides the viewer and firmware, **not a provisioned MQTT broker**. The boards may share one Wi-Fi network; the browser can use any network that can reach the broker. Browser access to a local broker also depends on its trusted certificate and local-network permissions.
 
 ## Verified reference build
 
@@ -55,7 +55,7 @@ Give every board a different publisher password. Do not put a broker administrat
 
 ## 3. Connect the viewer
 
-1. Open the digital twin’s **Hardware** tab.
+1. Open the Site’s **Hardware** tab.
 2. Enter the broker’s complete **WSS URL**, for example `wss://your-broker-host:your-wss-port/mqtt`. This is a placeholder, not a working broker.
 3. Enter the read-only viewer username/password and the matching topic prefix.
 4. Choose **Connect three slots**. “Subscribed” means the broker approved all three topic subscriptions. It does not mean all three devices are online.
@@ -129,4 +129,4 @@ The example timestamp `0` is deliberately invalid: the board must insert its **c
 - MQTT.js browser transport and reconnect API: https://github.com/mqttjs/MQTT.js
 - PubSubClient: https://github.com/knolleary/pubsubclient
 
-MQTT.js is MIT licensed; its license is supplied with the application. Arduino-ESP32 and PubSubClient retain their respective licenses and are installed separately. The project’s ownership notice applies to its original code, UI and educational content.
+MQTT.js is MIT licensed; its license is supplied with the Site. Arduino-ESP32 and PubSubClient retain their respective licenses and are installed separately. The project’s ownership notice applies to its original code, UI and educational content.

@@ -1,7 +1,8 @@
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 import { SLOT_IDS, TelemetryStore, connectionConfig } from './robot_measurement_validation.js';
+import { decodeInventory } from './robot_state_estimation_and_calibration.js';
 
-export function createHardwareWorkspace({ onChange, onView }) {
+export function createHardwareWorkspace({ onChange, onView, onObservation, onInventory, onInventoryError, onNewSession }) {
   const $ = id => document.getElementById(id), store = new TelemetryStore();
   let client = null, generation = 0, state = 'disconnected', config = null, subscriptionTimer = null;
   const set = (id, value) => { if ($(id).textContent !== value) $(id).textContent = value; };
@@ -72,7 +73,7 @@ export function createHardwareWorkspace({ onChange, onView }) {
     let next;
     try { next = connectionConfig({ url: $('hardware-url').value, username: $('hardware-user').value, password: $('hardware-password').value, prefix: $('hardware-prefix').value }); }
     catch (error) { set('hardware-message', error.message); return; }
-    const ticket = ++generation; endClient(); config = next; store.reset(); state = 'loading'; busy(true);
+    const ticket = ++generation; endClient(); config = next; store.reset(); onNewSession?.(); state = 'loading'; busy(true);
     set('hardware-message', 'Opening a secure connection to your broker…'); changed();
     try {
       const { default: mqtt } = await import('./external_libraries/mqtt.esm.js');
@@ -93,12 +94,24 @@ export function createHardwareWorkspace({ onChange, onView }) {
           clearTimeout(subscriptionTimer);
           if (error || !grants || grants.length !== 3 || grants.some(g => g.qos > 2)) return fail('Access to a device topic was denied. Give the viewer read permission for all three telemetry topics.');
           state = 'connected'; set('hardware-message', 'Listening for fresh ESP32 telemetry. Sensor values appear only after a device reports them.'); changed();
+          // Inventory is optional: its ACL cannot prevent the three AMR subscriptions from working.
+          liveClient.subscribe(next.inventoryTopic, { qos: 0 }, (inventoryError, inventoryGrants) => {
+            if (ticket !== generation) return;
+            if (inventoryError || !inventoryGrants?.length || inventoryGrants.some(g => g.qos > 2)) onInventoryError?.('Inventory subscription unavailable. Allow read access to the /inventory topic to feed the twin’s stock model.');
+          });
         });
       });
       liveClient.on('message', (topic, payload, packet) => {
         if (ticket !== generation || state !== 'connected') return;
         const index = next.topics.indexOf(topic);
-        if (index >= 0) { store.ingest(index, payload, packet); changed(); }
+        if (index >= 0) {
+          const now = Date.now(), tick = performance.now();
+          if (store.ingest(index, payload, packet, now, tick)) onObservation?.(store.slots[index].data, now, tick);
+          changed();
+        } else if (topic === next.inventoryTopic) {
+          try { if (packet.retain) throw Error('Retained inventory ignored; waiting for a fresh camera observation.'); if(payload.length>4096)throw Error('Inventory packet exceeds 4 KB.');const now=Date.now(),tick=performance.now();onInventory?.(decodeInventory(new TextDecoder('utf-8',{fatal:true}).decode(payload),now),now,tick);changed(); }
+          catch (error) { onInventoryError?.(error.message); }
+        }
       });
       liveClient.on('reconnect', () => { if (ticket !== generation) return; state = 'reconnecting'; set('hardware-message', 'Connection interrupted. Retrying every 3 seconds…'); changed(); });
       liveClient.on('close', () => { if (ticket !== generation) return; clearTimeout(subscriptionTimer); state = 'reconnecting'; changed(); });

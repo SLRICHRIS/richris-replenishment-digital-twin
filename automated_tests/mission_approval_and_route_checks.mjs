@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
+import { BIN_DESTINATIONS } from '../digital_twin_application/warehouse_racks_and_aisle_layout.js';
 import { routeTo, routeStats, tripFor, homeFor, assessMission, reviewDispatch, inventoryProjection } from '../digital_twin_application/mission_scheduling_and_routes.js';
 const make = () => ({
   robots: [0,1,2].map(id=>({id,x:120,y:170+id*80,battery:96-id*9,state:'Idle',task:null,route:[]})),
-  bins: [{id:'A',x:420,y:150,stock:64,rate:.09},{id:'B',x:710,y:150,stock:48,rate:.13},{id:'C',x:420,y:350,stock:77,rate:.07},{id:'D',x:710,y:350,stock:39,rate:.11}],
+  bins: BIN_DESTINATIONS.map(b=>({...b})),
   tasks: [{id:1,robot:0,bin:3,status:'Pending approval'},{id:2,robot:1,bin:1,status:'Pending approval'},{id:3,robot:2,bin:0,status:'Pending approval'}], demand:1,slow:false,stopped:false,running:true
 });
 let c=make(),r=c.robots[0],b=c.bins[3];
-assert.deepEqual(routeTo(r,b)[0],{x:220,y:170});
-assert.deepEqual(routeTo(b,homeFor(r)).at(-2),{x:220,y:170});
+assert(Math.hypot(routeTo(r,b)[0].x-220,routeTo(r,b)[0].y-170)<1e-8);
+assert(Math.hypot(routeTo(b,homeFor(r)).at(-2).x-220,routeTo(b,homeFor(r)).at(-2).y-170)<1e-8);
 assert(Number.isFinite(tripFor(homeFor(r),b).seconds));
 assert(tripFor(r,b,true).seconds>tripFor(r,b,false).seconds*2);
 const original=JSON.stringify(c),plan=reviewDispatch(c,[1,2,3]);assert.equal(JSON.stringify(c),original);

@@ -1,0 +1,398 @@
+{
+  "source_site": "https://replenishment-twin.slrichris2005.chatgpt.site",
+  "source_commit": "e8dbe22a7ef06e7016f2a2bf35251a4086f910be",
+  "version": "2.1.0",
+  "migration": "Relative filenames adapted to the existing readable GitHub layout; local Streamlit viewport handshake added. Model, routing and control authority retained.",
+  "files": [
+    {
+      "source_path": "dist/NOTICE.txt",
+      "repository_path": "digital_twin_application/ownership_and_external_software_licenses.txt",
+      "source_sha256": "164a2d66137c89c05037409cae9bbf0ebb939391a3a8efbba7e636b4a797e705",
+      "repository_sha256": "b52c3d45982f69351efaf999e9d732d9d430c033b56ff438042345527fef549b"
+    },
+    {
+      "source_path": "dist/app.js",
+      "repository_path": "digital_twin_application/warehouse_simulation_controller.js",
+      "source_sha256": "112368c2a9d18b90dc77ef0ebf33927fcb9a8df3372762375ec07e4fe5f47b03",
+      "repository_sha256": "645ce84087fb17569fe90b4806b3ceae55ae8638c7eb689363303f56b43cce42"
+    },
+    {
+      "source_path": "dist/dispatch.js",
+      "repository_path": "digital_twin_application/mission_scheduling_and_routes.js",
+      "source_sha256": "4170646a67db3f411b8d494902202d55c5b6bcda5541751d118456d9815503e0",
+      "repository_sha256": "139ca9e8addcc99fa315c51adbcf3b0f9f50c1b3561b3a1879cfed0f0deb2409"
+    },
+    {
+      "source_path": "dist/engineering/ARCHITECTURE.md",
+      "repository_path": "digital_twin_application/engineering/ARCHITECTURE.md",
+      "source_sha256": "b02491fcf641f95f36ca5978656152da140efda32a3b9b69ffd0d10cb0dbf0f4",
+      "repository_sha256": "da74669d152a3357b26888356450c3dbeb89ed747016eaf47c256a4ffce13222"
+    },
+    {
+      "source_path": "dist/engineering/FINAL_AUDIT.md",
+      "repository_path": "digital_twin_application/engineering/FINAL_AUDIT.md",
+      "source_sha256": "3be68009f3b4f2c6311aa9bd6dcb3a1a6198dac93e872b386d1adf749f7b889a",
+      "repository_sha256": "67f6e4d99e0dee659d5f02c3617ec2bfe634c79cf336c76e4a37c287f4db550a"
+    },
+    {
+      "source_path": "dist/engineering/VERIFICATION.md",
+      "repository_path": "digital_twin_application/engineering/VERIFICATION.md",
+      "source_sha256": "5d0d76834980fa1838f7deede41f97d5397cb897c110b75300abdc3c94b26af0",
+      "repository_sha256": "ce36c420e9c5c8d2e086202e4795164229b7bcd94d42cd40a3449591fd43d38f"
+    },
+    {
+      "source_path": "dist/engineering/edge/README.md",
+      "repository_path": "digital_twin_application/engineering/edge/README.md",
+      "source_sha256": "35f357a823dc2201ba0eef07261544f273504d48e5fda260271aa0f49885daa7",
+      "repository_sha256": "35f357a823dc2201ba0eef07261544f273504d48e5fda260271aa0f49885daa7"
+    },
+    {
+      "source_path": "dist/engineering/edge/facility.example.json",
+      "repository_path": "digital_twin_application/engineering/edge/facility.example.json",
+      "source_sha256": "fb474e9e21c1a4687a3b62a978e98708cea57c4425d4ff1be1cabc0f1fe57354",
+      "repository_sha256": "fb474e9e21c1a4687a3b62a978e98708cea57c4425d4ff1be1cabc0f1fe57354"
+    },
+    {
+      "source_path": "dist/engineering/edge/gateway.py",
+      "repository_path": "digital_twin_application/engineering/edge/gateway.py",
+      "source_sha256": "c87b891138963380cfdf2b6801cc81c06ed60b7161572d41a0aad3ab16cb0c83",
+      "repository_sha256": "c87b891138963380cfdf2b6801cc81c06ed60b7161572d41a0aad3ab16cb0c83"
+    },
+    {
+      "source_path": "dist/engineering/edge/labview_adapter.py",
+      "repository_path": "digital_twin_application/engineering/edge/labview_adapter.py",
+      "source_sha256": "a022ff59d064978ecadc26f578d3afeaf53e4e7bcf72df8597e8a8fa90541de8",
+      "repository_sha256": "a022ff59d064978ecadc26f578d3afeaf53e4e7bcf72df8597e8a8fa90541de8"
+    },
+    {
+      "source_path": "dist/engineering/edge/requirements.txt",
+      "repository_path": "digital_twin_application/engineering/edge/requirements.txt",
+      "source_sha256": "df88c624182b4b44cfc2da8ffb2f3ef55efe6ffa53c6daa61b6658171d3f7590",
+      "repository_sha256": "df88c624182b4b44cfc2da8ffb2f3ef55efe6ffa53c6daa61b6658171d3f7590"
+    },
+    {
+      "source_path": "dist/engineering/edge/test_gateway.py",
+      "repository_path": "digital_twin_application/engineering/edge/test_gateway.py",
+      "source_sha256": "1d642052bcd44451008d31c0fa19058cfba611f9c3cf3baecb9e725d3b84d617",
+      "repository_sha256": "1d642052bcd44451008d31c0fa19058cfba611f9c3cf3baecb9e725d3b84d617"
+    },
+    {
+      "source_path": "dist/engineering/replenish-edge-kit.zip",
+      "repository_path": "digital_twin_application/engineering/replenish-edge-kit.zip",
+      "source_sha256": "2a78d6993ee7e32e047ca7d73dc82c72fa63733962caae224813f1f45e7a83ee",
+      "repository_sha256": "83141dafb9b59a220e64777158754f50a507f8c1ed4cf9646c3c5ab39f62ea23"
+    },
+    {
+      "source_path": "dist/engineering.css",
+      "repository_path": "digital_twin_application/screen_styles/twin_model_validation_panel.css",
+      "source_sha256": "e6ca9168847fb4358333a6be61db313c46b1462382dd83d771506775b02ac379",
+      "repository_sha256": "e6ca9168847fb4358333a6be61db313c46b1462382dd83d771506775b02ac379"
+    },
+    {
+      "source_path": "dist/engineering.js",
+      "repository_path": "digital_twin_application/twin_model_validation_workspace.js",
+      "source_sha256": "15c39cf07214264876ba71b0fef28adaae76a2d1779a5f1435bf9519f6427ca5",
+      "repository_sha256": "1cc4ad9dc904a07d9b477ca40ffdfe00702e4b943ebf865d1f198704a5440600"
+    },
+    {
+      "source_path": "dist/experiment-worker.js",
+      "repository_path": "digital_twin_application/dispatch_experiment_worker.js",
+      "source_sha256": "b839a08085a9bc1333d042d748a480e05f7f989a462d4ca12c0135b6aac75904",
+      "repository_sha256": "0dc37a6af28cfb7934167000a3de9cbe1e68760141f4bb23f2f5c5247884fc0e"
+    },
+    {
+      "source_path": "dist/experiments.js",
+      "repository_path": "digital_twin_application/paired_dispatch_policy_experiments.js",
+      "source_sha256": "91889344aad230f1700532d649607a9901fd7c3135139c02918bbe2dee7b570a",
+      "repository_sha256": "9ea9acb87311917c2a5decb8f5f9fe618a7806005a8a3e2ec76c69e5a45110a4"
+    },
+    {
+      "source_path": "dist/facility.js",
+      "repository_path": "digital_twin_application/warehouse_graph_and_pathfinding.js",
+      "source_sha256": "9a0a52849a0e6e0a67c599e4512bd410500d5a21078155058188dc67d1aaa335",
+      "repository_sha256": "7d4b59e463b84d86e5438ed5296a98f667903ca8a4ee2d66c911a4432973fb11"
+    },
+    {
+      "source_path": "dist/favicon.svg",
+      "repository_path": "digital_twin_application/application_icon.svg",
+      "source_sha256": "1da8e3581e140cf497d82f6df8b53589308f3ce5f0fda3b54ea49eb199c21bf0",
+      "repository_sha256": "1da8e3581e140cf497d82f6df8b53589308f3ce5f0fda3b54ea49eb199c21bf0"
+    },
+    {
+      "source_path": "dist/fonts/barlow-condensed-600.woff",
+      "repository_path": "digital_twin_application/display_fonts/barlow-condensed-600.woff",
+      "source_sha256": "d69d80d0d532647cd5e5ca981b240a2af81c2170282070a3337dc3438ddc4e16",
+      "repository_sha256": "d69d80d0d532647cd5e5ca981b240a2af81c2170282070a3337dc3438ddc4e16"
+    },
+    {
+      "source_path": "dist/fonts/barlow-condensed-700.woff",
+      "repository_path": "digital_twin_application/display_fonts/barlow-condensed-700.woff",
+      "source_sha256": "faf57775802d49abf27a9e4ef6597c30067c84b545acaf01391548101f6e3819",
+      "repository_sha256": "faf57775802d49abf27a9e4ef6597c30067c84b545acaf01391548101f6e3819"
+    },
+    {
+      "source_path": "dist/fonts/barlowcondensed-OFL.txt",
+      "repository_path": "digital_twin_application/display_fonts/barlowcondensed-OFL.txt",
+      "source_sha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f",
+      "repository_sha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f"
+    },
+    {
+      "source_path": "dist/fonts/hanken-grotesk-variable.woff2",
+      "repository_path": "digital_twin_application/display_fonts/hanken-grotesk-variable.woff2",
+      "source_sha256": "4400c38a608adf24a574a92cdf1bfb18e95b4fe04213797de362f7d5663a4599",
+      "repository_sha256": "4400c38a608adf24a574a92cdf1bfb18e95b4fe04213797de362f7d5663a4599"
+    },
+    {
+      "source_path": "dist/fonts/hankengrotesk-OFL.txt",
+      "repository_path": "digital_twin_application/display_fonts/hankengrotesk-OFL.txt",
+      "source_sha256": "e02ccb89a86839b22feff7872ff5cc355cc0f58318d29eee20e2cf83a612f16d",
+      "repository_sha256": "e02ccb89a86839b22feff7872ff5cc355cc0f58318d29eee20e2cf83a612f16d"
+    },
+    {
+      "source_path": "dist/fonts/ibm-plex-mono-400.woff",
+      "repository_path": "digital_twin_application/display_fonts/ibm-plex-mono-400.woff",
+      "source_sha256": "abf757b7b341aa0f00719001a4ccfa44d8dc5c5ea324b454eb36e16a24847baf",
+      "repository_sha256": "abf757b7b341aa0f00719001a4ccfa44d8dc5c5ea324b454eb36e16a24847baf"
+    },
+    {
+      "source_path": "dist/fonts/ibm-plex-mono-500.woff",
+      "repository_path": "digital_twin_application/display_fonts/ibm-plex-mono-500.woff",
+      "source_sha256": "878e869681e08ef6f104c36470b9c2a0f1a3a75ef30f891446c51d56e2a0070e",
+      "repository_sha256": "878e869681e08ef6f104c36470b9c2a0f1a3a75ef30f891446c51d56e2a0070e"
+    },
+    {
+      "source_path": "dist/fonts/ibm-plex-sans-400.woff",
+      "repository_path": "digital_twin_application/display_fonts/ibm-plex-sans-400.woff",
+      "source_sha256": "f88dc52f810b8022cea926e6080380bdbffb8ec7ff1fb8a3ebe40073bfeb8fbb",
+      "repository_sha256": "f88dc52f810b8022cea926e6080380bdbffb8ec7ff1fb8a3ebe40073bfeb8fbb"
+    },
+    {
+      "source_path": "dist/fonts/ibm-plex-sans-500.woff",
+      "repository_path": "digital_twin_application/display_fonts/ibm-plex-sans-500.woff",
+      "source_sha256": "91ded954a5bb9c007b707ba3573da9171a85aaf6774bbab1374022ccc5ce63e2",
+      "repository_sha256": "91ded954a5bb9c007b707ba3573da9171a85aaf6774bbab1374022ccc5ce63e2"
+    },
+    {
+      "source_path": "dist/fonts/ibm-plex-sans-600.woff",
+      "repository_path": "digital_twin_application/display_fonts/ibm-plex-sans-600.woff",
+      "source_sha256": "d3d03deb6acf54eae815558c224f283d63d726dc111c552e9c90251a86db9907",
+      "repository_sha256": "d3d03deb6acf54eae815558c224f283d63d726dc111c552e9c90251a86db9907"
+    },
+    {
+      "source_path": "dist/fonts/ibmplexmono-OFL.txt",
+      "repository_path": "digital_twin_application/display_fonts/ibmplexmono-OFL.txt",
+      "source_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "repository_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da"
+    },
+    {
+      "source_path": "dist/fonts/ibmplexsans-OFL.txt",
+      "repository_path": "digital_twin_application/display_fonts/ibmplexsans-OFL.txt",
+      "source_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "repository_sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da"
+    },
+    {
+      "source_path": "dist/fonts.css",
+      "repository_path": "digital_twin_application/screen_styles/font_definitions.css",
+      "source_sha256": "5bf130f1891ce4768e2c655f914235cf77c25efb844330e6dad6185b114ea4bb",
+      "repository_sha256": "a891020b0624613987f25281627743ca0d21bdd032c2f528381e2f8b6394dbfe"
+    },
+    {
+      "source_path": "dist/hardware/ReplenishESP32/ReplenishESP32.ino",
+      "repository_path": "digital_twin_application/esp32_robot_firmware/ESP32_Robot_Telemetry/ESP32_Robot_Telemetry.ino",
+      "source_sha256": "4eb9c8a8bd001716dcfea297503c27062f31d1540efe498ee7b6f1c2b7f97973",
+      "repository_sha256": "9b572aaab36dfaa8d4fd0e79d0afc40eaa13e25d3248b7bea1b2373bb184aea6"
+    },
+    {
+      "source_path": "dist/hardware/ReplenishESP32/config.example.h",
+      "repository_path": "digital_twin_application/esp32_robot_firmware/ESP32_Robot_Telemetry/robot_connection_settings.example.h",
+      "source_sha256": "a39b45306b17dffeb48c27bf86c717f441a5ce50c105b7c139af9820edde9f7a",
+      "repository_sha256": "546d5fcec6036cc2d623fc060869e2d48029de19936cbd2796c1ec0dca576f9b"
+    },
+    {
+      "source_path": "dist/hardware/SETUP.md",
+      "repository_path": "digital_twin_application/esp32_robot_firmware/esp32_wifi_and_telemetry_setup.md",
+      "source_sha256": "8a9bc67cc3927516c1433c9481cf7949318263b43474d19ac3ef33687c66937e",
+      "repository_sha256": "00cdaedb181f24aaf7261dae7976d183068006c8adc7cf4f31e0216e509ea492"
+    },
+    {
+      "source_path": "dist/hardware/replenish-esp32-starter.zip",
+      "repository_path": "digital_twin_application/esp32_robot_firmware/esp32_robot_telemetry_starter_kit.zip",
+      "source_sha256": "614a1727a6d58290973bb32392aab83fce0b924f41f2952c021778a598604a0e",
+      "repository_sha256": "cd4b6a0ff33c730f022e93f19acf63e880a759fd5438407b18d210ddb5a53d66"
+    },
+    {
+      "source_path": "dist/hardware.css",
+      "repository_path": "digital_twin_application/screen_styles/hardware_connection_panel.css",
+      "source_sha256": "30216225c5fb2191da31600fd8e850d31e724224442ea7ea3a0fe121a3a8e089",
+      "repository_sha256": "30216225c5fb2191da31600fd8e850d31e724224442ea7ea3a0fe121a3a8e089"
+    },
+    {
+      "source_path": "dist/hardware.js",
+      "repository_path": "digital_twin_application/esp32_connection_controls.js",
+      "source_sha256": "ccfb96209057dd1043e16e37e36419e7f935044725061b409deea1660ddc3c99",
+      "repository_sha256": "abf55049e7110bca237fe1632828df590980bfccdcf8c47db53a785293f91d23"
+    },
+    {
+      "source_path": "dist/index.html",
+      "repository_path": "digital_twin_application/index.html",
+      "source_sha256": "843211f8589eef02b094f45e94d9f4ae070375222542878b140d32e7b3061165",
+      "repository_sha256": "60cc7b5c87b397a9d237c3390402464cf9e4267531f682b77c0421d8a9150a8b"
+    },
+    {
+      "source_path": "dist/industrial.js",
+      "repository_path": "digital_twin_application/industrial_building_and_equipment.js",
+      "source_sha256": "c54b9230b7677bc2d0cad03deb81e5a9bb696aeb50260e8ce6aeb81c2d58f0a5",
+      "repository_sha256": "271f81cc4728564555853fb32a52a9b02b4202bab1ac1f56b134905359867858"
+    },
+    {
+      "source_path": "dist/interface.css",
+      "repository_path": "digital_twin_application/screen_styles/shared_interface_components.css",
+      "source_sha256": "c0b7fa58bc8b1158421115c8a7630e34c0c90f18534c6a9038ebc93fecc55e18",
+      "repository_sha256": "760e2d5784f5fa7c1b292b475ba19e7e89607e3090a258eef62d3adf120dfa30"
+    },
+    {
+      "source_path": "dist/layout.js",
+      "repository_path": "digital_twin_application/warehouse_racks_and_aisle_layout.js",
+      "source_sha256": "d5d60958c671e4bc98630bee531707e493378f2cd24e595de0c29c205c7a2b17",
+      "repository_sha256": "d5d60958c671e4bc98630bee531707e493378f2cd24e595de0c29c205c7a2b17"
+    },
+    {
+      "source_path": "dist/motion.css",
+      "repository_path": "digital_twin_application/screen_styles/interface_animation_styles.css",
+      "source_sha256": "5d4b6999d60c49e51cab45573b0f015ac3c41088de1dc77a6c982db59091bea1",
+      "repository_sha256": "5d4b6999d60c49e51cab45573b0f015ac3c41088de1dc77a6c982db59091bea1"
+    },
+    {
+      "source_path": "dist/motion.js",
+      "repository_path": "digital_twin_application/interface_motion_and_transitions.js",
+      "source_sha256": "f137661829958d926cec0b11bcb628cbb604c22255bd8a70c9bc3dc03706e94e",
+      "repository_sha256": "f137661829958d926cec0b11bcb628cbb604c22255bd8a70c9bc3dc03706e94e"
+    },
+    {
+      "source_path": "dist/operations.css",
+      "repository_path": "digital_twin_application/screen_styles/mission_review_and_dispatch.css",
+      "source_sha256": "a15724be2afa55ce4a22f48277d07e2ae2da4ffa412d394905ff626505a6633a",
+      "repository_sha256": "a15724be2afa55ce4a22f48277d07e2ae2da4ffa412d394905ff626505a6633a"
+    },
+    {
+      "source_path": "dist/predictor.js",
+      "repository_path": "digital_twin_application/stock_and_battery_forecast.js",
+      "source_sha256": "533a19e92e0a9e78c6097cab03043e3ef09cab7843635dd4efef78e88b430659",
+      "repository_sha256": "bcf8bbf394f2791f9954dcd740fa94341df6ca4767ef4c46dfce7c7c2753732a"
+    },
+    {
+      "source_path": "dist/route-map.css",
+      "repository_path": "digital_twin_application/screen_styles/interactive_route_map.css",
+      "source_sha256": "3cfa78ebf7f1133774446a0a5319b76f3aae7c55281ce571b4be79a314236d94",
+      "repository_sha256": "3cfa78ebf7f1133774446a0a5319b76f3aae7c55281ce571b4be79a314236d94"
+    },
+    {
+      "source_path": "dist/route-map.js",
+      "repository_path": "digital_twin_application/interactive_route_map.js",
+      "source_sha256": "0c586b92adfda215cce3d3c834ffae956beba033b85dee961a6f44b8b7c90666",
+      "repository_sha256": "3441911671bb26373d089fc2794244190cfc345d15d4ff47aafbff29ec83b2b5"
+    },
+    {
+      "source_path": "dist/scene-canvas.js",
+      "repository_path": "digital_twin_application/two_dimensional_warehouse_view.js",
+      "source_sha256": "32f2572f6680a3470bd367b4f16aebc0e7116f2fb4104b1e93706082fe4fd0b9",
+      "repository_sha256": "996a21cac09707c730f0a59c5d603cd4d9d570c46b51c8be3f1bfeeb46bc5d9d"
+    },
+    {
+      "source_path": "dist/scene.js",
+      "repository_path": "digital_twin_application/three_dimensional_warehouse_view.js",
+      "source_sha256": "7c7d1f7b9381711c56a9de809489f6177432d79c05a012729c87ad744665e10e",
+      "repository_sha256": "7d429524fc979b177ef33b8d02b223bfdd5d523f74836054f2ad3b56dee47698"
+    },
+    {
+      "source_path": "dist/style.css",
+      "repository_path": "digital_twin_application/screen_styles/base_page_layout.css",
+      "source_sha256": "c74f0526238a568fda0c5ef37178f098891c6219be1799de45ea01db834f0517",
+      "repository_sha256": "c74f0526238a568fda0c5ef37178f098891c6219be1799de45ea01db834f0517"
+    },
+    {
+      "source_path": "dist/telemetry.js",
+      "repository_path": "digital_twin_application/robot_measurement_validation.js",
+      "source_sha256": "73efda46c3c8ce1a24f438ae0cc6fc5affba61d2b49d09484d0fc46233f0d2c3",
+      "repository_sha256": "73efda46c3c8ce1a24f438ae0cc6fc5affba61d2b49d09484d0fc46233f0d2c3"
+    },
+    {
+      "source_path": "dist/theme-init.js",
+      "repository_path": "digital_twin_application/saved_screen_theme.js",
+      "source_sha256": "9eab48172643120ca49c3cf05051a6e1a0e60299607b430b7f870923dc3a5da4",
+      "repository_sha256": "9eab48172643120ca49c3cf05051a6e1a0e60299607b430b7f870923dc3a5da4"
+    },
+    {
+      "source_path": "dist/themes.css",
+      "repository_path": "digital_twin_application/screen_styles/dark_and_bright_themes.css",
+      "source_sha256": "4480881453fdbc73ec3b48403f0c0b14ceb5dfe213a863f4637d67888580b19b",
+      "repository_sha256": "4480881453fdbc73ec3b48403f0c0b14ceb5dfe213a863f4637d67888580b19b"
+    },
+    {
+      "source_path": "dist/twin-core.js",
+      "repository_path": "digital_twin_application/robot_state_estimation_and_calibration.js",
+      "source_sha256": "6d0edc8681b550acaf0c4a9f6f323712e21fe2c1c7c41dcddb0458d637f9be15",
+      "repository_sha256": "6334ca3a6b00c6fa4742ed9ee1f1c87ee1641d17407c2d2050dcd0f9ea7ff99b"
+    },
+    {
+      "source_path": "dist/vendor/BufferGeometryUtils.js",
+      "repository_path": "digital_twin_application/external_libraries/BufferGeometryUtils.js",
+      "source_sha256": "018b6ec0dcbbaea7d68b02d8d1162ab37783b9dbd4cc85fdbc35506690a993ea",
+      "repository_sha256": "018b6ec0dcbbaea7d68b02d8d1162ab37783b9dbd4cc85fdbc35506690a993ea"
+    },
+    {
+      "source_path": "dist/vendor/MQTT-LICENSE.txt",
+      "repository_path": "digital_twin_application/external_libraries/MQTT-LICENSE.txt",
+      "source_sha256": "81b51ef8ac2a8ac8f111ed34ab1a32d63e7f4f7de586bd65f5510fb1ba3a89eb",
+      "repository_sha256": "81b51ef8ac2a8ac8f111ed34ab1a32d63e7f4f7de586bd65f5510fb1ba3a89eb"
+    },
+    {
+      "source_path": "dist/vendor/RoomEnvironment.js",
+      "repository_path": "digital_twin_application/external_libraries/RoomEnvironment.js",
+      "source_sha256": "3abf1ce79bb64c3ebd457be5e5f587ac5b29ef84436cba0d49c7720d020a5905",
+      "repository_sha256": "3abf1ce79bb64c3ebd457be5e5f587ac5b29ef84436cba0d49c7720d020a5905"
+    },
+    {
+      "source_path": "dist/vendor/RoundedBoxGeometry.js",
+      "repository_path": "digital_twin_application/external_libraries/RoundedBoxGeometry.js",
+      "source_sha256": "047158fdb27e8b64a42b03af68c69c32f667818a8f328ea2b85691e0bf974414",
+      "repository_sha256": "047158fdb27e8b64a42b03af68c69c32f667818a8f328ea2b85691e0bf974414"
+    },
+    {
+      "source_path": "dist/vendor/THREE-LICENSE.txt",
+      "repository_path": "digital_twin_application/external_libraries/THREE-LICENSE.txt",
+      "source_sha256": "bfe119ea4fd413f5f7ca3fcd63adb0c4a073ed39daa2fe7d3e6b769e21272601",
+      "repository_sha256": "bfe119ea4fd413f5f7ca3fcd63adb0c4a073ed39daa2fe7d3e6b769e21272601"
+    },
+    {
+      "source_path": "dist/vendor/mqtt.esm.js",
+      "repository_path": "digital_twin_application/external_libraries/mqtt.esm.js",
+      "source_sha256": "6e009e77fc644cbf7b46ea37ba77fbdaf5780452389a57f2b4a676437c2defdd",
+      "repository_sha256": "6e009e77fc644cbf7b46ea37ba77fbdaf5780452389a57f2b4a676437c2defdd"
+    },
+    {
+      "source_path": "dist/vendor/three.core.min.js",
+      "repository_path": "digital_twin_application/external_libraries/three.core.min.js",
+      "source_sha256": "61ba0df005b05991361d040d8ff670e1aadfd0ce7aeebd1fdb0725957a8957de",
+      "repository_sha256": "61ba0df005b05991361d040d8ff670e1aadfd0ce7aeebd1fdb0725957a8957de"
+    },
+    {
+      "source_path": "dist/vendor/three.module.min.js",
+      "repository_path": "digital_twin_application/external_libraries/three.module.min.js",
+      "source_sha256": "e2b5ee6bccd38fd6d8a2428546b83c5f2426d84b152ef82be8055556e3b40eb6",
+      "repository_sha256": "e2b5ee6bccd38fd6d8a2428546b83c5f2426d84b152ef82be8055556e3b40eb6"
+    },
+    {
+      "source_path": "dist/warehouse.js",
+      "repository_path": "digital_twin_application/warehouse_building_and_robot_models.js",
+      "source_sha256": "b7a452773b665faa2607a734ff43289d01bc1e13d12bbb7b50214cf1ff1692bb",
+      "repository_sha256": "05700242132d9be97c03fe0128e05dfa028f66cf75a85b10ad87f9ba9e8b6467"
+    },
+    {
+      "source_path": "dist/workspace.css",
+      "repository_path": "digital_twin_application/screen_styles/workspace_panel_layout.css",
+      "source_sha256": "9d16203212234a7435c63ebefca4b5207cdf4f9742e5431c7befa876cc382692",
+      "repository_sha256": "9d16203212234a7435c63ebefca4b5207cdf4f9742e5431c7befa876cc382692"
+    }
+  ]
+}
