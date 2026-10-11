@@ -1,0 +1,23 @@
+/* Local variable interface face; technical identifiers retain a separate mono face.
+   Font copyright and redistribution terms are included beside the font assets. */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../dashboard_images_and_fonts/interface_fonts_and_license_notices/hanken_grotesk_variable_dashboard_font.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../dashboard_images_and_fonts/interface_fonts_and_license_notices/ibm_plex_mono_regular_400_font.woff') format('woff');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../dashboard_images_and_fonts/interface_fonts_and_license_notices/ibm_plex_mono_medium_500_font.woff') format('woff');
+}

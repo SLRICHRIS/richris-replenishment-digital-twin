@@ -1,6 +1,6 @@
-"""Streamlit Cloud entrypoint. Hosting implementation lives in backend/."""
+"""Streamlit Cloud entrypoint. Hosting implementation lives in backend_streamlit_and_telemetry/."""
 
-from backend.streamlit_dashboard_host import render_dashboard
+from backend_streamlit_and_telemetry.streamlit_dashboard_host import render_dashboard
 
 
 if __name__ == "__main__":

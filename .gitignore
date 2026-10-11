@@ -17,9 +17,14 @@ node_modules/
 *.sqlite
 *.sqlite3
 *.db
-firmware/esp32_robot_telemetry/robot_connection_settings.h
-backend/edge/config.json
+esp32_telemetry_firmware/publish_esp32_robot_telemetry/esp32_wifi_and_mqtt_settings.h
+backend_streamlit_and_telemetry/mqtt_recording_and_inventory_bridge/mqtt_broker_private_settings.json
 
 # Temporary local output
 runtime/
 migration_work/
+
+# Keep configured headers/settings from previous checkouts private.
+**/robot_connection_settings.h
+**/esp32_wifi_and_mqtt_settings.h
+**/config.json
