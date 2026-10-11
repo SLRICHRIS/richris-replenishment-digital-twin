@@ -3,9 +3,13 @@
   "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "Development checks only; Streamlit deployment does not need Node.js.",
+  "description": "Frontend behavior checks; Streamlit deployment uses the Python backend.",
   "scripts": {
-    "test": "node automated_tests/robot_telemetry_checks.mjs && node automated_tests/mission_approval_and_route_checks.mjs && node automated_tests/shortest_path_optimality_checks.mjs && node automated_tests/interactive_route_map_checks.mjs && node automated_tests/route_map_interaction_checks.cjs && node automated_tests/warehouse_geometry_checks.mjs && node automated_tests/twin_calibration_and_replay_checks.mjs && node automated_tests/dashboard_interaction_checks.cjs && node automated_tests/interface_animation_checks.cjs && node automated_tests/final_feature_alignment_checks.mjs && node automated_tests/streamlit_window_connection_checks.cjs"
+    "test": "npm run test:frontend",
+    "test:frontend": "node tests/frontend/test_robot_telemetry.mjs && node tests/frontend/test_mission_approval_and_routes.mjs && node tests/frontend/test_shortest_path_optimality.mjs && node tests/frontend/test_route_map_solver_and_playback.mjs && node tests/frontend/test_route_map_user_interactions.cjs && node tests/frontend/test_warehouse_scene_geometry.mjs && node tests/frontend/test_twin_calibration_and_replay.mjs && node tests/frontend/test_dashboard_user_interactions.cjs && node tests/frontend/test_interface_animation_and_lifecycle.cjs && node tests/frontend/test_cross_feature_alignment.mjs && node tests/frontend/test_streamlit_window_bridge_and_scroll.cjs",
+    "test:backend": "python -m unittest discover -s tests/backend -p \"test_*.py\" -v",
+    "test:integration": "python -m unittest discover -s tests/integration -p \"test_*.py\" -v && python tests/integration/check_streamlit_served_assets.py && python tests/integration/check_repository_file_links.py",
+    "build:downloads": "python tools/build_dashboard_downloads.py"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

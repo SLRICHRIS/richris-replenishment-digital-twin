@@ -1,43 +1,56 @@
 # Warehouse Replenishment Digital Twin
 
-Replenish v2.1.0 runs the audited warehouse dashboard in Streamlit. It includes a twelve-rack reference warehouse, three virtual AMRs, an interactive indoor route map, supervised missions, read-only ESP32 telemetry and the Twin lab.
+Replenish v2.1.0 is a Streamlit-hosted warehouse dashboard with twelve reference racks, three virtual AMRs, shortest-path route exploration, supervised missions, read-only ESP32 telemetry and a Twin lab.
 
-The runtime is self-contained: Streamlit serves the local application folder; the browser runs the simulation, route solver and experiment workers. No ChatGPT login or hosted Site iframe is required.
+## Run the dashboard
 
-## Run
+Use Python 3.12. Run these commands from the repository root:
 
 ```sh
 python -m pip install -r requirements.txt
 python -m streamlit run streamlit_app.py
 ```
 
-Use Python 3.12. Streamlit Community Cloud settings:
+Node.js is needed only for frontend development checks. The deployed dashboard serves its JavaScript, fonts, workers and downloads locally.
+
+## Repository layout
+
+| Location | Responsibility | Start here |
+| --- | --- | --- |
+| `frontend/` | Browser interface, warehouse rendering, simulation, routing and telemetry display | [Frontend file guide](frontend/README.md) |
+| `backend/` | Python Streamlit host and optional MQTT/SQLite observation recorder | [Backend file guide](backend/README.md) |
+| `firmware/` | ESP32 telemetry sketch and example connection settings | [Firmware guide](firmware/README.md) |
+| `tests/` | Separate frontend, backend and integration checks | [Testing guide](tests/README.md) |
+| `docs/` | Architecture, setup, operator guide, model limits and verification | [Documentation index](docs/README.md) |
+| `tools/` | Rebuild downloadable kits and record repository fingerprints | [Maintenance guide](tools/README.md) |
+| `streamlit_app.py` | Thin deployment entrypoint calling the Python host | [Host implementation](backend/streamlit_dashboard_host.py) |
+| `requirements.txt` | Pinned dashboard Python dependency | Streamlit 1.65.0 |
+| `package.json` | Named development and verification commands | `npm test` |
+| `.streamlit/config.toml` | Streamlit server and appearance configuration | Used by the root entrypoint |
+
+The browser runs simulation, Dijkstra and model workers. Python hosts those browser files; the optional edge process archives observations independently. [Project flow and module responsibilities](docs/repository_structure_and_project_flow.md) explain the complete path from launch to routing, telemetry and model validation.
+
+## Streamlit Community Cloud settings
 
 | Field | Value |
 | --- | --- |
-| Repository | SLRICHRIS/richris-replenishment-digital-twin |
-| Branch | main |
-| Main file path | streamlit_app.py |
-| Python version | 3.12 |
-| Runtime dependency | streamlit==1.65.0 |
+| Repository | `SLRICHRIS/richris-replenishment-digital-twin` |
+| Branch | `main` |
+| Main file path | `streamlit_app.py` |
+| Python version | `3.12` |
 
-An existing Community Cloud app connected to this branch receives committed updates automatically. Simulation needs no secrets. Hardware credentials are entered in the browser connection panel and are not sent to Python.
+These settings remain unchanged after the folder reorganization. Deploy the complete repository. [Local setup and deployment](docs/deployment_and_local_setup.md) includes Windows and Linux commands.
 
-## Project flow
+## Read and verify
 
-| Read | Purpose |
-| --- | --- |
-| [System architecture](project_guides/01_system_architecture.md) | Runtime, data sources and authority |
-| [Installation and deployment](project_guides/02_installation_and_deployment.md) | Local setup and Streamlit hosting |
-| [Operator guide](project_guides/03_operator_guide.md) | All seven workspace views |
-| [Software capabilities and audit](project_guides/04_software_capabilities_and_audit.md) | Routing, model rules and validation limits |
-| [Application source map](digital_twin_application/README.md) | Literal filenames and responsibilities |
-| [Automated checks](automated_tests/README.md) | Reproduce the software checks |
-| [Verification results](test_results/README.md) | Evidence for this migration |
+- [System architecture](docs/system_architecture.md)
+- [Dashboard operator guide](docs/dashboard_operator_guide.md)
+- [Software capabilities and limits](docs/software_capabilities_and_limits.md)
+- [Recorded verification](docs/verification/README.md)
+- [Old-to-new file map](docs/verification/repository_path_migration.json)
 
-Four A–D bins are monitored; eight reserve racks are reference decoration. The graph has 22 nodes and 27 bidirectional links. Virtual dispatch reserves one complete outbound-and-return journey at a time. Hardware integration receives measurements only; physical movement, LabVIEW command acknowledgments and industrial commissioning remain pending.
+Four A–D bins are monitored; eight reserve racks are reference decoration. The graph has 22 nodes and 27 bidirectional links. Virtual dispatch reserves one complete outward-and-return journey at a time. Physical movement, sensor commissioning and a LabVIEW command/acknowledgment channel require separate integration. Hardware credentials are supplied at runtime and must never be committed.
 
-This update imports the audited Site release `e8dbe22a7ef06e7016f2a2bf35251a4086f910be` into the existing readable repository layout. [Migration fingerprints](test_results/audited_source_migration.json) record the source and adapted files.
+The audited application lineage starts at Site commit `e8dbe22a7ef06e7016f2a2bf35251a4086f910be`; the reorganization preserves its application behavior and the Streamlit workspace scrolling fix.
 
-© 2026 S L RICHRIS. All rights reserved. Purely for educational purposes. External components retain their [respective licenses](digital_twin_application/ownership_and_external_software_licenses.txt).
-
+© 2026 S L RICHRIS. All rights reserved. Purely for educational purposes. External components retain their [respective licenses](ownership_and_external_software_licenses.txt).

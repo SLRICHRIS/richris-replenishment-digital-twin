@@ -1,0 +1,26 @@
+{
+  "schema": "richris-repository-verification/v1",
+  "recorded_date": "2026-10-11",
+  "previous_github_commit": "083d2b861ade96daf20668a92978f8a7b731bbdb",
+  "runtime": {
+    "python": "3.12.14",
+    "streamlit": "1.65.0",
+    "node": "24.19.0",
+    "jsdom": "26.1.0"
+  },
+  "checks": [
+    {"command": "npm test", "result": "passed", "frontend_suites": 11, "route_oracle_comparisons": 2940, "map_combinations": 288, "reassignment_configurations": 288},
+    {"command": "python -m unittest discover -s tests/backend -p 'test_*.py' -v", "result": "passed", "tests": 6},
+    {"command": "python -m unittest discover -s tests/integration -p 'test_*.py' -v", "result": "passed", "tests": 1, "stable_component_name": "backend.streamlit_dashboard_host.replenish_workspace"},
+    {"command": "python tests/integration/check_streamlit_served_assets.py", "result": "passed", "served_frontend_files": 60, "coverage": "Real local Streamlit HTTP/WebSocket session, exact bytes and script/style/document MIME types"},
+    {"command": "python tests/integration/check_repository_file_links.py", "result": "passed", "migration_source_files": 104, "firmware_archive_members": 4, "edge_archive_members": 15},
+    {"command": "python tools/build_dashboard_downloads.py --check", "result": "passed", "generated_files": 6},
+    {"check": "JavaScript and Python syntax", "result": "passed", "application_javascript_modules": 19, "python_modules": 16},
+    {"check": "Browser runtime logic compared with previous release", "result": "passed", "normalization": "Only import and worker path literals removed for comparison"},
+    {"check": "Extracted edge starter kit", "result": "passed", "tests": 6}
+  ],
+  "limits": [
+    "The hosted Streamlit Cloud session and actual browser/GPU rendering have not been verified.",
+    "Physical AMR accuracy, real broker operation and the LabVIEW command channel require separate commissioning."
+  ]
+}

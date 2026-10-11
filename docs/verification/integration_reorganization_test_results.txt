@@ -1,0 +1,60 @@
+Runtime: Python 3.12.14; Streamlit 1.65.0
+
+Command: -m unittest discover -s tests/backend -p test_*.py -v
+Exported 1 observations. Import the JSON in Twin lab and confirm map alignment.
+test_browser_contract_types (test_mqtt_observation_recorder.GatewayTests.test_browser_contract_types) ... ok
+test_identity_null_zero_and_replay_rejection (test_mqtt_observation_recorder.GatewayTests.test_identity_null_zero_and_replay_rejection) ... ok
+test_inventory_and_labview_preserve_unknowns (test_mqtt_observation_recorder.GatewayTests.test_inventory_and_labview_preserve_unknowns) ... ok
+test_limit_and_invalid_database (test_mqtt_observation_recorder.GatewayTests.test_limit_and_invalid_database) ... ok
+test_retained_age_and_boot_retirement (test_mqtt_observation_recorder.GatewayTests.test_retained_age_and_boot_retirement) ... ok
+test_sqlite_export_and_session_boundaries (test_mqtt_observation_recorder.GatewayTests.test_sqlite_export_and_session_boundaries) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK
+
+Exit code: 0
+
+Command: -m unittest discover -s tests/integration -p test_*.py -v
+test_workspace_registers_and_keeps_its_identity_on_rerun (test_streamlit_dashboard_host.StreamlitHostTests.test_workspace_registers_and_keeps_its_identity_on_rerun) ... 2026-10-11 09:56:22.016 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.204s
+
+OK
+
+Exit code: 0
+
+Command: tests/integration/check_streamlit_served_assets.py
+PASS: actual Streamlit startup and WebSocket session; 60 digital twin application files served byte-for-byte with valid script/style/document MIME types.
+
+Exit code: 0
+
+Command: tests/integration/check_repository_file_links.py
+PASS: 6 generated downloads match canonical sources.
+PASS: 164 local references; browser imports and document-relative workers; unique HTML IDs; frontend/backend/firmware boundaries; 104-file migration coverage; kit source matches {'esp32_robot_telemetry_starter_kit.zip': 4, 'mqtt_observation_recorder_starter_kit.zip': 15}; private settings excluded; Streamlit entrypoint retained.
+
+Exit code: 0
+
+Command: tools/build_dashboard_downloads.py --check
+PASS: 6 generated downloads match canonical sources.
+
+Exit code: 0
+
+Command: extracted edge-kit root: python -m unittest discover -s tests/backend -p test_*.py -v
+Exported 1 observations. Import the JSON in Twin lab and confirm map alignment.
+test_browser_contract_types (test_mqtt_observation_recorder.GatewayTests.test_browser_contract_types) ... ok
+test_identity_null_zero_and_replay_rejection (test_mqtt_observation_recorder.GatewayTests.test_identity_null_zero_and_replay_rejection) ... ok
+test_inventory_and_labview_preserve_unknowns (test_mqtt_observation_recorder.GatewayTests.test_inventory_and_labview_preserve_unknowns) ... ok
+test_limit_and_invalid_database (test_mqtt_observation_recorder.GatewayTests.test_limit_and_invalid_database) ... ok
+test_retained_age_and_boot_retirement (test_mqtt_observation_recorder.GatewayTests.test_retained_age_and_boot_retirement) ... ok
+test_sqlite_export_and_session_boundaries (test_mqtt_observation_recorder.GatewayTests.test_sqlite_export_and_session_boundaries) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK
+
+Exit code: 0

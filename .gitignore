@@ -1,3 +1,4 @@
+# Python and JavaScript development environments
 .venv/
 venv/
 __pycache__/
@@ -5,22 +6,20 @@ __pycache__/
 .pytest_cache/
 node_modules/
 .DS_Store
+
+# Private connection settings, certificates and measurement archives
 .env
 .env.*
 !.env.example
 .streamlit/secrets.toml
 *.pem
 *.key
-runtime/
-migration_work/
-digital_twin_application/esp32_robot_firmware/ESP32_Robot_Telemetry/robot_connection_settings.h
-
-# Also exclude configured credentials from the earlier layout.
-frontend/hardware/ReplenishESP32/config.h
-
-
-# Local measurement archives and private edge settings
 *.sqlite
 *.sqlite3
 *.db
-digital_twin_application/engineering/edge/config.json
+firmware/esp32_robot_telemetry/robot_connection_settings.h
+backend/edge/config.json
+
+# Temporary local output
+runtime/
+migration_work/

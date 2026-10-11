@@ -1,0 +1,25 @@
+Command: npm test
+Runtime: Node.js 24.19.0; jsdom 26.1.0
+
+PASS: all 3 slots, null/zero readings, freshness, monotonic expiry, retained/duplicate/out-of-order/reboot rejection, UTF-8/size/schema validation, topic identity and secure connection settings.
+PASS: measured cadence/P95, sequence gaps, reboot boundaries, zero-valued sensor readiness, rejection history, rolling expiry and bounded diagnostics.
+PASS: staged routes, full-trip energy, shared-aisle timing, duplicate/reservation gates, stopped and paused queues, and approved-delivery inventory projection.
+PASS: five-second projection integrates both directions across the restricted-speed boundary.
+PASS: module-worker forecast preserves request identity and reports stockouts and paused aisle reservations.
+PASS: 2940 independent optimality checks, deterministic ties, distance/time tradeoff, directed pose anchoring, closed/disconnected routes, bay/data gates, recommendation, charging waits, stale approval and blocked paired experiments.
+PASS: 288 route/trace/direction/playback combinations; monotonic settled costs; closed/directed/unreachable cases; zero-distance route; anchored mobile pan/zoom geometry.
+PASS: real DOM map picking, closure rerouting, unreachable states, exact trace scrubbing/playback, node inspection, navigation playback, reduced motion, leg/objective switching, touch pan/pinch, keyboard controls and dispatch isolation.
+PASS: 12-rack geometry, aisle and floor clearance, all 24 outbound/return combinations, mid-segment cancellation, alternate-link routing and off-network rejection.
+PASS: industrial fixture geometry clears every AMR lane; landscape, mobile and ground cameras frame the enlarged hall.
+PASS: real scene constructs 12 racks and 108 carton instances; robot and carton geometry fit the route envelopes; reserve decoration is isolated from measured stock.
+PASS: observer causality, uncertainty growth, missing/old data, frame/jump/divergence gates, chronological holdout, energy fitting, three-asset fault replay, strict imports, legacy packets, stock freshness, deterministic paired policies, reserves and exclusive aisle.
+{"syntheticHoldout":{"gain":1.1198932483667368,"before_m":0.014775438238296851,"after_m":0.0032295292438824495,"train":65,"holdout":29},"pairedReference":{"fifoUnmet":14.90000000000001,"urgencyUnmet":0}}
+PASS: dispatch review, approval revalidation, exclusive aisle and bay separation, queued states, pause/stop retention, complete delivery cycles, cancellation, reassignment, congestion, mission guidance, theme switching and live/simulation isolation.
+PASS: rendered motion projection agrees with simulation across the aisle speed boundary.
+PASS: exact arrival/capacity accounting, charging-aware queue forecasts, blocked route review, route setting lock, retained return paths and superseded forecast handling.
+PASS: complete Twin lab UI workflow, reference/import source identity, fitting and application, live/synthetic model isolation, blocked physical studies, stale worker replies and paired-result display.
+PASS: persistent DOM rows/bars/charts, focus and select preservation, immediate mission actions, modal close/reopen races, stable animation counts, both themes, saved/device reduced motion, graceful fallback, source isolation, Route map navigation/isolation/pause and Twin lab DOM navigation/calibration/plots.
+PASS: 288 reassignment configurations use the new unit's own outbound/return geometry and reserve; frame/monotonic/source-consistent stock and demand; deterministic inventory replay; unapplyable speed fits withheld; bounded graph-only docked experiments.
+PASS: Streamlit handshake and trusted messages, viewport sizing/cleanup, real DOM scroll-container styles, keyboard access, seven-view scroll reset, focus preservation, stable in-view scrolling and standalone isolation.
+
+Exit code: 0
