@@ -4,6 +4,34 @@
 (() => {
   'use strict';
   if (window.parent === window) return;
+  document.documentElement.dataset.host = 'streamlit';
+
+  // The component iframe does not supply a document scrollbar. Its main
+  // region scrolls instead; changing tabs must reset that region, not window.
+  let viewObserver;
+  function bindWorkspaceScroll() {
+    const main = document.getElementById('main-content');
+    if (!main || !document.body) return;
+    main.setAttribute('tabindex', '0');
+    if (!main.hasAttribute('aria-label')) main.setAttribute('aria-label', 'Warehouse workspace');
+    let view = document.body.dataset.view;
+    viewObserver = new MutationObserver(() => {
+      const next = document.body.dataset.view;
+      if (next !== view) {
+        view = next;
+        main.scrollTop = 0;
+      }
+    });
+    viewObserver.observe(document.body, { attributes: true, attributeFilter: ['data-view'] });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindWorkspaceScroll, { once: true });
+  } else {
+    bindWorkspaceScroll();
+  }
+  window.addEventListener('pagehide', event => {
+    if (!event.persisted) viewObserver?.disconnect();
+  });
 
   // Streamlit serves this component on its own origin. Do not accept arbitrary
   // window messages, reflect parent arguments into HTML, or send telemetry to

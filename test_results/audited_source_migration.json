@@ -236,7 +236,7 @@
       "source_path": "dist/index.html",
       "repository_path": "digital_twin_application/index.html",
       "source_sha256": "843211f8589eef02b094f45e94d9f4ae070375222542878b140d32e7b3061165",
-      "repository_sha256": "60cc7b5c87b397a9d237c3390402464cf9e4267531f682b77c0421d8a9150a8b"
+      "repository_sha256": "597426d879358319a96878b60fe5e9958adb787f7d96bf797a61c9fd3c55cfdc"
     },
     {
       "source_path": "dist/industrial.js",
@@ -394,5 +394,23 @@
       "source_sha256": "9d16203212234a7435c63ebefca4b5207cdf4f9742e5431c7befa876cc382692",
       "repository_sha256": "9d16203212234a7435c63ebefca4b5207cdf4f9742e5431c7befa876cc382692"
     }
-  ]
+  ],
+  "streamlit_adapter_update": {
+    "date": "2026-10-11",
+    "reason": "Explicit internal workspace scroll region, keyboard access and reset on view changes.",
+    "files": [
+      {
+        "path": "streamlit_app.py",
+        "sha256": "cab02244296a43b7cb06b5703935e0366bee0053434a3f9aaba69c09500a2a27"
+      },
+      {
+        "path": "digital_twin_application/streamlit_window_connection.js",
+        "sha256": "ecc447bddc79f0f08c080a72ea6832005d27c9f35dd3001070d068653685ee59"
+      },
+      {
+        "path": "digital_twin_application/screen_styles/streamlit_workspace_scroll.css",
+        "sha256": "c4840b9c4a1ca45ddf51931f84f5ff717805250d2f0a87f173d741e88b053af6"
+      }
+    ]
+  }
 }

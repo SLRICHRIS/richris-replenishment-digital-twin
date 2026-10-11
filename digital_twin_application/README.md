@@ -5,7 +5,7 @@ The application is served as one local Streamlit component. Run `streamlit_app.p
 | File or folder | Responsibility |
 | --- | --- |
 | index.html | Seven-view dashboard document and shared controls |
-| streamlit_window_connection.js | Validated readiness/viewport handshake; no telemetry returned to Python |
+| streamlit_window_connection.js | Validated readiness/viewport handshake, keyboard scroll access and view scroll reset; no telemetry returned to Python |
 | warehouse_simulation_controller.js | Browser state, movement, approvals, navigation and operator actions |
 | mission_scheduling_and_routes.js | Journey feasibility, own-bay return, reservations and charging-aware queue model |
 | warehouse_racks_and_aisle_layout.js | Shared twelve-rack geometry, bin stops, lane segments and graph defaults |
@@ -24,6 +24,7 @@ The application is served as one local Streamlit component. Run `streamlit_app.p
 | dispatch_experiment_worker.js | Isolated experiment execution |
 | interface_motion_and_transitions.js | Motion preferences and lifecycle-aware interface effects |
 | saved_screen_theme.js | Early saved-theme selection |
+| screen_styles/streamlit_workspace_scroll.css | Embedded workspace scroll region with persistent header/navigation |
 | screen_styles/ | Layout, component, route-map and appearance styles |
 | display_fonts/ | Bundled fonts and license notices |
 | external_libraries/ | Bundled Three.js/MQTT modules and their licenses |

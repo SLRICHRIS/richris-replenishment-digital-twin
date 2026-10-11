@@ -40,7 +40,10 @@ st.html(
         max-width: none !important;
       }
       [data-testid="stVerticalBlock"] { gap: 0; }
-      [data-testid="stAppViewContainer"] { overflow: hidden; }
+      [data-testid="stAppViewContainer"] {
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
       iframe[title*="replenish_workspace"] {
         display: block;
         width: 100%;

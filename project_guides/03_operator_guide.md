@@ -16,6 +16,8 @@ Approval rechecks feasibility. One complete virtual delivery-and-return journey 
 
 Route-map closures and playback affect only the preview. Copy dispatch conditions reads the current settings without changing missions. Algorithm mode displays the actual solver trace; manual seeking remains available with reduced motion.
 
+In Streamlit, the workspace scrolls below the header while navigation stays visible. Use the scrollbar, touch scrolling or focus the workspace and use Page Down. Each view opens at the top; ordinary updates preserve your position.
+
 Use Dark/Bright and the motion control to adjust appearance. The Canvas fallback covers browsers without WebGL. Four A–D counts are monitored; the other eight racks are reference decoration.
 
 For hardware, follow [ESP32 setup](../digital_twin_application/esp32_robot_firmware/esp32_wifi_and_telemetry_setup.md), connect through Hardware and select the live source. A Wi-Fi heartbeat does not establish measured pose, speed or battery. Physical control remains pending.

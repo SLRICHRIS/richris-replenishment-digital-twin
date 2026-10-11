@@ -1,0 +1,4 @@
+PASS: Streamlit handshake and trusted messages, viewport sizing/cleanup, real DOM scroll-container styles, keyboard access, seven-view scroll reset, focus preservation, stable in-view scrolling and standalone isolation.
+
+Additional checks passed: Streamlit startup and stable component identity on rerun; local HTTP/WebSocket session with 69 application files served byte-for-byte; 103 local application/guide references; four firmware-kit and nine edge-kit files matching their sources.
+Live browser and deployed Streamlit Cloud verification were not performed.

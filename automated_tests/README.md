@@ -24,7 +24,7 @@ python -m unittest discover -s digital_twin_application/engineering/edge -p test
 | dashboard_interaction_checks.cjs | Review/approval/reassignment, source isolation and complete Twin lab flow |
 | interface_animation_checks.cjs | Focus, DOM persistence, motion preferences, themes and worker cleanup |
 | final_feature_alignment_checks.mjs | 288 reassignment configurations, inventory consistency and model/study gates |
-| streamlit_window_connection_checks.cjs | Parent/source validation, readiness, sizing and listener cleanup |
+| streamlit_window_connection_checks.cjs | Parent/source validation, readiness, sizing, seven-view scrolling, focus preservation and listener cleanup |
 | test_streamlit_startup.py | Real Python host registration and stable identity on rerun |
 | check_served_application_files.py | Local HTTP/WebSocket startup and byte-for-byte asset delivery/MIME |
 | check_project_file_links.py | Local references, firmware/edge ZIP contents and secret exclusions |

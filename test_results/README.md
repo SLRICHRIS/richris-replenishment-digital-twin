@@ -13,6 +13,10 @@
 | Source/guide links and kit contents | Local references, configured-secret exclusions and both kits checked | [File-link results](file_link_test_results.txt) |
 | Optional edge gateway | Six standard-library Python tests passed | [Edge results](edge_gateway_test_results.txt) |
 
+## Streamlit scroll correction
+
+The component originally depended on document scrolling while its iframe and host cropped overflow. The correction provides an explicit main-workspace scroll region, preserving the header and navigation. Its targeted DOM/protocol checks cover all seven views, keyboard access, unchanged-view scroll retention, focus preservation and cleanup. Streamlit startup, served files and local references were checked again. [Scroll correction evidence](streamlit_scroll_fix_results.txt) records these results. Live browser and hosted Cloud verification remain pending.
+
 ## Release lineage
 
 The imported Site release is `e8dbe22a7ef06e7016f2a2bf35251a4086f910be`. [Source migration fingerprints](audited_source_migration.json) record original and adapted paths/bytes. The application preserves the existing descriptive GitHub filenames and adds the Streamlit readiness/viewport bridge.
