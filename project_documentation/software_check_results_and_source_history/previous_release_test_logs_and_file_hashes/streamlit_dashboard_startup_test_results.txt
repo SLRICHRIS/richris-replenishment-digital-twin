@@ -1,6 +1,0 @@
-2026-10-11 09:17:47.815 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-.
-----------------------------------------------------------------------
-Ran 1 test in 0.231s
-
-OK

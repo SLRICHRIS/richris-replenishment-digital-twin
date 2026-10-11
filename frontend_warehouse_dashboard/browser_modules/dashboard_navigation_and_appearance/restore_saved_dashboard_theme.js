@@ -7,8 +7,12 @@
   } catch {}
   document.documentElement.dataset.theme = theme;
   let motion = 'full';
-  try { if (localStorage.getItem('replenish.motion') === 'reduced') motion = 'reduced'; } catch {}
+  try {
+    if (localStorage.getItem('replenish.motion') === 'reduced') motion = 'reduced';
+  } catch {}
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) motion = 'reduced';
   document.documentElement.dataset.motion = motion;
-  document.getElementById('theme-meta').setAttribute('content', theme === 'bright' ? '#ffffff' : '#0b1118');
+  document
+    .getElementById('theme-meta')
+    .setAttribute('content', theme === 'bright' ? '#ffffff' : '#0b1118');
 })();

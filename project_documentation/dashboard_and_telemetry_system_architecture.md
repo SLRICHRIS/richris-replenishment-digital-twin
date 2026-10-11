@@ -1,40 +1,32 @@
-# System Architecture
+# System architecture
 
-## Runtime and data flow
+`streamlit_app.py` starts the Python host, which serves the browser component with a stable identity. Browser modules own the reference warehouse, virtual dispatch, shortest-path map and twin models. Independent Python processes archive MQTT observations and handle operator overrides.
 
-`streamlit_app.py` calls `backend_streamlit_and_telemetry/streamlit_dashboard_host.py`, which registers one local component from `frontend_warehouse_dashboard/`. Its stable key preserves the workspace during ordinary Python reruns. Browser modules own simulation state, visualization, route search, MQTT reception and experiment workers. The host bridge sends only readiness and viewport height to Streamlit; it does not return robot telemetry or credentials.
-
-| Input | Processing | Output |
+| Path | Owner and processing | Output |
 | --- | --- | --- |
-| Virtual fleet and four bins | Approved journey reservations, motion and charging-aware forecasts | Simulated positions, stock and battery |
-| ESP32 MQTT over secure WebSockets | Fixed three-slot identity, schema, sequence, capture-age and monotonic-age validation | Fresh measured device fields; unknown values stay unknown |
-| Optional inventory topic | Source, map frame, capture age, sequence and per-bin freshness gates | Measured A–D counts and eligible demand evidence |
-| Measurements and recordings | Observer residual gates, chronological calibration and deterministic replay | Measured, estimated and predicted state with provenance |
-| Frozen experiment snapshot | Isolated paired worker using identical graph, conditions and demand settings | Scenario-specific policy outcomes; no dispatch authority |
-| Route-map endpoints and closures | The same production Dijkstra solver and actual search trace | Shortest-distance or fastest-time preview with both journey legs |
+| Virtual dispatch | Browser mission planner; Dijkstra; node/segment/corridor time windows | Concurrent approved journeys, deliveries and bay returns |
+| Measurements | ESP32 controller UART → MQTT → strict JS/Python validators | Boot/sequence-bound measured values; null stays unknown |
+| Twin | Scalar position observer, chronological holdout, separate prediction worker | Estimates, forecasts and recorded prediction residuals |
+| Historian | Independent Python MQTT recorder | Accepted observations and rejection reasons in SQLite |
+| Physical override | LabVIEW adapter/local HTTP → separate Coordinator → MQTT → ESP32 UART → onboard controller | Correlated accepted/executed/rejected ACKs and monotonic timing |
 
-## Shared reference geometry
+Prediction has no control token or actuator functions. The hardware viewer stays read-only. Physical motor execution belongs to the onboard controller; [commissioning](operator_override_channel_and_hardware_commissioning.md) defines the actual interface.
 
-Twelve racks surround three cross aisles and four connecting lanes. Four racks have monitored A–D bins; eight are reserve decoration. The route graph contains 22 nodes and 27 bidirectional links. The interactive map, simulator and Twin lab reference facility use this geometry.
+## Reference geometry and routing
 
-Dijkstra defaults to shortest permitted aisle distance. Fastest-time mode accounts for the configured speed zone. Equal distances prefer lower time, then fewer links and a deterministic node sequence. These are per-journey results, not a globally optimal fleet schedule.
+Twelve racks include four monitored A–D destinations and eight decorative reserves. The graph has 22 nodes and 27 bidirectional links. Dijkstra finds shortest permitted distance by default; time mode includes the restricted speed zone. Ties prefer the other objective, fewer links and a stable node sequence. The ordered candidate array is intentional for this small graph; it is not a large-scale routing implementation.
 
-## Virtual mission lifecycle
+## Mission lifecycle
 
-1. Review the assigned unit, bin, outward route, return route, queue wait and minimum return battery.
-2. Recheck availability, source data, graph reachability, own bay and the full-trip 15% modeled reserve on approval.
-3. Keep approved geometry and FIFO approval order while one complete journey reserves the shared aisle.
-4. Advance movement and charging to exact event boundaries; deliver up to 30 units within bin capacity.
-5. Return to the assigned unit's own bay before releasing the reservation.
-6. Require fresh approval after reassignment. Pausing or stopping retains the reservation.
+1. Review the unit, own bay, both route legs, planned start/arrival and at least 15% modeled return battery.
+2. Human approval rechecks stock, unit/bin exclusivity, route signature and current battery.
+3. Reserve each shared node, bidirectional segment and corridor within the 72-unit reference clearance. Delay departure for conflicts and bay charging; independent journeys overlap.
+4. Freeze departure speed/route geometry for that journey so its motion stays consistent with its reservation times.
+5. Integrate stock, charging and all moving robots to exact dispatch/arrival/return events. Each delivery occurs once.
+6. Return to the same bay, then release the windows. Cancellation suppresses delivery and completes the reserved path; an unplanned reversal could conflict with another robot.
 
-Route settings remain locked while approved reservations or moving journeys exist. Route map and paired comparisons are separate previews and cannot alter approved missions.
+A paused or stopped moving robot freezes the traffic clock for the fleet, retaining spatial separation. Stock consumption continues. This is a conservative fault recovery policy. The runtime does not yet replan around an indefinitely parked obstacle. Route objectives and closures remain locked while approved or moving journeys exist.
 
-## Authority and evidence
+Forecasts use the same scheduler and traffic clock. Paired policies use the same window planner and frozen inputs; their separate no-charger study assumption remains explicit. This is deterministic reference traffic scheduling, not physical collision avoidance or globally optimal fleet allocation.
 
-Hardware is read-only. The observer can withhold prediction for missing, stale, inconsistent-frame or divergent data. Calibration uses a chronological training/holdout split; synthetic recordings remain explicitly labeled. The optional edge historian stores observations in SQLite and supplies a LabVIEW inventory adapter.
-
-The graph-only paired study starts eligible units at their own bays and assumes no charger or pickup dwell. The operating simulator has its own charging-aware queue model. Physical AMRs, the Coordinator, calibrated ground truth and the LabVIEW command/acknowledgment channel need separate commissioning.
-
-See the [application source map](../frontend_warehouse_dashboard/frontend_dashboard_source_file_guide.md), [detailed architecture](digital_twin_architecture_and_validation_plan.md) and [final feature audit](digital_twin_feature_alignment_audit.md).
-
+See [model and validation contracts](digital_twin_architecture_and_validation_plan.md), [current checks](software_verification_results/current_software_check_results.md) and [module flow](repository_structure_and_project_flow.md).

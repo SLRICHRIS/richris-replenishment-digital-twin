@@ -1,12 +1,10 @@
-# ESP32 robot telemetry firmware
+# ESP32 firmware
 
-| File | Responsibility |
+| File in `publish_esp32_robot_telemetry/` | Responsibility |
 | --- | --- |
-| [publish_esp32_robot_telemetry/publish_esp32_robot_telemetry.ino](publish_esp32_robot_telemetry/publish_esp32_robot_telemetry.ino) | Publish one board's measured telemetry with its assigned AMR slot |
-| [publish_esp32_robot_telemetry/example_esp32_wifi_and_mqtt_settings.h](publish_esp32_robot_telemetry/example_esp32_wifi_and_mqtt_settings.h) | Example Wi-Fi, broker, certificate and identity settings |
+| `publish_esp32_robot_telemetry.ino` | Wi-Fi/TLS/MQTT setup, clock, bounded main loop and telemetry publishing |
+| `robot_telemetry_packet_serializer.h` | Exact version-1 packet encoding shared with the native cross-validator check |
+| `onboard_controller_sensor_and_override_bridge.h` | Fresh measured UART input, expiring boot-bound overrides, duplicate protection and actual controller execution ACKs |
+| `example_esp32_wifi_and_mqtt_settings.h` | Public placeholder settings; UART remains disabled until actual pins are specified |
 
-Arduino requires the sketch filename to match its folder name. Copy the example header to `esp32_wifi_and_mqtt_settings.h` locally; the configured header is ignored by Git and excluded from the download kit.
-
-Follow [Wi-Fi setup and the telemetry contract](../project_documentation/esp32_wifi_and_telemetry_setup.md). The starter publishes measurements only. Unconfigured pose, speed and battery fields remain unknown.
-
-After changing firmware or setup instructions, run `python project_maintenance_scripts/rebuild_dashboard_downloads_from_sources.py` from the repository root. The Hardware panel then offers the matching [starter kit](../frontend_warehouse_dashboard/downloadable_hardware_kits_and_guides/esp32_robot_telemetry_starter_kit.zip).
+Arduino requires matching folder/sketch names. Copy the example to the private configured header and install Arduino-ESP32 3.3.12, PubSubClient 2.8 and ArduinoJson 7.4.2. Keep credentials out of Git. [Connection setup](../project_documentation/esp32_wifi_and_telemetry_setup.md) and [controller commissioning](../project_documentation/operator_override_channel_and_hardware_commissioning.md) define how to connect.

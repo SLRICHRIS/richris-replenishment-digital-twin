@@ -1,42 +1,41 @@
-# Automated verification
+# Software verification
 
-Run from the repository root. Use Python 3.12 with the pinned dashboard requirements, Node.js and jsdom 26.1.0 for development checks. Node.js is not needed to deploy the Streamlit dashboard.
+Run from the repository root with Python 3.12, Node.js and a C++17 compiler. Install dashboard dependencies, development packages and the optional MQTT package when running networking:
 
 ```sh
 python -m pip install -r requirements.txt
 npm ci
+npm run format:check
 npm test
 python -m unittest discover -s automated_software_checks/python_telemetry_service_checks -p 'test_*.py' -v
 python -m unittest discover -s automated_software_checks/streamlit_and_repository_integration_checks -p 'test_*.py' -v
 python automated_software_checks/streamlit_and_repository_integration_checks/check_streamlit_frontend_file_delivery.py
 python automated_software_checks/streamlit_and_repository_integration_checks/check_repository_links_source_boundaries_and_downloads.py
 python project_maintenance_scripts/rebuild_dashboard_downloads_from_sources.py --check
-python project_maintenance_scripts/record_and_verify_repository_file_hashes.py --check
+python automated_software_checks/streamlit_and_repository_integration_checks/measure_override_latency_under_prediction_load.py --requests 100
 ```
 
-## Frontend checks
-
-| File under `browser_behavior_checks/` in this test folder | Coverage |
+| Checks | Coverage |
 | --- | --- |
-| `test_robot_telemetry_identity_and_freshness.mjs` | Identity, schema, null/zero, freshness, monotonic expiry and diagnostics |
-| `test_mission_approval_and_routes.mjs` | Both route legs, reserves, reservations, charging and forecast worker |
-| `test_shortest_path_optimality.mjs` | 2,940 independent route oracle checks, ties, closures and routing objectives |
-| `test_route_map_solver_and_playback.mjs` | 288 route/trace/direction/playback combinations |
-| `test_route_map_user_interactions.cjs` | Pointer, touch, keyboard, isolation and lifecycle |
-| `test_warehouse_scene_geometry.mjs` | Twelve racks, clearance, 24 journey pairs and scene geometry |
-| `test_robot_state_calibration_and_recording_replay.mjs` | Observer, holdout, faults, recording import and paired comparisons |
-| `test_dashboard_user_interactions.cjs` | Review/approval/reassignment, source isolation and Twin lab flow |
-| `test_interface_animation_and_lifecycle.cjs` | Focus, persistent DOM, motion preferences, themes and worker cleanup |
-| `test_mission_inventory_and_model_consistency.mjs` | 288 reassignment configurations, inventory and model/study gates |
-| `test_streamlit_frame_connection_and_scrolling.cjs` | Readiness, trusted parent, sizing, seven-view scrolling, focus and cleanup |
+| Browser telemetry | Three slots, identity, boot/sequence, retained/duplicate rejection, null/zero and monotonic freshness |
+| Routing | 2,940 Dijkstra vs independent oracle comparisons; 288 trace/playback cases; both legs, closures and geometry |
+| Mission/UI | Human revalidation, reassignment, source isolation, charging, exact stock/arrival events, pause/stop/cancel and scrolling |
+| Fleet windows | 48 fleet configurations, head-on/shared/disjoint/nearby corridors, continuing reservations, footprint separation and actual concurrent journeys |
+| Twin | Causal residuals, scalar position correction, chronological calibration/holdout, replay and deterministic concurrent policy comparisons |
+| Python recorder/inventory | Production packet validation, replay rejection, LabVIEW counts, SQLite sessions/export |
+| Coordinator | Boot-bound fresh identity, stable command IDs, execution vs acceptance, timeout, rejection, late/duplicate ACK and automatic expiry |
+| Firmware packet contract | Compile the serializer called by `.ino`; send the same actual bytes through browser and recorder validators |
+| Hosting/repository | Real Streamlit startup, stable rerun identity, all frontend bytes/MIME, source links/boundaries, kit members and private settings |
+| Override experiment | Production command service with simulated execution ACK; production prediction runs in separate busy processes |
 
-## Backend and integration checks
+## ESP32 build and UART behavior
 
-| Test path | Coverage |
-| --- | --- |
-| [python_telemetry_service_checks/test_mqtt_recorder_and_labview_inventory_adapter.py](python_telemetry_service_checks/test_mqtt_recorder_and_labview_inventory_adapter.py) | Six standard-library tests for validation, replay rejection, LabVIEW counts and SQLite export |
-| [streamlit_and_repository_integration_checks/test_streamlit_dashboard_host.py](streamlit_and_repository_integration_checks/test_streamlit_dashboard_host.py) | Actual Streamlit host registration and stable identity on rerun |
-| [streamlit_and_repository_integration_checks/check_streamlit_frontend_file_delivery.py](streamlit_and_repository_integration_checks/check_streamlit_frontend_file_delivery.py) | Real local HTTP/WebSocket process; every frontend file's bytes and MIME type |
-| [streamlit_and_repository_integration_checks/check_repository_links_source_boundaries_and_downloads.py](streamlit_and_repository_integration_checks/check_repository_links_source_boundaries_and_downloads.py) | Repository and browser references, worker locations, folder boundaries, download/source bytes and private-setting exclusions |
+Install Arduino CLI, Arduino-ESP32 3.3.12, PubSubClient 2.8 and ArduinoJson 7.4.2. Then:
 
-Frontend DOM checks use a test renderer. These results establish software behavior and local hosting; physical robot accuracy, real broker operation, deployed-browser WebGL and the hosted Streamlit Cloud session require separate verification. [Recorded results](../project_documentation/software_check_results_and_source_history/current_software_check_results.md) identify the runtime and scope.
+```sh
+python automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_esp32_firmware_build.py
+```
+
+The script creates a temporary placeholder configuration and compiles UART-disabled/enabled variants for `esp32:esp32:esp32`; it never flashes a board or commits that header. Use `--board`, `--arduino-cli` and `--config-file` for your installation. Supply `--json-include /path/to/ArduinoJson/src` to compile/run the native production UART header contract, covering measurement, frame/type/age, execution ACK, replay and guarded-resume behavior.
+
+[Current results](../project_documentation/software_verification_results/current_software_check_results.md) records software scope. Physical trial evidence is collected using [the commissioning guide](../project_documentation/operator_override_channel_and_hardware_commissioning.md).

@@ -1,17 +1,15 @@
 # Python backend
 
-Run the dashboard from the repository root with `python -m streamlit run streamlit_app.py`.
+Run `python -m streamlit run streamlit_app.py` from the root.
 
-| File | Responsibility |
+| Source | Responsibility |
 | --- | --- |
-| [streamlit_dashboard_host.py](streamlit_dashboard_host.py) | Configure Streamlit, locate `frontend_warehouse_dashboard/`, register the workspace and retain stable identity on rerun |
-| [mqtt_recording_and_inventory_bridge/mqtt_telemetry_recorder_and_inventory_publisher.py](mqtt_recording_and_inventory_bridge/mqtt_telemetry_recorder_and_inventory_publisher.py) | Optional separate MQTT subscriber, packet validation, SQLite archive, recording export and inventory publisher |
-| [mqtt_recording_and_inventory_bridge/labview_inventory_observation_adapter.py](mqtt_recording_and_inventory_bridge/labview_inventory_observation_adapter.py) | Pure acquisition function for a LabVIEW Python Node; validate actual capture timestamps and counts |
-| [mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json](mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json) | Illustrative route graph; survey and replace it before physical use |
-| [mqtt_recording_and_inventory_bridge/mqtt_recorder_network_dependencies.txt](mqtt_recording_and_inventory_bridge/mqtt_recorder_network_dependencies.txt) | MQTT dependency needed only for optional edge networking |
+| [streamlit_dashboard_host.py](streamlit_dashboard_host.py) | Serve the browser component with stable registration/rerun identity |
+| [mqtt_telemetry_recorder_and_inventory_publisher.py](mqtt_recording_and_inventory_bridge/mqtt_telemetry_recorder_and_inventory_publisher.py) | Validate observations, archive SQLite sessions, export and publish measured stock |
+| [labview_inventory_observation_adapter.py](mqtt_recording_and_inventory_bridge/labview_inventory_observation_adapter.py) | Convert actual LabVIEW acquisition/counts to validated input |
+| [operator_override_command_coordinator.py](operator_override_control_channel/operator_override_command_coordinator.py) | Independent local HTTP/MQTT command path, idempotency, device execution ACKs and monotonic latency journal |
+| [labview_operator_override_http_adapter.py](operator_override_control_channel/labview_operator_override_http_adapter.py) | Python Node interface for requesting/polling an operator command |
+| [example_warehouse_route_graph_for_calibration.json](mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json) | Reference graph to survey/confirm before physical use |
+| [mqtt_recorder_network_dependencies.txt](mqtt_recording_and_inventory_bridge/mqtt_recorder_network_dependencies.txt) | Optional paho-mqtt networking dependency |
 
-`__init__.py` files mark Python packages so imports work consistently from the repository root and from the extracted edge kit.
-
-The Streamlit host serves browser assets and receives the readiness/viewport handshake. Simulation and route computation run in browser modules. MQTT viewer credentials remain in the browser session; the edge recorder uses its own runtime environment and credentials. There is no motor command API in this backend.
-
-For edge installation, recorder/export commands and LabVIEW usage, read [the observation recorder setup](../project_documentation/mqtt_sqlite_recorder_and_labview_adapter_setup.md). [Backend tests](../automated_software_checks/python_telemetry_service_checks/test_mqtt_recorder_and_labview_inventory_adapter.py) run without a broker.
+Simulation/prediction remains in browser modules. The control process runs on the separate Coordinator platform and imports no prediction module. [Recorder setup](../project_documentation/mqtt_sqlite_recorder_and_labview_adapter_setup.md) and [override commissioning](../project_documentation/operator_override_channel_and_hardware_commissioning.md) provide the runtime commands. Package `__init__.py` files support root/extracted-kit imports.

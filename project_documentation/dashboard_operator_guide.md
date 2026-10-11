@@ -12,7 +12,7 @@ The dashboard opens in Simulation with three proposed missions awaiting review. 
 | Twin lab | Compare measured/estimated/predicted state, import/export recordings, replay faults, calibrate and run paired scenarios |
 | Activity | Review decisions and download the CSV event record |
 
-Approval rechecks feasibility. One complete virtual delivery-and-return journey runs at a time. Route settings lock while approved reservations exist. Reassignment needs fresh approval. Pause and stop retain the aisle reservation.
+Approval rechecks feasibility. Journeys overlap when their node, segment and nearby-corridor windows are compatible. Departure speed remains fixed for each reserved journey. Cancellation suppresses supply and completes its reserved path before docking. Route settings lock while approved reservations exist. Reassignment needs fresh approval. Pause and stop freeze traffic time and retain spatial separation.
 
 Route-map closures and playback affect only the preview. Copy dispatch conditions reads the current settings without changing missions. Algorithm mode displays the actual solver trace; manual seeking remains available with reduced motion.
 
@@ -20,7 +20,7 @@ In Streamlit, the workspace scrolls below the header while navigation stays visi
 
 Use Dark/Bright and the motion control to adjust appearance. The Canvas fallback covers browsers without WebGL. Four A–D counts are monitored; the other eight racks are reference decoration.
 
-For hardware, follow [ESP32 setup](esp32_wifi_and_telemetry_setup.md), connect through Hardware and select the live source. A Wi-Fi heartbeat does not establish measured pose, speed or battery. Physical control remains pending.
+For hardware, follow [ESP32 setup](esp32_wifi_and_telemetry_setup.md), connect through Hardware and select the live source. A Wi-Fi heartbeat does not establish measured pose, speed or battery. Physical overrides use the separate [Coordinator service](operator_override_channel_and_hardware_commissioning.md).
 
 Twin lab labels synthetic recordings, measured fields and prediction gates. Export recordings as JSON to preserve evidence. Applying a fit changes only its eligible model profile; map/source changes invalidate approval where required. Paired comparison outcomes are tied to their frozen scenario and do not execute missions.
 

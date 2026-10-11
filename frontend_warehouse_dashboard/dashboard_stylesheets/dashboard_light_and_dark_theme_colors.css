@@ -61,7 +61,7 @@
   --label-shadow: #01071370;
   --ambient: #4d79a50c;
 }
-html[data-theme="bright"] {
+html[data-theme='bright'] {
   color-scheme: light;
   --bg: #f0f3f6;
   --panel: #ffffff;

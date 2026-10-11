@@ -12,6 +12,7 @@
 | [Software verification evidence](routing_and_robot_model_software_verification.md) | Detailed algorithm, model and synthetic validation results |
 | [ESP32 Wi-Fi and telemetry setup](esp32_wifi_and_telemetry_setup.md) | Configure boards, secure topics and real measurement fields |
 | [Edge observation recorder setup](mqtt_sqlite_recorder_and_labview_adapter_setup.md) | MQTT archive, recording export and LabVIEW inventory adapter |
-| [Current verification record](software_check_results_and_source_history/current_software_check_results.md) | Checks of the reorganized repository and historical lineage |
+| [Operator override and commissioning](operator_override_channel_and_hardware_commissioning.md) | Control service, measured sensor UART, execution ACKs and latency experiments |
+| [Current verification record](software_verification_results/current_software_check_results.md) | Current software evidence and physical scope |
 
 Edit these canonical documents. Reading copies in `frontend_warehouse_dashboard/downloadable_hardware_kits_and_guides/` are generated for dashboard access; rebuild them with `python project_maintenance_scripts/rebuild_dashboard_downloads_from_sources.py`.

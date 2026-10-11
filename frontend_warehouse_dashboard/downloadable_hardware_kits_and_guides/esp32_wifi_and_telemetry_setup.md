@@ -71,7 +71,7 @@ Capture offset is browser receipt time minus device capture time. It includes cl
 
 ## 4. Connect your measurements
 
-Edit `readMeasurements()` in the sketch. The starter reports actual Wi-Fi RSSI, uptime and firmware identity. It deliberately sends `null` for unconfigured sensors.
+Configure the measured UART bridge using [controller commissioning](https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/operator_override_channel_and_hardware_commissioning.md). `readMeasurements()` reads its fresh controller cache. The starter reports actual Wi-Fi RSSI, uptime and firmware identity. It deliberately sends `null` for unconfigured sensors.
 
 | Field | Measurement required |
 | --- | --- |
@@ -103,7 +103,7 @@ Publish UTF-8 JSON, **QoS 0, retain false**, normally once per second. All shown
   "pose": null,
   "speed_mps": null,
   "wifi_rssi_dbm": -61,
-  "firmware": "richris-esp32-1.0.0"
+  "firmware": "richris-esp32-1.1.0"
 }
 ```
 

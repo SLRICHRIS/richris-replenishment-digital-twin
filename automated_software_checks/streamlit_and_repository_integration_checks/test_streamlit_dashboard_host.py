@@ -5,7 +5,6 @@ import unittest
 
 from streamlit.testing.v1 import AppTest
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -16,7 +15,10 @@ class StreamlitHostTests(unittest.TestCase):
         components = app.get("component_instance")
         self.assertEqual(len(components), 1)
         first = components[0].proto.id
-        self.assertEqual(components[0].proto.component_name, "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace")
+        self.assertEqual(
+            components[0].proto.component_name,
+            "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace",
+        )
         app.run(timeout=20)
         self.assertFalse(app.exception)
         self.assertEqual(app.get("component_instance")[0].proto.id, first)
@@ -24,4 +26,3 @@ class StreamlitHostTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -15,7 +15,6 @@ from streamlit.proto.BackMsg_pb2 import BackMsg
 from streamlit.proto.ForwardMsg_pb2 import ForwardMsg
 from websockets.sync.client import connect
 
-
 ROOT = Path(__file__).resolve().parents[2]
 BASE = "http://127.0.0.1:8511"
 http = build_opener(ProxyHandler({}))
@@ -24,9 +23,20 @@ http = build_opener(ProxyHandler({}))
 def check():
     with tempfile.TemporaryFile(mode="w+t") as log:
         process = subprocess.Popen(
-            [sys.executable, "-m", "streamlit", "run", "streamlit_app.py",
-             "--server.address", "127.0.0.1", "--server.port", "8511"],
-            cwd=ROOT, stdout=log, stderr=subprocess.STDOUT,
+            [
+                sys.executable,
+                "-m",
+                "streamlit",
+                "run",
+                "streamlit_app.py",
+                "--server.address",
+                "127.0.0.1",
+                "--server.port",
+                "8511",
+            ],
+            cwd=ROOT,
+            stdout=log,
+            stderr=subprocess.STDOUT,
         )
         try:
             for _ in range(100):
@@ -42,8 +52,11 @@ def check():
                 raise RuntimeError("Streamlit did not become ready within 10 seconds")
 
             with connect(
-                "ws://127.0.0.1:8511/_stcore/stream", origin=BASE,
-                subprotocols=["streamlit"], open_timeout=5, proxy=None,
+                "ws://127.0.0.1:8511/_stcore/stream",
+                origin=BASE,
+                subprotocols=["streamlit"],
+                open_timeout=5,
+                proxy=None,
             ) as websocket:
                 request = BackMsg()
                 request.rerun_script.query_string = ""
@@ -61,7 +74,10 @@ def check():
                             component = element.component_instance.component_name
                     if kind == "script_finished":
                         break
-                assert component == "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace", component
+                assert (
+                    component
+                    == "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace"
+                ), component
 
                 count = 0
                 assets = ROOT / "frontend_warehouse_dashboard"
@@ -69,17 +85,24 @@ def check():
                     if not path.is_file() or "__pycache__" in path.parts:
                         continue
                     relative = path.relative_to(assets).as_posix()
-                    with http.open(BASE + "/component/" + component + "/" + relative, timeout=5) as response:
+                    with http.open(
+                        BASE + "/component/" + component + "/" + relative, timeout=5
+                    ) as response:
                         assert response.read() == path.read_bytes(), relative
                         mime = response.headers.get_content_type()
                         if path.suffix in (".js", ".mjs"):
-                            assert mime in ("application/javascript", "text/javascript"), (relative, mime)
+                            assert mime in (
+                                "application/javascript",
+                                "text/javascript",
+                            ), (relative, mime)
                         elif path.suffix == ".css":
                             assert mime == "text/css", (relative, mime)
                         elif path.suffix == ".html":
                             assert mime == "text/html", (relative, mime)
                         count += 1
-                print(f"PASS: actual Streamlit startup and WebSocket session; {count} digital twin application files served byte-for-byte with valid script/style/document MIME types.")
+                print(
+                    f"PASS: actual Streamlit startup and WebSocket session; {count} digital twin application files served byte-for-byte with valid script/style/document MIME types."
+                )
         except Exception:
             log.seek(0)
             print(log.read()[-3000:], file=sys.stderr)
@@ -95,4 +118,3 @@ def check():
 
 if __name__ == "__main__":
     check()
-

@@ -29,7 +29,7 @@
   } else {
     bindWorkspaceScroll();
   }
-  window.addEventListener('pagehide', event => {
+  window.addEventListener('pagehide', (event) => {
     if (!event.persisted) viewObserver?.disconnect();
   });
 
@@ -37,11 +37,15 @@
   // window messages, reflect parent arguments into HTML, or send telemetry to
   // Python. MQTT credentials remain in the existing browser-only connection UI.
   const origin = window.location.origin;
-  const send = (type, detail = {}) => window.parent.postMessage({
-    isStreamlitMessage: true,
-    type,
-    ...detail,
-  }, origin);
+  const send = (type, detail = {}) =>
+    window.parent.postMessage(
+      {
+        isStreamlitMessage: true,
+        type,
+        ...detail,
+      },
+      origin,
+    );
 
   let lastHeight = -1;
   let queued = false;
@@ -66,7 +70,7 @@
       window.requestAnimationFrame(fitViewport);
     }
   }
-  window.addEventListener('message', event => {
+  window.addEventListener('message', (event) => {
     if (event.source !== window.parent || event.origin !== origin) return;
     if (event.data?.type === 'streamlit:render') scheduleFit();
   });
@@ -74,12 +78,15 @@
   try {
     window.parent.addEventListener('resize', scheduleFit);
     window.parent.visualViewport?.addEventListener('resize', scheduleFit);
-    window.addEventListener('pagehide', () => {
-      window.parent.removeEventListener('resize', scheduleFit);
-      window.parent.visualViewport?.removeEventListener('resize', scheduleFit);
-    }, { once: true });
+    window.addEventListener(
+      'pagehide',
+      () => {
+        window.parent.removeEventListener('resize', scheduleFit);
+        window.parent.visualViewport?.removeEventListener('resize', scheduleFit);
+      },
+      { once: true },
+    );
   } catch {}
   send('streamlit:componentReady', { apiVersion: 1 });
   scheduleFit();
 })();
-
