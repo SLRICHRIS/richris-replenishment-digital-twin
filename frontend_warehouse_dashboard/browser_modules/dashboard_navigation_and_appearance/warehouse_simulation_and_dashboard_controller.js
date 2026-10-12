@@ -4,6 +4,14 @@ import {
 } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 import { TwinScene } from '../warehouse_scene_rendering/warehouse_3d_renderer_and_camera.js';
 import { createRouteMap } from '../shortest_path_and_route_map/interactive_route_map_and_algorithm_playback.js';
+import {
+  checkedManagerRelocation,
+  replanFleetForManagerPositions,
+} from '../robot_mission_simulation/manager_relocation_and_fleet_route_replanning.js';
+import {
+  referenceFacility,
+  checkedRouting,
+} from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
 import { createMotionSystem, patchContent } from './dashboard_animation_and_element_updates.js';
 import { createHardwareWorkspace } from '../esp32_telemetry_monitoring/esp32_mqtt_connection_and_status_panel.js';
 import { createEngineeringWorkspace } from '../robot_state_models_and_policy_experiments/robot_model_validation_and_experiment_panel.js';
@@ -69,6 +77,8 @@ const icon = (name) => /* HTML */ `
   <svg class="icon" aria-hidden="true"><use href="#i-${name}" /></svg>
 `;
 let trafficClock = 0;
+let managerPlacementActive = false,
+  managerHoldReason = '';
 let approvalOrder = 0,
   reviewIds = [],
   routing = { objective: 'distance', blockedEdges: [] };
@@ -146,6 +156,9 @@ window.addEventListener('twin-renderer-lost', () => {
 });
 document.querySelector('.renderer-badge').textContent = scene.rendererKind;
 function reset() {
+  routeMap?.cancelManagerMove?.();
+  managerPlacementActive = false;
+  managerHoldReason = '';
   trafficClock = 0;
   generation++;
   approvalOrder = 0;
@@ -189,12 +202,89 @@ function reset() {
   addTask(3, 0);
   addTask(1, 1);
   addTask(0, 2);
+  routeMap?.syncManagers?.();
   sample();
   render();
   predict();
 }
 function dispatchContext() {
-  return { robots, bins, tasks, demand, slow, stopped, running, routing, trafficClock };
+  return {
+    robots,
+    bins,
+    tasks,
+    demand,
+    slow,
+    stopped,
+    running,
+    routing,
+    trafficClock,
+    managerPlacementActive,
+    managerHoldReason,
+  };
+}
+function managerPositionsChanged(zones) {
+  if (floorSource === 'hardware')
+    return {
+      ok: false,
+      message: 'Switch the floor source to Simulation to move managers and reroute virtual robots.',
+    };
+  try {
+    zones = checkedManagerRelocation(zones);
+  } catch (error) {
+    return { ok: false, message: error.message };
+  }
+  const previous = routing.restrictedZones || referenceFacility().restrictedZones;
+  if (JSON.stringify(zones) === JSON.stringify(previous))
+    return { ok: true, message: 'Manager stayed in place. Routes retained.' };
+  const replanned = replanFleetForManagerPositions(dispatchContext(), zones);
+  routing = replanned.routing;
+  managerHoldReason = replanned.reason;
+  let queued = 0;
+  for (const task of tasks.filter((t) => t.status === 'Queued')) {
+    const robot = robots[task.robot];
+    if (robot.task === task.id) {
+      robot.task = null;
+      if (!['Paused', 'Stopped'].includes(robot.state)) robot.state = 'Idle';
+    }
+    task.status = 'Pending approval';
+    task.journey = null;
+    task.approvedOrder = null;
+    task.approvedEstimate = null;
+    task.holdReason = 'Manager positions changed. Review the new route.';
+    queued++;
+  }
+  for (const plan of replanned.plans) {
+    const robot = robots.find((r) => r.id === plan.robot);
+    const task = tasks.find((t) => t.id === plan.task);
+    const travelled = task ? Math.max(0, task.totalDistance - routeLength(robot)) : 0;
+    robot.route = plan.route.map((p) => ({ ...p }));
+    robot.journey = plan.journey;
+    robot.traffic = plan.traffic;
+    robot.phase = plan.journey.returning ? 'inbound' : 'outbound';
+    if (!['Paused', 'Stopped'].includes(robot.state))
+      robot.state = plan.journey.returning ? 'Returning' : 'Delivering';
+    if (task) {
+      task.journey = plan.journey;
+      task.totalDistance = Math.max(1, travelled + routeLength(robot));
+      task.progress = (100 * travelled) / task.totalDistance;
+    }
+  }
+  robots.forEach((r) => (r.velocity = 0));
+  generation++;
+  predictionBusy = false;
+  const message = replanned.held
+    ? 'Fleet waiting: ' + replanned.reason + ' Move the manager to restore a clear route.'
+    : `Manager position applied. ${replanned.plans.length} active routes replanned; ${queued} queued missions require fresh approval.`;
+  log(
+    message +
+      ' Positions: ' +
+      zones
+        .map((zone) => `${zone.label} (${zone.x_m.toFixed(3)}, ${zone.y_m.toFixed(3)} m)`)
+        .join('; '),
+  );
+  render();
+  predict();
+  return { ok: true, message };
 }
 const missionName = (id) => 'M' + String(id).padStart(3, '0');
 const etaLabel = (seconds) =>
@@ -405,13 +495,59 @@ function sample() {
   history.push({ t: elapsed, b: robots.map((r) => r.battery) });
   if (history.length > 300) history.shift();
 }
+function finishRobotLeg(r) {
+  const t = tasks.find((task) => task.id === r.task && task.status === 'Active');
+
+  if (r.state === 'Delivering') {
+    if (t) {
+      const b = bins[t.bin],
+        delivered = Math.min(MODEL.load, MODEL.capacity - b.stock);
+      b.stock += delivered;
+      t.status = 'Completed';
+      t.progress = 100;
+      t.delivered = delivered;
+      t.finishedAt = elapsed;
+      completed++;
+      log(
+        missionName(t.id) +
+          ' complete. ' +
+          delivered.toFixed(1) +
+          ' units added to Bin ' +
+          b.id +
+          '.',
+      );
+    }
+    r.task = null;
+    r.state = 'Returning';
+    r.phase = 'inbound';
+    r.cancelledDelivery = false;
+    r.route = r.journey.inbound.points.map((p) => ({ ...p }));
+  } else {
+    r.state = 'Idle';
+    r.velocity = 0;
+    r.traffic = null;
+    r.journey = null;
+    log('AMR-0' + (r.id + 1) + ' docked. Node and segment reservations released.');
+  }
+}
 function step(dt) {
   if (!Number.isFinite(dt) || dt <= 0) return;
   let remaining = dt;
   while (remaining > 1e-9) {
     startNextMission();
     let held = trafficHeld(dispatchContext());
-    const movers = held ? [] : robots.filter((r) => r.route.length);
+    if (!held)
+      for (const robot of robots)
+        if (
+          robot.traffic &&
+          !robot.route.length &&
+          ['Delivering', 'Returning'].includes(robot.state) &&
+          robot.traffic.start <= trafficClock + 1e-6
+        )
+          finishRobotLeg(robot);
+    const movers = held
+      ? []
+      : robots.filter((r) => r.route.length && (r.traffic?.start ?? 0) <= trafficClock + 1e-6);
     for (const r of movers)
       if (r.battery <= 1e-10) {
         r.battery = 0;
@@ -422,6 +558,9 @@ function step(dt) {
       }
     let duration = remaining;
     if (!held) {
+      for (const r of robots)
+        if (r.route.length && r.traffic?.start > trafficClock + 1e-6)
+          duration = Math.min(duration, r.traffic.start - trafficClock);
       for (const r of movers)
         duration = Math.min(
           duration,
@@ -454,39 +593,7 @@ function step(dt) {
         r.velocity = movement.distance / duration / MODEL.scale;
         const t = tasks.find((task) => task.id === r.task && task.status === 'Active');
         if (t) t.progress = Math.min(99, 100 * (1 - routeLength(r) / Math.max(1, t.totalDistance)));
-        if (!r.route.length) {
-          if (r.state === 'Delivering') {
-            if (t) {
-              const b = bins[t.bin],
-                delivered = Math.min(MODEL.load, MODEL.capacity - b.stock);
-              b.stock += delivered;
-              t.status = 'Completed';
-              t.progress = 100;
-              t.delivered = delivered;
-              t.finishedAt = elapsed;
-              completed++;
-              log(
-                missionName(t.id) +
-                  ' complete. ' +
-                  delivered.toFixed(1) +
-                  ' units added to Bin ' +
-                  b.id +
-                  '.',
-              );
-            }
-            r.task = null;
-            r.state = 'Returning';
-            r.phase = 'inbound';
-            r.cancelledDelivery = false;
-            r.route = r.journey.inbound.points.map((p) => ({ ...p }));
-          } else {
-            r.state = 'Idle';
-            r.velocity = 0;
-            r.traffic = null;
-            r.journey = null;
-            log('AMR-0' + (r.id + 1) + ' docked. Node and segment reservations released.');
-          }
-        }
+        if (!r.route.length) finishRobotLeg(r);
       }
     remaining = Math.max(0, remaining - duration);
     if (elapsed - lastSample >= 1) {
@@ -619,7 +726,11 @@ function renderFleet(display = robots) {
       'aria-label',
       `Robot 0${r.id + 1}, ${r.state}, ${r.battery === null ? 'unmeasured' : r.battery.toFixed(0) + ' percent'} battery`,
     );
-    $('robot-state-' + r.id).textContent = r.state;
+    $('robot-state-' + r.id).textContent = managerPlacementActive
+      ? 'Placement hold'
+      : managerHoldReason && r.route.length
+        ? 'Waiting for clear route'
+        : r.state;
     $('robot-charge-' + r.id).textContent = r.battery === null ? '—' : r.battery.toFixed(0) + '%';
     $('robot-charge-bar-' + r.id).style.width = (r.battery ?? 0) + '%';
   });
@@ -643,7 +754,10 @@ function renderMissions() {
       const estimate =
         t.status === 'Active'
           ? etaLabel(
-              ['Paused', 'Stopped'].includes(r.state) ? null : routeStats(r, r.route, slow).seconds,
+              trafficHeld(context)
+                ? null
+                : Math.max(0, (r.traffic?.start ?? trafficClock) - trafficClock) +
+                    routeStats(r, r.route, slow).seconds,
             ) + ' to shelf'
           : t.status === 'Queued'
             ? t.holdReason || etaLabel(a.eta) + ' to shelf'
@@ -757,19 +871,23 @@ function renderBrief() {
       pending.map((t) => t.id),
     ).filter((a) => a.feasible).length;
   $('brief-eyebrow').textContent = 'Dispatch control';
-  $('brief-title').textContent = stopped
-    ? 'Fleet stop latched'
-    : !running
-      ? 'Simulation paused'
-      : owner
-        ? trafficHeld(context)
-          ? 'Traffic reservations held'
-          : 'Cooperative journeys in progress'
-        : queued.length
-          ? 'Queue on hold'
-          : pending.length
-            ? eligible + ' ready for review'
-            : 'Fleet standing by';
+  $('brief-title').textContent = managerPlacementActive
+    ? 'Placing manager · traffic held'
+    : managerHoldReason
+      ? 'Manager zone holds traffic'
+      : stopped
+        ? 'Fleet stop latched'
+        : !running
+          ? 'Simulation paused'
+          : owner
+            ? trafficHeld(context)
+              ? 'Traffic reservations held'
+              : 'Cooperative journeys in progress'
+            : queued.length
+              ? 'Queue on hold'
+              : pending.length
+                ? eligible + ' ready for review'
+                : 'Fleet standing by';
   $('brief-note').textContent =
     pending.length + ' awaiting approval · ' + queued.length + ' in the approved queue';
   $('brief-label-a').textContent = 'Traffic reservations';
@@ -779,13 +897,15 @@ function renderBrief() {
   $('brief-detail-a').textContent = owner
     ? owner.state + ' · segments reserved'
     : 'Node and segment time windows';
+  if (managerHoldReason) $('brief-detail-a').textContent = managerHoldReason;
   const next = tasks.find((t) => t.status === 'Active') || queued[0],
     nextRobot = next ? robots[next.robot] : null;
   const eta = next
     ? next.status === 'Active'
-      ? ['Paused', 'Stopped'].includes(nextRobot.state)
+      ? trafficHeld(context)
         ? null
-        : routeStats(nextRobot, nextRobot.route, slow).seconds
+        : Math.max(0, (nextRobot.traffic?.start ?? trafficClock) - trafficClock) +
+          routeStats(nextRobot, nextRobot.route, slow).seconds
       : assessMission(next, context).eta
     : null;
   $('brief-label-b').textContent = 'Next delivery';
@@ -985,8 +1105,8 @@ function renderRouting() {
     routing.objective === 'distance' ? 'Shortest permitted route' : 'Fastest permitted route';
   $('route-policy-status').textContent = locked
     ? 'Approved routes retained. Clear queued reservations and return moving units to their bays to unlock route settings.'
-    : routing.blockedEdges.length
-      ? 'A lane is closed. Both route legs must remain reachable; closures appear red in the Route network layer.'
+    : checkedRouting(referenceFacility(), routing).blockedEdges.length
+      ? 'Manual closures and manager positions restrict the network. Both route legs must remain reachable; restricted links appear red.'
       : 'All lanes open. Recommendations first check bay readiness, reservations and the complete return reserve.';
 }
 function changeRouting() {
@@ -997,6 +1117,7 @@ function changeRouting() {
   )
     return;
   routing = {
+    ...routing,
     objective: $('route-objective').value,
     blockedEdges: [...(ROUTE_CONDITIONS[$('route-condition').value] || [])],
   };
@@ -1055,12 +1176,31 @@ function render() {
   setHTML('stop', icon(stopped ? 'play' : 'stop') + (stopped ? 'Release stop' : 'Stop fleet'));
   $('stop').classList.toggle('latched', stopped);
   $('scene-state').classList.toggle('stopped', stopped);
-  $('scene-state').classList.toggle('paused', !running && !stopped);
+  $('scene-state').classList.toggle(
+    'paused',
+    (!running || managerPlacementActive || !!managerHoldReason) && !stopped,
+  );
   setHTML(
     'scene-state',
     /* HTML */ `
-      <i style="background:${stopped ? '#f0a39c' : running ? '#cef580' : '#e7be7a'}"></i>
-      ${stopped ? 'Fleet stopped' : running ? 'Running' : 'Paused'}
+      <i
+        style="background:${stopped
+          ? '#f0a39c'
+          : managerPlacementActive || managerHoldReason
+            ? '#e7be7a'
+            : running
+              ? '#cef580'
+              : '#e7be7a'}"
+      ></i>
+      ${stopped
+        ? 'Fleet stopped'
+        : managerPlacementActive
+          ? 'Placement hold'
+          : managerHoldReason
+            ? 'Waiting for clear route'
+            : running
+              ? 'Running'
+              : 'Paused'}
     `,
   );
   $('scene-empty').classList.toggle('hidden', !pending || active > 0 || stopped);
@@ -1320,6 +1460,8 @@ function predict() {
       demand,
       slow,
       routing,
+      managerPlacementActive,
+      managerHoldReason,
       sent: performance.now(),
     });
   } catch {
@@ -1696,7 +1838,18 @@ function sceneState() {
         slow: false,
         live: true,
       }
-    : { robots, bins, selected, running, stopped, slow, routing };
+    : {
+        robots,
+        bins,
+        selected,
+        running,
+        stopped,
+        slow,
+        routing,
+        trafficClock,
+        managerPlacementActive,
+        managerHoldReason,
+      };
 }
 function updateSourceUI() {
   const live = isLiveFloor();
@@ -1920,6 +2073,14 @@ document
 routeMap = createRouteMap({
   getSimulation: dispatchContext,
   isReducedMotion: () => scene.reducedMotion,
+  onManagersMoved: managerPositionsChanged,
+  onManagerDragChange(active) {
+    managerPlacementActive = active;
+    generation++;
+    predictionBusy = false;
+    render();
+    predict();
+  },
 });
 applyTheme(currentTheme, false);
 let last = performance.now(),

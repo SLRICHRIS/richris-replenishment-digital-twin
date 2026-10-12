@@ -178,6 +178,9 @@ function missionCheck(task, context) {
     reasons.push('This unit is reserved by another mission.');
   if (['Stopped', 'Paused'].includes(robot.state)) reasons.push('This unit is stopped or paused.');
   if (context.stopped) reasons.push('Fleet stop is latched.');
+  if (context.managerPlacementActive) reasons.push('Manager placement is in progress.');
+  if (context.managerHoldReason)
+    reasons.push('Manager zone holds traffic. ' + context.managerHoldReason);
   if (
     !Number.isFinite(bin.stock) ||
     bin.stock < 0 ||
@@ -205,7 +208,7 @@ function missionCheck(task, context) {
     trip = tripFor(homeFor(robot), bin, context.slow, context.routing, journey);
   } catch {
     reasons.push(
-      'No permitted outbound and return route. Check the lane closures and mapped destination.',
+      'No permitted outbound and return route. Check manager zones, lane closures and the mapped destination.',
     );
   }
   return { robot, bin, reasons, trip };
@@ -214,6 +217,8 @@ function missionCheck(task, context) {
 // A paused moving unit freezes traffic time to preserve existing spatial separation.
 export function trafficHeld(context) {
   return (
+    context.managerPlacementActive ||
+    !!context.managerHoldReason ||
     context.stopped ||
     context.robots.some((r) => r.route.length && ['Paused', 'Stopped'].includes(r.state))
   );
@@ -376,7 +381,10 @@ export function inventoryProjection(context, horizon) {
       const robot = context.robots[task.robot];
       let eta =
         task.status === 'Active'
-          ? routeStats(robot, robot.route, context.slow).seconds
+          ? Math.max(
+              0,
+              (robot.traffic?.start ?? context.trafficClock ?? 0) - (context.trafficClock ?? 0),
+            ) + routeStats(robot, robot.route, context.slow).seconds
           : (schedule.entries.find((e) => e.id === task.id)?.arrival ?? null);
       if (trafficHeld(context)) eta = null;
       if (

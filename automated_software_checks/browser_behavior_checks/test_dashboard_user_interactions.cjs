@@ -254,7 +254,7 @@ Object.assign(
           'utf8',
         )
         .replace(/export /g, '') +
-      ';return{MANAGER_STANDING_ZONES,managerStandingZonesInMetres,checkedManagerStandingZones,segmentIntersectsManagerZone,managerZoneHatchSegments};})()',
+      ';return{MANAGER_STANDING_ZONES,managerStandingZonesInMetres,checkedManagerStandingZones,segmentIntersectsManagerZone,managerZoneHatchSegments,managerZonesInModelCoordinates};})()',
     ctx,
   ),
 );
@@ -346,6 +346,17 @@ vm.runInContext(
 );
 
 ctx.createRouteMap = () => ({ render() {}, tick() {}, setVisible() {} });
+vm.runInContext(
+  fs
+    .readFileSync(
+      base +
+        '/browser_modules/robot_mission_simulation/manager_relocation_and_fleet_route_replanning.js',
+      'utf8',
+    )
+    .replace(/^import[\s\S]*?;\s*$/gm, '')
+    .replace(/export /g, ''),
+  ctx,
+);
 const app = fs
   .readFileSync(
     base +
@@ -568,6 +579,48 @@ import(
     assert(!get('lab-export-experiment').disabled);
     assert(get('lab-experiment-result').innerHTML.includes('Unmet demand'));
     assert(get('lab-experiment-message').textContent.includes('synthetic snapshot'));
+    run('reset(); assign(tasks[0]); step(5);');
+    const moved = run(
+      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}))',
+    );
+    assert(moved.ok);
+    assert(!run('managerHoldReason'));
+    assert(!run('robots[0].journey.outbound.edgeKeys.includes("lane11~lane12")'));
+    run('step(100);');
+    assert.equal(run('completed'), 1);
+    assert.equal(run('robots[0].state'), 'Idle');
+    run('reset(); assign(tasks[0]); assign(tasks[1]); step(5);');
+    assert.equal(run('tasks[1].status'), 'Queued');
+    run(
+      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}));',
+    );
+    assert.equal(run('tasks[1].status'), 'Pending approval');
+    assert.equal(run('robots[1].task'), null);
+    run('reset(); assign(tasks[0]); step(5); managerPlacementActive = true;');
+    const heldPose = run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])');
+    run('step(3);');
+    assert.equal(run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])'), heldPose);
+    run(
+      'managerPlacementActive = false; managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:robots[0].x/75,y_m:robots[0].y/75}));',
+    );
+    assert(run('managerHoldReason'));
+    run('step(10);');
+    assert.equal(run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])'), heldPose);
+    assert.equal(run('completed'), 0);
+    run('managerPositionsChanged(managerStandingZonesInMetres(75)); step(100);');
+    assert.equal(run('completed'), 1);
+    run('reset(); assign(tasks[0]); step(5); pauseRobot(0);');
+    run(
+      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}));',
+    );
+    assert.equal(run('robots[0].state'), 'Paused');
+    const physicalBefore = run('JSON.stringify(routing)');
+    run('floorSource = "hardware";');
+    assert.equal(run('managerPositionsChanged(managerStandingZonesInMetres(75))').ok, false);
+    assert.equal(run('JSON.stringify(routing)'), physicalBefore);
+    console.log(
+      'PASS: actual dashboard manager rerouting, completed delivery/return, queued approval invalidation, drag/no-route motion holds, recovery, retained operator pause and hardware isolation.',
+    );
     console.log(
       'PASS: complete Twin lab UI workflow, reference/import source identity, fitting and application, live/synthetic model isolation, blocked physical studies, stale worker replies and paired-result display.',
     );

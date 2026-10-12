@@ -158,7 +158,7 @@ export function referenceRouteGraph() {
     restrictedZones: managerStandingZonesInMetres(WAREHOUSE_LAYOUT.scale),
   };
 }
-export function paintLanePlan(c) {
+export function paintLanePlan(c, managerZones = MANAGER_STANDING_ZONES) {
   c.save();
   c.lineCap = 'butt';
   // Staging outlines and a pedestrian spine occupy the apron, outside AMR routes.
@@ -252,28 +252,31 @@ export function paintLanePlan(c) {
     c.stroke();
   }
   // Manager areas stay visible independently of the optional route network layer.
-  for (const zone of MANAGER_STANDING_ZONES) {
-    c.fillStyle = '#d8a33d';
+  for (const zone of managerZones) paintManagerStandingZone(c, zone);
+  c.restore();
+}
+export function paintManagerStandingZone(c, zone) {
+  c.save();
+  c.fillStyle = '#d8a33d';
+  c.beginPath();
+  c.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+  c.fill();
+  c.strokeStyle = '#8b3c2c';
+  c.lineWidth = 2.5;
+  c.stroke();
+  c.strokeStyle = '#795a31';
+  c.lineWidth = 2;
+  for (const [a, b] of managerZoneHatchSegments(zone)) {
     c.beginPath();
-    c.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
-    c.fill();
-    c.strokeStyle = '#8b3c2c';
-    c.lineWidth = 2.5;
+    c.moveTo(...a);
+    c.lineTo(...b);
     c.stroke();
-    c.strokeStyle = '#795a31';
-    c.lineWidth = 2;
-    for (const [a, b] of managerZoneHatchSegments(zone)) {
-      c.beginPath();
-      c.moveTo(...a);
-      c.lineTo(...b);
-      c.stroke();
-    }
-    c.fillStyle = '#422c20';
-    c.textAlign = 'center';
-    c.font = 'bold 9px monospace';
-    c.fillText(zone.label.toUpperCase(), zone.x, zone.y + 25);
-    c.font = 'bold 7px monospace';
-    c.fillText('NO AMR ENTRY', zone.x, zone.y + 35);
   }
+  c.fillStyle = '#422c20';
+  c.textAlign = 'center';
+  c.font = 'bold 9px monospace';
+  c.fillText(zone.label.toUpperCase(), zone.x, zone.y + 25);
+  c.font = 'bold 7px monospace';
+  c.fillText('NO AMR ENTRY', zone.x, zone.y + 35);
   c.restore();
 }

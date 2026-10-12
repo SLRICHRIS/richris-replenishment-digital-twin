@@ -27,6 +27,10 @@ Baseline before this change: `1def9b660f8c62ae9e038c47aee36cbabdba46e4`. All 12 
 
 Manager-zone cases verify segment crossings, footprint tangency, shortest clear detours in both directions/objectives, blocked endpoints and pose anchoring, immutable restrictions during manual lane reopening, metadata validation and JSON preservation. Every default reference lane clears the two configured areas; all published bay/bin routes and paired reference outcomes remain unchanged. DOM, native Three.js geometry and Canvas fallback checks confirm the shared positions, figures and labels. Static native SVG exports were inspected in both themes; a live browser/GPU visual check was unavailable in this environment. This change does not establish live personnel tracking or physical exclusion enforcement.
 
+## Movable managers — 12 October 2026
+
+Baseline before this change: `0fbd7141ffe9c9be44a8d1d2146b698b96c40633`. The frontend now has 13 suites. Manager tests cover reactive paths and cache reopening, current-pose/return/reserve holds, safe partial-segment exits, waiting poses, cancelled deliveries, fixed journey speeds and four concurrent replan configurations with 6,496 fleet samples. DOM tests exercise mouse/touch/keyboard, invalid drops, cancellation, page changes and automatic preview updates. Actual dashboard tests complete rerouted delivery/docking, invalidate queued approval, hold/recover motion and retain operator pause/hardware isolation. Native Three.js/Canvas checks verify moved figures, boundaries and network restrictions. Browser/GPU visual QA remains unavailable; positions are manual simulation inputs, not tracked people or physical enforcement.
+
 ## Override software experiment
 
 One monotonic Coordinator clock measures persisted request to matching executed ACK. The simulated controller deliberately waits 2 ms. Idle has zero prediction processes; normal/heavy have one/two continuously busy processes running production `comparePolicies`. All 300 requests executed, with no rejected/timed-out results.

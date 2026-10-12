@@ -38,7 +38,25 @@ const assert = require('node:assert/strict'),
     '../../frontend_warehouse_dashboard/browser_modules/shortest_path_and_route_map/interactive_route_map_and_algorithm_playback.js'
   );
   let reduced = false;
-  const api = createRouteMap({ getSimulation: () => simulation, isReducedMotion: () => reduced });
+  const dragFlags = [],
+    appliedZones = [];
+  const { checkedManagerRelocation } = await import(
+    '../../frontend_warehouse_dashboard/browser_modules/robot_mission_simulation/manager_relocation_and_fleet_route_replanning.js'
+  );
+  const api = createRouteMap({
+    getSimulation: () => simulation,
+    isReducedMotion: () => reduced,
+    onManagerDragChange: (active) => dragFlags.push(active),
+    onManagersMoved(zones) {
+      try {
+        checkedManagerRelocation(zones);
+        appliedZones.push(zones);
+        return { ok: true, message: 'Position applied.' };
+      } catch (error) {
+        return { ok: false, message: error.message };
+      }
+    },
+  });
   api.setVisible(true);
   const snapshot = () => api.getSnapshot(),
     click = (selector) =>
@@ -211,6 +229,63 @@ const assert = require('node:assert/strict'),
   $('map-copy-dispatch').click();
   assert.deepEqual(snapshot().state.blockedEdges, simulation.routing.blockedEdges);
   assert.equal(JSON.stringify(simulation), dispatchBefore);
+  $('map-reset-view').click();
+  $('map-mode-navigation').click();
+  change('map-origin', 'lane11');
+  change('map-destination', 'lane12');
+  change('map-leg', 'outbound');
+  change('map-speed-zone', 'normal');
+  $('map-open-lanes').click();
+  const directDistance = snapshot().plans.outbound.route.metres;
+  $('map-tool-managers').click();
+  assert.equal($('map-tool-managers').getAttribute('aria-pressed'), 'true');
+  const manager = svg.querySelector('[data-manager-zone="manager-01"]');
+  const panBefore = { ...snapshot().view };
+  pointer('pointerdown', 20, 130, 80, manager);
+  pointer('pointermove', 20, 545, 270);
+  assert.equal(dragFlags.at(-1), true);
+  assert(
+    snapshot().plans.outbound.route.metres > directDistance,
+    'Dragging updates the route before release',
+  );
+  assert.deepEqual(snapshot().view, panBefore, 'Manager drag must not pan the map');
+  pointer('pointerup', 20, 545, 270);
+  assert.equal(dragFlags.at(-1), false);
+  assert.equal(appliedZones.length, 1);
+  assert(Math.abs(snapshot().state.managerZones[0].x_m * 75 - 545) < 1e-8);
+  assert(svg.querySelector('[data-map-edge="lane11~lane12"]').classList.contains('closed'));
+  api.toggleEdge('lane11~lane12');
+  $('map-open-lanes').click();
+  assert(!snapshot().plans.outbound.route.edgeKeys.includes('lane11~lane12'));
+  pointer('pointerdown', 21, 545, 270, manager);
+  pointer('pointermove', 21, 700, 270);
+  pointer('pointercancel', 21, 700, 270);
+  assert.equal(appliedZones.length, 1, 'Cancelled touch placement does not apply a position');
+  assert(Math.abs(snapshot().state.managerZones[0].x_m * 75 - 545) < 1e-8);
+  pointer('pointerdown', 22, 545, 270, manager);
+  pointer('pointermove', 22, 335, 205);
+  pointer('pointerup', 22, 335, 205);
+  assert($('map-manager-status').textContent.includes('rack footprints'));
+  assert(
+    Math.abs(snapshot().state.managerZones[0].x_m * 75 - 545) < 1e-8,
+    'Invalid placement restores the old position',
+  );
+  manager.dispatchEvent(
+    new w.KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true }),
+  );
+  assert(Math.abs(snapshot().state.managerZones[0].x_m * 75 - 548) < 1e-8);
+  $('map-reset-managers').click();
+  assert.equal(snapshot().plans.outbound.route.metres, directDistance);
+  assert(!svg.querySelector('[data-map-edge="lane11~lane12"]').classList.contains('closed'));
+  pointer('pointerdown', 23, 130, 80, manager);
+  pointer('pointermove', 23, 440, 270);
+  api.setVisible(false);
+  assert.equal(dragFlags.at(-1), false, 'Leaving the map clears the placement hold');
+  assert(Math.abs(snapshot().state.managerZones[0].x_m * 75 - 130) < 1e-8);
+  api.setVisible(true);
+  simulation.robots[0].x = 200;
+  api.tick(9000);
+  assert(svg.querySelector('[data-map-fleet-robot="0"]').getAttribute('transform').includes('200'));
   dom.window.close();
   delete globalThis.document;
   delete globalThis.ResizeObserver;

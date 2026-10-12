@@ -12,6 +12,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_dashboard_user_interactions.cjs` | Verify or measure dashboard user interactions. |
 | `automated_software_checks/browser_behavior_checks/test_interface_animation_and_lifecycle.cjs` | Verify or measure interface animation and lifecycle. |
 | `automated_software_checks/browser_behavior_checks/test_mission_approval_and_routes.mjs` | Verify or measure mission approval and routes. |
+| `automated_software_checks/browser_behavior_checks/test_manager_movement_and_fleet_replanning.mjs` | Verify movable manager restrictions, reactive fleet routes, waiting poses, reserve gates and traffic clearance. |
 | `automated_software_checks/browser_behavior_checks/test_mission_inventory_and_model_consistency.mjs` | Verify or measure mission inventory and model consistency. |
 | `automated_software_checks/browser_behavior_checks/test_multi_robot_time_window_reservations.mjs` | Verify or measure multi robot time window reservations. |
 | `automated_software_checks/browser_behavior_checks/test_robot_state_calibration_and_recording_replay.mjs` | Verify or measure robot state calibration and recording replay. |
@@ -59,6 +60,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/esp32_telemetry_monitoring/robot_telemetry_validation_and_freshness.js` | Implement robot telemetry validation and freshness. |
 | `frontend_warehouse_dashboard/browser_modules/robot_mission_simulation/node_and_segment_time_window_reservations.js` | Implement node and segment time window reservations. |
 | `frontend_warehouse_dashboard/browser_modules/robot_mission_simulation/virtual_mission_scheduling_and_robot_motion.js` | Implement virtual mission scheduling and robot motion. |
+| `frontend_warehouse_dashboard/browser_modules/robot_mission_simulation/manager_relocation_and_fleet_route_replanning.js` | Validate manager placement and atomically replan active robot journeys and time-window reservations. |
 | `frontend_warehouse_dashboard/browser_modules/robot_state_models_and_policy_experiments/compare_dispatch_policies_with_shared_inputs.js` | Implement compare dispatch policies with shared inputs. |
 | `frontend_warehouse_dashboard/browser_modules/robot_state_models_and_policy_experiments/robot_model_validation_and_experiment_panel.js` | Implement robot model validation and experiment panel. |
 | `frontend_warehouse_dashboard/browser_modules/robot_state_models_and_policy_experiments/robot_state_estimation_calibration_and_replay.js` | Implement robot state estimation calibration and replay. |

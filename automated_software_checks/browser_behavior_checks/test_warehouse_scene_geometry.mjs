@@ -354,4 +354,69 @@ for (let i = 0; i < STORAGE_RACKS.length; i++) {
 console.log(
   'PASS: real scene constructs 12 racks and 108 carton instances; robot and carton geometry fit the route envelopes; reserve decoration is isolated from measured stock.',
 );
+const relocated = map.restrictedZones.map((zone, i) =>
+  i ? zone : { ...zone, x_m: 545 / 75, y_m: 250 / 75 },
+);
+animateWarehouse(
+  model,
+  {
+    robots: [],
+    bins: BIN_DESTINATIONS,
+    routing: { objective: 'distance', blockedEdges: [], restrictedZones: relocated },
+  },
+  0,
+  0,
+  { grid: false, routes: true },
+);
+assert(Math.abs(model.managers[0].figure.position.x - (545 - 450) / 75) < 1e-8);
+assert.equal(model.managers[0].figure.position.z, 0);
+assert.equal(model.managers[0].area.position.x, model.managers[0].figure.position.x);
+assert.equal(model.managers[0].area.position.z, model.managers[0].figure.position.z);
+const restrictedIndex = model.network.userData.edgeKeys.indexOf('lane11~lane12');
+assert(
+  Math.abs(
+    model.network.geometry.getAttribute('color').array[restrictedIndex * 6] - expectedColor[0],
+  ) < 1e-6,
+  '3D network includes manager restrictions',
+);
+fallbackAreas.length = 0;
+CanvasTwinScene.prototype.floor.call(
+  {
+    layers: { grid: false },
+    scale: 1,
+    box() {},
+    flush() {},
+    paintPolygon() {},
+    line() {},
+    shadow() {},
+    circle: (...args) => fallbackAreas.push(args),
+    text() {},
+  },
+  { robots: [], routing: { restrictedZones: relocated } },
+);
+assert.deepEqual(fallbackAreas[0].slice(0, 4), [545, 250, 0.25, 40]);
+const { projectedRobot } = await import(
+  '../../frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/warehouse_3d_renderer_and_camera.js'
+);
+const waitingRobot = {
+  id: 0,
+  x: 440,
+  y: 250,
+  route: [{ x: 650, y: 250 }],
+  state: 'Delivering',
+  battery: 96,
+  traffic: { start: 20 },
+};
+assert.equal(
+  projectedRobot(waitingRobot, { running: true, trafficClock: 12 }),
+  null,
+  'Forecast ghost respects a replanned departure wait',
+);
+assert.equal(
+  projectedRobot(waitingRobot, { running: true, trafficClock: 25, managerHoldReason: 'Blocked' }),
+  null,
+);
+console.log(
+  'PASS: moved manager figures, floor boundaries, 3D/Canvas positions, restricted-network colors and held/waiting motion projections agree.',
+);
 delete globalThis.document;

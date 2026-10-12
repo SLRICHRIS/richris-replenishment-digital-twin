@@ -21,6 +21,7 @@ python automated_software_checks/streamlit_and_repository_integration_checks/mea
 | Routing | 2,940 Dijkstra vs independent oracle comparisons; 288 trace/playback cases; both legs, closures and geometry |
 | Mission/UI | Human revalidation, reassignment, source isolation, charging, exact stock/arrival events, pause/stop/cancel and scrolling |
 | Fleet windows | 48 fleet configurations, head-on/shared/disjoint/nearby corridors, continuing reservations, footprint separation and actual concurrent journeys |
+| Movable managers | Mouse/touch/keyboard placement, restrictions and cache invalidation, partial-segment exits, atomic fleet replanning, waiting poses, reserve/return holds, approval invalidation and recovery |
 | Twin | Causal residuals, scalar position correction, chronological calibration/holdout, replay and deterministic concurrent policy comparisons |
 | Python recorder/inventory | Production packet validation, replay rejection, LabVIEW counts, SQLite sessions/export |
 | Coordinator | Boot-bound fresh identity, stable command IDs, execution vs acceptance, timeout, rejection, late/duplicate ACK and automatic expiry |

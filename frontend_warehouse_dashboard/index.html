@@ -776,8 +776,16 @@
                   <button id="map-tool-start" aria-pressed="false">Set start</button>
                   <button id="map-tool-destination" aria-pressed="true">Set destination</button>
                   <button id="map-tool-lanes" aria-pressed="false">Close / open lane</button>
+                  <button id="map-tool-managers" aria-pressed="false">Move managers</button>
                 </div>
                 <button id="map-fit-route" class="quiet">Fit route</button>
+              </div>
+              <div class="map-manager-controls">
+                <p id="map-manager-status" role="status">
+                  Move managers to reroute the simulation fleet. Queued missions need fresh approval
+                  after a move.
+                </p>
+                <button id="map-reset-managers" class="quiet">Reset manager positions</button>
               </div>
               <div class="route-map-viewport">
                 <svg
@@ -791,7 +799,9 @@
                   <desc id="route-map-description">
                     Select a map tool and tap a stop, junction or lane. Drag to pan, scroll or pinch
                     to zoom. Arrow keys pan, plus and minus zoom, zero resets the view. Tab to map
-                    nodes or use the selectors above.
+                    nodes or use the selectors above. Choose Move managers to drag M1 or M2 and
+                    reroute the simulation fleet. Arrow keys move a focused manager; Shift uses
+                    smaller steps. Escape cancels a placement.
                   </desc>
                   <g id="route-map-content"></g>
                 </svg>
@@ -852,6 +862,10 @@
                 >
                   <i class="manager"></i>
                   Manager area · no AMR entry
+                </span>
+                <span>
+                  <i class="fleet"></i>
+                  Simulation fleet
                 </span>
               </div>
               <div class="map-leg-controls">

@@ -1,6 +1,7 @@
 import {
   MANAGER_STANDING_ZONES,
   managerZoneHatchSegments,
+  managerZonesInModelCoordinates,
 } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 import {
   STORAGE_RACKS,
@@ -10,7 +11,11 @@ import {
   INDUSTRIAL_FIXTURES,
   referenceRouteGraph,
 } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
-import { routeEdgeKey } from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
+import {
+  routeEdgeKey,
+  checkedRouting,
+  referenceFacility,
+} from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
 import { projectMotion } from '../robot_mission_simulation/virtual_mission_scheduling_and_robot_motion.js';
 /* Dependency-free 3D projection. World geometry is depth-sorted and lit in Canvas 2D. */
 ('use strict');
@@ -422,29 +427,6 @@ export class CanvasTwinScene {
       );
       this.text(zone.label, zone.x, top + 12, 0.4, '#344747', Math.max(5, 9 * this.scale));
     }
-    for (const zone of MANAGER_STANDING_ZONES) {
-      this.circle(zone.x, zone.y, 0.25, zone.radius, '#8b3c2c', 1.5, 1, '#d8a33d');
-      for (const [a, b] of managerZoneHatchSegments(zone))
-        this.line(
-          [
-            [...a, 0.3],
-            [...b, 0.3],
-          ],
-          '#795a31',
-          1,
-          [],
-          0.8,
-        );
-      this.text(
-        zone.label.toUpperCase(),
-        zone.x,
-        zone.y + 26,
-        0.4,
-        '#422c20',
-        Math.max(5, 8 * this.scale),
-      );
-      this.text('NO AMR ENTRY', zone.x, zone.y + 36, 0.4, '#422c20', Math.max(4, 6 * this.scale));
-    }
     if (this.layers.grid) {
       for (let x = 0; x <= 900; x += 75)
         this.line(
@@ -570,6 +552,29 @@ export class CanvasTwinScene {
     this.text('AMR CHARGING', 111, 129, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('LINE SUPPLY', 545, 20, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('FINISHED GOODS', 545, 490, 1, '#344747', Math.max(6, 11 * this.scale));
+    for (const zone of managerZonesInModelCoordinates(state.routing?.restrictedZones)) {
+      this.circle(zone.x, zone.y, 0.25, zone.radius, '#8b3c2c', 1.5, 1, '#d8a33d');
+      for (const [a, b] of managerZoneHatchSegments(zone))
+        this.line(
+          [
+            [...a, 0.3],
+            [...b, 0.3],
+          ],
+          '#795a31',
+          1,
+          [],
+          0.8,
+        );
+      this.text(
+        zone.label.toUpperCase(),
+        zone.x,
+        zone.y + 26,
+        0.4,
+        '#422c20',
+        Math.max(5, 8 * this.scale),
+      );
+      this.text('NO AMR ENTRY', zone.x, zone.y + 36, 0.4, '#422c20', Math.max(4, 6 * this.scale));
+    }
     STORAGE_RACKS.forEach((r) => this.shadow(r.x, r.y, 126, 56, 0.22));
     state.robots.forEach((r) => this.shadow(r.x, r.y, 42, 35, 0.4));
   }
@@ -768,12 +773,15 @@ export class CanvasTwinScene {
     if (
       !r.route.length ||
       state.stopped ||
+      state.managerPlacementActive ||
+      state.managerHoldReason ||
       ['Paused', 'Stopped'].includes(r.state) ||
       !state.running ||
       r.battery <= 0
     )
       return null;
-    return { ...r, ...projectMotion(r, 5, state.slow) };
+    const delay = Math.max(0, (r.traffic?.start ?? 0) - (state.trafficClock ?? 0));
+    return delay >= 5 ? null : { ...r, ...projectMotion(r, 5 - delay, state.slow) };
   }
   overlays(state, time) {
     if (this.layers.routes)
@@ -788,10 +796,11 @@ export class CanvasTwinScene {
           [],
           0.4,
         );
-    if (this.layers.routes && !state.live && state.routing?.blockedEdges.length) {
+    if (this.layers.routes && !state.live) {
+      const blocked = checkedRouting(referenceFacility(), state.routing || {}).blockedEdges;
       const graph = referenceRouteGraph();
       for (const edge of graph.edges)
-        if (state.routing.blockedEdges.includes(routeEdgeKey(edge))) {
+        if (blocked.includes(routeEdgeKey(edge))) {
           const points = [edge.from, edge.to].map((id) => {
             const n = graph.nodes.find((n) => n.id === id);
             return [n.x_m * 75, n.y_m * 75, 1.3];
@@ -801,7 +810,12 @@ export class CanvasTwinScene {
     }
     const selected = state.robots[state.selected];
     state.robots.forEach((r) => {
-      if (this.layers.routes && r.route.length) {
+      if (
+        this.layers.routes &&
+        !state.managerHoldReason &&
+        !state.managerPlacementActive &&
+        r.route.length
+      ) {
         const pts = [[r.x, r.y, 1.5], ...r.route.map((p) => [p.x, p.y, 1.5])];
         this.line(pts, r.color, 7, [], 0.055);
         this.line(pts, r.color, 1.4, [5, 5], 0.85);
@@ -855,8 +869,8 @@ export class CanvasTwinScene {
     }
     return p;
   }
-  managerStandingFigures() {
-    for (const { x, y } of MANAGER_STANDING_ZONES) {
+  managerStandingFigures(state = {}) {
+    for (const { x, y } of managerZonesInModelCoordinates(state.routing?.restrictedZones)) {
       for (const offset of [-9, 9]) {
         this.box(x + offset, y + 3, 0, 12, 22, 9, '#292e2c');
         this.box(x + offset, y, 9, 11, 14, 54, '#314d69');
@@ -925,7 +939,7 @@ export class CanvasTwinScene {
     if (!state.live) this.overlays(state, time);
     this.scenery();
     this.industrial();
-    this.managerStandingFigures();
+    this.managerStandingFigures(state);
     STORAGE_RACKS.forEach((r) => this.rack(r, state.bins.find((b) => b.id === r.binId)?.stock));
     state.robots.forEach((r) => this.robot(r, r.id === state.selected, time));
     if (this.layers.ghosts)
@@ -935,7 +949,7 @@ export class CanvasTwinScene {
       });
     this.flush();
     if (!this.follow)
-      for (const zone of MANAGER_STANDING_ZONES)
+      for (const zone of managerZonesInModelCoordinates(state.routing?.restrictedZones))
         this.label(zone.label, zone.x, zone.y, 150, { color: '#fff0c7', sub: 'No AMR entry' });
     if (!this.follow)
       STORAGE_RACKS.forEach((rack) => {

@@ -16,6 +16,16 @@ export function managerStandingZonesInMetres(scale) {
     radius_m: radius / scale,
   }));
 }
+export function managerZonesInModelCoordinates(zones, scale = 75) {
+  if (zones === undefined) return MANAGER_STANDING_ZONES.map((zone) => ({ ...zone }));
+  return zones.map(({ id, label, x_m, y_m, radius_m }) => ({
+    id,
+    label,
+    x: x_m * scale,
+    y: y_m * scale,
+    radius: radius_m * scale,
+  }));
+}
 
 export function checkedManagerStandingZones(input, widthM, heightM) {
   if (input === undefined) return [];

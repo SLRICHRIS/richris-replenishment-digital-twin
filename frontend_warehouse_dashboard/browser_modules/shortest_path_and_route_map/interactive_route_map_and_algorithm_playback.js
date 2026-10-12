@@ -140,7 +140,12 @@ export function zoomRouteView(
     h: view.h * ratio,
   };
 }
-export function createRouteMap({ getSimulation, isReducedMotion = () => false }) {
+export function createRouteMap({
+  getSimulation,
+  isReducedMotion = () => false,
+  onManagerDragChange = () => {},
+  onManagersMoved = null,
+}) {
   const $ = (id) => document.getElementById(id),
     map = referenceFacility(),
     lookup = new Map(map.nodes.map((n) => [n.id, n])),
@@ -160,13 +165,15 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     playing: false,
     visible: false,
     speed: 4,
+    managerZones: map.restrictedZones.map((zone) => ({ ...zone })),
   };
   let plans = {},
     comparison = {},
     view = { x: 0, y: -20, w: 900, h: 540 },
     lastTick = null,
     searchClock = 0,
-    dragged = false;
+    dragged = false,
+    managerDrag = null;
   const pointers = new Map(),
     nodeElements = new Map(),
     edgeElements = new Map();
@@ -283,13 +290,14 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
           <g
             class="map-manager-zone"
             data-manager-zone="${zone.id}"
-            role="img"
+            role="button"
+            tabindex="-1"
             aria-label="${zone.label}, restricted standing area. No AMR entry. Configured reference location."
             transform="translate(${zone.x_m * MODEL.scale},${zone.y_m * MODEL.scale})"
           >
             <title>
               ${zone.label}: no AMR entry. Route clearance includes the robot footprint. Configured
-              location, no live personnel tracking.
+              manually positioned. Use Move managers to drag or move with arrow keys.
             </title>
             <circle class="map-manager-boundary" r="${zone.radius_m * MODEL.scale}" />
             <g class="map-manager-person" aria-hidden="true" transform="translate(0,-8)">
@@ -340,6 +348,14 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
       <path id="map-search-improved" class="map-search-improved" />
       <path id="map-travelled" class="map-travelled" />
       ${nodes}
+      <g id="map-fleet-robots" aria-label="Simulation fleet">
+        ${[0, 1, 2]
+          .map(
+            (id) =>
+              `<g class="map-fleet-robot" data-map-fleet-robot="${id}" role="img" aria-label="Simulation AMR-0${id + 1}"><circle r="9"/><text y="3" text-anchor="middle">${id + 1}</text></g>`,
+          )
+          .join('')}
+      </g>
       <g id="map-preview-robot" class="map-preview-robot" aria-hidden="true">
         <circle r="15" />
         <path d="M-5 -6 8 0-5 6Z" />
@@ -378,6 +394,7 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     $('map-destination').value = state.to;
   }
   function compute() {
+    map.restrictedZones = state.managerZones;
     state.playing = false;
     state.step = 0;
     state.seconds = 0;
@@ -447,6 +464,21 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
       algorithm = state.mode === 'algorithm',
       complete = trace?.kind === 'complete';
     svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+    svg.dataset.tool = state.tool;
+    for (const zone of state.managerZones) {
+      const marker = svg.querySelector(`[data-manager-zone="${zone.id}"]`);
+      marker.setAttribute(
+        'transform',
+        `translate(${zone.x_m * MODEL.scale},${zone.y_m * MODEL.scale})`,
+      );
+      marker.setAttribute('tabindex', state.tool === 'managers' ? '0' : '-1');
+      marker.setAttribute(
+        'aria-label',
+        `${zone.label}, restricted standing area. No AMR entry. X ${zone.x_m.toFixed(2)}, Y ${zone.y_m.toFixed(2)} metres. Use arrow keys in Move managers mode.`,
+      );
+      marker.classList.toggle('dragging', managerDrag?.id === zone.id);
+    }
+    renderFleetPositions();
     $('map-navigation-controls').hidden = algorithm;
     $('map-algorithm-controls').hidden = !algorithm;
     $('map-search-panel').hidden = !algorithm;
@@ -458,6 +490,7 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
       ['map-tool-destination', 'destination'],
       ['map-tool-lanes', 'lanes'],
       ['map-tool-inspect', 'inspect'],
+      ['map-tool-managers', 'managers'],
     ])
       $(id).setAttribute('aria-pressed', String(state.tool === tool));
     set(
@@ -482,16 +515,24 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
         : 'Complete outbound and return journey unavailable',
     );
     set('map-leg-name', state.leg === 'outbound' ? 'Outbound' : 'Return');
-    set('map-closures', state.blockedEdges.length + ' / ' + map.edges.length + ' links closed');
+    set(
+      'map-closures',
+      state.blockedEdges.length +
+        ' manual closures · ' +
+        managerRestrictedEdgeKeys(map).length +
+        ' links restricted by managers',
+    );
     set(
       'map-tap-hint',
-      state.tool === 'inspect'
-        ? 'Tap a node to inspect its position and search cost.'
-        : state.tool === 'lanes'
-          ? 'Tap an aisle to close or reopen it. Drag to pan.'
-          : state.tool === 'start'
-            ? 'Tap a stop or junction to set the start. Drag to pan.'
-            : 'Tap a stop or junction to set the destination. Drag to pan.',
+      state.tool === 'managers'
+        ? 'Drag M1 or M2. Release to apply. Arrow keys move a focused manager; Shift uses smaller steps.'
+        : state.tool === 'inspect'
+          ? 'Tap a node to inspect its position and search cost.'
+          : state.tool === 'lanes'
+            ? 'Tap an aisle to close or reopen it. Drag to pan.'
+            : state.tool === 'start'
+              ? 'Tap a stop or junction to set the start. Drag to pan.'
+              : 'Tap a stop or junction to set the destination. Drag to pan.',
     );
     const shown = !algorithm || complete;
     const other = plans[state.leg === 'outbound' ? 'return' : 'outbound'].route;
@@ -730,6 +771,69 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     searchClock = 0;
     render();
   }
+  function renderFleetPositions() {
+    const simulation = getSimulation();
+    for (const marker of svg.querySelectorAll('[data-map-fleet-robot]')) {
+      const robot = simulation?.robots?.find((r) => r.id === Number(marker.dataset.mapFleetRobot));
+      marker.style.display = robot ? '' : 'none';
+      if (robot) marker.setAttribute('transform', `translate(${robot.x},${robot.y})`);
+    }
+  }
+  function beginManagerMove(id, pointer = null) {
+    const zone = state.managerZones.find((z) => z.id === id);
+    if (!zone) return;
+    managerDrag = {
+      id,
+      pointerId: pointer?.pointerId,
+      original: state.managerZones.map((z) => ({ ...z })),
+      offset: pointer
+        ? routeMapPoint(view, svg.getBoundingClientRect(), pointer.clientX, pointer.clientY)
+        : null,
+    };
+    if (managerDrag.offset) {
+      managerDrag.offset.x -= zone.x_m * MODEL.scale;
+      managerDrag.offset.y -= zone.y_m * MODEL.scale;
+    }
+    onManagerDragChange(true);
+    stop();
+    set(
+      'map-manager-status',
+      'Placement preview. Simulation traffic is held until you release the manager.',
+    );
+  }
+  function previewManagerPosition(x, y) {
+    const zone = state.managerZones.find((z) => z.id === managerDrag.id);
+    const radius = zone.radius_m * MODEL.scale;
+    x = Math.max(radius, Math.min(WAREHOUSE_LAYOUT.width - radius, x));
+    y = Math.max(radius, Math.min(WAREHOUSE_LAYOUT.height - radius, y));
+    state.managerZones = state.managerZones.map((z) =>
+      z.id === zone.id ? { ...z, x_m: x / MODEL.scale, y_m: y / MODEL.scale } : z,
+    );
+    compute();
+  }
+  function finishManagerMove(cancel = false) {
+    if (!managerDrag) return;
+    const original = managerDrag.original;
+    managerDrag = null;
+    let result = { ok: true, message: 'Manager position applied. Routes recomputed.' };
+    try {
+      if (!cancel && onManagersMoved)
+        result = onManagersMoved(state.managerZones.map((z) => ({ ...z })));
+      if (cancel || result?.ok === false) state.managerZones = original;
+    } catch (error) {
+      state.managerZones = original;
+      result = { ok: false, message: error.message };
+    } finally {
+      onManagerDragChange(false);
+    }
+    compute();
+    set(
+      'map-manager-status',
+      cancel
+        ? 'Placement cancelled. Previous positions and routes retained.'
+        : result?.message || 'Manager position applied.',
+    );
+  }
   function stepSearch(delta) {
     state.playing = false;
     state.step = Math.max(0, Math.min(selected().events.length - 1, state.step + delta));
@@ -801,6 +905,15 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
   $('map-node-info-close').onclick = () => {
     state.inspected = null;
     render();
+  };
+  $('map-tool-managers').onclick = () => {
+    state.tool = 'managers';
+    render();
+  };
+  $('map-reset-managers').onclick = () => {
+    beginManagerMove(state.managerZones[0].id);
+    state.managerZones = referenceFacility().restrictedZones;
+    finishManagerMove();
   };
   for (const objective of ['distance', 'time'])
     $('map-choose-' + objective).onclick = () => {
@@ -891,6 +1004,29 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     action(e.target);
   });
   svg.addEventListener('keydown', (e) => {
+    const manager = e.target.closest('[data-manager-zone]');
+    if (
+      state.tool === 'managers' &&
+      manager &&
+      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)
+    ) {
+      e.preventDefault();
+      const zone = state.managerZones.find((z) => z.id === manager.dataset.managerZone),
+        step = e.shiftKey ? 3 : 15;
+      beginManagerMove(zone.id);
+      previewManagerPosition(
+        zone.x_m * MODEL.scale +
+          (e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0),
+        zone.y_m * MODEL.scale + (e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0),
+      );
+      finishManagerMove();
+      return;
+    }
+    if (e.key === 'Escape' && managerDrag) {
+      e.preventDefault();
+      finishManagerMove(true);
+      return;
+    }
     if (['Enter', ' '].includes(e.key) && e.target !== svg) {
       e.preventDefault();
       action(e.target);
@@ -925,6 +1061,19 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
   );
   svg.addEventListener('pointerdown', (e) => {
     if (e.button > 0) return;
+    if (managerDrag) {
+      finishManagerMove(true);
+      dragged = true;
+      return;
+    }
+    const manager = e.target.closest('[data-manager-zone]');
+    if (state.tool === 'managers' && manager) {
+      e.preventDefault();
+      dragged = true;
+      beginManagerMove(manager.dataset.managerZone, e);
+      svg.setPointerCapture?.(e.pointerId);
+      return;
+    }
     if (pointers.size === 0) dragged = false;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY });
     if (pointers.size === 2) {
@@ -933,6 +1082,12 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     }
   });
   svg.addEventListener('pointermove', (e) => {
+    if (managerDrag?.pointerId === e.pointerId) {
+      e.preventDefault();
+      const point = routeMapPoint(view, svg.getBoundingClientRect(), e.clientX, e.clientY);
+      previewManagerPosition(point.x - managerDrag.offset.x, point.y - managerDrag.offset.y);
+      return;
+    }
     const old = pointers.get(e.pointerId);
     if (!old) return;
     const rect = svg.getBoundingClientRect();
@@ -971,16 +1126,27 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
   const release = (e) => {
     pointers.delete(e.pointerId);
   };
-  svg.addEventListener('pointerup', release);
+  svg.addEventListener('pointerup', (e) => {
+    if (managerDrag?.pointerId === e.pointerId) finishManagerMove();
+    release(e);
+  });
   svg.addEventListener('pointercancel', (e) => {
+    if (managerDrag?.pointerId === e.pointerId) finishManagerMove(true);
     release(e);
     dragged = true;
   });
-  svg.addEventListener('lostpointercapture', release);
+  svg.addEventListener('lostpointercapture', (e) => {
+    if (managerDrag?.pointerId === e.pointerId) finishManagerMove(true);
+    release(e);
+  });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stop();
+    if (document.hidden) {
+      finishManagerMove(true);
+      stop();
+    }
   });
   function tick(now) {
+    if (state.visible) renderFleetPositions();
     if (!state.visible || document.hidden) {
       lastTick = null;
       return;
@@ -1022,13 +1188,27 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
     tick,
     setVisible(visible) {
       state.visible = visible;
-      if (!visible) stop();
-      else {
+      if (!visible) {
+        finishManagerMove(true);
+        stop();
+      } else {
         lastTick = null;
         render();
       }
     },
     getSnapshot: snapshot,
+    cancelManagerMove() {
+      finishManagerMove(true);
+    },
+    syncManagers(zones = referenceFacility().restrictedZones) {
+      if (managerDrag) finishManagerMove(true);
+      state.managerZones = zones.map((zone) => ({ ...zone }));
+      compute();
+      set(
+        'map-manager-status',
+        'Manager positions restored. Choose Move managers to reposition them.',
+      );
+    },
     chooseNode,
     toggleEdge,
     stepSearch,

@@ -13,6 +13,13 @@ import {
 self.onmessage = ({ data: d }) => {
   const alerts = [];
   const context = { ...d, tasks: d.tasks || [] };
+  if (context.managerPlacementActive || context.managerHoldReason)
+    alerts.push({
+      title: 'Manager zone · traffic held',
+      detail:
+        context.managerHoldReason ||
+        'Manager placement is in progress. Motion resumes only after placement and route checks.',
+    });
   const projection = inventoryProjection(context, d.horizon);
   projection.forEach((p, i) => {
     if (p.stockoutAt !== null)

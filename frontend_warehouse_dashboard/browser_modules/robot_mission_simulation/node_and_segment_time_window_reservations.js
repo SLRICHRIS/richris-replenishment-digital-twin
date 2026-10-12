@@ -49,6 +49,7 @@ const corridorDistances = new Map();
 function pointSegmentDistance(p, a, b) {
   const dx = b.x - a.x,
     dy = b.y - a.y;
+  if (dx * dx + dy * dy < 1e-12) return Math.hypot(p.x - a.x, p.y - a.y);
   const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
 }
@@ -108,6 +109,7 @@ export function reserveEarliest(template, existing, earliest = 0) {
           end: window.end + start,
         })),
       };
+    if (!Number.isFinite(next)) return null;
     start = next;
   }
   return null; // Bounded planning failure withholds dispatch, never drops a constraint.

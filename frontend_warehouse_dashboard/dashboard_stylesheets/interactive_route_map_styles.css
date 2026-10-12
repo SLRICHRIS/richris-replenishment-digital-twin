@@ -153,6 +153,49 @@ body[data-view='routes'] .session-action {
 .map-manager-zone {
   pointer-events: none;
 }
+.route-map-svg[data-tool='managers'] .map-manager-zone {
+  pointer-events: all;
+  cursor: grab;
+}
+.route-map-svg[data-tool='managers'] .map-manager-zone.dragging {
+  cursor: grabbing;
+}
+.map-manager-zone:focus .map-manager-boundary {
+  stroke: #fff0cb;
+  stroke-width: 4;
+}
+.map-manager-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 12px 20px;
+}
+.map-manager-controls p {
+  margin: 0;
+  flex: 1 1 280px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.map-fleet-robot {
+  pointer-events: none;
+}
+.map-fleet-robot circle {
+  fill: #326eaa;
+  stroke: #e4edfa;
+  stroke-width: 2;
+}
+.map-fleet-robot text {
+  fill: #fff;
+  font: bold 8px monospace;
+}
+.map-legend i.fleet {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background: #326eaa;
+  border: 1px solid #e4edfa;
+}
 .map-manager-boundary {
   fill: url(#map-manager-hatch);
   stroke: #ef9877;

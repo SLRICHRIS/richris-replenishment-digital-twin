@@ -3,6 +3,7 @@ import {
   BIN_DESTINATIONS,
   referenceRouteGraph,
   paintLanePlan,
+  paintManagerStandingZone,
 } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 import { createIndustrialEnvironment } from './build_industrial_hall_and_equipment.js';
 import { MANAGER_STANDING_ZONES } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
@@ -167,7 +168,7 @@ export function createWarehouse() {
       c.lineTo(1005, y);
       c.stroke();
     }
-    paintLanePlan(c);
+    paintLanePlan(c, []);
     c.restore();
   });
   const reliefRng = seeded(193);
@@ -532,6 +533,28 @@ export function createWarehouse() {
     reflective: mat('#e6ecdf', 0.5, 0.08),
   };
   const managers = MANAGER_STANDING_ZONES.map((definition) => {
+    const areaTexture = texture(256, 256, (c) => {
+      c.translate(128, 128);
+      c.scale(128 / definition.radius, 128 / definition.radius);
+      paintManagerStandingZone(c, { ...definition, x: 0, y: 0 });
+    });
+    const area = new T.Mesh(
+      new T.PlaneGeometry(
+        (definition.radius * 2) / WORLD_SCALE,
+        (definition.radius * 2) / WORLD_SCALE,
+      ),
+      new T.MeshBasicMaterial({
+        map: areaTexture,
+        transparent: true,
+        depthWrite: false,
+        side: T.DoubleSide,
+      }),
+    );
+    area.rotation.x = -Math.PI / 2;
+    area.position.copy(worldPosition(definition.x, definition.y));
+    area.position.y = 0.028;
+    area.renderOrder = 2;
+    root.add(area);
     const figure = new T.Group();
     figure.name = definition.id;
     figure.userData.managerZoneId = definition.id;
@@ -567,7 +590,7 @@ export function createWarehouse() {
       0.23,
     );
     mergeStatic(figure);
-    return { definition, figure };
+    return { definition, figure, area };
   });
   mergeStatic(staticRoot);
   // Detailed, rounded AMRs, kept as separate assemblies for telemetry-driven animation.

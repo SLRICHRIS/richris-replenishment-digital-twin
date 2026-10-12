@@ -132,7 +132,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
           'utf8',
         )
         .replace(/export /g, '') +
-      ';return{MANAGER_STANDING_ZONES,managerStandingZonesInMetres,checkedManagerStandingZones,segmentIntersectsManagerZone,managerZoneHatchSegments};})())',
+      ';return{MANAGER_STANDING_ZONES,managerStandingZonesInMetres,checkedManagerStandingZones,segmentIntersectsManagerZone,managerZoneHatchSegments,managerZonesInModelCoordinates};})())',
   );
   run(
     'Object.assign(window,(()=>{' +
@@ -163,6 +163,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
     'browser_modules/robot_state_models_and_policy_experiments/robot_state_estimation_calibration_and_replay',
     'browser_modules/robot_mission_simulation/node_and_segment_time_window_reservations',
     'browser_modules/robot_mission_simulation/virtual_mission_scheduling_and_robot_motion',
+    'browser_modules/robot_mission_simulation/manager_relocation_and_fleet_route_replanning',
     'browser_modules/shortest_path_and_route_map/interactive_route_map_and_algorithm_playback',
     'browser_modules/esp32_telemetry_monitoring/esp32_mqtt_connection_and_status_panel',
     'browser_modules/dashboard_navigation_and_appearance/dashboard_animation_and_element_updates',

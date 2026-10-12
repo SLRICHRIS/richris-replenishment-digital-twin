@@ -168,6 +168,7 @@ function insideManagerRestriction(facility, point) {
   );
 }
 export function checkedRouting(facility, options = {}) {
+  facility = facilityWithRoutingZones(facility, options);
   const objective = options.objective ?? 'distance',
     blockedEdges = options.blockedEdges ?? [];
   if (
@@ -181,7 +182,20 @@ export function checkedRouting(facility, options = {}) {
   return {
     objective,
     blockedEdges: [...new Set([...blockedEdges, ...managerRestrictedEdgeKeys(facility)])].sort(),
+    ...(options.restrictedZones === undefined ? {} : { restrictedZones: facility.restrictedZones }),
   };
+}
+function facilityWithRoutingZones(facility, options) {
+  return options.restrictedZones === undefined
+    ? facility
+    : {
+        ...facility,
+        restrictedZones: checkedManagerStandingZones(
+          options.restrictedZones,
+          facility.widthM,
+          facility.heightM,
+        ),
+      };
 }
 function compareCost(a, b, objective) {
   const keys =
@@ -216,6 +230,7 @@ export function graphRoute(
 ) {
   if (!Number.isFinite(speed) || speed <= 0 || !Number.isFinite(speedFactor) || speedFactor <= 0)
     throw Error('Route speed must be positive.');
+  facility = facilityWithRoutingZones(facility, options);
   options = checkedRouting(facility, options);
   const lookup = new Map(facility.nodes.map((n) => [n.id, n])),
     cost = new Map([[from, { metres: 0, seconds: 0, hops: 0, key: from }]]),
@@ -348,6 +363,8 @@ export function graphRouteTrace(facility, from, to, speed, speedFactor = 1, opti
 // Anchor a measured/model pose only to an existing node or an open segment.
 // A one-way segment permits forward travel only. No cross-rack connector is invented.
 export function graphRouteFromPose(facility, pose, to, speed, speedFactor = 1, options = {}) {
+  const manualClosures = new Set(options.blockedEdges || []);
+  facility = facilityWithRoutingZones(facility, options);
   options = checkedRouting(facility, options);
   if (!Number.isFinite(pose?.x_m) || !Number.isFinite(pose?.y_m))
     throw Error('Route position must be finite.');
@@ -361,7 +378,7 @@ export function graphRouteFromPose(facility, pose, to, speed, speedFactor = 1, o
   if (atNode) return graphRoute(facility, atNode.id, to, speed, speedFactor, options);
   const candidates = [];
   for (const edge of facility.edges) {
-    if (options.blockedEdges.includes(routeEdgeKey(edge))) continue;
+    if (manualClosures.has(routeEdgeKey(edge))) continue;
     const a = lookup.get(edge.from),
       b = lookup.get(edge.to),
       dx = b.x_m - a.x_m,
@@ -374,6 +391,12 @@ export function graphRouteFromPose(facility, pose, to, speed, speedFactor = 1, o
     )
       continue;
     for (const endpoint of edge.bidirectional ? [a, b] : [b]) {
+      if (
+        (facility.restrictedZones || []).some((zone) =>
+          segmentIntersectsManagerZone(pose, endpoint, zone, robotClearanceM),
+        )
+      )
+        continue;
       let tail;
       try {
         tail = graphRoute(facility, endpoint.id, to, speed, speedFactor, options);

@@ -7,19 +7,27 @@ import {
 import { CanvasTwinScene } from './warehouse_2d_canvas_fallback_renderer.js';
 import { projectMotion } from '../robot_mission_simulation/virtual_mission_scheduling_and_robot_motion.js';
 import { STORAGE_RACKS } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
+import {
+  checkedRouting,
+  referenceFacility,
+} from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
+import { managerZonesInModelCoordinates } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 
 export function projectedRobot(r, state) {
   if (state.live) return r.tracked && r.futurePose ? { ...r, ...r.futurePose } : null;
   if (
     !r.route.length ||
     state.stopped ||
+    state.managerPlacementActive ||
+    state.managerHoldReason ||
     r.state === 'Paused' ||
     r.state === 'Stopped' ||
     !state.running ||
     r.battery <= 0
   )
     return null;
-  return { ...r, ...projectMotion(r, 5, state.slow) };
+  const delay = Math.max(0, (r.traffic?.start ?? 0) - (state.trafficClock ?? 0));
+  return delay >= 5 ? null : { ...r, ...projectMotion(r, 5 - delay, state.slow) };
 }
 export function animateWarehouse(
   model,
@@ -29,10 +37,25 @@ export function animateWarehouse(
   layers = { routes: true, sensors: false, ghosts: false, grid: true },
 ) {
   model.syncStock(state.bins);
+  const managerZones = managerZonesInModelCoordinates(state.routing?.restrictedZones);
+  for (const manager of model.managers || []) {
+    const zone = managerZones.find((z) => z.id === manager.definition.id);
+    manager.figure.visible = manager.area.visible = !!zone;
+    if (zone) {
+      manager.figure.position.copy(worldPosition(zone.x, zone.y));
+      manager.area.position.copy(worldPosition(zone.x, zone.y));
+      manager.area.position.y = 0.028;
+      manager.area.scale.set(
+        zone.radius / manager.definition.radius,
+        zone.radius / manager.definition.radius,
+        1,
+      );
+    }
+  }
   model.grid.visible = layers.grid;
   if (model.network) model.network.visible = !state.live && layers.routes;
   if (model.network) {
-    const blocked = state.routing?.blockedEdges || [],
+    const blocked = checkedRouting(referenceFacility(), state.routing || {}).blockedEdges,
       signature = blocked.join('/');
     if (model.network.userData.availability !== signature) {
       const colors = model.network.geometry.getAttribute('color');
@@ -85,7 +108,12 @@ export function animateWarehouse(
       : r.state === 'Idle' && r.x < 150
         ? 1.8
         : 0.35;
-    o.route.visible = !state.live && layers.routes && r.route.length > 0;
+    o.route.visible =
+      !state.live &&
+      !state.managerHoldReason &&
+      !state.managerPlacementActive &&
+      layers.routes &&
+      r.route.length > 0;
     o.route.material.opacity = i === state.selected ? 0.95 : 0.48;
     if (o.destination) {
       o.destination.visible = o.route.visible;

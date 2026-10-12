@@ -3,7 +3,7 @@
 | Capability | Current behavior | Source of detail |
 | --- | --- | --- |
 | Industrial warehouse view | 12 racks, 4 active bins, 8 decorative reserves, three AMRs | [Operator guide](dashboard_operator_guide.md) |
-| Manager standing areas | Two configured personnel figures and hatched no-entry circles in the route map, 3D floor and Canvas fallback; shared routing includes robot clearance | [Operator guide](dashboard_operator_guide.md) |
+| Movable manager areas | Mouse/touch/keyboard placement, matching no-entry circles across views, live preview and atomic fleet replanning; blocked paths hold traffic and queued routes need fresh approval | [Operator guide](dashboard_operator_guide.md) |
 | Interactive routing | 22 nodes/27 links, Dijkstra trace, distance/time modes, closures and directions | [Routing verification](routing_and_robot_model_software_verification.md) |
 | Cooperative dispatch | Human approval, concurrent safe node/segment/corridor windows, bay return and battery reserve | [System architecture](dashboard_and_telemetry_system_architecture.md) |
 | Measured twin | Three validated MQTT slots, position observer, chronological calibration, replay and frozen policy studies | [Model contract](digital_twin_architecture_and_validation_plan.md) |
