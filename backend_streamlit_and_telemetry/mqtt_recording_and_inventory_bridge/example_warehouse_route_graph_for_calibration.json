@@ -282,5 +282,21 @@
       "to": "lane23",
       "bidirectional": true
     }
+  ],
+  "restrictedZones": [
+    {
+      "id": "manager-01",
+      "label": "Manager M1",
+      "x_m": 1.7333333333333334,
+      "y_m": 0.8,
+      "radius_m": 0.5333333333333333
+    },
+    {
+      "id": "manager-02",
+      "label": "Manager M2",
+      "x_m": 1.7333333333333334,
+      "y_m": 5.866666666666666,
+      "radius_m": 0.5333333333333333
+    }
   ]
 }

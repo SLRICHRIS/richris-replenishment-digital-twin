@@ -61,6 +61,25 @@ const assert = require('node:assert/strict'),
   assert.equal(svg.querySelectorAll('[data-map-node]').length, 22);
   assert.equal(svg.querySelectorAll('[data-map-edge]').length, 27);
   assert.equal(svg.querySelectorAll('[data-map-rack]').length, 12);
+  const { MANAGER_STANDING_ZONES } = await import(
+    '../../frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js'
+  );
+  assert.equal(svg.querySelectorAll('[data-manager-zone]').length, 2);
+  for (const zone of MANAGER_STANDING_ZONES) {
+    const marker = svg.querySelector(`[data-manager-zone="${zone.id}"]`);
+    const position = marker.getAttribute('transform').match(/translate\(([^,]+),([^\)]+)\)/);
+    assert(Math.abs(Number(position[1]) - zone.x) < 1e-8);
+    assert(Math.abs(Number(position[2]) - zone.y) < 1e-8);
+    assert.equal(
+      Number(marker.querySelector('.map-manager-boundary').getAttribute('r')),
+      zone.radius,
+    );
+    assert(marker.getAttribute('aria-label').includes('No AMR entry'));
+    assert(marker.textContent.includes(zone.label.toUpperCase()));
+    assert(marker.querySelector('.map-manager-person'));
+  }
+  assert(doc.querySelector('.map-legend .manager'));
+  assert(doc.querySelector('.facility-register .manager'));
   assert.equal(snapshot().state.to, 'binD');
   assert(snapshot().plans.outbound.route);
   assert($('map-directions').textContent.includes('Arrive at Bin D'));

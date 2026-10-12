@@ -1,4 +1,8 @@
 import {
+  MANAGER_STANDING_ZONES,
+  managerZoneHatchSegments,
+} from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
+import {
   STORAGE_RACKS,
   LANE_SEGMENTS,
   BIN_DESTINATIONS,
@@ -418,6 +422,29 @@ export class CanvasTwinScene {
       );
       this.text(zone.label, zone.x, top + 12, 0.4, '#344747', Math.max(5, 9 * this.scale));
     }
+    for (const zone of MANAGER_STANDING_ZONES) {
+      this.circle(zone.x, zone.y, 0.25, zone.radius, '#8b3c2c', 1.5, 1, '#d8a33d');
+      for (const [a, b] of managerZoneHatchSegments(zone))
+        this.line(
+          [
+            [...a, 0.3],
+            [...b, 0.3],
+          ],
+          '#795a31',
+          1,
+          [],
+          0.8,
+        );
+      this.text(
+        zone.label.toUpperCase(),
+        zone.x,
+        zone.y + 26,
+        0.4,
+        '#422c20',
+        Math.max(5, 8 * this.scale),
+      );
+      this.text('NO AMR ENTRY', zone.x, zone.y + 36, 0.4, '#422c20', Math.max(4, 6 * this.scale));
+    }
     if (this.layers.grid) {
       for (let x = 0; x <= 900; x += 75)
         this.line(
@@ -540,7 +567,7 @@ export class CanvasTwinScene {
         0.6,
       ),
     );
-    this.text('AMR CHARGING', 111, 95, 1, '#344747', Math.max(6, 11 * this.scale));
+    this.text('AMR CHARGING', 111, 129, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('LINE SUPPLY', 545, 20, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('FINISHED GOODS', 545, 490, 1, '#344747', Math.max(6, 11 * this.scale));
     STORAGE_RACKS.forEach((r) => this.shadow(r.x, r.y, 126, 56, 0.22));
@@ -828,6 +855,25 @@ export class CanvasTwinScene {
     }
     return p;
   }
+  managerStandingFigures() {
+    for (const { x, y } of MANAGER_STANDING_ZONES) {
+      for (const offset of [-9, 9]) {
+        this.box(x + offset, y + 3, 0, 12, 22, 9, '#292e2c');
+        this.box(x + offset, y, 9, 11, 14, 54, '#314d69');
+      }
+      this.box(x, y, 62, 30, 17, 12, '#314d69');
+      this.box(x, y, 74, 32, 19, 38, '#e2b434');
+      for (const offset of [-22, 22]) {
+        this.cylinder(x + offset, y, 66, 5, 35, '#e2b434');
+        this.cylinder(x + offset, y, 60, 4, 7, '#c9946d');
+      }
+      for (const z of [83, 95]) this.box(x, y + 10, z, 32, 1, 3, '#e6ecdf');
+      this.cylinder(x, y, 112, 7, 13, '#c9946d');
+      this.cylinder(x, y, 124, 11, 2, '#efba42');
+      this.cylinder(x, y, 126, 9, 6, '#efba42');
+      this.box(x + 23, y + 8, 64, 14, 3, 20, '#e5e7dd');
+    }
+  }
   draw(state, time) {
     if (!this.ctx || !state?.robots) return;
     const c = this.ctx,
@@ -879,6 +925,7 @@ export class CanvasTwinScene {
     if (!state.live) this.overlays(state, time);
     this.scenery();
     this.industrial();
+    this.managerStandingFigures();
     STORAGE_RACKS.forEach((r) => this.rack(r, state.bins.find((b) => b.id === r.binId)?.stock));
     state.robots.forEach((r) => this.robot(r, r.id === state.selected, time));
     if (this.layers.ghosts)
@@ -887,6 +934,9 @@ export class CanvasTwinScene {
         if (ghost) this.robot(ghost, false, time, true);
       });
     this.flush();
+    if (!this.follow)
+      for (const zone of MANAGER_STANDING_ZONES)
+        this.label(zone.label, zone.x, zone.y, 150, { color: '#fff0c7', sub: 'No AMR entry' });
     if (!this.follow)
       STORAGE_RACKS.forEach((rack) => {
         const bin = rack.binId ? state.bins.find((b) => b.id === rack.binId) : null,

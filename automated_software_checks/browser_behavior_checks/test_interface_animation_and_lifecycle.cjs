@@ -128,9 +128,21 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
       fs
         .readFileSync(
           base +
+            '/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js',
+          'utf8',
+        )
+        .replace(/export /g, '') +
+      ';return{MANAGER_STANDING_ZONES,managerStandingZonesInMetres,checkedManagerStandingZones,segmentIntersectsManagerZone,managerZoneHatchSegments};})())',
+  );
+  run(
+    'Object.assign(window,(()=>{' +
+      fs
+        .readFileSync(
+          base +
             '/browser_modules/warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js',
           'utf8',
         )
+        .replace(/^import[\s\S]*?;\s*$/gm, '')
         .replace(/export /g, '') +
       ';return{WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})())',
   );
@@ -144,7 +156,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
         )
         .replace(/^import[\s\S]*?;\s*$/gm, '')
         .replace(/export /g, '') +
-      ';return{referenceFacility,checkedFacility,graphRoute,graphRouteTrace,graphRouteFromPose,checkedRouting,routeEdgeKey,edgeSegments,travelledMetres};})())',
+      ';return{referenceFacility,checkedFacility,graphRoute,graphRouteTrace,graphRouteFromPose,checkedRouting,managerRestrictedEdgeKeys,routeEdgeKey,edgeSegments,travelledMetres};})())',
   );
   for (const name of [
     'browser_modules/esp32_telemetry_monitoring/robot_telemetry_validation_and_freshness',

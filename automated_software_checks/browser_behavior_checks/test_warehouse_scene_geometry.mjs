@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import {
+  MANAGER_STANDING_ZONES,
+  segmentIntersectsManagerZone,
+} from '../../frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 import {
   WAREHOUSE_LAYOUT as layout,
   STORAGE_RACKS,
@@ -17,6 +22,21 @@ import {
 } from '../../frontend_warehouse_dashboard/browser_modules/robot_mission_simulation/virtual_mission_scheduling_and_robot_motion.js';
 const radius = layout.robotRadius + layout.clearance,
   map = checkedFacility(referenceFacility());
+assert.deepEqual(
+  checkedFacility(
+    JSON.parse(
+      readFileSync(
+        new URL(
+          '../../backend_streamlit_and_telemetry/mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ),
+  ),
+  map,
+  'The downloadable default facility matches the reference floor and manager areas',
+);
 const rectangles = STORAGE_RACKS.map((r) => ({
   left: r.x - layout.rackFootprintWidth / 2,
   right: r.x + layout.rackFootprintWidth / 2,
@@ -55,6 +75,17 @@ for (const rack of rectangles)
   assert(rack.left >= 0 && rack.right <= 900 && rack.top >= 0 && rack.bottom <= 500);
 for (const lane of LANE_SEGMENTS)
   clearRoute({ x: lane.x1, y: lane.y1 }, [{ x: lane.x2, y: lane.y2 }]);
+for (const lane of LANE_SEGMENTS)
+  for (const zone of map.restrictedZones)
+    assert(
+      !segmentIntersectsManagerZone(
+        { x_m: lane.x1 / layout.scale, y_m: lane.y1 / layout.scale },
+        { x_m: lane.x2 / layout.scale, y_m: lane.y2 / layout.scale },
+        zone,
+        radius / layout.scale,
+      ),
+      'Every reference lane clears manager areas with the full robot footprint',
+    );
 for (let id = 0; id < 3; id++)
   for (const bin of BIN_DESTINATIONS)
     for (const slow of [false, true]) {
@@ -138,6 +169,28 @@ const model = createWarehouse();
 assert.equal(model.allRackCenters.length, 12);
 assert.equal(model.rackCenters.length, 4);
 assert.equal(model.cartons.count, 108);
+assert.equal(model.managers.length, MANAGER_STANDING_ZONES.length);
+for (const { definition, figure } of model.managers) {
+  assert.equal(
+    figure.parent,
+    model.root,
+    'Manager figures remain when facility equipment is hidden',
+  );
+  assert.equal(figure.position.x, (definition.x - 450) / layout.scale);
+  assert.equal(figure.position.z, (definition.y - 250) / layout.scale);
+  const bounds = new T.Box3().setFromObject(figure);
+  assert(
+    bounds.max.y >= 1.65 && bounds.max.y <= 2.1,
+    'Standing human model has reference human height',
+  );
+  for (const x of [bounds.min.x, bounds.max.x])
+    for (const z of [bounds.min.z, bounds.max.z])
+      assert(
+        Math.hypot(x * layout.scale + 450 - definition.x, z * layout.scale + 250 - definition.y) <
+          definition.radius,
+        'Manager geometry and sign fit inside their marked area',
+      );
+}
 // New real scene fixtures must stay clear of every AMR graph segment.
 for (const fixture of model.industrial.fixtures) {
   const box = new T.Box3().setFromObject(fixture.group);
@@ -194,6 +247,41 @@ const { CanvasTwinScene } = await import(
     '../../frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/warehouse_2d_canvas_fallback_renderer.js'
   ),
   lines = [];
+const fallbackAreas = [],
+  fallbackLabels = [],
+  fallbackFigures = [];
+CanvasTwinScene.prototype.floor.call(
+  {
+    layers: { grid: false },
+    scale: 1,
+    box() {},
+    flush() {},
+    paintPolygon() {},
+    line() {},
+    shadow() {},
+    circle: (...args) => fallbackAreas.push(args),
+    text: (...args) => fallbackLabels.push(args),
+  },
+  { slow: false, robots: [] },
+);
+assert.equal(fallbackAreas.length, MANAGER_STANDING_ZONES.length);
+for (const [index, zone] of MANAGER_STANDING_ZONES.entries()) {
+  assert.deepEqual(fallbackAreas[index].slice(0, 4), [zone.x, zone.y, 0.25, zone.radius]);
+  assert(
+    fallbackLabels.some(
+      ([text, x, y]) => text === zone.label.toUpperCase() && x === zone.x && y === zone.y + 26,
+    ),
+  );
+}
+CanvasTwinScene.prototype.managerStandingFigures.call({
+  box: (...args) => fallbackFigures.push(args),
+  cylinder() {},
+});
+for (const zone of MANAGER_STANDING_ZONES)
+  assert(
+    fallbackFigures.some(([x, y, z]) => x === zone.x && y === zone.y && z === 74),
+    'Canvas fallback includes a standing figure at each shared zone location',
+  );
 CanvasTwinScene.prototype.overlays.call(
   { layers: { routes: true }, line: (...args) => lines.push(args) },
   { robots: [], routing: { blockedEdges: ROUTE_CONDITIONS.north } },

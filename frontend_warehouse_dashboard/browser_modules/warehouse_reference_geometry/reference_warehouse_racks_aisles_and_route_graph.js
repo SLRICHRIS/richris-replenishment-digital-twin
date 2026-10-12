@@ -1,5 +1,10 @@
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 // Shared illustrative layout. Coordinates use 75 model units per metre.
+import {
+  MANAGER_STANDING_ZONES,
+  managerStandingZonesInMetres,
+  managerZoneHatchSegments,
+} from './warehouse_manager_standing_zones_and_route_clearance.js';
 export const WAREHOUSE_LAYOUT = Object.freeze({
   width: 900,
   height: 500,
@@ -147,7 +152,11 @@ export function referenceRouteGraph() {
   });
   for (let row = 0; row < 2; row++)
     for (let col = 0; col < 4; col++) links.push(['lane' + row + col, 'lane' + (row + 1) + col]);
-  return { nodes, edges: links.map(([from, to]) => ({ from, to, bidirectional: true })) };
+  return {
+    nodes,
+    edges: links.map(([from, to]) => ({ from, to, bidirectional: true })),
+    restrictedZones: managerStandingZonesInMetres(WAREHOUSE_LAYOUT.scale),
+  };
 }
 export function paintLanePlan(c) {
   c.save();
@@ -225,7 +234,7 @@ export function paintLanePlan(c) {
   );
   c.fillStyle = '#344c4c';
   c.font = 'bold 11px monospace';
-  c.fillText('AMR CHARGING', 46, 108);
+  c.fillText('AMR CHARGING', 46, 129);
   c.fillText('LINE SUPPLY', 496, 20);
   c.fillText('FINISHED GOODS', 480, 490);
   for (const rack of STORAGE_RACKS) {
@@ -241,6 +250,30 @@ export function paintLanePlan(c) {
     c.moveTo(52, y);
     c.lineTo(40, y + 9);
     c.stroke();
+  }
+  // Manager areas stay visible independently of the optional route network layer.
+  for (const zone of MANAGER_STANDING_ZONES) {
+    c.fillStyle = '#d8a33d';
+    c.beginPath();
+    c.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#8b3c2c';
+    c.lineWidth = 2.5;
+    c.stroke();
+    c.strokeStyle = '#795a31';
+    c.lineWidth = 2;
+    for (const [a, b] of managerZoneHatchSegments(zone)) {
+      c.beginPath();
+      c.moveTo(...a);
+      c.lineTo(...b);
+      c.stroke();
+    }
+    c.fillStyle = '#422c20';
+    c.textAlign = 'center';
+    c.font = 'bold 9px monospace';
+    c.fillText(zone.label.toUpperCase(), zone.x, zone.y + 25);
+    c.font = 'bold 7px monospace';
+    c.fillText('NO AMR ENTRY', zone.x, zone.y + 35);
   }
   c.restore();
 }

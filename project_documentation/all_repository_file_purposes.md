@@ -66,6 +66,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js` | Implement warehouse graph validation and dijkstra routing. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js` | Implement streamlit frame connection and scrolling. |
 | `frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js` | Implement reference warehouse racks aisles and route graph. |
+| `frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js` | Define manager standing locations, validate restricted-zone metadata and check route-segment clearance. |
 | `frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/build_industrial_hall_and_equipment.js` | Implement build industrial hall and equipment. |
 | `frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/build_warehouse_racks_cartons_and_robot_models.js` | Implement build warehouse racks cartons and robot models. |
 | `frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/warehouse_2d_canvas_fallback_renderer.js` | Implement warehouse 2d canvas fallback renderer. |

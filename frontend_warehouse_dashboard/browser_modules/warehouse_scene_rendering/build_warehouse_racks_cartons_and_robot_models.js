@@ -5,6 +5,7 @@ import {
   paintLanePlan,
 } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 import { createIndustrialEnvironment } from './build_industrial_hall_and_equipment.js';
+import { MANAGER_STANDING_ZONES } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 import { routeEdgeKey } from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
 import * as T from '../../external_browser_libraries/threejs_3d_rendering/threejs_3d_rendering_module.min.js';
 import { RoundedBoxGeometry } from '../../external_browser_libraries/threejs_3d_rendering/threejs_rounded_box_geometry.js';
@@ -522,6 +523,52 @@ export function createWarehouse() {
     worldPosition,
   });
   const walls = industrial.walls;
+  // Configured personnel figures belong to the reference map, not telemetry.
+  // Keep them visible when the surrounding facility equipment layer is hidden.
+  const managerMaterials = {
+    vest: mat('#e2b434', 0.85, 0),
+    skin: mat('#c9946d', 0.9, 0),
+    trousers: mat('#314d69', 0.9, 0),
+    reflective: mat('#e6ecdf', 0.5, 0.08),
+  };
+  const managers = MANAGER_STANDING_ZONES.map((definition) => {
+    const figure = new T.Group();
+    figure.name = definition.id;
+    figure.userData.managerZoneId = definition.id;
+    figure.position.copy(worldPosition(definition.x, definition.y));
+    root.add(figure);
+    for (const x of [-0.115, 0.115]) {
+      box(figure, M.rubber, x, 0.065, 0.045, 0.16, 0.13, 0.3, 0.025);
+      box(figure, managerMaterials.trousers, x, 0.47, 0, 0.15, 0.72, 0.18, 0.025);
+    }
+    box(figure, managerMaterials.trousers, 0, 0.83, 0, 0.4, 0.16, 0.22, 0.035);
+    box(figure, managerMaterials.vest, 0, 1.13, 0, 0.43, 0.5, 0.25, 0.055);
+    for (const x of [-0.29, 0.29]) {
+      const arm = cylinder(figure, managerMaterials.vest, x, 1.1, 0, 0.065, 0.47);
+      arm.rotation.z = x > 0 ? 0.12 : -0.12;
+      cylinder(figure, managerMaterials.skin, x * 1.1, 0.82, 0, 0.054, 0.12);
+    }
+    for (const y of [1.02, 1.17])
+      box(figure, managerMaterials.reflective, 0, y, 0.127, 0.43, 0.035, 0.012);
+    for (const x of [-0.085, 0.085])
+      box(figure, managerMaterials.reflective, x, 1.18, 0.128, 0.03, 0.36, 0.013);
+    cylinder(figure, managerMaterials.skin, 0, 1.45, 0, 0.095, 0.2);
+    cylinder(figure, M.yellow, 0, 1.58, 0, 0.147, 0.025);
+    cylinder(figure, M.yellow, 0, 1.63, 0, 0.12, 0.09);
+    box(figure, M.dark, 0.32, 0.93, 0.1, 0.19, 0.26, 0.035, 0.012);
+    box(figure, M.white, 0.32, 0.93, 0.12, 0.15, 0.21, 0.004);
+    sign(
+      figure,
+      labelTexture(definition.label.toUpperCase(), 'NO AMR ENTRY', '#6d4223', '#fff0c7'),
+      0,
+      1.9,
+      0,
+      0.82,
+      0.23,
+    );
+    mergeStatic(figure);
+    return { definition, figure };
+  });
   mergeStatic(staticRoot);
   // Detailed, rounded AMRs, kept as separate assemblies for telemetry-driven animation.
   const contactTexture = texture(128, 128, (c) => {
@@ -733,6 +780,7 @@ export function createWarehouse() {
     allRackCenters,
     network,
     industrial,
+    managers,
     worldPosition,
   };
 }

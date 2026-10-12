@@ -10,6 +10,8 @@ The production route solver uses Dijkstra with positive metric distance/travel-t
 
 `test_route_map_solver_and_playback.mjs` checks that instrumented and ordinary search agree, settled costs stay monotonic, directions add up and timed playback follows permitted segments. The DOM suite exercises taps, mouse/touch pan/zoom, closures, endpoint/leg state, keyboard input and dispatch isolation.
 
+Configured manager standing circles exclude an intersecting route segment after adding the 0.48 m model robot clearance. Tests cover crossings with endpoints outside the zone, exact tangency, safe shortest detours in both directions/objectives, directed links, restricted endpoints and same-node requests, restricted pose anchoring, invalid zone metadata, legacy imports and JSON round trips. Default locations preserve every published bay/bin journey. DOM and native Three.js/Canvas geometry checks verify matching markers, labels, standing figures and footprint clearance; these are not browser screenshots or physical personnel-detection tests.
+
 ## Cooperative traffic and event consistency
 
 `test_multi_robot_time_window_reservations.mjs` checks head-on exclusivity, shared nodes, disjoint segments and geometrically nearby corridors across objectives, closures, speed modes and destinations. It samples every 50 ms and requires enough clearance margin to bound unsampled motion using the sum of maximum speeds. Actual concurrent journeys must occur; per-unit study trips remain exclusive.

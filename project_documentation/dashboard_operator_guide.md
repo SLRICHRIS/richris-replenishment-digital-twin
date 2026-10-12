@@ -16,6 +16,10 @@ Approval rechecks feasibility. Journeys overlap when their node, segment and nea
 
 Route-map closures and playback affect only the preview. Copy dispatch conditions reads the current settings without changing missions. Algorithm mode displays the actual solver trace; manual seeking remains available with reduced motion.
 
+Manager M1 and M2 have visible hatched standing areas, human figures and **No AMR entry** labels in Floor and Route map, including the Canvas fallback. These are configured reference locations, not live personnel tracking. The shared route solver excludes links whose full segment intersects a standing circle plus the model's 0.48 m robot footprint/clearance. Manual lane reopening cannot remove a manager restriction. The default areas sit clear of every reference lane, so published journey distances remain unchanged.
+
+Default locations and radii are defined in [the manager standing-zone module](../frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js). Facility JSON may carry an optional `restrictedZones` array with `id`, plain `label`, `x_m`, `y_m` and `radius_m`; import/export preserves it and routing uses it. Older maps without this array remain supported. Custom Twin lab geometry does not reposition the reference floor figures. These illustrative areas and clearances require site measurement and controller integration before physical use.
+
 In Streamlit, the workspace scrolls below the header while navigation stays visible. Use the scrollbar, touch scrolling or focus the workspace and use Page Down. Each view opens at the top; ordinary updates preserve your position.
 
 Use Dark/Bright and the motion control to adjust appearance. The Canvas fallback covers browsers without WebGL. Four A–D counts are monitored; the other eight racks are reference decoration.

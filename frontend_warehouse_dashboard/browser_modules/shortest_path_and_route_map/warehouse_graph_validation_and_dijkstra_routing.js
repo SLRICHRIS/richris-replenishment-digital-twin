@@ -1,6 +1,15 @@
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 // Surveyed route graph in metres; no actuator/controller dependencies.
-import { referenceRouteGraph } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
+import {
+  referenceRouteGraph,
+  WAREHOUSE_LAYOUT,
+} from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
+import {
+  checkedManagerStandingZones,
+  segmentIntersectsManagerZone,
+} from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
+const robotClearanceM =
+  (WAREHOUSE_LAYOUT.robotRadius + WAREHOUSE_LAYOUT.clearance) / WAREHOUSE_LAYOUT.scale;
 const assets = ['amr-01', 'amr-02', 'amr-03'],
   bins = ['A', 'B', 'C', 'D'];
 const validId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,48}$/.test(id);
@@ -107,6 +116,11 @@ export function checkedFacility(input) {
     heightM: input.heightM,
     verified: input.verified,
     slowBoundaryXM: input.slowBoundaryXM,
+    restrictedZones: checkedManagerStandingZones(
+      input.restrictedZones,
+      input.widthM,
+      input.heightM,
+    ),
     nodes,
     edges,
   };
@@ -133,6 +147,26 @@ export function edgeSegments(a, b, speed, boundary, speedFactor) {
 }
 export const routeEdgeKey = (e) =>
   e.bidirectional ? [e.from, e.to].sort().join('~') : e.from + '>' + e.to;
+export function managerRestrictedEdgeKeys(facility) {
+  const lookup = new Map(facility.nodes.map((node) => [node.id, node]));
+  return facility.edges
+    .filter((edge) =>
+      (facility.restrictedZones || []).some((zone) =>
+        segmentIntersectsManagerZone(
+          lookup.get(edge.from),
+          lookup.get(edge.to),
+          zone,
+          robotClearanceM,
+        ),
+      ),
+    )
+    .map(routeEdgeKey);
+}
+function insideManagerRestriction(facility, point) {
+  return (facility.restrictedZones || []).some((zone) =>
+    segmentIntersectsManagerZone(point, point, zone, robotClearanceM),
+  );
+}
 export function checkedRouting(facility, options = {}) {
   const objective = options.objective ?? 'distance',
     blockedEdges = options.blockedEdges ?? [];
@@ -144,7 +178,10 @@ export function checkedRouting(facility, options = {}) {
     )
   )
     throw Error('Choose distance or time and known route links.');
-  return { objective, blockedEdges: [...new Set(blockedEdges)].sort() };
+  return {
+    objective,
+    blockedEdges: [...new Set([...blockedEdges, ...managerRestrictedEdgeKeys(facility)])].sort(),
+  };
 }
 function compareCost(a, b, objective) {
   const keys =
@@ -202,6 +239,19 @@ export function graphRoute(
       });
   };
   emit('start', null);
+  if (
+    insideManagerRestriction(facility, lookup.get(from)) ||
+    insideManagerRestriction(facility, lookup.get(to))
+  ) {
+    emit('unreachable', null);
+    throw Error(
+      'No permitted route from ' +
+        from +
+        ' to ' +
+        to +
+        '. An endpoint is inside a manager restriction.',
+    );
+  }
   while (true) {
     const current = [...cost.entries()]
       .filter(([id]) => !visited.has(id))
@@ -255,7 +305,11 @@ export function graphRoute(
   if (!cost.has(to)) {
     emit('unreachable', null);
     throw Error(
-      'No permitted route from ' + from + ' to ' + to + '. Check closures and directed links.',
+      'No permitted route from ' +
+        from +
+        ' to ' +
+        to +
+        '. Check manager zones, closures and directed links.',
     );
   }
   const ids = [to],
@@ -297,6 +351,8 @@ export function graphRouteFromPose(facility, pose, to, speed, speedFactor = 1, o
   options = checkedRouting(facility, options);
   if (!Number.isFinite(pose?.x_m) || !Number.isFinite(pose?.y_m))
     throw Error('Route position must be finite.');
+  if (insideManagerRestriction(facility, pose))
+    throw Error('Robot position is inside a manager restriction; no permitted path is available.');
   const tolerance = 0.00014,
     lookup = new Map(facility.nodes.map((n) => [n.id, n]));
   const atNode = facility.nodes.find(

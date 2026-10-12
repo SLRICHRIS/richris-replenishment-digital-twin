@@ -150,6 +150,72 @@ body[data-view='routes'] .session-action {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.map-manager-zone {
+  pointer-events: none;
+}
+.map-manager-boundary {
+  fill: url(#map-manager-hatch);
+  stroke: #ef9877;
+  stroke-width: 2;
+}
+.map-manager-hatch-base {
+  fill: #604a2c;
+}
+.map-manager-hatch-line {
+  fill: none;
+  stroke: #b38b3f;
+  stroke-width: 2;
+  opacity: 0.45;
+}
+.map-manager-trousers {
+  fill: #a8bdd3;
+  stroke: #192b3e;
+  stroke-width: 1;
+}
+.map-manager-vest {
+  fill: #e6b941;
+  stroke: #382b18;
+  stroke-width: 1;
+}
+.map-manager-reflective {
+  fill: none;
+  stroke: #f5f5da;
+  stroke-width: 2;
+}
+.map-manager-head {
+  fill: #d8ab83;
+}
+.map-manager-helmet {
+  fill: #f6da68;
+  stroke: #382b18;
+  stroke-width: 1.5;
+}
+.map-manager-no-entry circle {
+  fill: #b64637;
+  stroke: #fff0de;
+  stroke-width: 1;
+}
+.map-manager-no-entry path {
+  stroke: #fff0de;
+  stroke-width: 2;
+}
+.map-manager-label,
+.map-manager-restriction-label {
+  fill: #fff0cb;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: #604a2c;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.map-manager-label {
+  font-size: 8px;
+}
+.map-manager-restriction-label {
+  font-size: 6.5px;
+  letter-spacing: 0.35px;
+}
 .map-road {
   fill: none;
   stroke: #263743;
@@ -453,6 +519,14 @@ body[data-view='routes'] .session-action {
 }
 .map-legend i.closed {
   background: #e49389;
+}
+.map-legend i.manager,
+.zone-swatch.manager {
+  height: 10px;
+  width: 13px;
+  border: 1px solid #ed9d76;
+  border-radius: 2px;
+  background: repeating-linear-gradient(135deg, #604a2c 0 3px, #c79a43 3px 5px);
 }
 .map-leg-controls {
   display: flex;

@@ -3,6 +3,7 @@
 import {
   referenceFacility,
   graphRouteTrace,
+  managerRestrictedEdgeKeys,
   routeEdgeKey,
   travelledMetres,
 } from './warehouse_graph_validation_and_dijkstra_routing.js';
@@ -276,17 +277,57 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
         `,
       )
       .join('');
+    const managers = map.restrictedZones
+      .map(
+        (zone) => /* HTML */ `
+          <g
+            class="map-manager-zone"
+            data-manager-zone="${zone.id}"
+            role="img"
+            aria-label="${zone.label}, restricted standing area. No AMR entry. Configured reference location."
+            transform="translate(${zone.x_m * MODEL.scale},${zone.y_m * MODEL.scale})"
+          >
+            <title>
+              ${zone.label}: no AMR entry. Route clearance includes the robot footprint. Configured
+              location, no live personnel tracking.
+            </title>
+            <circle class="map-manager-boundary" r="${zone.radius_m * MODEL.scale}" />
+            <g class="map-manager-person" aria-hidden="true" transform="translate(0,-8)">
+              <path class="map-manager-trousers" d="M-8 5H8L10 24H2L0 12-2 24H-10Z" />
+              <path class="map-manager-vest" d="M-8-9H8L15 5 10 8 6-1 7 8H-7L-6-1-10 8-15 5Z" />
+              <path class="map-manager-reflective" d="M-7-3H7M-7 3H7M-3-8V7M3-8V7" />
+              <circle class="map-manager-head" cy="-17" r="7" />
+              <path class="map-manager-helmet" d="M-9-17Q-9-28 0-28T9-17Z M-11-17H11" />
+            </g>
+            <g class="map-manager-no-entry" transform="translate(27,-22)" aria-hidden="true">
+              <circle r="7" />
+              <path d="M-4 0H4" />
+            </g>
+            <text class="map-manager-label" y="29" text-anchor="middle">
+              ${zone.label.toUpperCase()}
+            </text>
+            <text class="map-manager-restriction-label" y="39" text-anchor="middle">
+              NO AMR ENTRY
+            </text>
+          </g>
+        `,
+      )
+      .join('');
     $('route-map-content').innerHTML = /* HTML */ `
       <defs>
         <pattern id="map-grid-pattern" width="75" height="75" patternUnits="userSpaceOnUse">
           <path d="M75 0H0V75" class="map-grid-line" />
         </pattern>
+        <pattern id="map-manager-hatch" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" class="map-manager-hatch-base" />
+          <path d="M-2 2 2-2M0 10 10 0M8 12 12 8" class="map-manager-hatch-line" />
+        </pattern>
       </defs>
       <rect class="map-floor" x="8" y="8" width="884" height="484" rx="12" />
       <rect x="8" y="8" width="884" height="484" fill="url(#map-grid-pattern)" />
-      ${roads}${rackMarkup}${bays}
+      ${roads}${rackMarkup}${bays}${managers}
       <g class="map-place-labels">
-        <text x="42" y="100">CHARGING BAYS</text>
+        <text x="42" y="124">CHARGING BAYS</text>
         <text x="492" y="118">NORTH CROSS AISLE</text>
         <text x="492" y="248">CENTRAL CROSS AISLE</text>
         <text x="492" y="378">SOUTH CROSS AISLE</text>
@@ -483,9 +524,11 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
         ? (trace?.improved || []).map((e) => path([lookup.get(e.from), lookup.get(e.to)])).join(' ')
         : '',
     );
+    const managerBlocked = managerRestrictedEdgeKeys(map);
     for (const edge of map.edges) {
       const e = edgeElements.get(routeEdgeKey(edge)),
-        closed = state.blockedEdges.includes(routeEdgeKey(edge));
+        managerRestricted = managerBlocked.includes(routeEdgeKey(edge)),
+        closed = managerRestricted || state.blockedEdges.includes(routeEdgeKey(edge));
       e.classList.toggle('closed', closed);
       e.classList.toggle(
         'restricted',
@@ -495,7 +538,7 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
       e.setAttribute('aria-pressed', String(closed));
       e.setAttribute(
         'aria-label',
-        `${routeNodeLabel(lookup.get(edge.from))} to ${routeNodeLabel(lookup.get(edge.to))}, ${closed ? 'closed' : 'open'}. ${state.tool === 'lanes' ? 'Press to toggle lane.' : 'Select Close lane to edit.'}`,
+        `${routeNodeLabel(lookup.get(edge.from))} to ${routeNodeLabel(lookup.get(edge.to))}, ${managerRestricted ? 'restricted by a manager standing area' : closed ? 'closed' : 'open'}. ${managerRestricted ? 'Cannot reopen a restricted lane.' : state.tool === 'lanes' ? 'Press to toggle lane.' : 'Select Close lane to edit.'}`,
       );
     }
     const settled = new Set(algorithm ? trace?.settled : []),
@@ -672,6 +715,10 @@ export function createRouteMap({ getSimulation, isReducedMotion = () => false })
   }
   function toggleEdge(key) {
     if (!edgeElements.has(key)) return;
+    if (managerRestrictedEdgeKeys(map).includes(key)) {
+      tell('This lane intersects a manager standing area and cannot be reopened.');
+      return;
+    }
     state.blockedEdges = state.blockedEdges.includes(key)
       ? state.blockedEdges.filter((k) => k !== key)
       : [...state.blockedEdges, key].sort();

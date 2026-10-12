@@ -21,6 +21,12 @@ Firmware: Arduino CLI 1.4.1, Arduino-ESP32 3.3.12, PubSubClient 2.8.0, ArduinoJs
 | Formatting | Prettier checks pass for project JS, embedded HTML, CSS and browser tests; Python and C++ sources formatted |
 | Repository cleanup | Historical logs/hashes/rename maps removed; one verification record and a current file-purpose catalog remain |
 
+## Manager standing areas — 12 October 2026
+
+Baseline before this change: `1def9b660f8c62ae9e038c47aee36cbabdba46e4`. All 12 frontend suites, 13 Python service tests and the two hosting/packet-contract integration tests pass. The running Streamlit host serves all 63 frontend files byte-for-byte; all seven generated downloads match canonical sources.
+
+Manager-zone cases verify segment crossings, footprint tangency, shortest clear detours in both directions/objectives, blocked endpoints and pose anchoring, immutable restrictions during manual lane reopening, metadata validation and JSON preservation. Every default reference lane clears the two configured areas; all published bay/bin routes and paired reference outcomes remain unchanged. DOM, native Three.js geometry and Canvas fallback checks confirm the shared positions, figures and labels. Static native SVG exports were inspected in both themes; a live browser/GPU visual check was unavailable in this environment. This change does not establish live personnel tracking or physical exclusion enforcement.
+
 ## Override software experiment
 
 One monotonic Coordinator clock measures persisted request to matching executed ACK. The simulated controller deliberately waits 2 ms. Idle has zero prediction processes; normal/heavy have one/two continuously busy processes running production `comparePolicies`. All 300 requests executed, with no rejected/timed-out results.
