@@ -4,6 +4,21 @@
 
 **Research status:** The code is a *synthetic digital model*. It has been tested for software behaviour, but its task times, warehouse geometry, policies and physical equipment have not been validated against a real warehouse. It must not be described as a physically synchronized Digital Twin.
 
+## Quick start: first understand one task
+
+If the Streamlit app feels crowded, do **not** start with policy numbers. Open **1 Follow one replenishment** and advance events in this order:
+
+1. At **t = 0**, KIT-A starts with 4 picking units and 70 reserve units. The model creates T001 for **14** units to reach its target of 18. Reserved goods are still physically in reserve.
+2. At **t = 4 s**, click **Process the next event**. The 14 units move **reserve → in transit**. Verify the Before/After quantities.
+3. At **t = 12 s**, the picking shelf receives demand for 5 KIT-A units but has only 4. The model records 4 filled and 1 unmet.
+4. At **t = 26.048 s**, T001 is delivered. Stock moves **in transit → picking shelf**.
+
+In between, events for other SKUs occur in chronological order. The interface shows exactly which event is next. The **Why this model** tab explains every component and equation term; **Evidence and paper** separates software checks from physical validation.
+
+For all quantities, example calculations, screen definitions and scope boundaries, see [the complete guided walkthrough](docs/00_guided_walkthrough.md).
+
+**New clarity module:** `warehouse_twin/explain.py` computes the next-event explanation, before/after stock difference and event interpretation from the authoritative simulation state, without changing warehouse logic. Tests for this module are in `tests/test_explain.py`.
+
 ## 1. What this repository contains
 
 One simulated transport resource moves a known quantity of stock from reserve location `R` to picking locations `P1`, `P2` or `P3`. A replenishment request is triggered when a picking location falls below its threshold. The model keeps track of where the stock actually is and uses discrete, timestamped events to update state.
@@ -29,6 +44,7 @@ research_baseline/
 ├── warehouse_twin/
 │   ├── __init__.py                   Package metadata
 │   ├── simulation.py                 Discrete-event model, routing, stock accounting and policy comparison
+│   ├── explain.py                    Read-only event explanations and inventory deltas
 │   ├── database.py                   Persistent SQLite state, events and measurements
 │   ├── api.py                        HTTP and WebSocket access to the model
 │   └── mqtt_gateway.py               Optional external MQTT to HTTP observation adapter
@@ -38,11 +54,13 @@ research_baseline/
 │   └── style.css                     Local interface typography and layout
 ├── tests/
 │   ├── test_simulation.py            Event ordering, conservation, constraints, policy checks
+│   ├── test_explain.py               Next-event explanations and before/after inventory logic
 │   ├── test_api.py                   State persistence, validation and HTTP tests
 │   └── test_mqtt_gateway.py          MQTT packet normalization test
 ├── examples/
 │   └── telemetry_example.json        Example packet, NOT a measured device observation
 ├── docs/
+│   ├── 00_guided_walkthrough.md       Step-by-step real event trace and screen tour
 │   ├── 01_system_architecture.md      Responsibilities and detailed process flow
 │   ├── 02_inventory_and_events.md     Inventory equations and event-state rules
 │   ├── 03_modelling_choices.md        What, why, assumptions and alternatives
