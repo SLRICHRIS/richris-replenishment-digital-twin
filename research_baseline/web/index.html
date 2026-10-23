@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Warehouse Replenishment | Operational Digital Model</title>
+  <link rel="stylesheet" href="/assets/style.css" />
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="brand-mark">R</span><div><strong>REPLENISHMENT LAB</strong><small>Operational Digital Model · Research Baseline</small></div></div>
+    <div class="top-status"><span id="connected">Connecting…</span><span class="pill">SYNTHETIC / NOT PHYSICALLY VALIDATED</span></div>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="overline">SYSTEM OBJECTIVE</p><h1>Understand a replenishment task<br>from inventory request to delivery.</h1>
+      <p class="muted">Model the warehouse's physical quantities and execution decisions. Test task order under identical demand. Validate behaviour before claiming a physical digital twin.</p></div>
+      <aside class="principles"><div><b>WHAT</b><span>Internal reserve-to-picking replenishment</span></div><div><b>HOW</b><span>Transaction-backed discrete-event simulation</span></div><div><b>WHY</b><span>Predict task timing and shortage consequences</span></div></aside>
+    </section>
+    <div id="message" class="message" aria-live="polite"></div>
+    <section class="section" id="operations">
+      <div class="section-heading"><span class="number">01</span><div><h2>Operate the warehouse model</h2><p>Reset creates a new run. Steps advance one event. Runs persist in SQLite and survive server restarts.</p></div></div>
+      <div class="toolbar">
+        <label>Dispatch policy<select id="policy"><option value="fifo">FIFO: oldest task first</option><option value="urgency">Urgency: predicted shortage first</option></select></label>
+        <label>Restricted aisle<select id="blocked"><option value="">No restrictions</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select></label>
+        <button id="reset" class="primary">Create new run</button>
+        <button id="step">Step one event</button>
+        <label>Run until (s)<input id="until" type="number" min="0" max="1440" step="5" value="240" /></label>
+        <button id="run">Run to time</button>
+      </div>
+      <details class="assumptions"><summary>Model assumptions and calibrated values</summary><div class="toolbar"><label>Graph speed (units/s)<input type="number" id="modelSpeed" step="0.01" min="0.05" max="10" value="0.42"></label><label>Loading (s)<input type="number" id="modelLoad" step="0.5" min="0" max="60" value="4"></label><label>Unloading (s)<input type="number" id="modelUnload" step="0.5" min="0" max="60" value="3"></label><span class="footnote">Changing these values requires creating a new run. Default values are synthetic, not physically calibrated.</span></div></details>
+      <div class="metric-row" id="metrics" aria-live="polite"></div>
+      <div class="columns">
+        <div class="panel map-panel"><div class="panel-heading"><h3>Warehouse movement graph</h3><span>Conceptual geometry, not Ferrari's laboratory</span></div>
+          <svg id="map" viewBox="0 0 940 510" role="img" aria-label="Warehouse locations and connected movement aisles"></svg>
+          <div class="legend"><span><i class="key black"></i>Active path</span><span><i class="key dashed"></i>Restricted aisle</span><span>R = reserve storage</span><span>P1–P3 = picking locations</span></div>
+        </div>
+        <div class="panel"><div class="panel-heading"><h3>Current operational state</h3><span id="clock">t = 0 s</span></div>
+          <div id="robot" class="robot"></div>
+          <table><thead><tr><th>SKU</th><th>Reserve</th><th>Reserved</th><th>Transit</th><th>Picking</th></tr></thead><tbody id="inventory"></tbody></table>
+          <h4>Replenishment tasks</h4><div class="scroll"><table><thead><tr><th>Task</th><th>Quantity</th><th>State</th><th>Destination</th></tr></thead><tbody id="tasks"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="events">
+      <div class="section-heading"><span class="number">02</span><div><h2>Inspect the event sequence</h2><p>Every recorded step changes a specific state. A replenishment request does not immediately add units to the picking shelf.</p></div></div>
+      <div class="panel"><div class="panel-heading"><h3>Persistent audit trail</h3><span id="eventCount"></span></div><div class="scroll tall"><table><thead><tr><th>Seq</th><th>Sim. time</th><th>Event</th><th>What happened</th></tr></thead><tbody id="eventRows"></tbody></table></div></div>
+    </section>
+    <section class="section" id="evaluation">
+      <div class="section-heading"><span class="number">03</span><div><h2>Compare decisions under matched conditions</h2><p>FIFO and urgency use the same stock, demand schedule, route restrictions and process times. Comparison does not modify the active run.</p></div></div>
+      <div class="panel"><div class="panel-heading"><h3>Independent counterfactual simulation</h3><button id="compare" class="primary">Compare both policies</button></div>
+        <p class="disclaimer">Results from uncalibrated synthetic inputs are demonstrations of software behaviour, not measured warehouse improvements.</p>
+        <div id="compareResults" class="compare-results"><p>Run a comparison to see the same scenario under two dispatch policies.</p></div>
+      </div>
+    </section>
+    <section class="section" id="validation">
+      <div class="section-heading"><span class="number">04</span><div><h2>Verification versus physical validation</h2><p>The model can demonstrate correct inventory accounting. It cannot prove physical timing accuracy without independent observations.</p></div></div>
+      <div class="columns">
+        <div class="panel"><div class="panel-heading"><h3>Inventory conservation checks</h3><span>Per SKU</span></div><div id="conservation"></div><p class="formula">Initial inventory − fulfilled demand = reserve + picking + in transit</p></div>
+        <div class="panel"><div class="panel-heading"><h3>Physical telemetry boundary</h3><span>Quarantine-first</span></div><p>POST <code>/api/telemetry</code> accepts device observations using a documented schema and saves them independently of the synthetic robot.</p><div id="telemetry"></div>
+        <p class="disclaimer">ESP32 telemetry cannot update an authoritative warehouse state until device identity, units, timestamps, coordinate mapping and physical timing have been validated.</p></div>
+      </div>
+    </section>
+    <section class="section" id="physical-validation">
+      <div class="section-heading"><span class="number">05</span><div><h2>Compare measured versus simulated task duration</h2><p>Enter a real observation for a completed task. This does not change the model or imply that the entry has been independently verified.</p></div></div>
+      <div class="panel">
+        <div class="toolbar">
+          <label>Completed task<select id="measuredTask"></select></label>
+          <label>Observed duration (s)<input type="number" id="observedTime" min="0.001" step="0.1" value="30"></label>
+          <label>Observation source<input type="text" id="measurementSource" placeholder="e.g. lab stopwatch" value="manual stopwatch"></label>
+          <button id="saveMeasurement" class="primary">Record observation</button>
+          <button id="refreshMeasurement">Refresh error report</button>
+        </div>
+        <div id="measurementReport"></div>
+      </div>
+    </section>
+    <section class="section last" id="architecture">
+      <div class="section-heading"><span class="number">06</span><div><h2>Why the architecture is structured this way</h2><p>Directly connects the implementation to the methodological lessons of Ferrari et al. (2024).</p></div></div>
+      <div class="reason-grid">
+        <article><h3>1. WMS-like task layer</h3><p>What work is required? A low picking stock level creates a request and reserves physical stock. It does not move stock.</p><p><b>Reason:</b> logical decisions and physical execution must be represented separately.</p></article>
+        <article><h3>2. WCS-like execution layer</h3><p>How is the task executed? Dispatch selects a queued task, checks a traversable path, schedules pickup and delivery, and updates the simulated robot.</p><p><b>Reason:</b> route and resource constraints change execution timing.</p></article>
+        <article><h3>3. Event-driven model</h3><p>When does state change? Only at a recorded time-stamped event: request, dispatch, pickup, delivery or demand.</p><p><b>Reason:</b> every quantity change is explainable and testable.</p></article>
+        <article><h3>4. SQLite + API</h3><p>Where does the state live? A single transactional snapshot and a persistent per-run event log, accessed through HTTP and WebSocket.</p><p><b>Reason:</b> browser reloads must not silently reset the research process.</p></article>
+        <article><h3>5. Matched policy experiments</h3><p>What is the effect of a choice? FIFO and urgency are run independently with identical external demand and warehouse inputs.</p><p><b>Reason:</b> policy comparisons require controlled conditions.</p></article>
+        <article><h3>6. Explicit validation boundary</h3><p>What remains unknown? Equipment times, telemetry calibration and physical-state synchronization still need independent measurement.</p><p><b>Reason:</b> a functioning software model is not proof of a validated Digital Twin.</p></article>
+      </div>
+      <p class="reference">Reference: Ferrari, A., Carlin, A., Rafele, C., &amp; Zenezini, G. (2024). <em>A method for developing and validating simulation models for automated storage and retrieval system digital twins.</em> The International Journal of Advanced Manufacturing Technology, 131, 5369–5382. DOI: <a href="https://doi.org/10.1007/s00170-023-12660-y" target="_blank" rel="noreferrer">10.1007/s00170-023-12660-y</a>.</p>
+    </section>
+  </main>
+</body>
+</html>

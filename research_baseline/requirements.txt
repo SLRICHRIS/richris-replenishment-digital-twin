@@ -1,0 +1,2 @@
+# Streamlit Community Cloud app; keep next to streamlit_app.py
+streamlit==1.65.0
