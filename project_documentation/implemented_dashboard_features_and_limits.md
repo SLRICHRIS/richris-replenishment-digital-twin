@@ -8,9 +8,9 @@
 | Advisory models | Sustained gyro/encoder residual, short constant-wheel-speed projection, reserve-based runtime | Project extensions; no validated fault classification or battery remaining useful life |
 | Telemetry quality | Boot/sequence checks, retained-message rejection, device-time integration and freshness/gap gates | [Software evidence](single_amr_alignment_validation.md); bounded process memory, not a durable raw archive |
 | Existing warehouse interface | One AMR-01, one central left-apron bay, 12 racks and 4 simulated replenishment stations | Preserves the original design; live v2 pose does not yet drive the 3D scene |
-| Replenishment model | Single-AMR sequential jobs, demand/pickup/delivery events and stock conservation | Simulation; inventory is not measured by the supplied sensors |
+| Stock/task model · slide 15 | `stock_step` balance and `task_step` finite-state machine in the detailed view | Manual software events; no sensor-driven stock or expanded policy experiment |
 | Route preview | 19 nodes, 24 bidirectional links, distance/time objectives and closures | Optional simulation tool; no physical navigation or collision-avoidance claim |
-| Reference experiments | Replay, older position observer, policy comparisons, manually placed manager zones and Dijkstra playback | Optional simulation/reference tools, separate from Python sensor models; not physical evidence |
+| Reference experiments | Older observer, policy comparisons, route playback and energy analytics retained in source | Hidden from the focused hosted navigation; no competing model workflow |
 
 ## Outside the current hardware scope
 

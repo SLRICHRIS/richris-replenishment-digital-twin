@@ -119,7 +119,8 @@ class RobotTwin:
         residual, alert = self.detector.update(packet.gyro_z_rad_s, c.gyro_bias_rad_s,
             ds_l / dt, ds_r / dt, c.track_m, dt, c.residual_threshold_rad_s, c.residual_hold_s)
         self.quality = "CONTINUITY_LOST" if self.continuity_lost else "OK"
-        self.last_result = dict(v_left_m_s=ds_l / dt, v_right_m_s=ds_r / dt,
+        self.last_result = dict(ds_left_m=ds_l, ds_right_m=ds_r,
+            dt_s=dt, v_left_m_s=ds_l / dt, v_right_m_s=ds_r / dt,
             yaw_rate_rad_s=(ds_r - ds_l) / (c.track_m * dt),
             corrected_gyro_rad_s=packet.gyro_z_rad_s - c.gyro_bias_rad_s,
             residual_rad_s=residual, advisory=alert, power_w=power,

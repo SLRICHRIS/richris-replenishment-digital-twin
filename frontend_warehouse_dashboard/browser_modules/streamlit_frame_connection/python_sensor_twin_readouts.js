@@ -34,8 +34,14 @@
       text(key + 'age', number(r?.age_s, 2, ' s'));
       text(key + 'soc', available ? number(r.soc * 100, 3, '%') : '—');
       text(key + 'pose', available ? r.pose.map((v) => number(v)).join(' / ') : '—');
-      text(key + 'voltage', number(raw.battery_voltage_v, 3, ' V'));
-      text(key + 'current', number(raw.battery_current_a, 4, ' A'));
+      text(key + 'travel', [d.ds_left_m, d.ds_right_m].map((v) => number(v, 5)).join(' / '));
+      text(key + 'gyro', number(raw.gyro_z_rad_s, 5));
+      text(key + 'bias', number(r?.gyro_bias_rad_s, 5));
+      text(key + 'corrected-gyro', number(d.corrected_gyro_rad_s, 5));
+      text(
+        key + 'battery-input',
+        [number(raw.battery_voltage_v, 3), number(raw.battery_current_a, 4)].join(' / '),
+      );
       text(key + 'power', number(d.power_w, 4, ' W'));
       text(key + 'energy', available ? number(r.energy_wh, 5, ' Wh') : '—');
       text(key + 'speed', [d.v_left_m_s, d.v_right_m_s].map((v) => number(v, 4)).join(' / '));

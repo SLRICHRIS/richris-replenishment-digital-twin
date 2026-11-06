@@ -19,7 +19,7 @@ GitHub stores code; Streamlit executes the backend. HTTPS serves the browser. Br
 
 The illustrative graph has **19 nodes and 24 bidirectional links**. AMR-01 starts/returns at the middle left-apron bay. Four A–D bins are simulated task destinations; eight reserve racks and the surrounding building are decoration. Dijkstra supplies distance/time route previews. Approved jobs run sequentially on the single virtual robot, with a 15% simulated return reserve and assumed charging/drain rates. These simulation percentages are separate from INA219-based coulomb counting and the sensor runtime's configured reserve.
 
-Manager figures, exclusion circles, route playback and cone overlays are optional simulation aids. They do not establish measured people, range sensing or physical collision safety. The Reference lab uses recordings/older v1 interfaces, not the active v2 Python state.
+Manager figures, exclusion circles, route playback and cone overlays are optional simulation aids. They do not establish measured people, range sensing or physical collision safety. The Reference lab uses recordings/older v1 interfaces, not the active v2 Python state, and is hidden from the focused hosted navigation. Sensor models displays six compact stages from slides 4–14. Detailed stock/tasks use slide 15’s stock balance and minimal task transitions, without policy-comparison controls.
 
 ## Synchronisation boundary
 

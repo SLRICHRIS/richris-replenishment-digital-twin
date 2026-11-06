@@ -21,7 +21,7 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
 }
 .python-sensor-cards {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 .python-sensor-card {
@@ -114,4 +114,41 @@ html[data-python-twin='true'] .python-floor-scope {
   margin: 12px 0;
   color: var(--muted, #aebdd0);
   line-height: 1.6;
+}
+
+/* The hosted workspace presents the slide models without parallel study views. */
+html[data-python-twin='true'] [data-slide-outside] {
+  display: none;
+}
+.python-model-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin: 16px 0;
+  font-size: 0.85rem;
+  color: var(--muted, #aebdd0);
+}
+.python-sensor-card h3 {
+  margin: 8px 0 16px;
+  font-size: 1.15rem;
+}
+.python-sensor-card dl {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+}
+.slide-equation {
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.slide-equation summary {
+  cursor: pointer;
+}
+.slide-equation-text {
+  color: var(--text, #e5edff);
+  font-weight: 600;
+}
+.slide-model-source {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted, #aebdd0);
 }

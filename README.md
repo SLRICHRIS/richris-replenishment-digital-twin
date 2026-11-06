@@ -21,7 +21,9 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber →
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
 
-The Hardware view's **Open detailed model inspection** button opens the native scientific view; its Inventory & tasks tab preserves the research branch's synthetic replenishment model. Reserve, transit and picking stock change through explicit demand/pickup/delivery events with conservation checks. Its FIFO/urgency policy experiment has **one virtual robot per run**, separate from the physical AMR-01 sensor node. This preserves the warehouse research scope without inventing physical inventory observations.
+The **Sensor models** view follows the presentation in six compact stages: wheel travel/speed (slides 4–5), pose (6–7), gyro bias (8–9), battery (10–11), sustained residual alert (12–13) and forecasts (14). Equation/variable details open on demand. **Inspect models and slide 15 stock/tasks** opens the scientific view with slide 15's exact stock-balance and minimal task-state functions. The larger FIFO/urgency research experiment remains in source, outside this user flow.
+
+The hosted navigation contains **Floor, Sensor models, Missions and Activity**. Route playback, the separate older observer/calibration lab and simulated energy analytics are hidden from this focused workspace; historical deep links return to Sensor models. The Floor and Missions preserve the original single-AMR warehouse illustration, with their virtual nature explicit.
 
 ## Existing dashboard and deployment
 

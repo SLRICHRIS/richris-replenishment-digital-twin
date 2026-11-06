@@ -230,6 +230,7 @@
         </button>
         <button
           id="tab-routes"
+          data-slide-outside
           role="tab"
           aria-controls="routes"
           aria-selected="false"
@@ -248,7 +249,7 @@
           data-page="hardware"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
-          <span>Hardware</span>
+          <span>Sensor models</span>
         </button>
         <button
           id="tab-missions"
@@ -264,6 +265,7 @@
         </button>
         <button
           id="tab-telemetry"
+          data-slide-outside
           role="tab"
           aria-controls="telemetry"
           aria-selected="false"
@@ -275,6 +277,7 @@
         </button>
         <button
           id="tab-engineering"
+          data-slide-outside
           role="tab"
           aria-controls="engineering"
           aria-selected="false"
@@ -1213,10 +1216,10 @@
             <div class="lab-banner">
               <div>
                 <span class="eyebrow">Predictive digital twin · Python backend</span>
-                <h2>AMR-01. Measured inputs. Modelled state.</h2>
+                <h2>AMR-01 · models from the presentation.</h2>
                 <p class="python-sensor-note">
-                  Encoder odometry, gyro consistency, battery SOC and advisory forecasts, calculated
-                  in Streamlit and displayed in this warehouse workspace.
+                  Six stages, in slide order. Encoders, MPU6050 and INA219 supply the inputs; Python
+                  calculates the states, forecasts and advisory alerts.
                 </p>
               </div>
             </div>
@@ -1230,93 +1233,168 @@
               <strong id="python-source-label">Waiting for Python</strong>
             </div>
             <p id="python-source-status" role="status"></p>
+            <div class="python-model-status" aria-label="AMR-01 sensor status">
+              <strong id="python-amr01-title">AMR-01</strong>
+              <span id="python-amr01-quality">WAITING</span>
+              <span>
+                Age:
+                <b id="python-amr01-age">—</b>
+              </span>
+              <span>
+                Firmware:
+                <b id="python-amr01-state">—</b>
+              </span>
+            </div>
             <div class="python-sensor-cards">
-              <article class="panel python-sensor-card" aria-labelledby="python-amr01-title">
-                <span class="eyebrow">ESP32 · encoders · MPU6050 · INA219</span>
-                <h2 id="python-amr01-title">AMR-01</h2>
-                <span id="python-amr01-quality">WAITING</span>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slides 4–5 · encoders</span>
+                <h3>01 · Wheel travel and speed</h3>
                 <dl>
-                  <dt>
-                    Estimated SOC
-                    <a
-                      class="model-paper-link"
-                      data-model-paper="soc"
-                      href="https://doi.org/10.3390/en14144074"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="A Critical Look at Coulomb Counting Approach for State of Charge Estimation in Batteries"
-                    >
-                      Paper B · pp. 7–8
-                    </a>
-                  </dt>
-                  <dd id="python-amr01-soc">—</dd>
-                  <dt>
-                    Local x / y / θ (m / m / rad)
-                    <a
-                      class="model-paper-link"
-                      data-model-paper="motion"
-                      href="https://doi.org/10.3390/s26185729"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
-                    >
-                      Paper A · p. 8
-                    </a>
-                  </dt>
-                  <dd id="python-amr01-pose">—</dd>
-                  <dt>
-                    Left / right speed (m/s)
-                    <a
-                      class="model-paper-link"
-                      data-model-paper="encoder"
-                      href="https://doi.org/10.3390/s26185729"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
-                    >
-                      Paper A · pp. 11, 38
-                    </a>
-                  </dt>
+                  <dt>Left / right travel (m)</dt>
+                  <dd id="python-amr01-travel">—</dd>
+                  <dt>Left / right speed (m/s)</dt>
                   <dd id="python-amr01-speed">—</dd>
-                  <dt>Pack voltage</dt>
-                  <dd id="python-amr01-voltage">—</dd>
-                  <dt>Current (+ discharge)</dt>
-                  <dd id="python-amr01-current">—</dd>
-                  <dt>Electrical power</dt>
+                </dl>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">Δs = 2πrΔn/N; v = Δs/Δt</p>
+                  <p>
+                    L/R identify the wheels. Δs: travel (m); r: calibrated radius (m); Δn: count
+                    increment; N: effective counts per wheel turn, including gearing and quadrature;
+                    Δt: device interval (s); v: speed (m/s); π: circle constant.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  <a
+                    class="model-paper-link"
+                    data-model-paper="encoder"
+                    href="https://doi.org/10.3390/s26185729"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                  >
+                    Paper A · p. 11 Eq. (9), p. 38 Eq. (A4)
+                  </a>
+                </p>
+              </article>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slides 6–7 · nonlinear kinematics</span>
+                <h3>02 · Robot position and heading</h3>
+                <dl>
+                  <dt>Local x / y / θ (m / m / rad)</dt>
+                  <dd id="python-amr01-pose">—</dd>
+                </dl>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">
+                    Δs = (ΔsR + ΔsL)/2; Δθ = (ΔsR − ΔsL)/B
+                    <br />
+                    x′ = x + Δs cos(θ + Δθ/2)
+                    <br />
+                    y′ = y + Δs sin(θ + Δθ/2); θ′ = θ + Δθ
+                  </p>
+                  <p>
+                    x/y: position (m); θ: heading (rad); B: wheel separation (m); ΔsL/ΔsR:
+                    left/right travel (m); Δs: centre travel (m); Δθ: turn (rad); prime: next
+                    sample. Rolling assumption; local frame, no absolute position measurement.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  <a
+                    class="model-paper-link"
+                    data-model-paper="motion"
+                    href="https://doi.org/10.3390/s26185729"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                  >
+                    Paper A · p. 8 Eqs. (1–3)
+                  </a>
+                  · midpoint adaptation
+                </p>
+              </article>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slides 8–9 · MPU6050</span>
+                <h3>03 · Gyro bias correction</h3>
+                <dl>
+                  <dt>Raw yaw rate (rad/s)</dt>
+                  <dd id="python-amr01-gyro">—</dd>
+                  <dt>Estimated bias (rad/s)</dt>
+                  <dd id="python-amr01-bias">—</dd>
+                  <dt>Corrected yaw rate (rad/s)</dt>
+                  <dd id="python-amr01-corrected-gyro">—</dd>
+                </dl>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">
+                    z = ω + b + ν; b̂ = mean(stationary z); ω̂ = z − b̂
+                  </p>
+                  <p>
+                    z: measured yaw rate; ω: true yaw rate; b: bias; ν: noise; b̂: estimated
+                    stationary bias; ω̂: bias-corrected rate. All rates in rad/s. Bias correction
+                    still leaves noise; heading is wheel odometry. No EKF is added.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  <a
+                    class="model-paper-link"
+                    data-model-paper="gyro"
+                    href="https://doi.org/10.3390/s26185729"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                  >
+                    Paper A · p. 10 Eq. (8)
+                  </a>
+                </p>
+              </article>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slides 10–11 · INA219</span>
+                <h3>04 · Battery energy and charge</h3>
+                <dl>
+                  <dt>Voltage / current (V / A)</dt>
+                  <dd id="python-amr01-battery-input">—</dd>
+                  <dt>Electrical power (W)</dt>
                   <dd id="python-amr01-power">—</dd>
-                  <dt>Net energy used</dt>
+                  <dt>Net energy used (Wh)</dt>
                   <dd id="python-amr01-energy">—</dd>
-                  <dt>
-                    Gyro–encoder residual
-                    <small>
-                      Project extension; gyro model:
-                      <a
-                        class="model-paper-link"
-                        data-model-paper="gyro"
-                        href="https://doi.org/10.3390/s26185729"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
-                      >
-                        Paper A · p. 10
-                      </a>
-                    </small>
-                  </dt>
+                  <dt>Estimated SOC (%)</dt>
+                  <dd id="python-amr01-soc">—</dd>
+                </dl>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">
+                    P = VI; E′ = E + VIΔt/3600
+                    <br />
+                    SOC′ = SOC − IΔt/(3600 C)
+                  </p>
+                  <p>
+                    V: pack voltage (V); I: discharge-positive current (A); P: power (W); E: net
+                    energy used (Wh); Δt: interval (s); C: usable capacity (Ah); SOC: charge
+                    fraction; prime: next sample; 3600: seconds/hour. Initial SOC/capacity must be
+                    measured; efficiency is 1.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  <a
+                    class="model-paper-link"
+                    data-model-paper="soc"
+                    href="https://doi.org/10.3390/en14144074"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="A Critical Look at Coulomb Counting Approach for State of Charge Estimation in Batteries"
+                  >
+                    Paper B · pp. 7–8 Eqs. (5–9)
+                  </a>
+                  · adapted sign; P/Wh use standard definitions
+                </p>
+              </article>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slides 12–13 · advisory</span>
+                <h3>05 · Sustained disagreement alert</h3>
+                <dl>
+                  <dt>Gyro–encoder residual (rad/s)</dt>
                   <dd id="python-amr01-residual">—</dd>
-                  <dt>
-                    5 s forecast x / y / θ
-                    <small>Project extension</small>
-                  </dt>
-                  <dd id="python-amr01-forecast">—</dd>
-                  <dt>
-                    Runtime to 20% reserve
-                    <small>Project extension</small>
-                  </dt>
-                  <dd id="python-amr01-runtime">—</dd>
-                  <dt>Firmware state</dt>
-                  <dd id="python-amr01-state">—</dd>
-                  <dt>Server receive age</dt>
-                  <dd id="python-amr01-age">—</dd>
                 </dl>
                 <p id="python-amr01-advisory" role="status">Waiting for Python results.</p>
                 <svg
@@ -1328,16 +1406,71 @@
                   <polyline id="python-amr01-plot" points="" />
                 </svg>
                 <small id="python-amr01-plot-range">Residual history</small>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">
+                    eω = (z − b̂) − (vR − vL)/B
+                    <br />
+                    Alert when |eω| &gt; τ continuously for Thold
+                  </p>
+                  <p>
+                    eω: yaw residual (rad/s); z: gyro rate (rad/s); b̂: bias (rad/s); vL/vR: wheel
+                    speeds (m/s); B: track (m); τ: calibrated threshold (rad/s); Thold: required
+                    duration (s). Timing begins at the first abnormal sample and resets after a
+                    normal, stale or missing sample.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  Project extension · gyro background:
+                  <a
+                    class="model-paper-link"
+                    data-model-paper="gyro"
+                    href="https://doi.org/10.3390/s26185729"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                  >
+                    Paper A · p. 10
+                  </a>
+                </p>
+              </article>
+              <article class="panel python-sensor-card">
+                <span class="eyebrow">Slide 14 · explicit assumptions</span>
+                <h3>06 · Motion and runtime forecasts</h3>
+                <dl>
+                  <dt>5 s forecast x / y / θ</dt>
+                  <dd id="python-amr01-forecast">—</dd>
+                  <dt>Runtime to 20% reserve (h)</dt>
+                  <dd id="python-amr01-runtime">—</dd>
+                </dl>
+                <details class="slide-equation">
+                  <summary>Equation &amp; variables</summary>
+                  <p class="slide-equation-text">
+                    Repeat midpoint pose update with fixed vL/vR for horizon H in 20 substeps.
+                    <br />
+                    Runtime = max(0, SOC − reserve) C / Ifuture
+                  </p>
+                  <p>
+                    H: horizon (s), here 5; Δt = H/20; vL/vR: assumed wheel speeds (m/s); x/y/θ:
+                    forecast pose (m/m/rad); SOC/reserve: fractions; C: usable Ah; Ifuture: assumed
+                    positive discharge current (A), here latest reading. Runtime is hours;
+                    unavailable for non-positive current.
+                  </p>
+                </details>
+                <p class="slide-model-source">
+                  Project extension · uses the motion and SOC models; no obstacle or battery-life
+                  model
+                </p>
               </article>
             </div>
             <p class="python-sensor-note">
               Synthetic mode is a fixed 6 s teaching trial; AMR01 has an injected gyro disagreement
               at 3–4 s. Live mode uses private server-side broker settings. Local odometry is not
-              registered to the warehouse map. Floor, Missions and Insights retain the virtual
-              reference fleet; sensor readings never move physical inventory or send motor commands.
+              registered to the warehouse map. Floor and Missions retain the single virtual AMR;
+              sensor readings never move physical inventory or send motor commands.
             </p>
             <button id="python-model-inspection" type="button">
-              Open detailed model inspection
+              Inspect models and slide 15 stock/tasks
             </button>
             <details class="panel python-sensor-card" id="python-model-evidence">
               <summary>Equations, papers and page references</summary>
@@ -1450,8 +1583,9 @@
                         </a>
                       </td>
                       <td>
-                        WMS/WCS and discrete-event modelling background; our reserve/transit/pick
-                        accounting is a project adaptation.
+                        Workflow context only. Slide 15 uses stock + delivered − consumed and a
+                        minimal idle/assigned/travelling/servicing task state machine; no fleet
+                        policy is added.
                       </td>
                     </tr>
                   </tbody>

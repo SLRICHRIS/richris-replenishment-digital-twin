@@ -448,6 +448,16 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   $('lab-source').value = 'live';
   $('lab-source').dispatchEvent(new ui.w.Event('change'));
   assert.equal($('lab-source').value, 'recording', 'hosted scope rejects a legacy source');
+  $('tab-engineering').click();
+  assert.equal(doc.body.dataset.view, 'hardware', 'old study deep links resolve to slide models');
+  $('tab-hardware').dispatchEvent(
+    new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+  );
+  assert.equal(doc.body.dataset.view, 'missions');
+  $('tab-missions').dispatchEvent(
+    new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+  );
+  assert.equal(doc.body.dataset.view, 'activity', 'keyboard navigation skips hidden study views');
   await ui.settle();
   ui.dom.window.close();
 
