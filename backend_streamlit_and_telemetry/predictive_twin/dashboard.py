@@ -31,14 +31,17 @@ def show_robot(rid, snapshot, calibration):
     a.metric("Local x (m)", f"{x:.3f}")
     b.metric("Local y (m)", f"{y:.3f}")
     c.metric("Heading (rad)", f"{theta:.3f}")
+    st.caption("Motion background: [Villagomez Alfaro et al. (2026)](https://doi.org/10.3390/s26185729) · PDF p. 8, Eqs. (1–3); encoder conversion p. 11 Eq. (9), p. 38 Eq. (A4). Midpoint discretisation is our implementation.")
     a, b = st.columns(2)
     a.metric("Estimated SOC (%)", f"{snapshot['soc'] * 100:.3f}")
     b.metric("Net energy (Wh)", f"{snapshot['energy_wh']:.5f}")
+    st.caption("SOC reference: [Movassagh et al. (2021)](https://doi.org/10.3390/en14144074) · PDF pp. 7–8, Eqs. (5–9), adapted to discharge-positive current and efficiency 1. Power and Wh integration use standard definitions.")
     derived = snapshot["derived"]
     if derived.get("soc_out_of_bounds"):
         st.error("Raw SOC is outside [0, 1]. Check initial charge, current calibration and usable capacity.")
     if derived:
         st.metric("Gyro–encoder residual (rad/s)", f"{derived['residual_rad_s']:.5f}")
+        st.caption("Residual detector: project extension. Gyro input model: [Villagomez Alfaro et al. (2026), p. 10 Eq. (8)](https://doi.org/10.3390/s26185729). This is not the paper’s EKF or a validated fault classifier.")
         if derived["advisory"]:
             st.warning("Sustained model disagreement: inspect motion/sensors. This does not identify a specific fault.")
         else:
@@ -94,7 +97,7 @@ def inventory_view():
     st.dataframe(list(state["tasks"].values()), hide_index=True)
     with st.expander("Experiment metrics and robot state"):
         st.json({"metrics": metrics(state), "robot": state["robot"]})
-    st.caption("Detailed walkthrough/API and comparison tests remain in research_baseline/. Ferrari motivates the replenishment workflow; sensor equations are mapped separately.")
+    st.caption("Detailed walkthrough/API and comparison tests remain in research_baseline/. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) provides the WMS/WCS and discrete-event background. Our replenishment workflow is an adaptation; sensor equations are mapped separately.")
 
 
 def render_sensor_dashboard():
