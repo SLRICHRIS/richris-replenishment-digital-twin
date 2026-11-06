@@ -1,6 +1,34 @@
 /* Preserve the original workspace; only the Streamlit-hosted Hardware content changes. */
 #python-sensor-panel {
   display: none;
+  width: 100%;
+  min-width: 0;
+}
+/* A single text column: the legacy lab banner reserves 54px for an icon. */
+.python-model-header {
+  display: block;
+  padding: clamp(18px, 2.5vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.python-model-header > div {
+  width: 100%;
+  min-width: 0;
+}
+.python-model-header h2 {
+  margin: 8px 0 10px;
+  max-width: 32ch;
+  font-size: clamp(1.375rem, 2.3vw, 2rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+.python-model-header p {
+  margin: 0;
+  max-width: 75ch;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
 }
 html[data-python-twin='true'] #python-sensor-panel {
   display: block;
@@ -151,4 +179,31 @@ html[data-python-twin='true'] [data-slide-outside] {
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--muted, #aebdd0);
+}
+
+.python-sensor-cards > .python-sensor-card {
+  display: flex;
+  flex-direction: column;
+}
+.python-sensor-cards .slide-equation {
+  margin-top: auto;
+  padding-top: 12px;
+}
+.python-sensor-toolbar > strong {
+  font-size: 0.875rem;
+}
+@media (max-width: 520px) {
+  .python-sensor-card {
+    padding: 18px;
+  }
+  .python-sensor-card dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .python-sensor-card dd {
+    margin-bottom: 12px;
+  }
+  .python-sensor-toolbar button {
+    flex: 1 1 180px;
+  }
 }

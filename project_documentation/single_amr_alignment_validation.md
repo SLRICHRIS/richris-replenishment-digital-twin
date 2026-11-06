@@ -34,3 +34,7 @@ A visible Floor note identifies the remaining local-to-map registration and live
 The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow slides 4–14, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view uses slide 15’s stock-balance and minimal task-state functions, not the larger policy experiment.
 
 The residual timer now starts at the first above-threshold sample, matching slide 13 rather than counting the preceding interval. Forecasts use slide 14’s 20 midpoint substeps by default. Software checks compare timestamp persistence behavior, integer stock conservation, permitted task transitions, invalid stock rejection and hosted navigation/replay isolation. No physical validation is implied.
+
+## Rendered sensor-panel layout
+
+The model heading now uses a dedicated single-column header instead of the legacy icon/title/badge grid, which had constrained its only text child to 54 px. Local headless Chromium checks cover 1500, 1024, 768 and 390 px viewports in both themes, with Streamlit scroll-container styles active. They verify header width/height, aligned desktop cards, stacked mobile cards and no horizontal overflow, including expanded mobile equations. Desktop and mobile screenshots were inspected. These are local layout checks, not observation of the deployed Streamlit app or physical hardware.
