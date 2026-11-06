@@ -1,23 +1,18 @@
-# Feature alignment audit
+# Single-AMR feature alignment audit
 
-This release addresses the 11 October 2026 review of GitHub commit `b5c847813141e6744272579583ce8e673f48d260`.
+This audit supersedes the earlier three-AMR/UART control architecture. The current active system uses AMR-01 direct sensors and server-side Python models.
 
-| Review finding | Correction | Verification |
+| Scope issue | Current alignment | Remaining limit |
 | --- | --- | --- |
-| Firmware packet rejected by recorder | Restore the protocol key `firmware`, independently of the folder name | Compile the `.ino` serializer header; feed identical output to JS/Python; null and zero remain distinct |
-| ZIP repeats mismatch | Rebuild both kits and guide copies from sources | Source/member byte checks and extracted-kit tests |
-| No override path | Separate HTTP/MQTT Coordinator, LabVIEW HTTP adapter and ESP32-to-controller bridge | Command boot/ID/expiry gates, idempotency, terminal ACK semantics and latency benchmark |
-| Prediction isolation unmeasured | Production command handler benchmark with production prediction in separate processes | 100 requests each at idle, normal and heavy software load |
-| Only one effective robot | Shared node, segment and adjacent-corridor time windows | Concurrent dashboard runs and fleet footprint checks |
-| Sensors always NaN | Fresh measured UART acquisition replaces the unconditional stub | Real sensor link remains to be wired/calibrated; unavailable readings stay null |
-| Long unreadable source | Prettier with HTML template formatting and named pure scheduling module | Formatter check and existing behavior/oracle regressions |
-| Repeated evidence clutter | Remove historical logs, hashes and rename maps; Git retains history | One current verification record and current file-purpose catalog |
-| Observer overstatement | Name scalar-variance position filter explicitly; heading is not filtered | [Model contract](digital_twin_architecture_and_validation_plan.md) |
+| Multiple robot/bay references | One AMR-01, one middle left-apron bay, one raw topic/calibration/card; virtual jobs are sequential | No multi-AMR coordination claim |
+| Legacy hardware instructions | Current setup points to direct encoders, MPU6050 and INA219 on ESP32 | UART/Coordinator/LabVIEW sources and ZIPs retained only as legacy references |
+| Mixing measured and simulated states | Hardware shows Python sensor estimates; Floor and stock/tasks retain labelled simulation | Coordinate registration and live 3D synchronisation still required |
+| Sensor/model ambiguity | Counts → wheel motion → nonlinear pose; gyro rate/bias; V/I → power/Wh/SOC | No full EKF, absolute localisation or measured stock |
+| Predictive/anomaly overstatement | Constant-speed/load assumptions and sustained residual advisories identified as project extensions | Physical forecast/fault validation pending; no fault classification or RUL |
+| Unbacked sensing graphics | Manager circles and cones labelled illustrative simulation tools | No people/range sensor or physical collision-safety claim |
+| Incorrect route totals | Single-AMR reference graph has 19 nodes and 24 bidirectional links | Dijkstra playback is an optional teaching tool |
+| Paper attribution | Hyperlinks, exact PDF pages and boundaries at model use sites | Project adaptations are not presented as verbatim paper equations |
 
-## Model differences retained deliberately
+The original warehouse appearance is retained. Detailed facility scenery, reference replay and route demonstrations are presentation/simulation aids, not additional physical subsystems. The live-floor v1 selector and legacy kit links are not exposed in the Python-hosted workflow.
 
-The runtime charges docked waiting robots at 0.16 percentage points/s; motion consumes 0.06/s and the return reserve is 15%. The paired study uses source profiles and no charging. Both use the same window constraints and graph routing, with their energy assumptions visible.
-
-Departure locks journey speed and geometry. New speed disturbances apply to queued journeys. Cancelling/reassigning a moving mission suppresses its old delivery and completes the reserved route before docking. Paused/stopped movement freezes traffic time rather than invalidating another robot's windows. These policies are reflected in execution, forecasts and operator text.
-
-Physical sensor acquisition, native LabVIEW VI, real controller execution and independent ground truth remain commissioning evidence. The browser remains a telemetry viewer for hardware; control is local to the separate Coordinator process. [Verification results](software_verification_results/current_software_check_results.md) lists measured software results and reproduction commands.
+See [current scope](implemented_dashboard_features_and_limits.md), [architecture](dashboard_and_telemetry_system_architecture.md), [commissioning](single_amr_sensor_twin_setup.md) and [software versus physical evidence](single_amr_alignment_validation.md). Historical results and sources remain available in Git history and explicitly marked legacy documents.

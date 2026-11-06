@@ -179,7 +179,10 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
   }
   function selectSource(value) {
     resetExperiment();
-    source = value === 'recording' ? 'recording' : 'live';
+    source =
+      value === 'recording' || document.documentElement.dataset.pythonTwin === 'true'
+        ? 'recording'
+        : 'live';
     playing = false;
     experimentMode = 'twin';
     calibration = null;
@@ -190,7 +193,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
     $('lab-experiment-source').textContent =
       'Source: ' +
       (source === 'live'
-        ? 'live twin state. All mapped AMRs must be idle; four fresh bin counts are required.'
+        ? 'legacy v1 state. AMR-01 must be idle; four independent bin counts are required.'
         : 'recorded twin state at the replay cursor.');
     $('lab-experiment-result').innerHTML = '';
     loadProfile();
@@ -370,7 +373,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
       synthetic = e?.provenance === 'synthetic';
     $('lab-provenance').textContent =
       source === 'live'
-        ? 'Live telemetry · ' + (connected?.() ? 'receiving' : 'awaiting devices')
+        ? 'Legacy v1 telemetry · ' + (connected?.() ? 'receiving' : 'awaiting devices')
         : !e
           ? 'No recording loaded'
           : synthetic
@@ -1235,6 +1238,16 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
       refresh();
     }
   });
+  // The hosted v2 sensor path has no connection to this legacy v1 observer.
+  // Keep recording studies available without offering an inactive hardware source.
+  function applyPythonSensorScope() {
+    if (document.documentElement.dataset.pythonTwin !== 'true') return;
+    const legacyOption = $('lab-source').querySelector('option[value="live"]');
+    legacyOption.disabled = true;
+    legacyOption.hidden = true;
+    if (source === 'live') selectSource('recording');
+  }
+  document.addEventListener('python-twin:render', applyPythonSensorScope);
   $('lab-source').value = 'live';
   $('lab-asset').value = '0';
   $('lab-fault').value = 'nominal';
@@ -1246,6 +1259,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
   loadProfile();
   loadFacility();
   refresh();
+  applyPythonSensorScope();
   return {
     refresh,
     setVisible(visible) {

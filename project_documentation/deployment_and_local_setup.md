@@ -39,12 +39,12 @@ For a new app, open [Streamlit Community Cloud](https://share.streamlit.io/), co
 
 For a private repository, authorize that repository in Streamlit's linked GitHub account. Keep the repository private unless you deliberately change its audience. Preserve the existing app's sharing settings when updating it.
 
-Deploy from the repository root with the complete repository, including `frontend_warehouse_dashboard/` and `backend_streamlit_and_telemetry/`. Simulation needs no secrets. The browser's Hardware panel accepts MQTT credentials; they are not placed in the Python host, source files or GitHub.
+Deploy from the repository root with the complete repository, including `frontend_warehouse_dashboard/` and `backend_streamlit_and_telemetry/`. The default synthetic trial needs no secrets. For live sensors, configure private Streamlit server secrets using `.streamlit/secrets.example.toml`; do not commit credentials. The Python subscriber connects to MQTT/TLS 8883 and the browser receives calculated readouts. Follow [current single-AMR commissioning](single_amr_sensor_twin_setup.md). Reuse the existing private app; no second deployment is required.
 
 ## Optional hardware and development
 
-- [ESP32 setup](esp32_wifi_and_telemetry_setup.md): starter firmware, broker access and measurement format.
-- [Edge historian and LabVIEW inventory adapter](mqtt_sqlite_recorder_and_labview_adapter_setup.md): separate optional Python process and its own requirements.
+- [Single-AMR setup](single_amr_sensor_twin_setup.md): direct-sensor firmware, private secrets, broker access, raw units and calibration.
+- [Edge historian and LabVIEW inventory adapter](mqtt_sqlite_recorder_and_labview_adapter_setup.md): legacy v1 reference, outside the active raw-sensor path.
 - [Automated checks](../automated_software_checks/software_check_commands_and_coverage.md): JavaScript and Python verification.
 
 ## Troubleshooting
@@ -56,7 +56,7 @@ Deploy from the repository root with the complete repository, including `fronten
 | Missing frontend_warehouse_dashboard/index.html message | Complete frontend_warehouse_dashboard/ and backend_streamlit_and_telemetry/ folders beside streamlit_app.py |
 | Blank or clipped workspace | Browser console and Streamlit logs; local component files must be present |
 | Canvas compatibility view | Browser WebGL availability; the Canvas fallback remains usable |
-| Offline hardware | Secure broker WebSocket URL, topic identity, credentials and freshness gates |
+| Offline hardware | Private server secrets, MQTT/TLS 8883, `robot/amr01/state`, commissioning calibration and freshness gates |
 
 Official references: [deploy](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy), [committed updates](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app/edit-your-app) and [private repository access](https://docs.streamlit.io/deploy/streamlit-community-cloud/get-started/connect-your-github-account).
 

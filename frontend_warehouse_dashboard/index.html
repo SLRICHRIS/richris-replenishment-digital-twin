@@ -282,7 +282,7 @@
           data-page="engineering"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-focus" /></svg>
-          <span>Twin lab</span>
+          <span>Reference lab</span>
         </button>
         <button
           id="tab-activity"
@@ -407,13 +407,22 @@
               <button type="button" data-floor-source="simulation" aria-pressed="true">
                 Simulation
               </button>
-              <button type="button" data-floor-source="hardware" aria-pressed="false">
+              <button
+                type="button"
+                data-floor-source="hardware"
+                data-legacy-interface
+                aria-pressed="false"
+              >
                 <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
-                Live AMRs
+                Legacy v1 floor
               </button>
             </div>
             <span id="floor-source-note">12 racks · 4 active bins · 8 reserve racks</span>
           </div>
+          <p class="python-floor-scope">
+            Simulation · AMR-01 sensor estimates are in Hardware. Live 3D synchronisation awaits
+            measured coordinate calibration. Shelf stock and mission actions are simulated.
+          </p>
           <div class="operation-brief" id="operation-brief" aria-label="Operational readiness">
             <div class="brief-lead">
               <span class="eyebrow" id="brief-eyebrow">Dispatch control</span>
@@ -464,7 +473,7 @@
                   </button>
                   <button id="stop" class="danger">
                     <svg class="icon" aria-hidden="true"><use href="#i-stop" /></svg>
-                    Stop fleet
+                    Stop simulation
                   </button>
                 </div>
               </div>
@@ -483,7 +492,7 @@
                 </span>
                 <span title="Configured reference locations; no live personnel tracking.">
                   <i class="zone-swatch manager"></i>
-                  Manager areas · no AMR entry
+                  Simulated manager areas
                 </span>
                 <span class="facility-register-note">Reference facility</span>
               </div>
@@ -567,7 +576,7 @@
                     <i></i>
                     Route network
                   </button>
-                  <button id="layer-sensors" aria-pressed="false">
+                  <button id="layer-sensors" data-reference-only aria-pressed="false">
                     <i></i>
                     Sensors
                   </button>
@@ -596,7 +605,7 @@
               </div>
               <div class="fleet-selector">
                 <div class="fleet-selector-heading">
-                  <h3>Fleet</h3>
+                  <h3>AMR-01</h3>
                   <span>Select a unit to inspect</span>
                 </div>
                 <div class="fleet-strip" id="robots" aria-label="Select a robot"></div>
@@ -781,14 +790,16 @@
                   <button id="map-tool-start" aria-pressed="false">Set start</button>
                   <button id="map-tool-destination" aria-pressed="true">Set destination</button>
                   <button id="map-tool-lanes" aria-pressed="false">Close / open lane</button>
-                  <button id="map-tool-managers" aria-pressed="false">Move managers</button>
+                  <button id="map-tool-managers" data-reference-only aria-pressed="false">
+                    Move managers
+                  </button>
                 </div>
                 <button id="map-fit-route" class="quiet">Fit route</button>
               </div>
               <div class="map-manager-controls">
                 <p id="map-manager-status" role="status">
-                  Move managers to reroute the simulation fleet. Queued missions need fresh approval
-                  after a move.
+                  Optional simulation: move manager figures to reroute AMR-01. Queued missions need
+                  fresh approval after a move.
                 </p>
                 <button id="map-reset-managers" class="quiet">Reset manager positions</button>
               </div>
@@ -804,9 +815,8 @@
                   <desc id="route-map-description">
                     Select a map tool and tap a stop, junction or lane. Drag to pan, scroll or pinch
                     to zoom. Arrow keys pan, plus and minus zoom, zero resets the view. Tab to map
-                    nodes or use the selectors above. Choose Move managers to drag M1 or M2 and
-                    reroute the simulation fleet. Arrow keys move a focused manager; Shift uses
-                    smaller steps. Escape cancels a placement.
+                    nodes or use the selectors above. Manager figures and circles are reference
+                    simulation markers, not detected people or physical exclusion zones.
                   </desc>
                   <g id="route-map-content"></g>
                 </svg>
@@ -1154,7 +1164,7 @@
               <div class="panel-head">
                 <div>
                   <span class="eyebrow">Power & utilisation</span>
-                  <h2>Fleet energy</h2>
+                  <h2>Simulation energy</h2>
                 </div>
                 <div id="energy-legend" class="energy-legend"></div>
               </div>
@@ -1745,8 +1755,8 @@
               <span class="eyebrow">Model &amp; measurement</span>
               <h2>Observe. Calibrate. Compare.</h2>
               <p>
-                Synchronize the AMR-01 model, measure their error, then test a decision against a
-                frozen state.
+                Optional reference replay and legacy v1 observer studies. Current encoder, gyro and
+                battery models are in Hardware → Open detailed model inspection.
               </p>
             </div>
             <span class="lab-badge" id="lab-provenance">Live telemetry · awaiting devices</span>
@@ -1755,7 +1765,7 @@
             <div class="lab-source">
               <label for="lab-source">Evidence source</label>
               <select id="lab-source">
-                <option value="live">Live ESP32 measurements</option>
+                <option value="live">Legacy v1 input (separate)</option>
                 <option value="recording">Reference / imported recording</option>
               </select>
             </div>
@@ -1778,8 +1788,8 @@
             </button>
           </div>
           <p class="lab-message" id="lab-message" role="status">
-            Connect AMR-01 in Hardware. The reference run can demonstrate the model workflow without
-            physical devices.
+            Load a labelled reference run or import a compatible recording. This lab is separate
+            from the Python raw-sensor models and does not establish physical validation.
           </p>
           <nav class="lab-tabs" aria-label="Twin engineering views">
             <button type="button" data-lab-tab="state" aria-pressed="true">
@@ -1847,7 +1857,7 @@
                   0
                   <small>/ 4</small>
                 </strong>
-                <small>Camera / LabVIEW observations</small>
+                <small>Legacy inventory input; no stock sensor</small>
               </article>
             </div>
             <div class="lab-grid">
@@ -1946,7 +1956,7 @@
                 <p>
                   Define the actual loading bays, bins and traversable links in metres. Every AMR
                   needs an outward route and a return route. The 3D floor remains a reference
-                  illustration; this graph is the model used by Twin lab experiments.
+                  illustration; this graph is the model used by Reference lab experiments.
                 </p>
                 <label for="lab-facility-json">Facility model · JSON</label>
                 <textarea
@@ -2097,8 +2107,7 @@
               </div>
               <div class="lab-experiment-body">
                 <p id="lab-experiment-source">
-                  Source: live twin state. All mapped AMRs must be idle; four fresh bin counts are
-                  required.
+                  Source: live twin state. AMR-01 must be idle; four fresh bin counts are required.
                 </p>
                 <div class="lab-field-grid lab-experiment-fields">
                   <label>
@@ -2149,12 +2158,12 @@
                 </div>
                 <p id="lab-experiment-message" role="status">
                   The baseline uses FIFO. Both branches schedule one 30-unit replenishment for each
-                  of the four bins, with concurrent node, segment and nearby-corridor reservations.
+                  of the four bins, with single-AMR route/time reservations.
                 </p>
                 <p>
-                  Study assumptions: four new bin requests, units docked at their mapped bays, and
-                  no charging. The operating simulator keeps its separate approved queue and
-                  charging model.
+                  Study assumptions: four new bin requests, AMR-01 docked at its mapped bay, and no
+                  charging. The operating simulator keeps its separate approved queue and charging
+                  model.
                 </p>
                 <div id="lab-experiment-result"></div>
               </div>
@@ -2166,41 +2175,44 @@
                 <div class="panel-head">
                   <div>
                     <span class="eyebrow">Operational contract</span>
-                    <h2>Separate control from prediction</h2>
+                    <h2>Current AMR-01 sensor path</h2>
                   </div>
                 </div>
                 <ol class="lab-architecture">
                   <li>
                     <b>Physical observations</b>
                     <span>
-                      ESP32 pose, speed, battery and state; camera / LabVIEW stock counts.
+                      ESP32 cumulative wheel counts, MPU6050 z gyro, INA219 voltage/current and
+                      local state.
                     </span>
                   </li>
                   <li>
-                    <b>Telemetry &amp; historian</b>
+                    <b>Read-only server telemetry</b>
                     <span>
-                      Identity, timestamp and sequence checks; optional edge SQLite archive.
+                      EMQX → Python over TLS 8883; boot, sequence, device-time and freshness checks.
                     </span>
                   </li>
                   <li>
                     <b>State &amp; asset models</b>
                     <span>
-                      Measured, estimated and predicted values; residual gates and versioned
-                      calibration.
+                      Calibrated wheel odometry, gyro bias, power/Wh/SOC and residual advisories.
+                      Hardware displays the results; map registration is pending.
                     </span>
                   </li>
                   <li>
                     <b>Isolated advisory computation</b>
                     <span>
-                      Paired experiments run in a worker. They cannot access broker credentials or
-                      issue commands.
+                      Conditional motion/runtime forecasts; separate synthetic replenishment
+                      studies. Browser readouts do not expose server broker credentials or issue
+                      commands.
                     </span>
                   </li>
                   <li>
-                    <b>Human decision &amp; Coordinator</b>
+                    <b>Local movement and operator responsibility</b>
                     <span>
-                      LabVIEW approval and device acknowledgment belong to the physical control
-                      path, which still needs integration.
+                      The observation sketch holds motor standby LOW. A commissioned local
+                      controller is needed for movement; warehouse mission buttons control only
+                      simulation.
                     </span>
                   </li>
                 </ol>
@@ -2213,10 +2225,11 @@
                     Read the architecture &amp; validation plan ↗
                   </a>
                   <a
+                    data-legacy-interface
                     href="./downloadable_hardware_kits_and_guides/mqtt_sqlite_recorder_and_labview_adapter_starter_kit.zip"
                     download
                   >
-                    Download edge historian &amp; LabVIEW adapter
+                    Legacy v1 historian &amp; LabVIEW adapter
                   </a>
                   <a
                     href="./downloadable_hardware_kits_and_guides/digital_twin_feature_alignment_audit.md"
@@ -2354,8 +2367,8 @@
                 and recharges at the depot. Shelf inventory decreases at a configured consumption
                 rate. The reference layout has 12 racks: four monitored replenishment stations and
                 eight reserve storage racks. Three cross aisles and four connecting lanes form a
-                shared route graph used by both dispatch and Twin lab defaults. Reserve cartons are
-                decorative and carry no measured inventory. The surrounding cutaway hall adds
+                shared route graph used by both dispatch and Reference lab defaults. Reserve cartons
+                are decorative and carry no measured inventory. The surrounding cutaway hall adds
                 receiving and dispatch doors, pallet staging, packing and quality benches, service
                 cabinets, structural steel and overhead services. These fixtures are illustrative
                 context outside the 12 × 6.7 m mapped AMR zone; they do not report equipment states
@@ -2363,36 +2376,36 @@
                 and Plan view removes the walls and overhead frame for route inspection. Geometry
                 and dimensions are illustrative. Lighting, metal surfaces, concrete and cartons are
                 rendered in real-time 3D. Wheel and payload animation follows simulation state. A
-                simpler compatibility view is used when WebGL 2 is unavailable. A conservative
-                shared-aisle reservation allows one virtual robot journey at a time, including its
-                return to the bay. Staging routes avoid the other occupied bays. Routes are checked
-                against the reference rack footprints with a conservative robot clearance envelope.
-                This is a discrete route model, not physical collision avoidance or a dynamics
-                model.
+                simpler compatibility view is used when WebGL 2 is unavailable. AMR-01 completes one
+                virtual journey at a time, including its return to the single middle left-apron bay.
+                Routes are checked against the reference rack footprints with a conservative robot
+                clearance envelope. This is a discrete route model, not physical collision avoidance
+                or a dynamics model.
               </p>
               <p>
-                Sensor cones are illustrative visibility overlays. The +5s layer projects motion
-                along each assigned route using current speed and pause/stop state. It does not
-                predict interactions or new assignments. Dispatch estimates integrate aisle speed
-                and the complete return journey. A 15% return battery reserve is required.
-                Shortest-distance routing is the default; fastest travel time is a separate
-                objective. Lane closures remove permitted links. Approved outward and return paths
-                are retained, and route settings lock until reserved journeys clear. Battery on
-                return is a conservative minimum before any additional bay charging. Inventory
-                projections use the same chronological approved queue, including charging waits;
-                unapproved deliveries and arrivals behind paused or impossible reservations are
-                excluded. Demand and speed are assumed constant over the forecast window.
+                The optional cone overlay is illustrative; the component list has no range sensor.
+                Manager circles are manually placed simulation areas, not detected people. The +5s
+                layer projects motion along each assigned route using current speed and pause/stop
+                state. It does not predict interactions or new assignments. Dispatch estimates
+                integrate aisle speed and the complete return journey. A 15% return battery reserve
+                is required. Shortest-distance routing is the default; fastest travel time is a
+                separate objective. Lane closures remove permitted links. Approved outward and
+                return paths are retained, and route settings lock until reserved journeys clear.
+                Battery on return is a conservative minimum before any additional bay charging.
+                Inventory projections use the same chronological approved queue, including charging
+                waits; unapproved deliveries and arrivals behind paused or impossible reservations
+                are excluded. Demand and speed are assumed constant over the forecast window.
               </p>
               <p>
                 Prediction runs in a separate browser Web Worker. Browser command handling and
                 forecast round-trip timings are diagnostics, not validated physical override
-                latency, Wi-Fi delay or system reliability. The Hardware workspace can receive real
-                ESP32 telemetry through a configured secure MQTT broker. The Floor source selector
-                separates that telemetry from this simulation. Physical poses require calibrated
-                localization; the warehouse geometry is a reference layout. Live data never drives
-                the simulation’s stock, missions or forecasts. This viewer sends no motor commands.
-                Physical overrides use the separate Coordinator service on the control platform.
-                Simulation time pauses while the tab is hidden or the live floor is selected.
+                latency, Wi-Fi delay or system reliability. In Streamlit, Hardware receives
+                Python-computed results from raw AMR-01 sensors. Live odometry remains in its local
+                frame; a surveyed coordinate transform is required before it can update the 3D
+                floor. Physical accuracy and advisory performance require measured validation. Live
+                data does not drive simulated stock or tasks. This viewer sends no motor commands.
+                LabVIEW, Coordinator/UART control and browser v1 telemetry are legacy references
+                outside the active sensor path. Simulation time pauses while the tab is hidden.
               </p>
               <p id="diagnostics"></p>
             </div>
@@ -2506,9 +2519,9 @@
         <h2 id="help-dialog-title">Operator guide</h2>
         <p>
           Explore this educational simulation by reviewing and approving the initial missions.
-          Independent journeys can overlap; shared nodes, segments and nearby corridors have
-          reserved time windows. Select a robot on the floor or in the fleet strip to inspect its
-          state.
+          AMR-01 completes one journey at a time, including its bay return. Select AMR-01 on the
+          floor or in the robot strip to inspect its simulated state. Hardware displays the separate
+          Python sensor models.
         </p>
         <dl class="help-list">
           <div>
@@ -2516,7 +2529,7 @@
             <dd>Choose stops, close preview lanes, animate directions or step through Dijkstra.</dd>
           </div>
           <div>
-            <dt>Twin lab</dt>
+            <dt>Reference lab</dt>
             <dd>Inspect observations, fit asset models and compare frozen policies.</dd>
           </div>
           <div>
@@ -2558,9 +2571,9 @@
         <div class="help-note">
           <svg class="icon" aria-hidden="true"><use href="#i-help" /></svg>
           <p>
-            Forecast +5s projects assigned virtual routes. Sensors shows an illustrative visibility
-            overlay. Drive and mission controls operate on the virtual fleet; Hardware receives
-            read-only observations. Route map is an independent preview.
+            Forecast +5s projects the assigned virtual route. The cone overlay and manager markers
+            are illustrations. Drive and mission controls operate only on the virtual AMR-01;
+            Hardware receives read-only sensor estimates. Route map is a simulation preview.
           </p>
         </div>
         <p class="guide-attribution">

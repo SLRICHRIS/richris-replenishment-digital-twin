@@ -16,6 +16,7 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber →
 - Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Hardware. The workflow reference is also linked in the warehouse model explanation.
 - [Exact slide, equation, variable and paper-page mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
+- [Current capability scope and outstanding live-3D registration](project_documentation/implemented_dashboard_features_and_limits.md)
 - [Validation evidence and remaining hardware work](project_documentation/single_amr_alignment_validation.md)
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
@@ -24,7 +25,7 @@ The Hardware view's **Open detailed model inspection** button opens the native s
 
 ## Existing dashboard and deployment
 
-The existing single-AMR virtual warehouse dashboard remains the main workspace. Its route planning, animation and experiments are separate from the physical AMR-01 sensor node. The Hardware screen receives calculated sensor results from Python through the Streamlit component protocol; JavaScript formats these readouts and sends only source-selection/inspection actions back. Periodic model updates preserve the current view, scroll and virtual mission state. Local encoder pose has no surveyed map transform, so it is not silently placed into the 3D warehouse. Existing browser MQTT connections, UART firmware, recorder/coordinator and LabVIEW adapters are legacy interfaces, not part of the current single-AMR path. Earlier documents under `project_documentation/` describe that historical design unless explicitly listed above. Do not use the legacy downloadable UART starter kit to commission the new direct-sensor publisher.
+The existing single-AMR virtual warehouse dashboard remains the main workspace. Its route planning, animation and experiments are separate from the physical AMR-01 sensor node. The Hardware screen receives calculated sensor results from Python through the Streamlit component protocol; JavaScript formats these readouts and sends only source-selection/inspection actions back. Periodic model updates preserve the current view, scroll and virtual mission state. Local encoder pose has no surveyed map transform, so it is not silently placed into the 3D warehouse. Existing browser MQTT connections, UART firmware, recorder/coordinator and LabVIEW adapters are legacy interfaces, not part of the current single-AMR path. Legacy guides are marked at entry; the main architecture, scope and operator guides describe the current single-AMR path. Do not use the legacy downloadable UART starter kit to commission the new direct-sensor publisher.
 
 **Use the existing Streamlit deployment**, repository `SLRICHRIS/richris-replenishment-digital-twin`, branch `main`, entry point `streamlit_app.py`, Python 3.12. An existing app already using these settings picks up changes from main; no second app or private-app slot is required. If it uses the older research entry point, update that deployment to the root entry point. Deployment changes and live connection still require access to the existing Streamlit app.
 

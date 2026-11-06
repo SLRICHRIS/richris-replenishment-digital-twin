@@ -22,3 +22,9 @@ Measure effective x4 counts per wheel revolution, left/right radii and effective
 The new firmware is a read-only observation sketch with TB6612 standby low; local motor control/navigation remains commissioning work. The models do not implement a full EKF, absolute map localisation, obstacle detection/avoidance, multi-robot traffic control, battery degradation or remaining useful life. Constant-wheel-speed/runtime projections are assumed-load forecasts. The stock/task experiment uses one synthetic robot per policy, not a validated physical fleet.
 
 Continuous trajectories and battery charge during long data gaps are unknown. Integrals resume as partial estimates; missing data are never silently filled. The backend state is process memory with bounded history, not a publication-grade measurement archive. Export trial data and use an independent durable recorder before drawing experimental conclusions. Paper-to-code attribution and exact PDF pages are in [the slide mapping](slide_to_code_mapping.md).
+
+## Scope alignment
+
+The current architecture, operator guide and feature audit describe one direct-sensor AMR. The hosted UI hides the legacy v1 live-floor selector and legacy kit links. The Reference lab accepts recordings rather than claiming a connection to the Python v2 state; its optional studies remain separate. Manager-movement controls and the unsupported cone-overlay control are hidden in the active hosted workflow; their source remains available as reference simulation code. The original warehouse design, one middle bay, virtual tasks and paper links are retained.
+
+A visible Floor note identifies the remaining local-to-map registration and live 3D synchronisation work. This revision does not implement that transform or claim physical validation. Coordinate calibration requires independent surveyed measurements and a known initial pose.

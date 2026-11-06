@@ -1,5 +1,7 @@
 # Operator override channel and hardware commissioning
 
+> **Legacy v1 reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
+
 The control service runs on the Coordinator/LabVIEW computer. Prediction workers and the Streamlit viewer have no operator token and cannot call it. The viewer remains read-only for physical robots.
 
 ## Start the Coordinator

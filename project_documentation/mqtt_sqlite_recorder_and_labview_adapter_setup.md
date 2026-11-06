@@ -1,5 +1,7 @@
 # Replenish edge evidence kit
 
+> **Legacy v1 reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
+
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
 This kit records ESP32 measurements in SQLite and translates actual LabVIEW/perception inventory observations to the browser's MQTT contract. It does not issue motor commands, replace the Coordinator, or establish that the AMRs have been physically validated.
