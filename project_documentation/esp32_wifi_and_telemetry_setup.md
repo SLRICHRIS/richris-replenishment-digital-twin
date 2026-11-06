@@ -1,5 +1,7 @@
 # Replenish · ESP32 live telemetry
 
+> **Legacy v1 reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
+
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
 This starter connects **one ESP32 board** to the digital twin’s Hardware workspace. It publishes measurements only. It does not receive or transmit motor, mission or emergency-stop commands.
@@ -24,7 +26,7 @@ The sketch compiled and linked successfully on **6 October 2026** with this conf
 | PubSubClient | 2.8 |
 | Board profile | ESP32 Dev Module · `esp32:esp32:esp32` · default options |
 
-The active telemetry code was built with test-only configuration values and compiler warnings enabled. It uses approximately **1.00 MB of flash (76%)** and **48 KB of static RAM (14%)** under the reference board profile. These figures do not measure runtime Wi-Fi/TLS memory use.
+The legacy UART telemetry code was built with test-only configuration values and compiler warnings enabled. It uses approximately **1.00 MB of flash (76%)** and **48 KB of static RAM (14%)** under the reference board profile. These figures do not measure runtime Wi-Fi/TLS memory use.
 
 Compilation does not verify a physical board, sensor wiring, localization or a real broker connection. Select your exact board model before uploading and complete the connection checks below. This kit contains source code; it does not contain preconfigured firmware binaries or credentials.
 
@@ -45,7 +47,7 @@ Give every board a different publisher password. Do not put a broker administrat
 2. Copy `example_esp32_wifi_and_mqtt_settings.h` to `esp32_wifi_and_mqtt_settings.h` in the same folder.
 3. Enter your Wi-Fi name/password, broker **host**, MQTT **TLS port**, and this board’s publisher credentials.
 4. Paste the broker provider’s trusted **root CA certificate** into `BROKER_ROOT_CA`. Certificate verification stays enabled.
-5. Set `AMR_SLOT` to **1**, **2** or **3**. Use each number once.
+5. Set `AMR_SLOT` to **1** only. Other slots have been removed.
 6. Select the exact ESP32 board model and its USB port, then compile and upload.
 7. Open Serial Monitor at **115200 baud**. Wait for Wi-Fi, time synchronization and “Broker connected”.
 

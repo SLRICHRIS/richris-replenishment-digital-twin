@@ -1,32 +1,28 @@
-# System architecture
+# Single-AMR system architecture
 
-`streamlit_app.py` starts the Python host, which serves the browser component with a stable identity. Browser modules own the reference warehouse, virtual dispatch, shortest-path map and twin models. Independent Python processes archive MQTT observations and handle operator overrides.
+`streamlit_app.py` starts the Streamlit Python host and serves the previously designed warehouse component. The active hardware path is:
 
-| Path | Owner and processing | Output |
+**ESP32 AMR-01 → MQTT/TLS 8883 → EMQX → Python sensor models → Streamlit component → Hardware readouts.**
+
+| Layer | Inputs and processing | Output / authority |
 | --- | --- | --- |
-| Virtual dispatch | Browser mission planner; Dijkstra; node/segment/corridor time windows | Concurrent approved journeys, deliveries and bay returns |
-| Measurements | ESP32 controller UART → MQTT → strict JS/Python validators | Boot/sequence-bound measured values; null stays unknown |
-| Twin | Scalar position observer, chronological holdout, separate prediction worker | Estimates, forecasts and recorded prediction residuals |
-| Historian | Independent Python MQTT recorder | Accepted observations and rejection reasons in SQLite |
-| Physical override | LabVIEW adapter/local HTTP → separate Coordinator → MQTT → ESP32 UART → onboard controller | Correlated accepted/executed/rejected ACKs and monotonic timing |
+| Physical acquisition | Two cumulative wheel encoder counts; MPU6050 raw z gyro; INA219 pack voltage/current; firmware state and device time | One non-retained v2 topic: `robot/amr01/state` |
+| Python subscriber | TLS verification, exact identity, boot/sequence and finite-value checks; retained/gap/freshness gates | Accepted sensor samples; no command publishing |
+| Motion and battery | Calibrated wheel conversion, midpoint kinematics, gyro bias, power/energy and coulomb counting | Relative pose, wheel speed, SOC and energy estimates |
+| Advisory computation | Gyro/encoder disagreement and assumed-load/constant-speed projections | Advisory alerts and conditional forecasts; no physical control authority |
+| Browser Hardware | Receives public Python results through the Streamlit component protocol | Formats readouts; broker credentials stay on the server |
+| Warehouse simulation | Browser-owned AMR-01, routes, stock and explicit virtual task events | Separate illustrative mission state; does not receive v2 pose yet |
 
-Prediction has no control token or actuator functions. The hardware viewer stays read-only. Physical motor execution belongs to the onboard controller; [commissioning](operator_override_channel_and_hardware_commissioning.md) defines the actual interface.
+GitHub stores code; Streamlit executes the backend. HTTPS serves the browser. Browser MQTT/WSS 8084 belongs to the legacy v1 interface, not this active path. The direct-sensor observation sketch holds TB6612 standby LOW; a commissioned local movement controller remains necessary for physical driving.
 
-## Reference geometry and routing
+## Reference geometry and virtual jobs
 
-Twelve racks include four monitored A–D destinations and eight decorative reserves. The graph has 19 nodes and 27 bidirectional links. Dijkstra finds shortest permitted distance by default; time mode includes the restricted speed zone. Ties prefer the other objective, fewer links and a stable node sequence. The ordered candidate array is intentional for this small graph; it is not a large-scale routing implementation.
+The illustrative graph has **19 nodes and 24 bidirectional links**. AMR-01 starts/returns at the middle left-apron bay. Four A–D bins are simulated task destinations; eight reserve racks and the surrounding building are decoration. Dijkstra supplies distance/time route previews. Approved jobs run sequentially on the single virtual robot, with a 15% simulated return reserve and assumed charging/drain rates. These simulation percentages are separate from INA219-based coulomb counting and the sensor runtime's configured reserve.
 
-## Mission lifecycle
+Manager figures, exclusion circles, route playback and cone overlays are optional simulation aids. They do not establish measured people, range sensing or physical collision safety. The Reference lab uses recordings/older v1 interfaces, not the active v2 Python state.
 
-1. Review the unit, own bay, both route legs, planned start/arrival and at least 15% modeled return battery.
-2. Human approval rechecks stock, unit/bin exclusivity, route signature and current battery.
-3. Reserve each shared node, bidirectional segment and corridor within the 72-unit reference clearance. Delay departure for conflicts and bay charging; independent journeys overlap.
-4. Freeze departure speed/route geometry for that journey so its motion stays consistent with its reservation times.
-5. Integrate stock, charging and all moving robots to exact dispatch/arrival/return events. Each delivery occurs once.
-6. Return to the same bay, then release the windows. Cancellation suppresses delivery and completes the reserved path; an unplanned reversal could conflict with another robot.
+## Synchronisation boundary
 
-A paused or stopped moving robot freezes the traffic clock for the fleet, retaining spatial separation. Stock consumption continues. This is a conservative fault recovery policy. The runtime does not yet replan around an indefinitely parked obstacle. Route objectives and closures remain locked while approved or moving journeys exist.
+Python integrates odometry in a local frame starting at (0, 0, 0). The warehouse uses an illustrative map frame. No surveyed transform currently connects them, so live local pose is shown in Hardware and is not placed automatically in the 3D scene. Coordinate registration and measured validation are outstanding core work, not a completed capability. Inventory and tasks also remain synthetic until independently confirmed events are integrated.
 
-Forecasts use the same scheduler and traffic clock. Paired policies use the same window planner and frozen inputs; their separate no-charger study assumption remains explicit. This is deterministic reference traffic scheduling, not physical collision avoidance or globally optimal fleet allocation.
-
-See [model and validation contracts](digital_twin_architecture_and_validation_plan.md), [current checks](software_verification_results/current_software_check_results.md) and [module flow](repository_structure_and_project_flow.md).
+See [setup and raw schema](single_amr_sensor_twin_setup.md), [model and paper mapping](slide_to_code_mapping.md), [scope](implemented_dashboard_features_and_limits.md) and [validation](single_amr_alignment_validation.md). Legacy recorder, LabVIEW and Coordinator sources remain outside this path for reproducibility.

@@ -1,13 +1,21 @@
-# Implemented capabilities
+# Single-AMR capabilities and scope
 
-| Capability | Current behavior | Source of detail |
+| Capability | Current behavior | Evidence / boundary |
 | --- | --- | --- |
-| Industrial warehouse view | 12 racks, 4 active bins, 8 decorative reserves, AMR-01 | [Operator guide](dashboard_operator_guide.md) |
-| Movable manager areas | Mouse/touch/keyboard placement, matching no-entry circles across views, live preview and atomic fleet replanning; blocked paths hold traffic and queued routes need fresh approval | [Operator guide](dashboard_operator_guide.md) |
-| Interactive routing | 19 nodes/27 links, Dijkstra trace, distance/time modes, closures and directions | [Routing verification](routing_and_robot_model_software_verification.md) |
-| Cooperative dispatch | Human approval, concurrent safe node/segment/corridor windows, bay return and battery reserve | [System architecture](dashboard_and_telemetry_system_architecture.md) |
-| Measured twin | Three validated MQTT slots, position observer, chronological calibration, replay and frozen policy studies | [Model contract](digital_twin_architecture_and_validation_plan.md) |
-| Observation archive | Durable MQTT-to-SQLite recordings and LabVIEW inventory adapter | [Recorder guide](mqtt_sqlite_recorder_and_labview_adapter_setup.md) |
-| Operator override | Separate Coordinator HTTP/MQTT path, controller ACKs and software latency experiment | [Commissioning guide](operator_override_channel_and_hardware_commissioning.md) |
+| AMR-01 acquisition | One ESP32, two quadrature encoders, MPU6050 z gyro and INA219 voltage/current; topic `robot/amr01/state` | [Direct-sensor setup](single_amr_sensor_twin_setup.md); physical commissioning pending |
+| Motion twin | Effective encoder counts → wheel distance → differential-drive midpoint pose; stationary gyro bias | [Equations and paper pages](slide_to_code_mapping.md); local relative pose, no EKF or absolute localisation |
+| Battery twin | Power, accumulated Wh and coulomb-counted SOC | Initial SOC, usable capacity and calibrated current required; runtime assumes future load |
+| Advisory models | Sustained gyro/encoder residual, short constant-wheel-speed projection, reserve-based runtime | Project extensions; no validated fault classification or battery remaining useful life |
+| Telemetry quality | Boot/sequence checks, retained-message rejection, device-time integration and freshness/gap gates | [Software evidence](single_amr_alignment_validation.md); bounded process memory, not a durable raw archive |
+| Existing warehouse interface | One AMR-01, one central left-apron bay, 12 racks and 4 simulated replenishment stations | Preserves the original design; live v2 pose does not yet drive the 3D scene |
+| Replenishment model | Single-AMR sequential jobs, demand/pickup/delivery events and stock conservation | Simulation; inventory is not measured by the supplied sensors |
+| Route preview | 19 nodes, 24 bidirectional links, distance/time objectives and closures | Optional simulation tool; no physical navigation or collision-avoidance claim |
+| Reference experiments | Replay, older position observer, policy comparisons, manually placed manager zones and Dijkstra playback | Optional simulation/reference tools, separate from Python sensor models; not physical evidence |
 
-[Current verification](software_verification_results/current_software_check_results.md) distinguishes executable software checks from physical evidence still to collect.
+## Outside the current hardware scope
+
+LabVIEW/camera inventory feeds, browser v1 telemetry, UART/Coordinator commands and their downloadable kits are retained only as legacy references. They are not commissioning prerequisites for the direct-sensor AMR-01 path. Multi-AMR coordination, personnel detection, physical exclusion zones, motor-system identification, SLAM, full EKF and battery degradation/RUL are not implemented by the current sensor twin. Facility details are illustrative scenery. The cone overlay has no matching range sensor in the component list.
+
+## Remaining core integration
+
+Survey the physical test area and calibrate a local-odometry-to-map transform before synchronising measured pose into the 3D scene. Establish initial pose/heading, units and axis directions explicitly; withhold stale or discontinuous observations. Then validate motion, battery, forecasts and residual advisories using independent measurements and separate healthy/fault trials. Until that work is complete, describe this as a sensor-model implementation with a separate warehouse simulation, not a physically validated synchronised twin.

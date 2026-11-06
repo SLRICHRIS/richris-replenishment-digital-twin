@@ -98,3 +98,20 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
 .paper-attribution {
   line-height: 1.7;
 }
+
+/* Hide retired hardware affordances in the active Python-hosted workflow. */
+html[data-python-twin='true'] [data-legacy-interface],
+html[data-python-twin='true'] [data-reference-only],
+html[data-python-twin='true'] .map-manager-controls {
+  display: none;
+}
+
+.python-floor-scope {
+  display: none;
+}
+html[data-python-twin='true'] .python-floor-scope {
+  display: block;
+  margin: 12px 0;
+  color: var(--muted, #aebdd0);
+  line-height: 1.6;
+}

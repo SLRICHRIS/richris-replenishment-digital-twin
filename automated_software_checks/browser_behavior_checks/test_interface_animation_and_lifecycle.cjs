@@ -431,6 +431,23 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   restoredWorker.onmessageerror();
   assert($('lab-run-experiment').disabled);
   assert($('lab-experiment-message').textContent.includes('service unavailable'));
+  // A hosted raw-sensor session must not offer the disconnected v1 observer source.
+  $('lab-source').value = 'live';
+  $('lab-source').dispatchEvent(new ui.w.Event('change'));
+  doc.documentElement.dataset.pythonTwin = 'true';
+  doc.dispatchEvent(new ui.w.CustomEvent('python-twin:render'));
+  assert.equal($('lab-source').value, 'recording');
+  assert($('lab-source').querySelector('option[value="live"]').disabled);
+  $('lab-reference').click();
+  $('lab-cursor').value = '7';
+  $('lab-cursor').dispatchEvent(new ui.w.Event('input'));
+  const hostedFloor = run('JSON.stringify({tasks,robots})');
+  doc.dispatchEvent(new ui.w.CustomEvent('python-twin:render'));
+  assert.equal(+$('lab-cursor').value, 7, 'sensor refresh preserves the reference replay');
+  assert.equal(run('JSON.stringify({tasks,robots})'), hostedFloor);
+  $('lab-source').value = 'live';
+  $('lab-source').dispatchEvent(new ui.w.Event('change'));
+  assert.equal($('lab-source').value, 'recording', 'hosted scope rejects a legacy source');
   await ui.settle();
   ui.dom.window.close();
 

@@ -1,4 +1,6 @@
-# Current software verification
+# Historical software verification
+
+> These October results describe the earlier multi-AMR/UART reference implementation. They are retained for reproducibility, not as current single-AMR capability or physical evidence. Use [current AMR-01 software evidence](../single_amr_alignment_validation.md) and [scope](../implemented_dashboard_features_and_limits.md) for the active path.
 
 Recorded 11 October 2026. Baseline GitHub commit: `b5c847813141e6744272579583ce8e673f48d260`.
 Runtime: Python 3.12.14, Streamlit 1.65.0, Node.js 24.19.0, jsdom 26.1.0, Prettier 3.6.2.
