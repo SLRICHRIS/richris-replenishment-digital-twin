@@ -4,7 +4,7 @@
 // the Site source.
 #pragma once
 
-#define AMR_SLOT 1 // Use 1, 2 and 3 on the three separate boards.
+#define AMR_SLOT 1 // AMR-01 only.
 
 static const char WIFI_SSID[] = "YOUR_WIFI_NAME";
 static const char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";

@@ -4,7 +4,7 @@ Source deck: **Digital_Twin_Modelling_Equations_and_Python_S_L_Richris.pptx**, 1
 
 | Slides | Sensed input / acquisition | Model & code | Exact paper / PDF page | Boundary |
 |---|---|---|---|---|
-| 1–3 | ESP32, two robots; encoders, MPU6050, INA219 | `telemetry.py`, `mqtt_service.py`, `workspace_payload.py`, existing warehouse Hardware view | Project architecture and sensing table | ESP32 → TLS 8883 → EMQX → Python/Streamlit → browser. GitHub stores source. |
+| 1–3 | ESP32, AMR-01; encoders, MPU6050, INA219 | `telemetry.py`, `mqtt_service.py`, `workspace_payload.py`, existing warehouse Hardware view | Project architecture and sensing table | ESP32 → TLS 8883 → EMQX → Python/Streamlit → browser. GitHub stores source. |
 | 4 equation → 5 code | Signed cumulative quadrature counts; calibrated effective counts per **wheel** revolution | `models.wheel_distance`: linear scaling, Δs = 2πr Δn/N; v = Δs/Δt | [A], p.11 Eq.(9), p.38 Eq.(A4) | Discrete project notation; gearing and x4 decoding must be included in N. |
 | 6 equation → 7 code | Left/right wheel movement; calibrated track B | `models.midpoint_pose`: nonlinear differential-drive midpoint update | [A], p.8 Eqs.(1–3) for continuous kinematics | Midpoint discretisation is the project's implementation, not a claimed verbatim numbered paper equation. Planar rolling, no substantial slip. |
 | 8 equation → 9 code | MPU6050 z angular rate, rad/s; independently stationary calibration samples | `models.stationary_gyro_bias`; corrected z−b in `telemetry.RobotTwin` | [A], p.10 Eq.(8); p.11 Table 2 for their EKF context | Bias/noise sensor model. **This implementation does not implement their EKF.** Heading remains encoder odometry; gyro supplies consistency checking. MPU6050 has no magnetometer/absolute yaw. |
@@ -21,4 +21,4 @@ Every physical quantity uses SI units except explicitly labelled Ah, Wh and hour
 
 **[C]** Ferrari et al., replenishment digital-twin workflow reference, **2024**, [DOI 10.1007/s00170-023-12660-y](https://doi.org/10.1007/s00170-023-12660-y). Sensor prediction/anomaly equations are not attributed to this workflow paper.
 
-See [sensor contract and commissioning](two_robot_sensor_twin_setup.md) and [software evidence](two_robot_alignment_validation.md). A paper implementation, a proposed extension, and a hardware-validated result are different claims; the repository only claims the tested software behaviour documented here.
+See [sensor contract and commissioning](single_amr_sensor_twin_setup.md) and [software evidence](single_amr_alignment_validation.md). A paper implementation, a proposed extension, and a hardware-validated result are different claims; the repository only claims the tested software behaviour documented here.

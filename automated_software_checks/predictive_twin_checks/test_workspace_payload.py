@@ -7,7 +7,7 @@ from backend_streamlit_and_telemetry.predictive_twin.workspace_payload import wo
 def test_existing_dashboard_receives_only_derived_sensor_display_data():
     payload = workspace_payload('demo')
     assert payload['mode'] == 'demo'
-    assert set(payload['robots']) == {'amr01', 'amr02'}
+    assert set(payload['robots']) == {'amr01'}
     a = payload['robots']['amr01']
     assert a['forecast_pose'] is not None
     assert len(a['history']) <= 241

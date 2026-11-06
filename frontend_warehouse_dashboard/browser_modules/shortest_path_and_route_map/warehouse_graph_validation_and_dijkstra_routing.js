@@ -10,7 +10,7 @@ import {
 } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 const robotClearanceM =
   (WAREHOUSE_LAYOUT.robotRadius + WAREHOUSE_LAYOUT.clearance) / WAREHOUSE_LAYOUT.scale;
-const assets = ['amr-01', 'amr-02', 'amr-03'],
+const assets = ['amr-01'],
   bins = ['A', 'B', 'C', 'D'];
 const validId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,48}$/.test(id);
 export function referenceFacility(verified = false) {
@@ -86,8 +86,8 @@ export function checkedFacility(input) {
       ...(n.role === 'bin' ? { binId: n.binId } : {}),
     };
   });
-  if (seenAssets.size !== 3 || seenBins.size !== 4)
-    throw Error('Facility needs three bays and four bin destinations.');
+  if (seenAssets.size !== 1 || seenBins.size !== 4)
+    throw Error('Facility needs one AMR-01 bay and four bin destinations.');
   const edgeIds = new Set();
   const edges = input.edges.map((e) => {
     if (

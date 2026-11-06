@@ -81,7 +81,7 @@ assert.equal(doc.getElementById('python-amr01-soc').textContent, '80.000%');
 assert.equal(doc.getElementById('python-amr01-current').textContent, '0.6000 A');
 assert.match(doc.getElementById('python-amr01-advisory').textContent, /Sustained/);
 assert.equal(doc.getElementById('python-amr01-advisory').dataset.alert, 'true');
-assert.equal(doc.getElementById('python-amr02-quality').textContent, 'WAITING');
+assert.equal(doc.getElementById('python-amr02-quality'), null, 'AMR-02 is removed from the DOM');
 assert.equal(
   doc.getElementById('python-amr01-state').querySelector('img'),
   null,

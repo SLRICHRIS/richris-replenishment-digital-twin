@@ -4,7 +4,7 @@
 
 ## Shortest paths
 
-The production route solver uses Dijkstra with positive metric distance/travel-time weights. Distance/time objectives use deterministic secondary objective, link-count and node-sequence ties. The reference graph has 22 nodes; the ordered candidate array keeps search/trace behavior easy to inspect at this scale. Larger graphs can replace that selection structure with a priority queue while retaining the same oracle tests.
+The production route solver uses Dijkstra with positive metric distance/travel-time weights. Distance/time objectives use deterministic secondary objective, link-count and node-sequence ties. The reference graph has 19 nodes; the ordered candidate array keeps search/trace behavior easy to inspect at this scale. Larger graphs can replace that selection structure with a priority queue while retaining the same oracle tests.
 
 `test_shortest_path_optimality.mjs` compares results to an independently implemented Floyd–Warshall all-pairs algorithm on random directed/closed/disconnected graphs. It also checks the distance/time tradeoff, same-node paths, one-way pose anchoring and unreachable return gates. The oracle does not reuse production Dijkstra.
 
@@ -16,7 +16,7 @@ Configured manager standing circles exclude an intersecting route segment after 
 
 `test_manager_movement_and_fleet_replanning.mjs` verifies manager relocation, routing-cache invalidation, safe partial-segment exits, blocked current poses/returns, reserve gates, cancelled deliveries, fixed departure speeds, waiting forecasts and concurrent atomic replans. The route-map DOM suite checks drag/touch cancellation, keyboard steps, rack rejection, route reopening and placement-hold cleanup. Dashboard cases execute real rerouting through delivery/docking, queued approval invalidation, no-route holds and recovery, retained operator pause and hardware isolation. Scene geometry checks move both personnel and boundaries and verify matching 3D/Canvas network closures. Replanning is conservative: unscheduled robots remain occupied poses; if no priority order yields a compatible plan, traffic remains held.
 
-`test_multi_robot_time_window_reservations.mjs` checks head-on exclusivity, shared nodes, disjoint segments and geometrically nearby corridors across objectives, closures, speed modes and destinations. It samples every 50 ms and requires enough clearance margin to bound unsampled motion using the sum of maximum speeds. Actual concurrent journeys must occur; per-unit study trips remain exclusive.
+`test_single_amr_route_time_windows.mjs` checks head-on exclusivity, shared nodes, disjoint segments and geometrically nearby corridors across objectives, closures, speed modes and destinations. It samples every 50 ms and requires enough clearance margin to bound unsampled motion using the sum of maximum speeds. Actual concurrent journeys must occur; per-unit study trips remain exclusive.
 
 Dashboard checks execute the production event loop, compare forecast/actual stock and arrival/charging times, and verify footprint separation, reserve, pause/stop holds, cancellation and reassignment. Cancellation suppresses delivery while keeping the reserved path; geometry helpers still support on-segment route queries. Paired branch checks use the same window planner without mutating the frozen source.
 

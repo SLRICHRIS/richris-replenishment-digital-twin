@@ -111,19 +111,16 @@ export const AISLE_Y = Object.freeze([120, 250, 380]);
 export const LANE_SEGMENTS = Object.freeze([
   ...AISLE_Y.map((y) => Object.freeze({ x1: AISLE_X[0], y1: y, x2: AISLE_X.at(-1), y2: y })),
   ...AISLE_X.map((x) => Object.freeze({ x1: x, y1: AISLE_Y[0], x2: x, y2: AISLE_Y.at(-1) })),
-  Object.freeze({ x1: 220, y1: 170, x2: 220, y2: 330 }),
-  ...[170, 250, 330].map((y) => Object.freeze({ x1: 120, y1: y, x2: 220, y2: y })),
+  Object.freeze({ x1: 220, y1: 170, x2: 220, y2: 250 }),
+  ...[170].map((y) => Object.freeze({ x1: 120, y1: y, x2: 220, y2: y })),
   Object.freeze({ x1: 220, y1: 250, x2: 230, y2: 250 }),
 ]);
 export function referenceRouteGraph() {
   const node = (id, role, x, y, extra = {}) => ({ id, role, x_m: x / 75, y_m: y / 75, ...extra });
   const nodes = [
     node('bay01', 'bay', 120, 170, { assetId: 'amr-01' }),
-    node('bay02', 'bay', 120, 250, { assetId: 'amr-02' }),
-    node('bay03', 'bay', 120, 330, { assetId: 'amr-03' }),
     node('stage01', 'junction', 220, 170),
     node('entry', 'junction', 220, 250),
-    node('stage03', 'junction', 220, 330),
   ];
   AISLE_Y.forEach((y, row) =>
     AISLE_X.forEach((x, col) => nodes.push(node('lane' + row + col, 'junction', x, y))),
@@ -132,9 +129,6 @@ export function referenceRouteGraph() {
   const links = [
     ['bay01', 'stage01'],
     ['stage01', 'entry'],
-    ['bay02', 'entry'],
-    ['bay03', 'stage03'],
-    ['stage03', 'entry'],
     ['entry', 'lane10'],
   ];
   AISLE_Y.forEach((y, row) => {

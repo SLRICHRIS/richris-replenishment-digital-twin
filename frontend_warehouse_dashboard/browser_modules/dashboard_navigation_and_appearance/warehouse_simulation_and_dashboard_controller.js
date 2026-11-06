@@ -34,8 +34,8 @@ import {
 } from '../robot_mission_simulation/virtual_mission_scheduling_and_robot_motion.js';
 ('use strict');
 const $ = (id) => document.getElementById(id),
-  colors = ['#82b6ff', '#bca2ff', '#efbd68'],
-  unitInks = ['#82b6ff', '#bca2ff', '#efbd68'];
+  colors = ['#82b6ff'],
+  unitInks = ['#82b6ff'];
 let robots,
   bins,
   tasks,
@@ -198,10 +198,10 @@ function reset() {
   $('scenario').value = 'normal';
   $('scenario-description').textContent = 'Standard demand and aisle speed.';
   scene.setView('iso');
-  log('Session started. Three virtual robots ready.');
+  log('Session started. AMR-01 ready.');
   addTask(3, 0);
-  addTask(1, 1);
-  addTask(0, 2);
+  addTask(1, 0);
+  addTask(0, 0);
   routeMap?.syncManagers?.();
   sample();
   render();
@@ -1154,7 +1154,7 @@ function render() {
     queued = tasks.filter((t) => t.status === 'Queued').length;
   setHTML(
     'available',
-    robots.filter((r) => r.state !== 'Stopped' && r.battery >= 15).length + ' <small>/ 3</small>',
+    robots.filter((r) => r.state !== 'Stopped' && r.battery >= 15).length + ' <small>/ 1</small>',
   );
   $('completed').textContent = String(completed).padStart(2, '0');
   $('fleet-caption').textContent = stopped
@@ -1372,7 +1372,7 @@ const pages = {
   hardware: {
     title: 'Hardware connections',
     context: 'Physical observations',
-    summary: 'Inspect the three device streams and connect your physical testbed.',
+    summary: 'Inspect the AMR-01 device stream and connect your physical testbed.',
   },
   environment: {
     title: 'Facility overview',
@@ -1522,7 +1522,7 @@ const scenarioNotes = {
   normal: 'Standard demand and aisle speed. Existing battery levels are retained.',
   demand: 'Shelf consumption increases to three times the standard rate.',
   battery:
-    'AMR-02 is set to 12% battery. Dispatch requires a 15% reserve after the return journey.',
+    'AMR-01 is set to 12% battery. Dispatch requires a 15% reserve after the return journey.',
   congestion:
     'New departures use 0.11 m/s in the restricted aisle. Reserved journeys retain their departure speed.',
 };
@@ -1542,7 +1542,7 @@ $('apply').onclick = () => {
   const v = $('scenario').value;
   demand = v === 'demand' ? 3 : 1;
   slow = v === 'congestion';
-  if (v === 'battery') robots[1].battery = 12;
+  if (v === 'battery') robots[0].battery = 12;
   log('Scenario applied: ' + $('scenario').selectedOptions[0].text + '.', true);
   $('scenario-description').textContent = scenarioNotes[v];
   render();
@@ -1744,11 +1744,7 @@ function applyTheme(theme, persist = true) {
         button.dataset.themeOption === currentTheme ? 'true' : 'false',
       ),
     );
-  unitInks.splice(
-    0,
-    3,
-    ...(currentTheme === 'bright' ? ['#124fa5', '#6541a3', '#855306'] : colors),
-  );
+  unitInks.splice(0, 3, ...(currentTheme === 'bright' ? ['#124fa5'] : colors));
   setHTML(
     'energy-legend',
     unitInks
@@ -1955,7 +1951,7 @@ function renderHardwareFloor() {
   $('brief-label-c').textContent = 'Reported measurements';
   $('brief-value-c').textContent = Object.values(slot.measurements).filter(Boolean).length + ' / 4';
   $('brief-detail-c').textContent = 'Pose · battery · speed · state';
-  $('operation-brief').dataset.tone = live === 3 ? 'ready' : 'warning';
+  $('operation-brief').dataset.tone = live === 1 ? 'ready' : 'warning';
   renderFleet(display);
   document.documentElement.style.setProperty('--unit-color', r.color);
   document.documentElement.style.setProperty('--unit-ink', unitInks[selected]);
@@ -1984,7 +1980,7 @@ function renderHardwareFloor() {
     'scene-state',
     /* HTML */ `
       <i></i>
-      ${live} / 3 live
+      ${live} / 1 live
     `,
   );
   $('scene-empty').classList.toggle('hidden', tracked > 0);

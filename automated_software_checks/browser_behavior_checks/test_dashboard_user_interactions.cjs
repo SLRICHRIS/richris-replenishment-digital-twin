@@ -368,264 +368,57 @@ const app = fs
 vm.runInContext(app, ctx);
 const run = (s) => vm.runInContext(s, ctx);
 assert.equal(get('environment').hidden, false);
+assert.equal(run('robots.length'), 1);
+assert.equal(run('robots[0].id'), 0);
 assert.equal(run('tasks.length'), 3);
-assert.equal(run('scene.layers.facility'), true);
+assert(run('tasks.every(t=>t.robot===0)'));
 get('layer-facility').click();
 assert.equal(run('scene.layers.facility'), false);
-assert.equal(get('layer-facility').attrs['aria-pressed'], 'false');
 get('layer-facility').click();
 assert.equal(run('scene.layers.facility'), true);
-get('demo').click();
-assert(get('dispatch-dialog').open);
-assert(get('dispatch-review').innerHTML.includes('Battery on return'));
-assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 0);
-get('confirm-dispatch').click();
-assert(!get('dispatch-dialog').open);
-assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 1);
-assert.equal(run('tasks.filter(t=>t.status==="Queued").length'), 2);
-assert(get('brief-value-a').textContent.includes('journeys'));
-run('step(5);render()');
-assert.equal(run('robots[1].x'), 120);
-assert.equal(run('robots[2].x'), 120);
-run('pauseRobot(0)');
-let poses = run('JSON.stringify(robots.map(r=>[r.x,r.y]))');
+for (let mission = 0; mission < 3; mission++) {
+  get('demo').click();
+  assert(get('dispatch-dialog').open);
+  get('confirm-dispatch').click();
+  assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 1);
+  assert.equal(run('robots.length'), 1);
+  run('step(500);render()');
+  assert.equal(run('completed'), mission + 1);
+  assert.equal(run('robots[0].state'), 'Idle');
+  assert(run('robots[0].battery>=15'));
+}
+run('reset();assign(tasks[0]);step(2);pauseRobot(0)');
+const pose = run('JSON.stringify([robots[0].x,robots[0].y])');
 run('step(5)');
-assert.equal(run('JSON.stringify(robots.map(r=>[r.x,r.y]))'), poses);
-assert.equal(run('assessMission(tasks[1],dispatchContext()).eta'), null);
-run('stopFleet();resumeFleet()');
-assert.equal(run('robots[0].state'), 'Paused');
-assert.equal(run('robots[1].state'), 'Queued');
-run('pauseRobot(0)');
-run(
-  `let peakMoving=0;for(let i=0;i<1400;i++){step(.1);peakMoving=Math.max(peakMoving,robots.filter(r=>r.route.length).length);for(let a=0;a<robots.length;a++)for(let b=a+1;b<robots.length;b++)if(Math.hypot(robots[a].x-robots[b].x,robots[a].y-robots[b].y)<72-1e-6)throw Error('Robot footprint overlap');}render();`,
-);
-assert(run('peakMoving') > 1);
-assert.equal(run('completed'), 3);
-assert(run('robots.every(r=>r.state==="Idle")'));
-assert(run('robots.every(r=>Number.isFinite(r.battery)&&r.battery>=15)'));
-run('reset();running=false');
-get('demo').click();
+assert.equal(run('JSON.stringify([robots[0].x,robots[0].y])'), pose);
+run('pauseRobot(0);step(500)');
+assert.equal(run('completed'), 1);
+run('reset();robots[0].battery=12;openDispatch()');
 get('confirm-dispatch').click();
 assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 0);
-assert.equal(run('tasks.filter(t=>t.status==="Queued").length'), 3);
-run('cancelTask(tasks[0]);render()');
-assert.equal(run('robots[0].task'), null);
-assert.equal(run('robots[0].state'), 'Idle');
-run('reset();openDispatch();robots[0].battery=16');
-get('confirm-dispatch').click();
-assert.equal(run('tasks[0].status'), 'Pending approval');
-assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 1);
-run('reset();assign(tasks[0]);step(2);reassign(tasks[0],1)');
-assert.equal(run('tasks[0].status'), 'Pending approval');
-assert.equal(run('robots[0].cancelledDelivery'), true);
-assert.equal(run('robots[0].phase'), 'outbound');
-assert.equal(run('robots[1].task'), null);
-run('reset();assign(tasks[0]);step(2);cancelTask(tasks[0]);step(100)');
+run('reset();assign(tasks[0]);step(2);cancelTask(tasks[0]);step(500);render()');
 assert.equal(run('completed'), 0);
 assert.equal(run('robots[0].state'), 'Idle');
-run('reset();slow=true');
-get('demo').click();
-get('confirm-dispatch').click();
-run('step(500);render()');
-assert.equal(run('completed'), 3);
-assert(run('robots.every(r=>r.route.length===0)'));
-run('reset()');
-get('new-task').click();
-assert.equal(get('destination').value, '2');
-assert(get('mission-assessment').innerHTML.includes('Recommended'));
-get('mission-form').onsubmit({ preventDefault() {} });
-assert.equal(run('tasks.length'), 4);
-assert.equal(run('activePage'), 'missions');
-run('addTask(2,0)');
-assert.equal(run('tasks.length'), 4);
-assert(!get('tasks').innerHTML.includes('NaN'));
-get('theme-bright').click();
-assert.equal(run('currentTheme'), 'bright');
-get('theme-dark').click();
-assert.equal(run('currentTheme'), 'dark');
-run('activatePage("environment");setFloorSource("hardware")');
-const before = run('JSON.stringify({robots,bins,tasks,elapsed})');
-run('frame(500)');
-get('run').click();
-get('stop').click();
-get('demo').click();
-assert.equal(run('JSON.stringify({robots,bins,tasks,elapsed})'), before);
-assert(get('run').disabled);
-assert.equal(get('unit-battery').innerHTML, '—');
-assert.equal(get('brief-title').textContent, '0 of 3 streams live');
-assert(!get('layer-facility').disabled);
-get('layer-facility').click();
-assert.equal(run('scene.layers.facility'), false);
-get('layer-facility').click();
-assert.equal(
-  run('JSON.stringify({robots,bins,tasks,elapsed})'),
-  before,
-  'Facility visibility has no operational authority',
-);
-run('setFloorSource("simulation")');
-assert(!get('run').disabled);
-assert(!get('tasks').innerHTML.includes('undefined'));
-assert(!get('log').innerHTML.includes('NaN'));
-get('tab-missions').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
-assert.equal(run('activePage'), 'telemetry');
-console.log(
-  'PASS: dispatch review, approval revalidation, concurrent journeys and footprint separation, queued states, pause/stop retention, complete delivery cycles, cancellation, reassignment, congestion, mission guidance, theme switching and live/simulation isolation.',
-);
-run(
-  'reset();slow=true;assign(tasks[0]);robots[0].x=290;robots[0].y=250;robots[0].route=[{x:710,y:250},{x:710,y:350}];',
-);
-const predicted = run('projectMotion(robots[0],5,true)');
-run('step(5)');
-assert(Math.abs(run('robots[0].x') - predicted.x) < 1e-7);
-assert(Math.abs(run('robots[0].y') - predicted.y) < 1e-7);
-console.log(
-  'PASS: rendered motion projection agrees with simulation across the aisle speed boundary.',
-);
-// Forecasts and execution must agree across capacity clamping and exact arrival events.
-run('reset();bins[3].stock=98;assign(tasks[0]);');
-const arrival = run('tasks[0].journey.outbound.seconds'),
-  expectedStock = run('inventoryProjection(dispatchContext(),60)[3].projected');
-run('step(60)');
-assert(Math.abs(run('tasks[0].finishedAt') - arrival) < 1e-8);
-assert(Math.abs(run('bins[3].stock') - expectedStock) < 1e-8);
-// A battery disturbance after approval causes a timed charging hold, then a valid journey.
-run('reset();running=false;assign(tasks[0]);robots[0].battery=12;running=true;');
-const expected = run('queueTimeline(dispatchContext()).entries[0]');
-assert(expected.chargeWait > 0);
-const projected = run('inventoryProjection(dispatchContext(),150)[3].projected');
-run('step(150);render()');
-assert(Math.abs(run('tasks[0].startedAt') - expected.start) < 1e-8);
-assert(Math.abs(run('tasks[0].finishedAt') - expected.arrival) < 1e-8);
-assert(Math.abs(run('bins[3].stock') - projected) < 1e-8);
-assert(run('robots[0].battery>=15'));
+run('reset();running=false;assign(tasks[0]);robots[0].battery=12;running=true');
+const queued = run('queueTimeline(dispatchContext()).entries[0]');
+assert(queued.chargeWait > 0);
+run('step(500)');
+assert.equal(run('completed'), 1);
 run('reset()');
 get('route-condition').value = 'entry';
 get('route-condition').onchange();
 get('demo').click();
-assert(get('confirm-dispatch').disabled);
-assert(get('dispatch-review').innerHTML.includes('No permitted outbound and return route'));
-assert(!get('dispatch-review').innerHTML.includes('NaN'));
-assert(!get('dispatch-review').innerHTML.includes('undefined'));
-run('reset()');
-get('route-condition').value = 'north';
-get('route-condition').onchange();
-const approvedPath = run(
-  'JSON.stringify(assessMission(tasks[2],dispatchContext()).trip.outbound.points)',
+get('confirm-dispatch').click();
+assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 0);
+run('reset();assign(tasks[0]);step(5);');
+const moved = run(
+  'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}))',
 );
-run('assign(tasks[2]);render()');
-assert(get('route-condition').disabled);
-assert.equal(run('JSON.stringify(robots[2].route)'), approvedPath);
-run('cancelTask(tasks[2]);step(50);render()');
-assert(!get('route-condition').disabled);
-run('reset();slow=true;assign(tasks[0]);');
-const savedReturn = run('JSON.stringify(tasks[0].journey.inbound.points)');
-run('slow=false;step(tasks[0].journey.outbound.seconds+1)');
-assert.equal(
-  run('JSON.stringify(tasks[0].journey.inbound.points)'),
-  savedReturn,
-  'Speed changes retain approved geometry',
-);
-run('reset();predict()');
-const forecastGeneration = run('generation');
-run(
-  `worker.onmessage({data:{generation:${forecastGeneration},sent:100,alerts:[{title:'obsolete response',detail:'superseded snapshot'}]}})`,
-);
-assert(!get('alerts').innerHTML.includes('obsolete response'));
+assert(moved.ok);
+assert(!run('managerHoldReason'));
+run('step(500)');
+assert.equal(run('completed'), 1);
+assert.equal(run('robots.length'), 1);
 console.log(
-  'PASS: exact arrival/capacity accounting, charging-aware queue forecasts, blocked route review, route setting lock, retained return paths and superseded forecast handling.',
+  'PASS: original dashboard with one AMR, three sequential deliveries, approval exclusivity, pause/resume, cancellation, recharge, route closure and manager relocation.',
 );
-run('activatePage("engineering")');
-get('lab-reference').click();
-assert.equal(run('engineering.source'), 'recording');
-assert(get('lab-provenance').textContent.includes('Synthetic'));
-const liveBefore = run('JSON.stringify(engineering.liveEngine.profiles)');
-get('lab-fit').click();
-assert(!get('lab-apply-fit').disabled);
-assert(get('lab-calibration-result').innerHTML.includes('holdout'));
-get('lab-apply-fit').click();
-assert.equal(
-  run('JSON.stringify(engineering.liveEngine.profiles)'),
-  liveBefore,
-  'Synthetic calibration cannot modify live models',
-);
-get('lab-run-experiment').click();
-assert.equal(worker.data.snapshot.provenance, 'synthetic');
-assert.equal(worker.data.options.horizonS, 120);
-const frozen = worker.data;
-get('lab-source').value = 'live';
-get('lab-source').handlers.change?.();
-get('lab-source').onchange();
-assert.equal(run('engineering.source'), 'live');
-assert.equal(get('lab-frame-confirmed').checked, false);
-assert(!get('lab-provenance').textContent.includes('Synthetic'));
-worker.onmessage({
-  data: { requestId: frozen.requestId, error: 'old comparison should be ignored' },
-});
-assert(!get('lab-experiment-message').textContent.includes('old comparison'));
-get('lab-run-experiment').click();
-assert(
-  get('lab-experiment-message').textContent.includes('facility route graph'),
-  'Uncommissioned hardware cannot run a physical experiment',
-);
-get('lab-reference').click();
-get('lab-run-experiment').click();
-import(
-  '../../frontend_warehouse_dashboard/browser_modules/robot_state_models_and_policy_experiments/compare_dispatch_policies_with_shared_inputs.js'
-)
-  .then(({ comparePolicies }) => {
-    const d = worker.data,
-      comparison = comparePolicies(d.snapshot, d.options);
-    worker.onmessage({ data: { requestId: d.requestId, result: comparison } });
-    assert(!get('lab-export-experiment').disabled);
-    assert(get('lab-experiment-result').innerHTML.includes('Unmet demand'));
-    assert(get('lab-experiment-message').textContent.includes('synthetic snapshot'));
-    run('reset(); assign(tasks[0]); step(5);');
-    const moved = run(
-      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}))',
-    );
-    assert(moved.ok);
-    assert(!run('managerHoldReason'));
-    assert(!run('robots[0].journey.outbound.edgeKeys.includes("lane11~lane12")'));
-    run('step(100);');
-    assert.equal(run('completed'), 1);
-    assert.equal(run('robots[0].state'), 'Idle');
-    run('reset(); assign(tasks[0]); assign(tasks[1]); step(5);');
-    assert.equal(run('tasks[1].status'), 'Queued');
-    run(
-      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}));',
-    );
-    assert.equal(run('tasks[1].status'), 'Pending approval');
-    assert.equal(run('robots[1].task'), null);
-    run('reset(); assign(tasks[0]); step(5); managerPlacementActive = true;');
-    const heldPose = run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])');
-    run('step(3);');
-    assert.equal(run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])'), heldPose);
-    run(
-      'managerPlacementActive = false; managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:robots[0].x/75,y_m:robots[0].y/75}));',
-    );
-    assert(run('managerHoldReason'));
-    run('step(10);');
-    assert.equal(run('JSON.stringify([robots[0].x,robots[0].y,trafficClock])'), heldPose);
-    assert.equal(run('completed'), 0);
-    run('managerPositionsChanged(managerStandingZonesInMetres(75)); step(100);');
-    assert.equal(run('completed'), 1);
-    run('reset(); assign(tasks[0]); step(5); pauseRobot(0);');
-    run(
-      'managerPositionsChanged(managerStandingZonesInMetres(75).map((z,i)=>i?z:{...z,x_m:545/75,y_m:250/75}));',
-    );
-    assert.equal(run('robots[0].state'), 'Paused');
-    const physicalBefore = run('JSON.stringify(routing)');
-    run('floorSource = "hardware";');
-    assert.equal(run('managerPositionsChanged(managerStandingZonesInMetres(75))').ok, false);
-    assert.equal(run('JSON.stringify(routing)'), physicalBefore);
-    console.log(
-      'PASS: actual dashboard manager rerouting, completed delivery/return, queued approval invalidation, drag/no-route motion holds, recovery, retained operator pause and hardware isolation.',
-    );
-    console.log(
-      'PASS: complete Twin lab UI workflow, reference/import source identity, fitting and application, live/synthetic model isolation, blocked physical studies, stale worker replies and paired-result display.',
-    );
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });

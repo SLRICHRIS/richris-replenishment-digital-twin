@@ -24,7 +24,7 @@ Actions are `stop`, `pause`, `resume`. Use the same 32-character lowercase hex c
 
 ## MQTT and device execution
 
-| Topic suffix, per `amr-01` / `amr-02` / `amr-03` | Publisher | Subscriber |
+| Topic suffix, per `amr-01` | Publisher | Subscriber |
 | --- | --- | --- |
 | `/telemetry` | ESP32 | Viewer, historian, Coordinator |
 | `/commands` | Coordinator only | That ESP32 only |

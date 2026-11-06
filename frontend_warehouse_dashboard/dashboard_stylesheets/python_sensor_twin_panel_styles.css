@@ -21,7 +21,7 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
 }
 .python-sensor-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 .python-sensor-card {

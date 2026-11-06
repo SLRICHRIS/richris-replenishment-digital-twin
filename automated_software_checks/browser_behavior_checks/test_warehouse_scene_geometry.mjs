@@ -86,7 +86,7 @@ for (const lane of LANE_SEGMENTS)
       ),
       'Every reference lane clears manager areas with the full robot footprint',
     );
-for (let id = 0; id < 3; id++)
+for (let id = 0; id < 1; id++)
   for (const bin of BIN_DESTINATIONS)
     for (const slow of [false, true]) {
       const home = homeFor({ id }),
@@ -138,7 +138,7 @@ assert.throws(
 for (const objective of ['distance', 'time'])
   for (const blockedEdges of [ROUTE_CONDITIONS.north, ROUTE_CONDITIONS.central])
     for (const slow of [false, true])
-      for (let id = 0; id < 3; id++)
+      for (let id = 0; id < 1; id++)
         for (const bin of BIN_DESTINATIONS) {
           const home = homeFor({ id });
           clearRoute(home, routeTo(home, bin, slow, { objective, blockedEdges }));

@@ -30,7 +30,7 @@ for (const objective of ['distance', 'time'])
       ROUTE_CONDITIONS.central,
       ROUTE_CONDITIONS.entry,
     ])
-      for (const bay of ['bay01', 'bay02', 'bay03'])
+      for (const bay of ['bay01'])
         for (const bin of ['binA', 'binB', 'binC', 'binD'])
           for (const [from, to] of [
             [bay, bin],
@@ -221,7 +221,7 @@ assert.deepEqual(
   [],
   'Older facility imports remain supported',
 );
-for (const bay of ['bay01', 'bay02', 'bay03'])
+for (const bay of ['bay01'])
   for (const bin of ['binA', 'binB', 'binC', 'binD'])
     for (const [from, to] of [
       [bay, bin],

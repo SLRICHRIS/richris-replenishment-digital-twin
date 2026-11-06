@@ -8,7 +8,7 @@ The contribution to demonstrate is synchronized measured state, useful predictio
 
 ## Observation contract
 
-Fixed assets are `amr-01`, `amr-02`, `amr-03`. The topic must match `device_id`. Each packet requires version 1, a hexadecimal boot ID, increasing safe-integer sequence, acquisition `sent_at_ms`, `uptime_ms`, recognized state and the **`firmware`** key. Field/folder names are independent. Battery, speed and pose must be measured values in range or null; zero is a valid measurement.
+Fixed assets are `amr-01`. The topic must match `device_id`. Each packet requires version 1, a hexadecimal boot ID, increasing safe-integer sequence, acquisition `sent_at_ms`, `uptime_ms`, recognized state and the **`firmware`** key. Field/folder names are independent. Battery, speed and pose must be measured values in range or null; zero is a valid measurement.
 
 The browser and Python reject malformed identity, invalid numbers, old/future capture times, duplicate sequences and retired boots. Retained observations cannot refresh state. The native serializer contract test compiles the exact header called by the `.ino` and passes its emitted bytes into both production validators. ZIPs are built from canonical sources.
 
@@ -32,11 +32,11 @@ Use at least 12 eligible straight moving intervals. Reject missing measurements,
 
 Battery discharge fits only when training includes at least 15 s moving and 0.1 percentage points decline. It assumes already calibrated battery percentage; it does not infer voltage/current, watt-hours, payload or charging physics. Encoder speed and encoder pose share error, so validate absolute pose using independent surveyed/camera ground truth.
 
-Synthetic reference fits stay separate from live profiles. A recording's physical label is its producer's assertion. Final evaluation requires additional independent later runs, varied speeds/payloads and all three robots.
+Synthetic reference fits stay separate from live profiles. A recording's physical label is its producer's assertion. Final evaluation requires additional independent later runs, varied speeds/payloads and all AMR-01.
 
 ## Frozen policy study
 
-FIFO and earliest-stockout/maintenance policies receive identical immutable stock, demand, battery, models, map, objective, closures, speed and horizon. Four new 30-unit A–D requests are scheduled; existing runtime missions are not continued. Both branches use the production node/segment/corridor window planner and same reference footprint. A robot's journeys cannot overlap; independent robots may. The study allocates by earliest reserved arrival, then distance/reserve; route search still uses the selected distance/time objective.
+FIFO and earliest-stockout/maintenance policies receive identical immutable stock, demand, battery, models, map, objective, closures, speed and horizon. Four new 30-unit A–D requests are scheduled; existing runtime missions are not continued. Both branches use the production node/segment/corridor window planner and same reference footprint. A robot's journeys cannot overlap; removed-identity rejection may. The study allocates by earliest reserved arrival, then distance/reserve; route search still uses the selected distance/time objective.
 
 The study assumes no charger or pickup dwell, unlike the running simulator's bay charging. It applies the selected demand multiplier on top of the source demand. Metrics integrate chronological arrivals, capacity clamping, actual traveled segments and concurrent battery discharge. Exported records include windows and both route legs. Policy improvement is reported only when the computed outcomes show it; it is not guaranteed.
 

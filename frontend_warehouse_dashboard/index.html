@@ -6,7 +6,7 @@
     <meta id="theme-meta" name="theme-color" content="#0b1118" />
     <meta
       name="description"
-      content="An educational digital twin by S L RICHRIS for exploring supervised three-robot warehouse replenishment. Simulation and optional live ESP32 telemetry are shown as separate data sources."
+      content="An educational digital twin by S L RICHRIS for exploring supervised single-AMR warehouse replenishment. Simulation and optional live ESP32 telemetry are shown as separate data sources."
     />
     <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js"></script>
     <script src="./browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js"></script>
@@ -348,7 +348,7 @@
           <div class="metric-value">
             <strong id="available">
               3
-              <small>/ 3</small>
+              <small>/ 1</small>
             </strong>
             <span class="metric-foot" id="fleet-caption">Fleet ready</span>
           </div>
@@ -1174,7 +1174,7 @@
             <div class="lab-banner">
               <div>
                 <span class="eyebrow">Predictive digital twin · Python backend</span>
-                <h2>Two robots. Measured inputs. Modelled state.</h2>
+                <h2>AMR-01. Measured inputs. Modelled state.</h2>
                 <p class="python-sensor-note">
                   Encoder odometry, gyro consistency, battery SOC and advisory forecasts, calculated
                   in Streamlit and displayed in this warehouse workspace.
@@ -1194,7 +1194,7 @@
             <div class="python-sensor-cards">
               <article class="panel python-sensor-card" aria-labelledby="python-amr01-title">
                 <span class="eyebrow">ESP32 · encoders · MPU6050 · INA219</span>
-                <h2 id="python-amr01-title">AMR01</h2>
+                <h2 id="python-amr01-title">AMR-01</h2>
                 <span id="python-amr01-quality">WAITING</span>
                 <dl>
                   <dt>Estimated SOC</dt>
@@ -1232,47 +1232,6 @@
                   <polyline id="python-amr01-plot" points="" />
                 </svg>
                 <small id="python-amr01-plot-range">Residual history</small>
-              </article>
-              <article class="panel python-sensor-card" aria-labelledby="python-amr02-title">
-                <span class="eyebrow">ESP32 · encoders · MPU6050 · INA219</span>
-                <h2 id="python-amr02-title">AMR02</h2>
-                <span id="python-amr02-quality">WAITING</span>
-                <dl>
-                  <dt>Estimated SOC</dt>
-                  <dd id="python-amr02-soc">—</dd>
-                  <dt>Local x / y / θ (m / m / rad)</dt>
-                  <dd id="python-amr02-pose">—</dd>
-                  <dt>Left / right speed (m/s)</dt>
-                  <dd id="python-amr02-speed">—</dd>
-                  <dt>Pack voltage</dt>
-                  <dd id="python-amr02-voltage">—</dd>
-                  <dt>Current (+ discharge)</dt>
-                  <dd id="python-amr02-current">—</dd>
-                  <dt>Electrical power</dt>
-                  <dd id="python-amr02-power">—</dd>
-                  <dt>Net energy used</dt>
-                  <dd id="python-amr02-energy">—</dd>
-                  <dt>Gyro–encoder residual</dt>
-                  <dd id="python-amr02-residual">—</dd>
-                  <dt>5 s forecast x / y / θ</dt>
-                  <dd id="python-amr02-forecast">—</dd>
-                  <dt>Runtime to 20% reserve</dt>
-                  <dd id="python-amr02-runtime">—</dd>
-                  <dt>Firmware state</dt>
-                  <dd id="python-amr02-state">—</dd>
-                  <dt>Server receive age</dt>
-                  <dd id="python-amr02-age">—</dd>
-                </dl>
-                <p id="python-amr02-advisory" role="status">Waiting for Python results.</p>
-                <svg
-                  viewBox="0 0 500 120"
-                  role="img"
-                  aria-label="AMR02 residual versus sample time"
-                >
-                  <line x1="10" y1="60" x2="490" y2="60" stroke="currentColor" opacity=".25" />
-                  <polyline id="python-amr02-plot" points="" />
-                </svg>
-                <small id="python-amr02-plot-range">Residual history</small>
               </article>
             </div>
             <p class="python-sensor-note">
@@ -1318,12 +1277,13 @@
             <div>
               <span class="eyebrow">ESP32 / Wi-Fi telemetry</span>
               <p>
-                Three dedicated device slots. Live measurements stay separate from the simulation.
+                One dedicated AMR-01 device slot. Live measurements stay separate from the
+                simulation.
               </p>
             </div>
             <div class="hardware-live-total">
               <strong id="hardware-live-count">0</strong>
-              <span>/ 3 slots live</span>
+              <span>/ 1 slot live</span>
             </div>
           </div>
           <div class="hardware-grid">
@@ -1421,194 +1381,6 @@
               </div>
               <button id="hw-0-view" class="quiet" disabled>View on floor</button>
             </article>
-            <article
-              class="panel hardware-slot"
-              id="hardware-slot-1"
-              data-slot="1"
-              data-status="offline"
-            >
-              <div class="hardware-slot-head">
-                <div>
-                  <span class="eyebrow">Connection slot 02</span>
-                  <h2>AMR-02</h2>
-                </div>
-                <span id="hw-1-status" class="hardware-state">Offline</span>
-              </div>
-              <div class="hardware-pair">
-                <div>
-                  <span>Battery</span>
-                  <strong id="hw-1-battery">—</strong>
-                </div>
-                <div>
-                  <span>Velocity</span>
-                  <strong id="hw-1-speed">—</strong>
-                </div>
-              </div>
-              <dl class="hardware-readings">
-                <div>
-                  <dt>Position · X / Y</dt>
-                  <dd id="hw-1-position">Not measured</dd>
-                </div>
-                <div>
-                  <dt>Wi-Fi signal</dt>
-                  <dd id="hw-1-signal">Not reported</dd>
-                </div>
-                <div>
-                  <dt>Device state</dt>
-                  <dd id="hw-1-state">Awaiting telemetry</dd>
-                </div>
-              </dl>
-              <div class="hardware-packet-meta">
-                <span id="hw-1-age">No packets received</span>
-                <span id="hw-1-packets">0 accepted · 0 rejected</span>
-              </div>
-              <p id="hw-1-issue" class="hardware-issue" hidden></p>
-              <div
-                class="measurement-readiness"
-                id="hw-1-measurements"
-                aria-label="Reported measurements"
-              >
-                <span data-measurement="pose">Pose</span>
-                <span data-measurement="battery">Battery</span>
-                <span data-measurement="speed">Speed</span>
-                <span data-measurement="state">State</span>
-              </div>
-              <details class="stream-diagnostics">
-                <summary>
-                  Stream diagnostics
-                  <span id="hw-1-quality">Waiting</span>
-                </summary>
-                <div class="diagnostic-grid">
-                  <div>
-                    <span>Receive cadence</span>
-                    <strong id="hw-1-rate">—</strong>
-                  </div>
-                  <div>
-                    <span>Sequence gaps · 60 s</span>
-                    <strong id="hw-1-gaps">0</strong>
-                  </div>
-                  <div>
-                    <span>Capture offset · P95</span>
-                    <strong id="hw-1-offset">—</strong>
-                  </div>
-                  <div>
-                    <span>Detected reboots</span>
-                    <strong id="hw-1-reboots">0</strong>
-                  </div>
-                </div>
-                <svg
-                  id="hw-1-cadence"
-                  viewBox="0 0 280 42"
-                  role="img"
-                  aria-label="Recent packet arrival intervals"
-                ></svg>
-                <p class="diagnostic-caption" id="hw-1-diagnostic-note">
-                  Metrics use up to 60 seconds and 120 accepted packets. Capture offset also
-                  includes clock error.
-                </p>
-                <p class="diagnostic-last-issue" id="hw-1-last-issue" hidden></p>
-              </details>
-              <div class="hardware-binding">
-                <span class="eyebrow">Telemetry topic</span>
-                <code id="hw-1-topic">richris/warehouse01/amr-02/telemetry</code>
-                <span id="hw-1-firmware">No firmware reported</span>
-              </div>
-              <button id="hw-1-view" class="quiet" disabled>View on floor</button>
-            </article>
-            <article
-              class="panel hardware-slot"
-              id="hardware-slot-2"
-              data-slot="2"
-              data-status="offline"
-            >
-              <div class="hardware-slot-head">
-                <div>
-                  <span class="eyebrow">Connection slot 03</span>
-                  <h2>AMR-03</h2>
-                </div>
-                <span id="hw-2-status" class="hardware-state">Offline</span>
-              </div>
-              <div class="hardware-pair">
-                <div>
-                  <span>Battery</span>
-                  <strong id="hw-2-battery">—</strong>
-                </div>
-                <div>
-                  <span>Velocity</span>
-                  <strong id="hw-2-speed">—</strong>
-                </div>
-              </div>
-              <dl class="hardware-readings">
-                <div>
-                  <dt>Position · X / Y</dt>
-                  <dd id="hw-2-position">Not measured</dd>
-                </div>
-                <div>
-                  <dt>Wi-Fi signal</dt>
-                  <dd id="hw-2-signal">Not reported</dd>
-                </div>
-                <div>
-                  <dt>Device state</dt>
-                  <dd id="hw-2-state">Awaiting telemetry</dd>
-                </div>
-              </dl>
-              <div class="hardware-packet-meta">
-                <span id="hw-2-age">No packets received</span>
-                <span id="hw-2-packets">0 accepted · 0 rejected</span>
-              </div>
-              <p id="hw-2-issue" class="hardware-issue" hidden></p>
-              <div
-                class="measurement-readiness"
-                id="hw-2-measurements"
-                aria-label="Reported measurements"
-              >
-                <span data-measurement="pose">Pose</span>
-                <span data-measurement="battery">Battery</span>
-                <span data-measurement="speed">Speed</span>
-                <span data-measurement="state">State</span>
-              </div>
-              <details class="stream-diagnostics">
-                <summary>
-                  Stream diagnostics
-                  <span id="hw-2-quality">Waiting</span>
-                </summary>
-                <div class="diagnostic-grid">
-                  <div>
-                    <span>Receive cadence</span>
-                    <strong id="hw-2-rate">—</strong>
-                  </div>
-                  <div>
-                    <span>Sequence gaps · 60 s</span>
-                    <strong id="hw-2-gaps">0</strong>
-                  </div>
-                  <div>
-                    <span>Capture offset · P95</span>
-                    <strong id="hw-2-offset">—</strong>
-                  </div>
-                  <div>
-                    <span>Detected reboots</span>
-                    <strong id="hw-2-reboots">0</strong>
-                  </div>
-                </div>
-                <svg
-                  id="hw-2-cadence"
-                  viewBox="0 0 280 42"
-                  role="img"
-                  aria-label="Recent packet arrival intervals"
-                ></svg>
-                <p class="diagnostic-caption" id="hw-2-diagnostic-note">
-                  Metrics use up to 60 seconds and 120 accepted packets. Capture offset also
-                  includes clock error.
-                </p>
-                <p class="diagnostic-last-issue" id="hw-2-last-issue" hidden></p>
-              </details>
-              <div class="hardware-binding">
-                <span class="eyebrow">Telemetry topic</span>
-                <code id="hw-2-topic">richris/warehouse01/amr-03/telemetry</code>
-                <span id="hw-2-firmware">No firmware reported</span>
-              </div>
-              <button id="hw-2-view" class="quiet" disabled>View on floor</button>
-            </article>
           </div>
           <div class="hardware-setup-grid">
             <section class="panel hardware-connect-panel">
@@ -1666,7 +1438,7 @@
                     spellcheck="false"
                     required
                   />
-                  <small>Use the same prefix in all three ESP32 configurations.</small>
+                  <small>Use the same prefix in the ESP32 configuration.</small>
                 </div>
                 <p class="hardware-credential-note full">
                   Use a read-only broker account for this viewer. Credentials stay in this tab and
@@ -1674,7 +1446,7 @@
                 </p>
                 <div class="hardware-form-actions full">
                   <button type="submit" class="primary" id="hardware-connect">
-                    Connect three slots
+                    Connect AMR-01
                   </button>
                   <button type="button" id="hardware-disconnect" disabled>Disconnect</button>
                 </div>
@@ -1687,7 +1459,7 @@
               <span class="eyebrow">Bring your AMRs online</span>
               <h2>ESP32 starter kit</h2>
               <p>
-                One firmware project, flashed onto three boards with a different slot number for
+                One firmware project, flashed onto the AMR-01 board with a fixed slot number for
                 each AMR.
               </p>
               <ol>
@@ -1746,7 +1518,7 @@
               <span class="eyebrow">Model &amp; measurement</span>
               <h2>Observe. Calibrate. Compare.</h2>
               <p>
-                Synchronize three asset models, measure their error, then test a decision against a
+                Synchronize the AMR-01 model, measure their error, then test a decision against a
                 frozen state.
               </p>
             </div>
@@ -1764,7 +1536,7 @@
               <label for="lab-fault">Reference condition</label>
               <select id="lab-fault">
                 <option value="nominal">Speed bias</option>
-                <option value="dropout">AMR-02 packet dropout</option>
+                <option value="dropout">AMR-01 packet dropout</option>
                 <option value="jump">AMR-01 position jump</option>
               </select>
             </div>
@@ -1779,8 +1551,8 @@
             </button>
           </div>
           <p class="lab-message" id="lab-message" role="status">
-            Connect the three slots in Hardware. The reference run can demonstrate the model
-            workflow without physical devices.
+            Connect AMR-01 in Hardware. The reference run can demonstrate the model workflow without
+            physical devices.
           </p>
           <nav class="lab-tabs" aria-label="Twin engineering views">
             <button type="button" data-lab-tab="state" aria-pressed="true">
@@ -1828,7 +1600,7 @@
                 <span>Prediction eligible</span>
                 <strong id="lab-eligible">
                   0
-                  <small>/ 3</small>
+                  <small>/ 1</small>
                 </strong>
                 <small>Fresh data + mapped frame + error gate</small>
               </article>
@@ -1860,8 +1632,6 @@
                   </div>
                   <select id="lab-asset" aria-label="Asset model">
                     <option value="0">AMR-01</option>
-                    <option value="1">AMR-02</option>
-                    <option value="2">AMR-03</option>
                   </select>
                 </div>
                 <div class="lab-legend">
@@ -1919,7 +1689,7 @@
             <section class="panel lab-fleet">
               <div class="panel-head">
                 <div>
-                  <h2>Three asset models</h2>
+                  <h2>AMR-01 model</h2>
                   <p>Transport validity and model validity are separate checks.</p>
                 </div>
               </div>
@@ -1965,7 +1735,7 @@
                 </label>
                 <button type="submit" class="primary">Save facility model</button>
                 <p id="lab-facility-help">
-                  A connected graph with three bay nodes, four bin nodes and optional junctions.
+                  A connected graph with one AMR-01 bay node, four bin nodes and optional junctions.
                   Editing the graph clears previous asset frame confirmations and holdout approvals.
                 </p>
               </form>
@@ -2115,7 +1885,7 @@
                     Proposed policy
                     <select id="lab-policy">
                       <option value="urgency">Earliest stockout first</option>
-                      <option value="maintenance">FIFO with AMR-02 unavailable</option>
+                      <option value="maintenance">FIFO with AMR-01 unavailable</option>
                     </select>
                   </label>
                   <label>
@@ -2243,7 +2013,7 @@
                   <p>
                     Browser checks establish software behavior. Physical synchronization,
                     localization accuracy, override latency under load and end-to-end command
-                    reliability require measured runs on your three AMRs.
+                    reliability require measured runs on AMR-01.
                   </p>
                   <p>
                     Session evidence is kept in a bounded memory buffer. Export it before reloading,
@@ -2337,26 +2107,26 @@
             </summary>
             <div class="model-content">
               <p>
-                This interactive 3D scene uses the presentation's three-robot replenishment
-                workflow. Each robot carries 30 units along simplified aisle routes. Battery drains
-                during motion and recharges at the depot. Shelf inventory decreases at a configured
-                consumption rate. The reference layout has 12 racks: four monitored replenishment
-                stations and eight reserve storage racks. Three cross aisles and four connecting
-                lanes form a shared route graph used by both dispatch and Twin lab defaults. Reserve
-                cartons are decorative and carry no measured inventory. The surrounding cutaway hall
-                adds receiving and dispatch doors, pallet staging, packing and quality benches,
-                service cabinets, structural steel and overhead services. These fixtures are
-                illustrative context outside the 12 × 6.7 m mapped AMR zone; they do not report
-                equipment states or extend the telemetry map. The Facility layer can hide the
-                building and equipment, and Plan view removes the walls and overhead frame for route
-                inspection. Geometry and dimensions are illustrative. Lighting, metal surfaces,
-                concrete and cartons are rendered in real-time 3D. Wheel and payload animation
-                follows simulation state. A simpler compatibility view is used when WebGL 2 is
-                unavailable. A conservative shared-aisle reservation allows one virtual robot
-                journey at a time, including its return to the bay. Staging routes avoid the other
-                occupied bays. Routes are checked against the reference rack footprints with a
-                conservative robot clearance envelope. This is a discrete route model, not physical
-                collision avoidance or a dynamics model.
+                This interactive 3D scene uses the project's single-AMR replenishment workflow. Each
+                robot carries 30 units along simplified aisle routes. Battery drains during motion
+                and recharges at the depot. Shelf inventory decreases at a configured consumption
+                rate. The reference layout has 12 racks: four monitored replenishment stations and
+                eight reserve storage racks. Three cross aisles and four connecting lanes form a
+                shared route graph used by both dispatch and Twin lab defaults. Reserve cartons are
+                decorative and carry no measured inventory. The surrounding cutaway hall adds
+                receiving and dispatch doors, pallet staging, packing and quality benches, service
+                cabinets, structural steel and overhead services. These fixtures are illustrative
+                context outside the 12 × 6.7 m mapped AMR zone; they do not report equipment states
+                or extend the telemetry map. The Facility layer can hide the building and equipment,
+                and Plan view removes the walls and overhead frame for route inspection. Geometry
+                and dimensions are illustrative. Lighting, metal surfaces, concrete and cartons are
+                rendered in real-time 3D. Wheel and payload animation follows simulation state. A
+                simpler compatibility view is used when WebGL 2 is unavailable. A conservative
+                shared-aisle reservation allows one virtual robot journey at a time, including its
+                return to the bay. Staging routes avoid the other occupied bays. Routes are checked
+                against the reference rack footprints with a conservative robot clearance envelope.
+                This is a discrete route model, not physical collision avoidance or a dynamics
+                model.
               </p>
               <p>
                 Sensor cones are illustrative visibility overlays. The +5s layer projects motion
@@ -2390,7 +2160,7 @@
       <footer class="statusbar">
         <div class="statusbar-system">
           <span class="footer-brand">WH-01</span>
-          <span id="hardware-summary">0 / 3 hardware slots live</span>
+          <span id="hardware-summary">0 / 1 hardware slot live</span>
           <span id="sync">Forecast engine connecting</span>
         </div>
         <div class="ownership-line">

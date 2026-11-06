@@ -18,7 +18,7 @@ import time
 import uuid
 from pathlib import Path
 
-ASSETS = ["amr-01", "amr-02", "amr-03"]
+ASSETS = ["amr-01"]
 STATES = {"unknown", "idle", "moving", "paused", "charging", "fault"}
 NOTICE = "© 2026 S L RICHRIS. All rights reserved. Purely for educational purposes."
 

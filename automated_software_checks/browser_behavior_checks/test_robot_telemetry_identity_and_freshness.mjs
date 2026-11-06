@@ -22,10 +22,10 @@ const sample = (id = 'amr-01', extra = {}) => ({
 });
 const encode = (p) => new TextEncoder().encode(JSON.stringify(p));
 const store = new TelemetryStore();
-for (let i = 0; i < 3; i++) {
+for (let i = 0; i < 1; i++) {
   assert(store.ingest(i, encode(sample('amr-0' + (i + 1))), {}, now, 0));
 }
-assert.equal(store.snapshot(true, now, 0).filter((s) => s.status === 'live').length, 3);
+assert.equal(store.snapshot(true, now, 0).filter((s) => s.status === 'live').length, 1);
 assert(store.snapshot(true, now, 0).every((s) => !s.tracked && s.data.battery_pct === null));
 assert.equal(store.snapshot(true, now + 5001, 5001)[0].status, 'stale');
 assert.equal(store.snapshot(true, now + 15001, 15001)[0].status, 'offline');
@@ -97,8 +97,8 @@ const cfg = connectionConfig({
   password: 'test-only',
   prefix: 'richris/warehouse01/',
 });
-assert.equal(cfg.topics.length, 3);
-assert.equal(cfg.topics[2], 'richris/warehouse01/amr-03/telemetry');
+assert.equal(cfg.topics.length, 1);
+assert.equal(cfg.topics[0], 'richris/warehouse01/amr-01/telemetry');
 for (const url of [
   'ws://localhost/mqtt',
   'https://broker/mqtt',
@@ -110,7 +110,7 @@ for (const prefix of ['foo/#', 'foo/+', 'foo bar', '/foo', 'foo//bar'])
   assert.throws(() => connectionConfig({ ...cfg, prefix }));
 assert.throws(() => connectionConfig({ ...cfg, password: '' }));
 console.log(
-  'PASS: all 3 slots, null/zero readings, freshness, monotonic expiry, retained/duplicate/out-of-order/reboot rejection, UTF-8/size/schema validation, topic identity and secure connection settings.',
+  'PASS: AMR-01 only, null/zero readings, freshness, monotonic expiry, retained/duplicate/out-of-order/reboot rejection, UTF-8/size/schema validation, topic identity and secure connection settings.',
 );
 const diagnostics = new TelemetryStore();
 const offsets = [20, 30, 50, 40, 100],

@@ -12,7 +12,8 @@ from .telemetry import ROBOT_IDS
 
 @st.cache_resource(show_spinner=False)
 def live_service(host, username, password, calibration_json):
-    calibrations = {rid: Calibration(**values) for rid, values in json.loads(calibration_json).items()}
+    values = json.loads(calibration_json)
+    calibrations = {rid: Calibration(**values[rid]) for rid in ROBOT_IDS}
     return MQTTService(host, username, password, calibrations)
 
 
@@ -66,7 +67,7 @@ def show_robot(rid, snapshot, calibration):
 def live_view(service):
     st.caption(f"MQTT/TLS 8883 · {service.status} · rejected packets: {service.fleet.rejected_packets}")
     snapshots = service.fleet.snapshots()
-    for column, rid in zip(st.columns(2), ROBOT_IDS):
+    for column, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
         with column:
             show_robot(rid, snapshots[rid], service.fleet.robots[rid].calibration)
 
@@ -74,7 +75,7 @@ def live_view(service):
 def inventory_view():
     from research_baseline.warehouse_twin.simulation import new_state, step, run_until, metrics, assert_invariants
     st.subheader("Warehouse replenishment experiment")
-    st.info("Synthetic discrete-event experiment: one virtual robot per policy run. It is separate from the two physical sensor nodes; no telemetry automatically confirms inventory movement.")
+    st.info("Synthetic discrete-event experiment: one virtual robot per policy run. It is separate from the physical AMR-01 sensor node; no telemetry automatically confirms inventory movement.")
     policy = st.selectbox("Dispatch policy", ("fifo", "urgency"))
     if "inventory_experiment" not in st.session_state or st.session_state.inventory_experiment["policy"] != policy:
         st.session_state.inventory_experiment = new_state(policy)[0]
@@ -98,7 +99,7 @@ def inventory_view():
 
 def render_sensor_dashboard():
     st.title("Warehouse Robot Digital Twin")
-    st.caption("S. L. Richris · two ESP32 sensor nodes · Python models in Streamlit · observer/advisory view")
+    st.caption("S. L. Richris · one ESP32 sensor node · Python models in Streamlit · observer/advisory view")
     sensors, inventory, mapping = st.tabs(("Sensor twin", "Inventory & tasks", "Equations & evidence"))
     with sensors:
         mode = st.radio("Data source", ("Synthetic demonstration", "Live MQTT sensors"), horizontal=True)
@@ -106,13 +107,13 @@ def render_sensor_dashboard():
             st.info("SYNTHETIC DATA · illustrative calibration, not hardware validation. AMR01 has an injected gyro disagreement at 3–4 s.")
             fleet = demo_fleet()
             snapshots = fleet.snapshots(now=6)
-            for col, rid in zip(st.columns(2), ROBOT_IDS):
+            for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
                 with col:
                     show_robot(rid, snapshots[rid], fleet.robots[rid].calibration)
             with st.expander("Residual demonstration history"):
                 st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
         else:
-            st.caption("The backend subscribes to robot/amr01/state and robot/amr02/state. Configure private Streamlit secrets and measured calibrations; no credentials are sent to the browser.")
+            st.caption("The backend subscribes to robot/amr01/state. Configure private Streamlit secrets and measured calibrations; no credentials are sent to the browser.")
             try:
                 if not st.secrets["commissioning"]["measured_calibration_confirmed"]:
                     raise ValueError("Measured calibration must be confirmed")

@@ -1,6 +1,6 @@
 #pragma once
 // Copy to private esp32_wifi_and_mqtt_settings.h. Never commit real credentials.
-static const char ROBOT_ID[] = "amr01"; // second board: amr02
+static const char ROBOT_ID[] = "amr01"; // AMR-01 only
 static const char WIFI_SSID[] = "REPLACE";
 static const char WIFI_PASSWORD[] = "REPLACE";
 static const char MQTT_HOST[] = "your-deployment.emqxsl.com";

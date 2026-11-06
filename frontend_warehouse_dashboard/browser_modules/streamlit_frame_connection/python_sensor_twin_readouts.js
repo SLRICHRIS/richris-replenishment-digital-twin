@@ -24,7 +24,7 @@
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
     }
     const robots = payload.robots || {};
-    for (const rid of ['amr01', 'amr02']) {
+    for (const rid of ['amr01']) {
       const r = robots[rid],
         key = 'python-' + rid + '-';
       const available = r && !r.stale;

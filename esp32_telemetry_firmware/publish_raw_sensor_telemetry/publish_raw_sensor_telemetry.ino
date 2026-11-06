@@ -1,4 +1,4 @@
-/* Direct raw-sensor telemetry for the two-robot Python twin.
+/* Direct raw-sensor telemetry for the single-AMR Python twin.
  * Arduino ESP32 + PubSubClient + Adafruit MPU6050/INA219/Unified Sensor/BusIO.
  * Motor standby stays LOW: integrate a commissioned LOCAL motion controller
  * separately. This observation sketch does not receive MQTT motor commands.
@@ -43,8 +43,8 @@ void setup() {
   Serial.begin(115200);
   pinMode(MOTOR_STBY, OUTPUT);
   digitalWrite(MOTOR_STBY, LOW);
-  if (strcmp(ROBOT_ID, "amr01") && strcmp(ROBOT_ID, "amr02")) {
-    Serial.println("Use amr01 or amr02");
+  if (strcmp(ROBOT_ID, "amr01")) {
+    Serial.println("Use amr01 only");
     while (true) delay(100);
   }
   Wire.begin(21, 22);

@@ -15,16 +15,16 @@ def send(fleet, p, received=None, retained=False):
     return fleet.ingest(p, f"robot/{p['robot_id']}/state", received=p['sample_time_s'] if received is None else received, retained=retained)
 
 
-def test_two_robot_isolation_and_cumulative_count_loss():
+def test_single_robot_rejects_removed_identity_and_recovers_net_counts():
     f = FleetTwin(example_calibrations())
     send(f, packet())
-    send(f, packet(rid='amr02'))
+    for removed in ('amr02', 'amr03'):
+        assert not send(f, packet(rid=removed))
+    assert set(f.robots) == {'amr01'}
     send(f, packet(2, .1, count=20))  # one missing packet; net counts retained
     s = f.snapshots(.1)
     assert s['amr01']['pose'][0] == pytest.approx(2 * math.pi * .033 * 20 / 600)
-    assert s['amr02']['pose'] == (0, 0, 0)
     assert s['amr01']['soc'] < .9
-    assert s['amr02']['soc'] == .9
 
 
 def test_duplicate_reordered_and_retired_boots_cannot_change_integrals():
@@ -93,9 +93,8 @@ def test_topic_identity_finiteness_and_retained_packets():
     assert not f.ingest([], 'robot/amr01/state', received=0)
 
 
-def test_demo_injected_residual_and_constant_other_robot():
+def test_demo_injected_residual_clears_for_amr01():
     f = demo_fleet()
-    a, b = f.snapshots(6).values()
+    a = f.snapshots(6)['amr01']
     assert any(row['advisory'] for row in a['history'])
-    assert not any(row['advisory'] for row in b['history'])
     assert a['derived']['advisory'] is False  # cleared after the injected disagreement

@@ -240,7 +240,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
     1,
     'animation must not defer dispatch',
   );
-  assert.equal(run('tasks.filter(t=>t.status==="Queued").length'), 2);
+  assert.equal(run('tasks.filter(t=>t.status==="Queued").length'), 0);
   assert($('dispatch-dialog').inert, 'a closing approval dialog cannot be clicked twice');
   ui.flush();
   await ui.settle();
@@ -271,8 +271,8 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   run('reassign(tasks[0],1);render()');
   assert.equal(
     doc.querySelector('[data-reassign="1"]').value,
-    '1',
-    'reconciled select must reflect the assigned robot',
+    '0',
+    'removed AMRs cannot replace the configured AMR-01',
   );
   run('activatePage("telemetry")');
   ui.flush();
@@ -280,9 +280,9 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   run('step(2);render()');
   ui.flush();
   assert.deepEqual([...$('energy-chart').querySelectorAll('polyline')], lines);
-  run('activatePage("environment");selected=2;render()');
+  run('activatePage("environment");selected=0;render()');
   ui.flush();
-  assert(effects.some((effect) => effect.target.classList?.contains('inspector-stats')));
+  assert.equal($('inspect-title').textContent, 'AMR-01');
   await ui.settle();
   const stableEffectCount = effects.length;
   run('render()');
@@ -368,7 +368,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   $('lab-apply-fit').click();
   assert.equal(run('JSON.stringify(engineering.liveEngine.profiles)'), liveProfiles);
   doc.querySelector('[data-lab-tab="state"]').click();
-  assert.equal(doc.querySelectorAll('#lab-assets tr').length, 3);
+  assert.equal(doc.querySelectorAll('#lab-assets tr').length, 1);
   assert.equal(doc.querySelectorAll('#lab-map polyline').length, 2);
   $('theme-bright').click();
   assert.equal(doc.documentElement.dataset.theme, 'bright');
