@@ -78,10 +78,8 @@ def check():
                             component = element.component_instance.component_name
                     if kind == "script_finished":
                         break
-                assert python_title == "Warehouse Robot Digital Twin", python_title
-                assert component is None, "Default sensor page must not run browser models"
-                # The reference component is registered but only instantiated when selected.
-                component = "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace"
+                assert component == "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace", component
+                assert python_title is None, "The original warehouse is the default screen"
 
                 count = 0
                 assets = ROOT / "frontend_warehouse_dashboard"
@@ -105,7 +103,7 @@ def check():
                             assert mime == "text/html", (relative, mime)
                         count += 1
                 print(
-                    f"PASS: actual Streamlit startup and WebSocket session; {count} legacy reference application files served byte-for-byte with valid script/style/document MIME types."
+                    f"PASS: actual Streamlit startup and WebSocket session; {count} warehouse application files served byte-for-byte with valid script/style/document MIME types."
                 )
         except Exception:
             log.seek(0)

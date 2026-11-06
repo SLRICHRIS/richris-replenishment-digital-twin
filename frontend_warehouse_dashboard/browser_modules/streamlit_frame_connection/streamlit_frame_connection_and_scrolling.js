@@ -34,8 +34,8 @@
   });
 
   // Streamlit serves this component on its own origin. Do not accept arbitrary
-  // window messages, reflect parent arguments into HTML, or send telemetry to
-  // Python. MQTT credentials remain in the existing browser-only connection UI.
+  // window messages or reflect parent arguments into HTML. Python sends derived
+  // sensor display data; browser actions send only an allowlisted source choice.
   const origin = window.location.origin;
   const send = (type, detail = {}) =>
     window.parent.postMessage(
@@ -72,7 +72,27 @@
   }
   window.addEventListener('message', (event) => {
     if (event.source !== window.parent || event.origin !== origin) return;
-    if (event.data?.type === 'streamlit:render') scheduleFit();
+    if (event.data?.type === 'streamlit:render') {
+      const payload = event.data.args?.python_twin;
+      if (payload && ['demo', 'live'].includes(payload.mode)) {
+        document.dispatchEvent(new CustomEvent('python-twin:render', { detail: payload }));
+      }
+      scheduleFit();
+    }
+  });
+  let actionSequence = 0;
+  document.addEventListener('python-twin:action', (event) => {
+    const action = event.detail;
+    if (!action || !['sensor_source', 'model_inspection'].includes(action.action)) return;
+    if (action.action === 'sensor_source' && !['demo', 'live'].includes(action.mode)) return;
+    send('streamlit:setComponentValue', {
+      value: {
+        action: action.action,
+        ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
+        nonce: `${Date.now()}-${++actionSequence}`,
+      },
+      dataType: 'json',
+    });
   });
   window.addEventListener('resize', scheduleFit);
   try {
