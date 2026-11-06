@@ -185,8 +185,8 @@ const assert = require('node:assert/strict'),
   assert.equal(snapshot().view.w, 900);
   captures = [];
   const origin = svg.querySelector('[data-map-node="bay01"]');
-  pointer('pointerdown', 1, 120, 170, origin);
-  pointer('pointerup', 1, 120, 170, origin);
+  pointer('pointerdown', 1, 120, 250, origin);
+  pointer('pointerup', 1, 120, 250, origin);
   assert.equal(captures.length, 0, 'Station clicks must not be stolen by pointer capture');
   const old = snapshot().view;
   pointer('pointerdown', 1, 200, 200);

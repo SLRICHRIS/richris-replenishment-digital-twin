@@ -1,3 +1,4 @@
+import { AMR_HOME } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 // Advisory state/model service. This module has no command or motor interface.
 import {
@@ -782,7 +783,7 @@ export function referenceRecording(fault = 'nominal') {
         angular_speed_rps: 0,
         pose: {
           x_m: x,
-          y_m: (170 + i * 80) / 75 + 0.002 * Math.cos(step + i),
+          y_m: AMR_HOME.y / 75 + 0.002 * Math.cos(step + i),
           heading_deg: outbound || !moving ? 0 : 180,
         },
         speed_mps: moving ? 0.24 : 0,

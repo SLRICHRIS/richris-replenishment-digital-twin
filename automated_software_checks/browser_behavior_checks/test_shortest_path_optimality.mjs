@@ -165,7 +165,7 @@ const make = () => ({
   robots: [0].map((id) => ({
     id,
     x: 120,
-    y: 170 + id * 80,
+    y: 250,
     battery: 96 - id * 9,
     state: 'Idle',
     task: null,
@@ -191,9 +191,9 @@ assert.equal(assessMission(task, c).trip, null);
 assert.equal(assessMission(task, c).feasible, false);
 c = make();
 c.tasks = [task];
-c.robots[0].y = 250;
-assert(assessMission(task, c).reasons.some((r) => r.includes('own loading bay')));
 c.robots[0].y = 170;
+assert(assessMission(task, c).reasons.some((r) => r.includes('own loading bay')));
+c.robots[0].y = 250;
 c.robots[0].battery = NaN;
 assert.equal(assessMission(task, c).feasible, false);
 c = make();

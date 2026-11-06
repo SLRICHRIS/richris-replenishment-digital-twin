@@ -16,6 +16,8 @@ export const WAREHOUSE_LAYOUT = Object.freeze({
   robotRadius: 34,
   clearance: 2,
 });
+// The single AMR uses the middle charging position on the left apron.
+export const AMR_HOME = Object.freeze({ x: 120, y: 250 });
 // Building and staging apron are illustrative context outside the mapped AMR zone.
 export const INDUSTRIAL_HALL = Object.freeze({
   left: -105,
@@ -111,15 +113,14 @@ export const AISLE_Y = Object.freeze([120, 250, 380]);
 export const LANE_SEGMENTS = Object.freeze([
   ...AISLE_Y.map((y) => Object.freeze({ x1: AISLE_X[0], y1: y, x2: AISLE_X.at(-1), y2: y })),
   ...AISLE_X.map((x) => Object.freeze({ x1: x, y1: AISLE_Y[0], x2: x, y2: AISLE_Y.at(-1) })),
-  Object.freeze({ x1: 220, y1: 170, x2: 220, y2: 250 }),
-  ...[170].map((y) => Object.freeze({ x1: 120, y1: y, x2: 220, y2: y })),
+  Object.freeze({ x1: AMR_HOME.x, y1: AMR_HOME.y, x2: 220, y2: AMR_HOME.y }),
   Object.freeze({ x1: 220, y1: 250, x2: 230, y2: 250 }),
 ]);
 export function referenceRouteGraph() {
   const node = (id, role, x, y, extra = {}) => ({ id, role, x_m: x / 75, y_m: y / 75, ...extra });
   const nodes = [
-    node('bay01', 'bay', 120, 170, { assetId: 'amr-01' }),
-    node('stage01', 'junction', 220, 170),
+    node('bay01', 'bay', AMR_HOME.x, AMR_HOME.y, { assetId: 'amr-01' }),
+    node('stage01', 'junction', 170, AMR_HOME.y),
     node('entry', 'junction', 220, 250),
   ];
   AISLE_Y.forEach((y, row) =>
@@ -229,7 +230,7 @@ export function paintLanePlan(c, managerZones = MANAGER_STANDING_ZONES) {
   );
   c.fillStyle = '#344c4c';
   c.font = 'bold 11px monospace';
-  c.fillText('AMR CHARGING', 46, 129);
+  c.fillText('AMR CHARGING', 46, AMR_HOME.y - 41);
   c.fillText('LINE SUPPLY', 496, 20);
   c.fillText('FINISHED GOODS', 480, 490);
   for (const rack of STORAGE_RACKS) {

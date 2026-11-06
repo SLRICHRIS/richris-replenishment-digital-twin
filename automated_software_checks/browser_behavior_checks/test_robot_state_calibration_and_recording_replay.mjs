@@ -210,7 +210,7 @@ const snapshot = {
   units: [0].map((i) => ({
     id: 'amr-0' + (i + 1),
     x_m: 1.6,
-    y_m: (170 + 80 * i) / 75,
+    y_m: 250 / 75,
     battery_pct: 90 - i * 5,
     state: 'idle',
     profile: configured('amr-0' + (i + 1)),

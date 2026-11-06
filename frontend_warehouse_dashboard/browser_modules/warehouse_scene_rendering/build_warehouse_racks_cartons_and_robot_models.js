@@ -1,4 +1,5 @@
 import {
+  AMR_HOME,
   STORAGE_RACKS,
   BIN_DESTINATIONS,
   referenceRouteGraph,
@@ -477,7 +478,7 @@ export function createWarehouse() {
   // One AMR-01 charger with contact pads, a status display, cable and wheel stops.
   const dockLights = [];
   for (let i = 0; i < 1; i++) {
-    const p = worldPosition(42, 170 + i * 80);
+    const p = worldPosition(42, AMR_HOME.y);
     const dock = new T.Group();
     dock.position.copy(p);
     staticRoot.add(dock);

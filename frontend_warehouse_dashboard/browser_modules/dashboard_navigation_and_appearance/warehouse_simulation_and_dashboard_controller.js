@@ -168,8 +168,8 @@ function reset() {
   $('route-condition').value = 'open';
   robots = colors.map((color, i) => ({
     id: i,
-    x: 120,
-    y: 170 + i * 80,
+    x: MODEL.depotX,
+    y: MODEL.depotY,
     battery: 96 - i * 9,
     color,
     state: 'Idle',

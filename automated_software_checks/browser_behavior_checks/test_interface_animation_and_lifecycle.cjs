@@ -144,7 +144,7 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
         )
         .replace(/^import[\s\S]*?;\s*$/gm, '')
         .replace(/export /g, '') +
-      ';return{WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})())',
+      ';return{AMR_HOME,WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})())',
   );
   run(
     'Object.assign(window,(()=>{' +
