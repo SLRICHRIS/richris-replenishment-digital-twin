@@ -53,7 +53,12 @@ def check():
         if not relative:
             return
         base = FRONTEND if worker else owner.parent
-        destination = (base / relative).resolve()
+        # FastAPI mounts research_baseline/web at /assets; these are HTTP-root
+        # references, not filesystem absolute paths.
+        if owner.is_relative_to(ROOT / "research_baseline/web") and relative.startswith("/assets/"):
+            destination = (ROOT / "research_baseline/web" / relative.removeprefix("/assets/")).resolve()
+        else:
+            destination = (base / relative).resolve()
         checked += 1
         if not destination.is_relative_to(ROOT) or not destination.exists():
             errors.append(f"{owner.relative_to(ROOT)} -> {reference}")

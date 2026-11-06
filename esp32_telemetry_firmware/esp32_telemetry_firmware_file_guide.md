@@ -1,3 +1,5 @@
+> Historical/reference workspace. The active two-robot Python sensor path is documented in the root README and `project_documentation/two_robot_sensor_twin_setup.md`.
+
 # ESP32 firmware
 
 | File in `publish_esp32_robot_telemetry/` | Responsibility |

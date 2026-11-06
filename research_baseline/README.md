@@ -1,3 +1,5 @@
+> Historical/reference workspace. The active two-robot Python sensor path is documented in the root README and `project_documentation/two_robot_sensor_twin_setup.md`.
+
 # Warehouse Replenishment Research Model
 
 **A focused, event-driven warehouse replenishment model with a local persistent backend and a separate Streamlit research interface.**

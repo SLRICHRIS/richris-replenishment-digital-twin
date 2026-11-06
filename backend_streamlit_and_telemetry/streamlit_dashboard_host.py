@@ -1,7 +1,7 @@
 """Host the browser dashboard as a local Streamlit component.
 
-The browser owns simulation, routing and telemetry display. This host receives
-only the component handshake and viewport size, not MQTT credentials or readings.
+The active sensor twin runs models in Python. The optional legacy reference
+workspace retains the earlier browser simulation for comparison.
 """
 
 from pathlib import Path
@@ -11,7 +11,8 @@ from streamlit.components.v1 import declare_component
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIRECTORY = REPOSITORY_ROOT / "frontend_warehouse_dashboard"
-APPLICATION_VERSION = "2.1.0"
+APPLICATION_VERSION = "3.0.0"
+LEGACY_WORKSPACE = declare_component("replenish_workspace", path=str(FRONTEND_DIRECTORY))
 
 
 def render_dashboard() -> None:
@@ -23,28 +24,24 @@ def render_dashboard() -> None:
             / "dashboard_images_and_fonts/warehouse_dashboard_application_icon.svg"
         ),
         layout="wide",
-        initial_sidebar_state="collapsed",
+        initial_sidebar_state="expanded",
         menu_items={
             "About": (
-                f"Replenish {APPLICATION_VERSION}: an educational three-AMR digital twin. "
+                f"Replenish {APPLICATION_VERSION}: an educational two-robot sensor twin with a legacy warehouse reference. "
                 "© 2026 S L RICHRIS. All rights reserved. Purely for educational purposes."
             )
         },
     )
-    st.html("""
-        <style>
-        [data-testid="stHeader"] { display: none; }
-        [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; }
-        [data-testid="stVerticalBlock"] { gap: 0; }
-        [data-testid="stAppViewContainer"] { overflow-x: hidden; overflow-y: auto; }
-        iframe[title*="replenish_workspace"] { display: block; width: 100%; border: 0; }
-        </style>
-        """)
+    view = st.sidebar.radio("Workspace", ("Two-robot Python twin", "Legacy 3D reference"))
+    if view == "Two-robot Python twin":
+        from .predictive_twin.dashboard import render_sensor_dashboard
+        render_sensor_dashboard()
+        return
+    st.warning("Legacy reference: three virtual AMRs and browser-owned models. This workspace does not use the new Python sensor state; its connections and controls are separate.")
     if not (FRONTEND_DIRECTORY / "index.html").is_file():
         st.error(
             "The frontend_warehouse_dashboard/index.html file is missing. Deploy the complete repository."
         )
         st.stop()
 
-    workspace = declare_component("replenish_workspace", path=str(FRONTEND_DIRECTORY))
-    workspace(key="warehouse-workspace", default=None)
+    LEGACY_WORKSPACE(key="warehouse-workspace", default=None)

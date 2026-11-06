@@ -1,0 +1,41 @@
+name: Digital twin checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  python-and-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest automated_software_checks/predictive_twin_checks automated_software_checks/streamlit_and_repository_integration_checks -q
+      - run: PYTHONPATH=research_baseline python -m pytest research_baseline/tests -q
+      - run: python -m unittest discover -s automated_software_checks/python_telemetry_service_checks -v
+      - run: python automated_software_checks/streamlit_and_repository_integration_checks/check_streamlit_frontend_file_delivery.py
+      - run: python automated_software_checks/streamlit_and_repository_integration_checks/check_repository_links_source_boundaries_and_downloads.py
+      - run: npm ci
+      - run: npm run test:browser
+  direct-sensor-firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 and sensor libraries
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli lib install PubSubClient "Adafruit MPU6050" "Adafruit INA219"
+      - name: Compile observation sketch using example settings
+        run: |
+          sketch=esp32_telemetry_firmware/publish_raw_sensor_telemetry
+          cp "$sketch/example_esp32_wifi_and_mqtt_settings.h" "$sketch/esp32_wifi_and_mqtt_settings.h"
+          arduino-cli compile --fqbn esp32:esp32:esp32 "$sketch"
