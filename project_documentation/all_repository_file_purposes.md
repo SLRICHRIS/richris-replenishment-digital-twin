@@ -137,3 +137,52 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `project_ownership_and_external_software_licenses.txt` | Configuration or reference data for project ownership and external software licenses. |
 | `requirements.txt` | Pinned Streamlit dashboard runtime dependency. |
 | `streamlit_app.py` | Required deployment entrypoint delegating to the Python dashboard host. |
+| `.github/workflows/digital-twin-checks.yml` | Run Python, browser, hosting and direct-sensor firmware compilation checks. |
+| `.streamlit/secrets.example.toml` | Public placeholder settings; measured calibrations and private broker credentials are supplied separately. |
+| `automated_software_checks/predictive_twin_checks/test_models.py` | Verify test models of the active Python sensor twin. |
+| `automated_software_checks/predictive_twin_checks/test_mqtt_service.py` | Verify test mqtt service of the active Python sensor twin. |
+| `automated_software_checks/predictive_twin_checks/test_telemetry.py` | Verify test telemetry of the active Python sensor twin. |
+| `backend_streamlit_and_telemetry/predictive_twin/__init__.py` | Mark the active Python sensor twin package. |
+| `backend_streamlit_and_telemetry/predictive_twin/dashboard.py` | Render Python model outputs and the separate inventory experiment in Streamlit. |
+| `backend_streamlit_and_telemetry/predictive_twin/demo.py` | Generate clearly labelled deterministic synthetic raw measurements. |
+| `backend_streamlit_and_telemetry/predictive_twin/models.py` | Implement slide equations and forecasts with explicit units and validation. |
+| `backend_streamlit_and_telemetry/predictive_twin/mqtt_service.py` | Subscribe server-side over verified TLS without issuing commands. |
+| `backend_streamlit_and_telemetry/predictive_twin/telemetry.py` | Validate raw packets and maintain isolated per-robot model state and freshness. |
+| `esp32_telemetry_firmware/publish_raw_sensor_telemetry/example_esp32_wifi_and_mqtt_settings.h` | Configure direct-sensor firmware using public placeholders only. |
+| `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino` | Publish direct encoder/gyro/battery observations; keep motors in standby for commissioning. |
+| `project_documentation/slide_to_code_mapping.md` | Document slide to code mapping. |
+| `project_documentation/two_robot_alignment_validation.md` | Document two robot alignment validation. |
+| `project_documentation/two_robot_sensor_twin_setup.md` | Document two robot sensor twin setup. |
+| `requirements-dev.txt` | Install the active app and research verification dependencies. |
+| `research_baseline/.gitignore` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/Dockerfile` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/README.md` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/compose.yaml` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/docs/00_guided_walkthrough.md` | Explain the synthetic replenishment scenario and walkthrough. |
+| `research_baseline/docs/01_system_architecture.md` | Describe the research inventory API architecture. |
+| `research_baseline/docs/02_inventory_and_events.md` | Define reserve/transit/pick stock and task event semantics. |
+| `research_baseline/docs/03_modelling_choices.md` | Document synthetic inventory model assumptions. |
+| `research_baseline/docs/04_validation_protocol.md` | Document the research model validation protocol. |
+| `research_baseline/docs/05_streamlit_deployment.md` | Document the standalone research Streamlit entry point. |
+| `research_baseline/docs/06_source_credit.md` | Attribute the research inventory workflow sources. |
+| `research_baseline/docs/07_security_and_limitations.md` | Document research API boundaries and synthetic-data limitations. |
+| `research_baseline/examples/telemetry_example.json` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/requirements-backend.txt` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/requirements-dev.txt` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/requirements.txt` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/start_linux_macos.sh` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/start_windows.bat` | Configure or launch the standalone research inventory experiment. |
+| `research_baseline/streamlit_app.py` | Render the detailed synthetic warehouse walkthrough and policy comparison. |
+| `research_baseline/tests/test_api.py` | Verify the research api model. |
+| `research_baseline/tests/test_explain.py` | Verify the research explain model. |
+| `research_baseline/tests/test_mqtt_gateway.py` | Verify the research mqtt gateway model. |
+| `research_baseline/tests/test_simulation.py` | Verify the research simulation model. |
+| `research_baseline/warehouse_twin/__init__.py` | Mark the research inventory model package. |
+| `research_baseline/warehouse_twin/api.py` | Serve the synthetic inventory API, quarantine endpoint, event stream and web assets. |
+| `research_baseline/warehouse_twin/database.py` | Persist synthetic runs, immutable events and quarantined legacy telemetry in SQLite. |
+| `research_baseline/warehouse_twin/explain.py` | Derive inventory-event explanations without changing authoritative state. |
+| `research_baseline/warehouse_twin/mqtt_gateway.py` | Forward legacy x/y observations to the research API quarantine; not the active raw-sensor path. |
+| `research_baseline/warehouse_twin/simulation.py` | Execute deterministic replenishment events and enforce inventory conservation. |
+| `research_baseline/web/app.js` | Display the research API inventory and event experiment in a browser. |
+| `research_baseline/web/index.html` | Define the research API web view. |
+| `research_baseline/web/style.css` | Style the research API web view. |

@@ -62,6 +62,7 @@ def check():
                 request.rerun_script.query_string = ""
                 websocket.send(request.SerializeToString())
                 component = None
+                python_title = None
                 for _ in range(100):
                     message = ForwardMsg()
                     message.ParseFromString(websocket.recv(timeout=10))
@@ -70,14 +71,17 @@ def check():
                         element = message.delta.new_element
                         if element.HasField("exception"):
                             raise AssertionError(element.exception.message)
+                        if element.HasField("heading"):
+                            if element.heading.tag == "h1":
+                                python_title = element.heading.body
                         if element.HasField("component_instance"):
                             component = element.component_instance.component_name
                     if kind == "script_finished":
                         break
-                assert (
-                    component
-                    == "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace"
-                ), component
+                assert python_title == "Warehouse Robot Digital Twin", python_title
+                assert component is None, "Default sensor page must not run browser models"
+                # The reference component is registered but only instantiated when selected.
+                component = "backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace"
 
                 count = 0
                 assets = ROOT / "frontend_warehouse_dashboard"
@@ -101,7 +105,7 @@ def check():
                             assert mime == "text/html", (relative, mime)
                         count += 1
                 print(
-                    f"PASS: actual Streamlit startup and WebSocket session; {count} digital twin application files served byte-for-byte with valid script/style/document MIME types."
+                    f"PASS: actual Streamlit startup and WebSocket session; {count} legacy reference application files served byte-for-byte with valid script/style/document MIME types."
                 )
         except Exception:
             log.seek(0)

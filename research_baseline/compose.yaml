@@ -1,0 +1,11 @@
+services:
+  research_backend:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      TWIN_DB_PATH: /app/data/warehouse_model.sqlite3
+    volumes:
+      - warehouse_model_data:/app/data
+volumes:
+  warehouse_model_data:
