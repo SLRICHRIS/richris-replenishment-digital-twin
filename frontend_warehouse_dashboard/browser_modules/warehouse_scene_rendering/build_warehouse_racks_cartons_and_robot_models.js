@@ -474,7 +474,7 @@ export function createWarehouse() {
         m.computeBoundingSphere();
       }
   }
-  // Three independent chargers with contact pads, status displays, cables and wheel stops.
+  // One AMR-01 charger with contact pads, a status display, cable and wheel stops.
   const dockLights = [];
   for (let i = 0; i < 1; i++) {
     const p = worldPosition(42, 170 + i * 80);

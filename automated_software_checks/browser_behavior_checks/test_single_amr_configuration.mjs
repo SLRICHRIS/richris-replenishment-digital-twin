@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { paintLanePlan } from '../../frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 import { createWarehouse } from '../../frontend_warehouse_dashboard/browser_modules/warehouse_scene_rendering/build_warehouse_racks_cartons_and_robot_models.js';
 import { referenceFacility } from '../../frontend_warehouse_dashboard/browser_modules/shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
 import {
@@ -38,4 +39,34 @@ for (const removed of ['amr-02', 'amr-03']) {
 }
 console.log(
   'PASS: actual warehouse geometry constructs one AMR and one dock; map and telemetry registry admit only AMR-01.',
+);
+
+// Check the actual floor painter too: robot assemblies alone do not detect ghost bays.
+const paintedLabels = [],
+  bayRectangles = [],
+  chevrons = [];
+const floorContext = new Proxy(
+  {
+    fillText: (value) => paintedLabels.push(value),
+    fillRect: (...rectangle) => {
+      if (floorContext.fillStyle === '#255f69') bayRectangles.push(rectangle);
+    },
+    moveTo: (x, y) => {
+      if (x === 52) chevrons.push(y);
+    },
+  },
+  { get: (target, key) => (key in target ? target[key] : () => {}) },
+);
+paintLanePlan(floorContext);
+assert.deepEqual(
+  paintedLabels.filter((value) => /^\d{2}$/.test(value)),
+  ['01'],
+);
+assert.equal(bayRectangles.length, 1, 'Only one painted parking rectangle');
+assert(
+  chevrons.length > 0 && chevrons.every((y) => y >= 133 && y <= 201),
+  'No hatching extends into the former 02/03 bays',
+);
+console.log(
+  'PASS: floor texture paints only bay 01, with no 02/03 labels, parking rectangles or leftover charging-zone hatching.',
 );
