@@ -206,15 +206,16 @@ export function paintLanePlan(c, managerZones = MANAGER_STANDING_ZONES) {
       c.lineTo(860, y + offset);
       c.stroke();
     }
-  for (let i = 0; i < 3; i++) {
-    const y = 170 + i * 80;
+  const chargingBays = referenceRouteGraph().nodes.filter((node) => node.role === 'bay');
+  for (const bay of chargingBays) {
+    const y = bay.y_m * WAREHOUSE_LAYOUT.scale;
     c.fillStyle = '#255f69';
     c.fillRect(54, y - 31, 105, 62);
     c.strokeStyle = '#e8af38';
     c.strokeRect(54, y - 31, 105, 62);
     c.fillStyle = '#e8ece3';
     c.font = 'bold 16px sans-serif';
-    c.fillText('0' + (i + 1), 65, y + 6);
+    c.fillText(bay.assetId.slice(-2), 65, y + 6);
   }
   BIN_DESTINATIONS.forEach((b) => {
     c.strokeStyle = '#e1c25d';
@@ -236,14 +237,17 @@ export function paintLanePlan(c, managerZones = MANAGER_STANDING_ZONES) {
     c.font = 'bold 9px monospace';
     c.fillText(rack.address, rack.x - 14, rack.y + (rack.facing > 0 ? 40 : -36));
   }
-  // Repeating chevrons designate reserved charging bays, without claiming a safety standard.
+  // Keep the charging-area hatching within each configured bay's footprint.
   c.strokeStyle = '#c19c40';
   c.lineWidth = 3;
-  for (let y = 133; y <= 367; y += 16) {
-    c.beginPath();
-    c.moveTo(52, y);
-    c.lineTo(40, y + 9);
-    c.stroke();
+  for (const bay of chargingBays) {
+    const centreY = bay.y_m * WAREHOUSE_LAYOUT.scale;
+    for (let y = centreY - 37; y <= centreY + 31; y += 16) {
+      c.beginPath();
+      c.moveTo(52, y);
+      c.lineTo(40, y + 9);
+      c.stroke();
+    }
   }
   // Manager areas stay visible independently of the optional route network layer.
   for (const zone of managerZones) paintManagerStandingZone(c, zone);
