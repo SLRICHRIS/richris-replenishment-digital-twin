@@ -88,7 +88,7 @@ export function replanFleetForManagerPositions(context, zones) {
   const clock = context.trafficClock ?? 0;
   let failure = 'No compatible fleet route is available.';
   let best = null;
-  // At most three AMRs: try all six priority orders. A not-yet-scheduled robot
+  // Only AMR-01 is configured; retain deterministic reservation planning. A not-yet-scheduled robot
   // remains an occupied pose, so an earlier route cannot drive through it.
   for (const order of orders(movers)) {
     const planned = [],

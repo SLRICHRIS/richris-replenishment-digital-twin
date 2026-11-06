@@ -162,7 +162,7 @@ duplicate.edges.push({ ...duplicate.edges[0] });
 assert.throws(() => checkedFacility(duplicate), /Duplicate/);
 
 const make = () => ({
-  robots: [0, 1, 2].map((id) => ({
+  robots: [0].map((id) => ({
     id,
     x: 120,
     y: 170 + id * 80,
@@ -197,7 +197,7 @@ c.robots[0].y = 170;
 c.robots[0].battery = NaN;
 assert.equal(assessMission(task, c).feasible, false);
 c = make();
-assert.equal(rankUnits(0, c)[0].robot, 1, 'Recommendations use actual round-trip aisle distance');
+assert.equal(rankUnits(0, c)[0].robot, 0, 'Only AMR-01 can be recommended');
 
 // A retained queued mission can charge after a battery disturbance. No instantaneous dispatch.
 c = make();

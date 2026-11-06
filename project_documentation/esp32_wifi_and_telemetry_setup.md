@@ -2,11 +2,11 @@
 
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
-This starter connects **three ESP32 boards** to the digital twin’s Hardware workspace. It publishes measurements only. It does not receive or transmit motor, mission or emergency-stop commands.
+This starter connects **one ESP32 board** to the digital twin’s Hardware workspace. It publishes measurements only. It does not receive or transmit motor, mission or emergency-stop commands.
 
 ## What you need
 
-- Three Wi-Fi-capable ESP32 boards and their USB cables.
+- One Wi-Fi-capable ESP32 board and its USB cable.
 - Arduino IDE with Espressif’s Arduino-ESP32 **3.3.12** board package (the verified reference version), plus Nick O’Leary’s **PubSubClient 2.8** library.
 - A private MQTT broker with a trusted TLS certificate, an MQTT TLS listener for the boards, and a **WSS listener for the browser**. These are usually different ports. Use the exact addresses supplied by your broker operator.
 - Your network must allow the board to reach the broker and an NTP time server. Both the ESP32 and browser clocks must be accurate to within a few seconds.
@@ -35,9 +35,7 @@ The default prefix is `richris/warehouse01`. Use a private namespace and change 
 | Account | Allowed operation | Exact topic |
 | --- | --- | --- |
 | AMR-01 publisher | Publish only | `richris/warehouse01/amr-01/telemetry` |
-| AMR-02 publisher | Publish only | `richris/warehouse01/amr-02/telemetry` |
-| AMR-03 publisher | Publish only | `richris/warehouse01/amr-03/telemetry` |
-| Browser viewer | Subscribe/read only | All three topics above |
+| Browser viewer | Subscribe/read only | The AMR-01 topic above |
 
 Give every board a different publisher password. Do not put a broker administrator password into the browser or firmware. Device IDs alone are labels; broker authentication and topic permissions enforce the slot boundaries.
 
@@ -58,7 +56,7 @@ Give every board a different publisher password. Do not put a broker administrat
 1. Open the dashboard’s **Hardware** tab.
 2. Enter the broker’s complete **WSS URL**, for example `wss://your-broker-host:your-wss-port/mqtt`. This is a placeholder, not a working broker.
 3. Enter the read-only viewer username/password and the matching topic prefix.
-4. Choose **Connect three slots**. “Subscribed” means the broker approved all three topic subscriptions. It does not mean all three devices are online.
+4. Choose **Connect AMR-01**. “Subscribed” means the broker approved the AMR-01 subscription. It does not mean AMR-01 is online.
 5. Each slot becomes **Live** only after receiving a fresh, valid packet from its matching device.
 
 The password is held in this tab only, sent to the specified broker, and cleared from the form after connecting. It is not saved in browser storage. Reloading requires reconnecting. This viewer does not keep a durable telemetry history or run while the page is closed.
@@ -107,7 +105,7 @@ Publish UTF-8 JSON, **QoS 0, retain false**, normally once per second. All shown
 
 The example timestamp `0` is deliberately invalid: the board must insert its **current UTC Unix time in milliseconds**. A measured pose is an object such as `{"x_m": 1.2, "y_m": 2.0, "heading_deg": 90}`. Use `null` for the entire pose until all three fields are measured.
 
-- Device IDs are exactly `amr-01`, `amr-02`, `amr-03` and must match the topic.
+- Device IDs are exactly `amr-01` and must match the topic.
 - A new random hexadecimal `boot_id` is generated on every reboot. Sequence numbers increase within a boot.
 - States: `unknown`, `idle`, `moving`, `paused`, `charging`, `fault`.
 - Fresh: up to 5 seconds after capture/receipt. Stale: over 5 and up to 15 seconds. Offline: over 15 seconds, or the broker connection is unavailable.
@@ -117,7 +115,7 @@ The example timestamp `0` is deliberately invalid: the board must insert its **c
 ## Troubleshooting
 
 - **No broker connection:** verify the TLS/WSS endpoint, port, credentials, firewall and certificate chain. ESP32 uses the TLS host/port; the browser uses WSS.
-- **Subscriptions denied:** grant the viewer read access to all three exact topics.
+- **Subscriptions denied:** grant the viewer read access to the AMR-01 exact topic.
 - **Subscribed, but no device:** check the prefix, slot number, publisher permissions and Serial Monitor.
 - **Timestamp rejected:** allow NTP access and correct the computer’s clock.
 - **Live, but no robot on the floor:** localization has not been measured, calibrated or included yet.

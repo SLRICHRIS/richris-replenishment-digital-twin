@@ -1,4 +1,4 @@
-> Historical/reference workspace. The active two-robot Python sensor path is documented in the root README and `project_documentation/two_robot_sensor_twin_setup.md`.
+> Historical/reference workspace. The active single-AMR Python sensor path is documented in the root README and `project_documentation/single_amr_sensor_twin_setup.md`.
 
 # Warehouse Replenishment Research Model
 

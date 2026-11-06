@@ -14,7 +14,7 @@ Prediction has no control token or actuator functions. The hardware viewer stays
 
 ## Reference geometry and routing
 
-Twelve racks include four monitored A–D destinations and eight decorative reserves. The graph has 22 nodes and 27 bidirectional links. Dijkstra finds shortest permitted distance by default; time mode includes the restricted speed zone. Ties prefer the other objective, fewer links and a stable node sequence. The ordered candidate array is intentional for this small graph; it is not a large-scale routing implementation.
+Twelve racks include four monitored A–D destinations and eight decorative reserves. The graph has 19 nodes and 27 bidirectional links. Dijkstra finds shortest permitted distance by default; time mode includes the restricted speed zone. Ties prefer the other objective, fewer links and a stable node sequence. The ordered candidate array is intentional for this small graph; it is not a large-scale routing implementation.
 
 ## Mission lifecycle
 

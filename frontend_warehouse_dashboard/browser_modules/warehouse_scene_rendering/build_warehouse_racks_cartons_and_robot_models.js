@@ -476,7 +476,7 @@ export function createWarehouse() {
   }
   // Three independent chargers with contact pads, status displays, cables and wheel stops.
   const dockLights = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1; i++) {
     const p = worldPosition(42, 170 + i * 80);
     const dock = new T.Group();
     dock.position.copy(p);
@@ -783,7 +783,7 @@ export function createWarehouse() {
     robots.push(robot);
     return robot;
   };
-  ['#82b6ff', '#bca2ff', '#efbd68'].forEach((color, i) => makeRobot(i, color));
+  ['#82b6ff'].forEach((color, i) => makeRobot(i, color));
   root.updateMatrixWorld(true);
   return {
     root,

@@ -32,7 +32,7 @@ class StreamlitHostTests(unittest.TestCase):
         import json
         args = json.loads(components[0].proto.json_args)
         self.assertEqual(args['python_twin']['mode'], 'demo')
-        self.assertEqual(set(args['python_twin']['robots']), {'amr01', 'amr02'})
+        self.assertEqual(set(args['python_twin']['robots']), {'amr01'})
         self.assertNotIn('password', components[0].proto.json_args)
         self.assertEqual(components[0].proto.component_name,
                          'backend_streamlit_and_telemetry.streamlit_dashboard_host.replenish_workspace')

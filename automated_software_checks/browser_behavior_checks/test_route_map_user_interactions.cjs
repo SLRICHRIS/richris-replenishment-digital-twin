@@ -76,8 +76,8 @@ const assert = require('node:assert/strict'),
     Object.defineProperty(event, 'pointerId', { value: id });
     target.dispatchEvent(event);
   };
-  assert.equal(svg.querySelectorAll('[data-map-node]').length, 22);
-  assert.equal(svg.querySelectorAll('[data-map-edge]').length, 27);
+  assert.equal(svg.querySelectorAll('[data-map-node]').length, 19);
+  assert.equal(svg.querySelectorAll('[data-map-edge]').length, 24);
   assert.equal(svg.querySelectorAll('[data-map-rack]').length, 12);
   const { MANAGER_STANDING_ZONES } = await import(
     '../../frontend_warehouse_dashboard/browser_modules/warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js'
@@ -105,8 +105,8 @@ const assert = require('node:assert/strict'),
   assert.equal(snapshot().state.to, 'binA');
   assert.equal($('map-destination').value, 'binA');
   $('map-tool-start').click();
-  click('[data-map-node="bay03"]');
-  assert.equal(snapshot().state.from, 'bay03');
+  click('[data-map-node="bay01"]');
+  assert.equal(snapshot().state.from, 'bay01');
   $('map-tool-lanes').click();
   click('[data-map-edge="entry~lane10"] .map-edge-hit');
   assert.equal(snapshot().plans.outbound.route, null);
@@ -122,9 +122,9 @@ const assert = require('node:assert/strict'),
   assert($('map-navigation-controls').hidden);
   $('map-search-next').click();
   assert.equal(snapshot().state.step, 1);
-  assert(snapshot().plans.outbound.events[1].settled.includes('bay03'));
+  assert(snapshot().plans.outbound.events[1].settled.includes('bay01'));
   const endpoints = [snapshot().state.from, snapshot().state.to];
-  click('[data-map-node="bay03"]');
+  click('[data-map-node="bay01"]');
   assert.deepEqual([snapshot().state.from, snapshot().state.to], endpoints);
   assert(!$('map-node-info').hidden);
   assert($('map-node-info-cost').textContent.includes('Settled cost'));
@@ -162,18 +162,18 @@ const assert = require('node:assert/strict'),
   assert.equal(snapshot().plans.return.route.nodes[0].id, 'binA');
   assert.equal(snapshot().state.seconds, 0);
   assert.equal($('map-origin').value, 'binA');
-  assert.equal($('map-destination').value, 'bay03');
+  assert.equal($('map-destination').value, 'bay01');
   assert(svg.querySelector('[data-map-node="binA"]').classList.contains('start'));
-  assert(svg.querySelector('[data-map-node="bay03"]').classList.contains('end'));
+  assert(svg.querySelector('[data-map-node="bay01"]').classList.contains('end'));
   assert.equal(svg.querySelector('[data-map-node="binA"] .map-pin-letter').textContent, 'S');
-  assert($('map-directions').textContent.includes('Arrive at Bay 03'));
+  assert($('map-directions').textContent.includes('Arrive at Bay 01'));
   $('map-tool-start').click();
   click('[data-map-node="binB"]');
   assert.equal(snapshot().plans.return.route.nodes[0].id, 'binB');
   assert.equal($('map-origin').value, 'binB');
-  change('map-destination', 'bay02');
-  assert.equal(snapshot().plans.return.route.nodes.at(-1).id, 'bay02');
-  assert.equal(snapshot().plans.outbound.route.nodes[0].id, 'bay02');
+  change('map-destination', 'bay01');
+  assert.equal(snapshot().plans.return.route.nodes.at(-1).id, 'bay01');
+  assert.equal(snapshot().plans.outbound.route.nodes[0].id, 'bay01');
   change('map-speed-zone', 'slow');
   assert(snapshot().state.slow);
   $('map-choose-time').click();

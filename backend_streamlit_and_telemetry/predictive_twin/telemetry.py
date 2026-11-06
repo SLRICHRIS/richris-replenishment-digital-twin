@@ -11,7 +11,7 @@ import time
 
 from .models import Calibration, ResidualDetector, battery_step, finite, midpoint_pose, wheel_distance
 
-ROBOT_IDS = ("amr01", "amr02")
+ROBOT_IDS = ("amr01",)
 
 
 @dataclass(frozen=True)
@@ -147,7 +147,7 @@ class RobotTwin:
 class FleetTwin:
     def __init__(self, calibrations, stale_after_s=2.0):
         if set(calibrations) != set(ROBOT_IDS):
-            raise ValueError("Calibrate amr01 and amr02 separately")
+            raise ValueError("Configure the measured amr01 calibration only")
         finite(stale_after_s)
         if stale_after_s <= 0:
             raise ValueError("Freshness timeout must be positive")

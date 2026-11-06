@@ -15,8 +15,8 @@
 #include <sys/time.h>
 #include <time.h>
 
-#if AMR_SLOT < 1 || AMR_SLOT > 3
-#error "AMR_SLOT must be 1, 2 or 3."
+#if AMR_SLOT != 1
+#error "AMR_SLOT must be 1 (AMR-01)."
 #endif
 
 NetworkClientSecure tls;

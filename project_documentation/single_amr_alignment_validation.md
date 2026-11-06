@@ -1,19 +1,19 @@
-# Two-robot alignment: software evidence and physical limits
+# Single-AMR alignment: software evidence and physical limits
 
-The implementation is aligned to the 15-slide modelling deck and integrated into the previously designed warehouse dashboard. The default remains the original floor UI; Hardware shows backend sensor models. The parent is `research-baseline-2026-10` commit `96e76b33529137750c004a72b6751473e8277199`, which contains all of main plus the inventory research baseline. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
+The implementation is aligned to the 15-slide modelling deck and integrated into the previously designed warehouse dashboard. The default remains the original floor UI; Hardware shows backend sensor models. This revision keeps only AMR-01: one robot assembly, one dock, one hardware card and one raw-sensor topic. The inventory research baseline remains a separate single-resource experiment. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
 
 ## Verified locally
 
 | Check | Result / scope |
 |---|---|
-| Python sensor and host tests | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; independent robots; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and inventory event buttons. |
-| MQTT service test | Mock client verifies TLS context, exact two subscriptions, callback isolation and absence of command publishing; this is not a broker connectivity test. |
+| 25 Python sensor and host tests | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; removed-identity rejection; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and inventory event buttons. |
+| MQTT service test | Mock client verifies TLS context, the single AMR-01 subscription, callback isolation and absence of command publishing; this is not a broker connectivity test. |
 | Research baseline | 21 tests pass: API/quarantine, synthetic discrete events, graph/event explanations, inventory conservation, shared-input policy comparison and legacy gateway. |
 | Legacy Python services | 13 tests pass: recorder and coordinator lifecycle. These services remain outside the new active sensor path. |
-| Browser regression suite | The original 13 suites plus the Python-to-warehouse readout suite pass, including routing, calibration/replay, simulated stock consistency, reservations and manager-driven route changes. These are legacy workspace tests. |
+| Browser regression suite | All 15 suites pass, including direct CPU construction of exactly one robot and one dock; the prior multi-robot reservation study is replaced with single-AMR route/time-window checks, including routing, calibration/replay, simulated stock consistency, reservations and manager-driven route changes. These are legacy workspace tests. |
 | Hosting/assets/source boundaries | Original warehouse landing component, server-computed display arguments and registered assets checked using a real Streamlit WebSocket session; file-purpose catalog, local links and existing download reproducibility checked separately. |
 
-Run the commands in the root README to reproduce these checks. The merged alignment baseline passed the real GitHub Actions ESP32 build; the observation sketch is unchanged in this UI integration. CI additionally compiles the direct-sensor ESP32 sketch. Local environment has no Arduino toolchain; **no local firmware build, sensor wiring, motor test or hardware validation is claimed**. Read the Actions result for the actual remote compile status. A successful compile still would not validate sensors or mechanics.
+Run the commands in the root README to reproduce these checks. CI compiles the direct-sensor ESP32 sketch with the AMR-01-only identity admission check. Local environment has no Arduino toolchain; **no local firmware build, sensor wiring, motor test or hardware validation is claimed**. Read the Actions result for the actual remote compile status. A successful compile still would not validate sensors or mechanics.
 
 ## Physical commissioning still required
 

@@ -506,7 +506,7 @@ export class CanvasTwinScene {
           [],
           0.55,
         );
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 1; i++) {
       const y = 170 + i * 80;
       this.paintPolygon(
         [
@@ -618,7 +618,7 @@ export class CanvasTwinScene {
     );
   }
   scenery() {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 1; i++) {
       const y = 170 + i * 80;
       this.box(41, y, 0, 20, 36, 43, '#405462');
       this.box(53, y, 22, 1, 23, 13, '#132a36');

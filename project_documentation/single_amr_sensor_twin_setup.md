@@ -1,12 +1,12 @@
-# Two-robot sensor twin commissioning
+# Single-AMR sensor twin commissioning
 
 ## Entry point and hosting
 
 Deploy branch containing this change with root `streamlit_app.py` and root `requirements.txt`. Run locally with `streamlit run streamlit_app.py`. GitHub supplies code to Streamlit; it is not a continuously running computation host. The original warehouse dashboard opens first; select Hardware for Python-derived sensor results. Its initial source is a fixed synthetic trial. The detailed model-inspection view includes an independent synthetic inventory experiment. Reuse the existing Streamlit app deployment rather than creating another private app. Earlier `research_baseline/streamlit_app.py` is a separate inventory walkthrough.
 
-The Streamlit backend establishes MQTT/TLS on **8883** using the system trusted CA store. Use a serverless EMQX hostname with a publicly trusted certificate; custom CA deployments require explicit server-side CA configuration. It subscribes read-only to two state topics. Browser WSS/8084 belongs to the preserved standalone v1 interfaces, not the current raw-sensor path. When Python arguments are present, Hardware displays the new backend readouts and hides the old v1 connection form. Browser access uses Streamlit HTTPS. MQTT callbacks never access Streamlit UI/session APIs or issue commands. A cached subscriber and lock-protected fleet state are shared by viewers of the same server process/configuration.
+The Streamlit backend establishes MQTT/TLS on **8883** using the system trusted CA store. Use a serverless EMQX hostname with a publicly trusted certificate; custom CA deployments require explicit server-side CA configuration. It subscribes read-only to the single AMR-01 state topic. Browser WSS/8084 belongs to the preserved standalone v1 interfaces, not the current raw-sensor path. When Python arguments are present, Hardware displays the new backend readouts and hides the old v1 connection form. Browser access uses Streamlit HTTPS. MQTT callbacks never access Streamlit UI/session APIs or issue commands. A cached subscriber and lock-protected fleet state are shared by viewers of the same server process/configuration.
 
-Copy `.streamlit/secrets.example.toml` into **private** `.streamlit/secrets.toml`, or enter the contents into Streamlit Cloud secrets. Replace broker credentials and **every illustrative calibration value**, then set `commissioning.measured_calibration_confirmed = true`. Never commit that private file. Subscriber permissions should allow only reading `robot/amr01/state` and `robot/amr02/state`; use different publisher credentials per board.
+Copy `.streamlit/secrets.example.toml` into **private** `.streamlit/secrets.toml`, or enter the contents into Streamlit Cloud secrets. Replace broker credentials and **every illustrative calibration value**, then set `commissioning.measured_calibration_confirmed = true`. Never commit that private file. Subscriber permissions should allow only reading `robot/amr01/state`; use a dedicated AMR-01 publisher credential.
 
 ## Contract v2
 
@@ -19,7 +19,7 @@ Publish a non-retained JSON object on `robot/<robot_id>/state`, with these exact
 | Field | Definition |
 |---|---|
 | schema_version | Integer 2 |
-| robot_id | Exactly amr01 or amr02; must match topic |
+| robot_id | Exactly amr01 only; must match topic |
 | boot_id | Nonempty unique boot identifier, at most 64 characters |
 | seq | Strictly increasing nonnegative uint32 within boot; duplicate/out-of-order packets ignored |
 | sample_time_s | Device monotonic acquisition time in seconds, increasing within boot; not broker receive time |
@@ -37,7 +37,7 @@ History is bounded to 1,200 derived samples per robot in server memory and can b
 
 ## Direct-sensor firmware
 
-Use `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino`; copy the adjacent example settings to private `esp32_wifi_and_mqtt_settings.h`. Install Arduino ESP32, PubSubClient, Adafruit MPU6050, Adafruit INA219, Adafruit Unified Sensor and Adafruit BusIO. Use ESP32 Dev Module. Assign amr01 and amr02 separately and use the broker's trusted CA. Certificate verification is enabled and NTP provides time before TLS. The sketch has no separate UART controller dependency.
+Use `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino`; copy the adjacent example settings to private `esp32_wifi_and_mqtt_settings.h`. Install Arduino ESP32, PubSubClient, Adafruit MPU6050, Adafruit INA219, Adafruit Unified Sensor and Adafruit BusIO. Use ESP32 Dev Module. Assign amr01 only and use the broker's trusted CA. Certificate verification is enabled and NTP provides time before TLS. The sketch has no separate UART controller dependency.
 
 | Connection | Example pins / acquisition |
 |---|---|
@@ -52,7 +52,7 @@ Verify actual shunt resistance. Adafruit's 32V/2A calibration assumes a 0.1-ohm 
 
 Roll each wheel forward by hand and adjust its encoder sign. Measure effective counts per wheel revolution including gearbox and all four edges; measure radii against actual travel and track against rotation trials. Mount IMU with body z positive counterclockwise, and estimate stationary bias with `models.stationary_gyro_bias` using independently stationary samples. MPU6050 has no magnetometer, so integrating gyro alone would drift. Measure usable capacity and initial SOC at the start of every quantitative trial; voltage alone is not a calibrated SOC measurement. Learn residual threshold and hold time from healthy trials and validate on separate fault/slip trials.
 
-The new firmware is a commissioning observation sketch, not a completed autonomous controller. Firmware compile/hardware status is recorded in [software evidence](two_robot_alignment_validation.md). Legacy UART sketches and downloadable kits remain for historical reproducibility, identified as legacy in the README.
+The new firmware is a commissioning observation sketch, not a completed autonomous controller. Firmware compile/hardware status is recorded in [software evidence](single_amr_alignment_validation.md). Legacy UART sketches and downloadable kits remain for historical reproducibility, identified as legacy in the README.
 
 ## Primary implementation references
 

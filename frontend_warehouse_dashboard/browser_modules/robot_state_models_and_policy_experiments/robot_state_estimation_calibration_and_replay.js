@@ -11,7 +11,7 @@ import {
   referenceFacility,
 } from '../shortest_path_and_route_map/warehouse_graph_validation_and_dijkstra_routing.js';
 
-export const TWIN_VERSION = '2.1.0';
+export const TWIN_VERSION = '3.2.0';
 export const NOTICE = '© 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.';
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const rms = (xs) => (xs.length ? Math.sqrt(xs.reduce((s, x) => s + x * x, 0) / xs.length) : null);
@@ -582,8 +582,11 @@ export function parseRecording(text) {
     return { kind: e.kind, received_at_ms: e.received_at_ms, packet };
   });
   // Imported provenance is a user declaration, not a certification of authenticity.
-  if (r.profiles !== undefined && (!Array.isArray(r.profiles) || r.profiles.length !== 3))
-    throw Error('A recording model registry must contain exactly three asset profiles.');
+  if (
+    r.profiles !== undefined &&
+    (!Array.isArray(r.profiles) || r.profiles.length !== SLOT_IDS.length)
+  )
+    throw Error('A recording model registry must contain exactly one AMR-01 profile.');
   const profiles = SLOT_IDS.map((id, i) =>
     checkedProfile(r.profiles?.[i] || defaultProfile(id), id),
   );
@@ -752,11 +755,11 @@ export function fitCalibration(events, assetId, profile) {
 export function referenceRecording(fault = 'nominal') {
   const start = 1760000000000,
     events = [],
-    gains = [1.12, 0.88, 1.06];
+    gains = [1.12];
   for (let step = 0; step <= 100; step++) {
     const t = step * 0.5;
-    for (let i = 0; i < 3; i++) {
-      if (fault === 'dropout' && i === 1 && t >= 18 && t <= 24) continue;
+    for (let i = 0; i < SLOT_IDS.length; i++) {
+      if (fault === 'dropout' && i === 0 && t >= 18 && t <= 24) continue;
       const outbound = t < 24,
         moving = t < 48,
         travel = moving ? (outbound ? t : 48 - t) : 0;

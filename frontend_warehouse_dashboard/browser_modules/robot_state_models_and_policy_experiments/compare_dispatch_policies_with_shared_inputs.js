@@ -33,8 +33,8 @@ function trip(unit, bin, facility, speedFactor, routing) {
 }
 
 function validate(input, options) {
-  if (!input || input.units?.length !== 3 || input.bins?.length !== 4)
-    throw new Error('Experiment requires exactly three assets and four bins.');
+  if (!input || input.units?.length !== 1 || input.bins?.length !== 4)
+    throw new Error('Experiment requires exactly one AMR-01 asset and four bins.');
   if (
     !Number.isFinite(options.horizonS) ||
     options.horizonS < 30 ||
@@ -114,7 +114,7 @@ export function runBranch(input, options, policy) {
     );
   for (const bin of requests) {
     const ranked = units
-      .filter((u) => policy !== 'maintenance' || u.id !== 'amr-02')
+      .filter((u) => policy !== 'maintenance' || u.id !== 'amr-01')
       .map((unit) => {
         try {
           const route = trip(unit, bin, input.facility, options.speedFactor, input.routing);

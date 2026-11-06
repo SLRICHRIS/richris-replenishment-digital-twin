@@ -14,7 +14,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_mission_approval_and_routes.mjs` | Verify or measure mission approval and routes. |
 | `automated_software_checks/browser_behavior_checks/test_manager_movement_and_fleet_replanning.mjs` | Verify movable manager restrictions, reactive fleet routes, waiting poses, reserve gates and traffic clearance. |
 | `automated_software_checks/browser_behavior_checks/test_mission_inventory_and_model_consistency.mjs` | Verify or measure mission inventory and model consistency. |
-| `automated_software_checks/browser_behavior_checks/test_multi_robot_time_window_reservations.mjs` | Verify or measure multi robot time window reservations. |
+| `automated_software_checks/browser_behavior_checks/test_single_amr_route_time_windows.mjs` | Verify or measure multi robot time window reservations. |
 | `automated_software_checks/browser_behavior_checks/test_robot_state_calibration_and_recording_replay.mjs` | Verify or measure robot state calibration and recording replay. |
 | `automated_software_checks/browser_behavior_checks/test_robot_telemetry_identity_and_freshness.mjs` | Verify or measure robot telemetry identity and freshness. |
 | `automated_software_checks/browser_behavior_checks/test_route_map_solver_and_playback.mjs` | Verify or measure route map solver and playback. |
@@ -151,8 +151,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `esp32_telemetry_firmware/publish_raw_sensor_telemetry/example_esp32_wifi_and_mqtt_settings.h` | Configure direct-sensor firmware using public placeholders only. |
 | `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino` | Publish direct encoder/gyro/battery observations; keep motors in standby for commissioning. |
 | `project_documentation/slide_to_code_mapping.md` | Document slide to code mapping. |
-| `project_documentation/two_robot_alignment_validation.md` | Document two robot alignment validation. |
-| `project_documentation/two_robot_sensor_twin_setup.md` | Document two robot sensor twin setup. |
+| `project_documentation/single_amr_alignment_validation.md` | Document two robot alignment validation. |
+| `project_documentation/single_amr_sensor_twin_setup.md` | Document two robot sensor twin setup. |
 | `requirements-dev.txt` | Install the active app and research verification dependencies. |
 | `research_baseline/.gitignore` | Configure or launch the standalone research inventory experiment. |
 | `research_baseline/Dockerfile` | Configure or launch the standalone research inventory experiment. |
@@ -190,4 +190,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_workspace_payload.py` | Verify public component data, bounded history, private-setting isolation and stale forecast suppression. |
 | `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the existing warehouse Hardware view. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values in the original Hardware design without recalculating the models. |
-| `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Match integrated two-robot sensor cards to the existing warehouse theme and responsive layout. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Match integrated single-AMR sensor cards to the existing warehouse theme and responsive layout. |
+| `automated_software_checks/browser_behavior_checks/test_single_amr_configuration.mjs` | Construct warehouse geometry and verify exactly one robot, one dock and one registered telemetry identity. |

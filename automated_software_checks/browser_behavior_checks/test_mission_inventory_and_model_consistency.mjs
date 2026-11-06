@@ -28,48 +28,36 @@ for (const slow of [false, true])
       ROUTE_CONDITIONS.north,
       ROUTE_CONDITIONS.central,
     ])
-      for (let from = 0; from < 3; from++)
-        for (let to = 0; to < 3; to++)
-          if (from !== to)
-            for (let bin = 0; bin < 4; bin++) {
-              const robots = [0, 1, 2].map((id) => ({
-                id,
-                ...homeFor({ id }),
-                battery: 95,
-                state: 'Idle',
-                task: null,
-                route: [],
-              }));
-              const task = { id: 1, robot: from, bin, status: 'Queued', approvedOrder: 1 };
-              const c = {
-                robots,
-                bins: structuredClone(BIN_DESTINATIONS),
-                tasks: [task],
-                demand: 1,
-                slow,
-                stopped: false,
-                routing: { objective, blockedEdges: [...blockedEdges] },
-              };
-              task.journey = tripFor(robots[from], c.bins[bin], slow, c.routing);
-              robots[from].task = 1;
-              robots[from].state = 'Queued';
-              const own = tripFor(robots[to], c.bins[bin], slow, c.routing),
-                before = JSON.stringify(task.journey);
-              robots[to].battery = MODEL.reserve + own.seconds * MODEL.drain + 1e-7;
-              const a = assessMission({ ...task, robot: to }, c);
-              assert(a.feasible, a.reasons.join(' '));
-              assert.equal(a.trip.inbound.nodes.at(-1).id, 'bay0' + (to + 1));
-              assert.deepEqual(a.trip.outbound.nodes, own.outbound.nodes);
-              assert.deepEqual(a.trip.inbound.nodes, own.inbound.nodes);
-              assert(Math.abs(a.trip.metres - own.metres) < 1e-9);
-              assert(Math.abs(a.trip.seconds - own.seconds) < 1e-9);
-              assert.equal(
-                JSON.stringify(task.journey),
-                before,
-                'Candidate checks must preserve the old approval',
-              );
-              reassignments++;
-            }
+      for (let bin = 0; bin < 4; bin++) {
+        const robot = {
+          id: 0,
+          ...homeFor({ id: 0 }),
+          battery: 95,
+          state: 'Idle',
+          task: null,
+          route: [],
+        };
+        const task = { id: 1, robot: 0, bin, status: 'Pending approval' };
+        const c = {
+          robots: [robot],
+          bins: structuredClone(BIN_DESTINATIONS),
+          tasks: [task],
+          demand: 1,
+          slow,
+          stopped: false,
+          routing: { objective, blockedEdges: [...blockedEdges] },
+        };
+        const trip = tripFor(robot, c.bins[bin], slow, c.routing);
+        robot.battery = MODEL.reserve + trip.seconds * MODEL.drain + 1e-7;
+        const before = JSON.stringify(c);
+        const assessment = assessMission(task, c);
+        assert(assessment.feasible, assessment.reasons.join(' '));
+        assert.equal(assessment.trip.inbound.nodes.at(-1).id, 'bay01');
+        assert.equal(JSON.stringify(c), before, 'Assessment must not mutate approval inputs');
+        robot.battery -= 0.01;
+        assert(!assessMission(task, c).feasible, 'Return reserve is mandatory');
+        reassignments++;
+      }
 
 const now = 1760000000000;
 const inv = (seq, count, frame = 'warehouse-01', source = 'camera') => ({
@@ -165,7 +153,7 @@ const allowedFit = fitCalibration(referenceRecording().events, 'amr-01', default
 assert(allowedFit.ready && allowedFit.passes);
 const docked = {
   provenance: 'simulation',
-  units: [0, 1, 2].map((id) => ({
+  units: [0].map((id) => ({
     id: 'amr-0' + (id + 1),
     x_m: homeFor({ id }).x / MODEL.scale,
     y_m: homeFor({ id }).y / MODEL.scale,
@@ -198,5 +186,5 @@ assert.throws(
   'Large configured noise cannot admit an off-bay asset',
 );
 console.log(
-  `PASS: ${reassignments} reassignment configurations use the new unit's own outbound/return geometry and reserve; frame/monotonic/source-consistent stock and demand; deterministic inventory replay; unapplyable speed fits withheld; bounded graph-only docked experiments.`,
+  `PASS: ${reassignments} single-AMR route/reserve cases;; frame/monotonic/source-consistent stock and demand; deterministic inventory replay; unapplyable speed fits withheld; bounded graph-only docked experiments.`,
 );

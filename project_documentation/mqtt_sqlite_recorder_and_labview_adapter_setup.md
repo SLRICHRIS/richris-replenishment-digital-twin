@@ -22,7 +22,7 @@ Set `MQTT_HOST` to the broker hostname and `MQTT_USER` to a read-only archive ac
 python -m backend_streamlit_and_telemetry.mqtt_recording_and_inventory_bridge.mqtt_telemetry_recorder_and_inventory_publisher record --database warehouse-evidence.sqlite3
 ```
 
-The recorder subscribes to the three `/amr-0N/telemetry` topics and `/inventory`. It writes accepted observations and rejection reasons, preserving receiver wall time and monotonic time. A bounded queue decouples the MQTT network callback from SQLite commits. The queue can overflow; the shutdown report counts overflows. QoS 0 collection is not lossless. Device ACLs must restrict each publisher to its own topic; a `device_id` string is not cryptographic proof of device identity.
+The recorder subscribes to the `/amr-01/telemetry` topic and `/inventory`. It writes accepted observations and rejection reasons, preserving receiver wall time and monotonic time. A bounded queue decouples the MQTT network callback from SQLite commits. The queue can overflow; the shutdown report counts overflows. QoS 0 collection is not lossless. Device ACLs must restrict each publisher to its own topic; a `device_id` string is not cryptographic proof of device identity.
 
 Stop with Ctrl+C. Export the most recent connection session:
 
@@ -52,7 +52,7 @@ The example timestamp is illustrative. Supply the actual acquisition Unix timest
 
 ## Asset-frame metadata
 
-`backend_streamlit_and_telemetry/mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json` contains the same illustrative 22-node, 27-link route graph used by the twelve-rack reference floor: three bays, four A–D loading stops, three cross aisles and four connecting lanes. Eight additional racks are reserve storage with no measured stock contract. The example is unverified. Survey and replace its coordinates and edges for your testbed before confirming geometry in Twin lab; an imported graph does not change the reference 3D warehouse.
+`backend_streamlit_and_telemetry/mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json` contains the same illustrative 19-node, 24-link route graph used by the twelve-rack reference floor: one AMR-01 bay, four A–D loading stops, three cross aisles and four connecting lanes. Eight additional racks are reserve storage with no measured stock contract. The example is unverified. Survey and replace its coordinates and edges for your testbed before confirming geometry in Twin lab; an imported graph does not change the reference 3D warehouse.
 
 Existing ESP32 v1 packets continue to work. Add these optional fields only when actual localization supplies them:
 

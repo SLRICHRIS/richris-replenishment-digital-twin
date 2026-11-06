@@ -29,7 +29,7 @@ export function createHardwareWorkspace({
     const slots = snapshot(),
       live = slots.filter((s) => s.status === 'live').length;
     set('hardware-live-count', String(live));
-    set('hardware-summary', `${live} / 3 hardware slots live`);
+    set('hardware-summary', `${live} / 1 hardware slot live`);
     set(
       'hardware-broker-state',
       {
@@ -245,21 +245,26 @@ export function createHardwareWorkspace({
       liveClient.on('connect', () => {
         if (ticket !== generation) return;
         state = 'connecting';
-        set('hardware-message', 'Broker connected. Subscribing to all three device topics…');
+        set('hardware-message', 'Broker connected. Subscribing to the AMR-01 device topic…');
         changed();
         clearTimeout(subscriptionTimer);
         subscriptionTimer = setTimeout(() => {
           if (ticket === generation)
             fail(
-              'The broker did not confirm the three subscriptions. Check the viewer’s topic permissions.',
+              'The broker did not confirm the AMR-01 subscription. Check the viewer’s topic permissions.',
             );
         }, 10000);
         liveClient.subscribe(next.topics, { qos: 0 }, (error, grants) => {
           if (ticket !== generation) return;
           clearTimeout(subscriptionTimer);
-          if (error || !grants || grants.length !== 3 || grants.some((g) => g.qos > 2))
+          if (
+            error ||
+            !grants ||
+            grants.length !== SLOT_IDS.length ||
+            grants.some((g) => g.qos > 2)
+          )
             return fail(
-              'Access to a device topic was denied. Give the viewer read permission for all three telemetry topics.',
+              'Access to a device topic was denied. Give the viewer read permission for the AMR-01 telemetry topic.',
             );
           state = 'connected';
           set(
@@ -267,7 +272,7 @@ export function createHardwareWorkspace({
             'Listening for fresh ESP32 telemetry. Sensor values appear only after a device reports them.',
           );
           changed();
-          // Inventory is optional: its ACL cannot prevent the three AMR subscriptions from working.
+          // Inventory is optional: its ACL cannot prevent the AMR-01 subscription from working.
           liveClient.subscribe(
             next.inventoryTopic,
             { qos: 0 },

@@ -20,14 +20,7 @@ import { conflictingWindows } from '../../frontend_warehouse_dashboard/browser_m
 const defaults = referenceFacility().restrictedZones;
 const zonesAt = (x, y) =>
   defaults.map((z, i) => (i ? { ...z } : { ...z, x_m: x / 75, y_m: y / 75 }));
-function context(
-  positions = [
-    [440, 250],
-    [120, 250],
-    [120, 330],
-  ],
-  destinations = [1],
-) {
+function context(positions = [[440, 250]], destinations = [1]) {
   const robots = positions.map(([x, y], id) => ({
     id,
     x,
@@ -149,19 +142,12 @@ let schedules = 0,
   samples = 0;
 for (const objective of ['distance', 'time'])
   for (const slow of [false, true]) {
-    const fleet = context(
-      [
-        [440, 250],
-        [230, 380],
-        [120, 330],
-      ],
-      [1, 2, 0],
-    );
+    const fleet = context([[440, 250]], [1]);
     fleet.routing.objective = objective;
     fleet.slow = slow;
     const result = replanFleetForManagerPositions(fleet, zonesAt(545, 250));
     assert(!result.held, result.reason);
-    assert.equal(result.plans.length, 3);
+    assert.equal(result.plans.length, 1);
     assert.equal(conflictingWindows(result.plans.flatMap((p) => p.traffic.windows)), null);
     const end = Math.max(...result.plans.map((p) => p.traffic.release));
     for (let time = fleet.trafficClock; time <= end + 0.05; time += 0.05) {
@@ -191,5 +177,5 @@ for (const objective of ['distance', 'time'])
     schedules++;
   }
 console.log(
-  `PASS: manager relocation, fresh route cache, clear partial-segment escape, blocked pose/return/reserve holds, cancellation return, frozen speed, delayed forecasts and ${schedules} concurrent replans over ${samples} fleet samples.`,
+  `PASS: manager relocation, fresh route cache, clear partial-segment escape, blocked pose/return/reserve holds, cancellation return, frozen speed, delayed forecasts and ${schedules} AMR-01 replans over ${samples} fleet samples.`,
 );

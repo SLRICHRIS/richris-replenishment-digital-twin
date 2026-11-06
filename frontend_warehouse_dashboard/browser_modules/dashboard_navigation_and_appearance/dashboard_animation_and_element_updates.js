@@ -351,8 +351,6 @@ export function createMotionSystem({ scene } = {}) {
         'hardware-live-count',
         'hardware-broker-state',
         'hw-0-status',
-        'hw-1-status',
-        'hw-2-status',
       ]) {
         const el = $(id),
           value = el.textContent;

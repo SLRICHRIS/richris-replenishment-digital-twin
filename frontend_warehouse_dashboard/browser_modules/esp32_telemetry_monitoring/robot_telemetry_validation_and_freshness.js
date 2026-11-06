@@ -1,5 +1,5 @@
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
-export const SLOT_IDS = ['amr-01', 'amr-02', 'amr-03'];
+export const SLOT_IDS = ['amr-01'];
 export const FRESH_MS = 5000;
 export const OFFLINE_MS = 15000;
 export const STATES = ['unknown', 'idle', 'moving', 'paused', 'charging', 'fault'];
@@ -61,7 +61,13 @@ export function decodeTelemetry(payload, expectedId, now = Date.now()) {
   } catch {
     throw new Error('Packet is not valid UTF-8 JSON.');
   }
-  if (!p || Array.isArray(p) || p.v !== 1 || p.device_id !== expectedId)
+  if (
+    !p ||
+    Array.isArray(p) ||
+    p.v !== 1 ||
+    p.device_id !== expectedId ||
+    !SLOT_IDS.includes(expectedId)
+  )
     throw new Error('Packet version or device identity does not match this slot.');
   if (typeof p.boot_id !== 'string' || !/^[a-fA-F0-9]{8,32}$/.test(p.boot_id))
     throw new Error('Packet needs a valid boot identifier.');

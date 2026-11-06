@@ -66,7 +66,8 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
   let savedProfiles, savedFacility;
   try {
     const saved = JSON.parse(localStorage.getItem('replenish.twin.live-profiles.v2'));
-    if (saved?.length === 3) savedProfiles = SLOT_IDS.map((id, i) => checkedProfile(saved[i], id));
+    if (saved?.length === SLOT_IDS.length)
+      savedProfiles = SLOT_IDS.map((id, i) => checkedProfile(saved[i], id));
   } catch {}
   try {
     savedFacility = checkedFacility(
@@ -376,7 +377,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
             ? 'Synthetic reference · not physical evidence'
             : 'Imported recording · user supplied';
     $('lab-provenance').dataset.tone = synthetic ? 'synthetic' : 'normal';
-    html('lab-eligible', states.filter((a) => a.eligible).length + ' <small>/ 3</small>');
+    html('lab-eligible', states.filter((a) => a.eligible).length + ' <small>/ 1</small>');
     $('lab-comparisons').textContent = String(
       states.reduce((sum, a) => sum + a.comparisons.length, 0),
     );
@@ -477,8 +478,8 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
       const gates = [
         ['Facility coordinates and route graph confirmed', !!e?.facility.verified],
         [
-          'Fresh mapped pose / speed for all three assets',
-          states.length === 3 && states.every((a) => a.eligible),
+          'Fresh mapped pose / speed for AMR-01',
+          states.length === SLOT_IDS.length && states.every((a) => a.eligible),
         ],
         [
           'All four bin observations fresh',
@@ -489,8 +490,8 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
           rates.length === 4 && rates.every((r) => r.rate !== null),
         ],
         [
-          'Motion holdout accepted for all three assets',
-          states.length === 3 &&
+          'Motion holdout accepted for AMR-01',
+          states.length === SLOT_IDS.length &&
             states.every(
               (a) =>
                 a.profile.validation?.passes && a.profile.validation.provenance !== 'synthetic',
@@ -498,7 +499,8 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
         ],
         [
           'Measured discharge models for all assets',
-          states.length === 3 && states.every((a) => a.profile.energyProvenance === 'measured'),
+          states.length === SLOT_IDS.length &&
+            states.every((a) => a.profile.energyProvenance === 'measured'),
         ],
         ['Independent localization ground truth', false],
         ['Physical command / acknowledgment integration', false],
@@ -576,15 +578,15 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
       )
     )
       throw Error(
-        'Physical reserve experiments require measured discharge and accepted motion holdouts for all three AMRs. Use calibration first, or select the simulator for an assumption-based study.',
+        'Physical reserve experiments require measured discharge and accepted motion holdouts for AMR-01. Use calibration first, or select the simulator for an assumption-based study.',
       );
     if (
       !e ||
-      states.length !== 3 ||
+      states.length !== SLOT_IDS.length ||
       states.some((s) => !s.eligible || s.packet.battery_pct === null)
     )
       throw Error(
-        'Need three fresh, mapped pose/speed/battery streams with valid model gates. Load the reference run, or complete Hardware and asset configuration.',
+        'Need one fresh, mapped pose/speed/battery stream with valid model gates. Load the reference run, or complete Hardware and asset configuration.',
       );
     if (
       inventory.length !== 4 ||
@@ -646,7 +648,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
                 ? 'FIFO baseline'
                 : branch.policy === 'urgency'
                   ? 'Earliest-stockout proposal'
-                  : 'AMR-02 unavailable'}
+                  : 'AMR-01 unavailable'}
             </b>
             <br />
             ${branch.schedule
@@ -713,7 +715,7 @@ export function createEngineeringWorkspace({ getSimulation, connected, onChange 
           ? 'FIFO baseline'
           : branch.policy === 'urgency'
             ? 'Earliest-stockout proposal'
-            : 'AMR-02 unavailable';
+            : 'AMR-01 unavailable';
     const horizonX = X(result.options.horizonS);
     let timeline = /* HTML */ `
       <rect

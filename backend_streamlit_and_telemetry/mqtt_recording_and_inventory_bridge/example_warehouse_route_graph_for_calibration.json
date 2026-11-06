@@ -14,20 +14,6 @@
       "assetId": "amr-01"
     },
     {
-      "id": "bay02",
-      "role": "bay",
-      "x_m": 1.6,
-      "y_m": 3.3333333333333335,
-      "assetId": "amr-02"
-    },
-    {
-      "id": "bay03",
-      "role": "bay",
-      "x_m": 1.6,
-      "y_m": 4.4,
-      "assetId": "amr-03"
-    },
-    {
       "id": "stage01",
       "role": "junction",
       "x_m": 2.933333333333333,
@@ -38,12 +24,6 @@
       "role": "junction",
       "x_m": 2.933333333333333,
       "y_m": 3.3333333333333335
-    },
-    {
-      "id": "stage03",
-      "role": "junction",
-      "x_m": 2.933333333333333,
-      "y_m": 4.4
     },
     {
       "id": "lane00",
@@ -154,21 +134,6 @@
     },
     {
       "from": "stage01",
-      "to": "entry",
-      "bidirectional": true
-    },
-    {
-      "from": "bay02",
-      "to": "entry",
-      "bidirectional": true
-    },
-    {
-      "from": "bay03",
-      "to": "stage03",
-      "bidirectional": true
-    },
-    {
-      "from": "stage03",
       "to": "entry",
       "bidirectional": true
     },
