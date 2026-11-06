@@ -191,7 +191,7 @@ assert.equal(graphRouteTrace(restrictedDirected, 'b', 'a', 1).route, null);
 const endpointMap = {
   ...map,
   restrictedZones: [
-    { id: 'manager-bay', label: 'Manager', x_m: 120 / 75, y_m: 170 / 75, radius_m: 0.1 },
+    { id: 'manager-bay', label: 'Manager', x_m: 120 / 75, y_m: 250 / 75, radius_m: 0.1 },
   ],
 };
 const endpointTrace = graphRouteTrace(endpointMap, 'bay01', 'bay01', 1);

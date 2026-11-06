@@ -270,7 +270,7 @@ Object.assign(
         )
         .replace(/^import[\s\S]*?;\s*$/gm, '')
         .replace(/export /g, '') +
-      ';return{WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})()',
+      ';return{AMR_HOME,WAREHOUSE_LAYOUT,BIN_DESTINATIONS,STORAGE_RACKS,AISLE_X,AISLE_Y,LANE_SEGMENTS,referenceRouteGraph,paintLanePlan};})()',
     ctx,
   ),
 );
@@ -370,6 +370,7 @@ const run = (s) => vm.runInContext(s, ctx);
 assert.equal(get('environment').hidden, false);
 assert.equal(run('robots.length'), 1);
 assert.equal(run('robots[0].id'), 0);
+assert.equal(run('robots[0].y'), 250, 'AMR-01 starts in the middle bay');
 assert.equal(run('tasks.length'), 3);
 assert(run('tasks.every(t=>t.robot===0)'));
 get('layer-facility').click();
@@ -385,6 +386,7 @@ for (let mission = 0; mission < 3; mission++) {
   run('step(500);render()');
   assert.equal(run('completed'), mission + 1);
   assert.equal(run('robots[0].state'), 'Idle');
+  assert.equal(run('robots[0].y'), 250, 'AMR-01 returns to its middle bay');
   assert(run('robots[0].battery>=15'));
 }
 run('reset();assign(tasks[0]);step(2);pauseRobot(0)');
@@ -399,6 +401,7 @@ assert.equal(run('tasks.filter(t=>t.status==="Active").length'), 0);
 run('reset();assign(tasks[0]);step(2);cancelTask(tasks[0]);step(500);render()');
 assert.equal(run('completed'), 0);
 assert.equal(run('robots[0].state'), 'Idle');
+assert.equal(run('robots[0].y'), 250, 'AMR-01 returns to its middle bay');
 run('reset();running=false;assign(tasks[0]);robots[0].battery=12;running=true');
 const queued = run('queueTimeline(dispatchContext()).entries[0]');
 assert(queued.chargeWait > 0);

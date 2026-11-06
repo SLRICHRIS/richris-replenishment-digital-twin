@@ -25,11 +25,13 @@ const model = createWarehouse();
 delete globalThis.document;
 assert.equal(model.robots.length, 1, 'Only one robot assembly is constructed');
 assert.equal(model.dockLights.length, 1, 'Only one charging dock is constructed');
+assert.equal(model.dockLights[0].position.z, 0, 'Dock lies at the warehouse middle Y position');
 const bays = referenceFacility().nodes.filter((n) => n.role === 'bay');
 assert.deepEqual(
   bays.map((n) => n.assetId),
   ['amr-01'],
 );
+assert.equal(bays[0].y_m * 75, 250, 'AMR-01 bay is centred vertically');
 assert.deepEqual(SLOT_IDS, ['amr-01']);
 for (const removed of ['amr-02', 'amr-03']) {
   assert.throws(
@@ -63,10 +65,15 @@ assert.deepEqual(
   ['01'],
 );
 assert.equal(bayRectangles.length, 1, 'Only one painted parking rectangle');
+assert.equal(
+  bayRectangles[0][1] + bayRectangles[0][3] / 2,
+  250,
+  'Painted bay matches the centred dock',
+);
 assert(
-  chevrons.length > 0 && chevrons.every((y) => y >= 133 && y <= 201),
-  'No hatching extends into the former 02/03 bays',
+  chevrons.length > 0 && chevrons.every((y) => y >= 213 && y <= 281),
+  'Hatching stays within the sole middle bay',
 );
 console.log(
-  'PASS: floor texture paints only bay 01, with no 02/03 labels, parking rectangles or leftover charging-zone hatching.',
+  'PASS: floor texture paints only bay 01 in the middle position; markings and dock agree.',
 );

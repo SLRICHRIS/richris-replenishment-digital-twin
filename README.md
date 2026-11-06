@@ -45,4 +45,4 @@ Software tests verify equations, units, isolation, sequence/freshness handling a
 
 © 2026 S. L. Richris. See [ownership and external software licences](project_ownership_and_external_software_licenses.txt).
 
-The project configures **AMR-01 only**: one simulated robot, one loading/charging bay, one sensor card, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Three demo missions remain as sequential jobs for AMR-01. Reuse the existing app deployment.
+The project configures **AMR-01 only**: one simulated robot, one loading/charging bay centred on the left apron, one sensor card, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Three demo missions remain as sequential jobs for AMR-01. Reuse the existing app deployment.

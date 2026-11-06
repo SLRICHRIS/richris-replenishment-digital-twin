@@ -4,6 +4,7 @@ import {
   managerZonesInModelCoordinates,
 } from '../warehouse_reference_geometry/warehouse_manager_standing_zones_and_route_clearance.js';
 import {
+  AMR_HOME,
   STORAGE_RACKS,
   LANE_SEGMENTS,
   BIN_DESTINATIONS,
@@ -507,7 +508,7 @@ export class CanvasTwinScene {
           0.55,
         );
     for (let i = 0; i < 1; i++) {
-      const y = 170 + i * 80;
+      const y = AMR_HOME.y;
       this.paintPolygon(
         [
           [56, y - 31, 0.6],
@@ -549,7 +550,7 @@ export class CanvasTwinScene {
         0.6,
       ),
     );
-    this.text('AMR CHARGING', 111, 129, 1, '#344747', Math.max(6, 11 * this.scale));
+    this.text('AMR CHARGING', 111, AMR_HOME.y - 41, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('LINE SUPPLY', 545, 20, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('FINISHED GOODS', 545, 490, 1, '#344747', Math.max(6, 11 * this.scale));
     for (const zone of managerZonesInModelCoordinates(state.routing?.restrictedZones)) {
@@ -619,7 +620,7 @@ export class CanvasTwinScene {
   }
   scenery() {
     for (let i = 0; i < 1; i++) {
-      const y = 170 + i * 80;
+      const y = AMR_HOME.y;
       this.box(41, y, 0, 20, 36, 43, '#405462');
       this.box(53, y, 22, 1, 23, 13, '#132a36');
       this.box(53.8, y, 28, 1, 18, 2, '#48bda9');

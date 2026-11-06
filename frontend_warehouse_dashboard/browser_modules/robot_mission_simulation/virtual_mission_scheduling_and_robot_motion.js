@@ -1,3 +1,4 @@
+import { AMR_HOME } from '../warehouse_reference_geometry/reference_warehouse_racks_aisles_and_route_graph.js';
 // © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 // Deterministic educational dispatch model. Never sends commands to hardware.
 import {
@@ -13,7 +14,8 @@ import {
 } from './node_and_segment_time_window_reservations.js';
 export const MODEL = Object.freeze({
   scale: 75,
-  depotX: 120,
+  depotX: AMR_HOME.x,
+  depotY: AMR_HOME.y,
   stagingX: 220,
   aisleY: 250,
   speed: 38,
@@ -25,7 +27,7 @@ export const MODEL = Object.freeze({
   capacity: 100,
 });
 export const OPEN_MISSIONS = ['Pending approval', 'Queued', 'Active'];
-export const homeFor = (robot) => ({ id: robot.id, x: MODEL.depotX, y: 170 + robot.id * 80 });
+export const homeFor = (robot) => ({ id: robot.id, x: MODEL.depotX, y: MODEL.depotY });
 
 export const ROUTE_CONDITIONS = Object.freeze({
   open: [],
