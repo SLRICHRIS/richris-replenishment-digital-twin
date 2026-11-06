@@ -13,6 +13,7 @@ The **previously designed warehouse dashboard is the default screen**, with its 
 
 ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → AMR-01 models → Streamlit browser view. Topic: `robot/amr01/state`. The active raw-sensor path does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
 
+- Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Hardware. The workflow reference is also linked in the warehouse model explanation.
 - [Exact slide, equation, variable and paper-page mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
 - [Validation evidence and remaining hardware work](project_documentation/single_amr_alignment_validation.md)

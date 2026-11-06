@@ -64,3 +64,37 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
     grid-template-columns: 1fr;
   }
 }
+
+/* Visible references stay adjacent to the model they support. */
+.model-paper-link {
+  color: var(--blue, #82b6ff);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  overflow-wrap: anywhere;
+}
+.python-sensor-card dt .model-paper-link,
+.python-sensor-card dt small {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}
+.model-paper-table {
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.model-paper-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.model-paper-table th,
+.model-paper-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line, #334155);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.6;
+}
+.paper-attribution {
+  line-height: 1.7;
+}

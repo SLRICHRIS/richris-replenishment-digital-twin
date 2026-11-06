@@ -1011,7 +1011,23 @@
           hidden
         >
           <div class="view-intro">
-            <p>Review route timing, stock urgency and return battery before committing a unit.</p>
+            <p>
+              Review route timing, stock urgency and return battery before committing a unit.
+              <br />
+              <small>
+                Workflow background:
+                <a
+                  class="model-paper-link"
+                  data-model-paper="inventory"
+                  href="https://doi.org/10.1007/s00170-023-12660-y"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ferrari et al. (2024), Section 4
+                </a>
+                . The AMR replenishment sequence is a project adaptation.
+              </small>
+            </p>
             <button id="new-task" class="primary">
               <svg class="icon" aria-hidden="true"><use href="#i-plus" /></svg>
               New mission
@@ -1114,6 +1130,19 @@
                 </div>
                 <span class="threshold-tag" id="inventory-horizon">120 s projection</span>
               </div>
+              <p class="paper-attribution">
+                Workflow background:
+                <a
+                  class="model-paper-link"
+                  data-model-paper="inventory"
+                  href="https://doi.org/10.1007/s00170-023-12660-y"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ferrari et al. (2024), Section 4
+                </a>
+                . Stock projections below are our project implementation.
+              </p>
               <div id="bins" class="bin-grid"></div>
               <div class="table-note">
                 Projection uses the selected forecast window, current demand and approved
@@ -1197,11 +1226,47 @@
                 <h2 id="python-amr01-title">AMR-01</h2>
                 <span id="python-amr01-quality">WAITING</span>
                 <dl>
-                  <dt>Estimated SOC</dt>
+                  <dt>
+                    Estimated SOC
+                    <a
+                      class="model-paper-link"
+                      data-model-paper="soc"
+                      href="https://doi.org/10.3390/en14144074"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="A Critical Look at Coulomb Counting Approach for State of Charge Estimation in Batteries"
+                    >
+                      Paper B · pp. 7–8
+                    </a>
+                  </dt>
                   <dd id="python-amr01-soc">—</dd>
-                  <dt>Local x / y / θ (m / m / rad)</dt>
+                  <dt>
+                    Local x / y / θ (m / m / rad)
+                    <a
+                      class="model-paper-link"
+                      data-model-paper="motion"
+                      href="https://doi.org/10.3390/s26185729"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                    >
+                      Paper A · p. 8
+                    </a>
+                  </dt>
                   <dd id="python-amr01-pose">—</dd>
-                  <dt>Left / right speed (m/s)</dt>
+                  <dt>
+                    Left / right speed (m/s)
+                    <a
+                      class="model-paper-link"
+                      data-model-paper="encoder"
+                      href="https://doi.org/10.3390/s26185729"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                    >
+                      Paper A · pp. 11, 38
+                    </a>
+                  </dt>
                   <dd id="python-amr01-speed">—</dd>
                   <dt>Pack voltage</dt>
                   <dd id="python-amr01-voltage">—</dd>
@@ -1211,11 +1276,32 @@
                   <dd id="python-amr01-power">—</dd>
                   <dt>Net energy used</dt>
                   <dd id="python-amr01-energy">—</dd>
-                  <dt>Gyro–encoder residual</dt>
+                  <dt>
+                    Gyro–encoder residual
+                    <small>
+                      Project extension; gyro model:
+                      <a
+                        class="model-paper-link"
+                        data-model-paper="gyro"
+                        href="https://doi.org/10.3390/s26185729"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                      >
+                        Paper A · p. 10
+                      </a>
+                    </small>
+                  </dt>
                   <dd id="python-amr01-residual">—</dd>
-                  <dt>5 s forecast x / y / θ</dt>
+                  <dt>
+                    5 s forecast x / y / θ
+                    <small>Project extension</small>
+                  </dt>
                   <dd id="python-amr01-forecast">—</dd>
-                  <dt>Runtime to 20% reserve</dt>
+                  <dt>
+                    Runtime to 20% reserve
+                    <small>Project extension</small>
+                  </dt>
                   <dd id="python-amr01-runtime">—</dd>
                   <dt>Firmware state</dt>
                   <dd id="python-amr01-state">—</dd>
@@ -1243,33 +1329,174 @@
             <button id="python-model-inspection" type="button">
               Open detailed model inspection
             </button>
-            <details class="panel python-sensor-card">
-              <summary>Equations, units and evidence</summary>
+            <details class="panel python-sensor-card" id="python-model-evidence">
+              <summary>Equations, papers and page references</summary>
+              <div class="model-paper-table">
+                <table aria-label="Model to paper mapping">
+                  <thead>
+                    <tr>
+                      <th>Where used</th>
+                      <th>Paper and PDF page</th>
+                      <th>Implementation boundary</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>Encoder conversion · slides 4–5</th>
+                      <td>
+                        <a
+                          class="model-paper-link"
+                          data-model-paper="encoder"
+                          href="https://doi.org/10.3390/s26185729"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                        >
+                          Paper A · p. 11 Eq. (9); p. 38 Eq. (A4)
+                        </a>
+                      </td>
+                      <td>
+                        Δs = 2πrΔn/N; project discrete notation includes gearing and x4 decoding.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Motion update · slides 6–7</th>
+                      <td>
+                        <a
+                          class="model-paper-link"
+                          data-model-paper="motion"
+                          href="https://doi.org/10.3390/s26185729"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                        >
+                          Paper A · p. 8 Eqs. (1–3)
+                        </a>
+                      </td>
+                      <td>
+                        Continuous kinematics background; midpoint discretisation is our
+                        implementation.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Gyro input · slides 8–9</th>
+                      <td>
+                        <a
+                          class="model-paper-link"
+                          data-model-paper="gyro"
+                          href="https://doi.org/10.3390/s26185729"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                        >
+                          Paper A · p. 10 Eq. (8)
+                        </a>
+                      </td>
+                      <td>
+                        Bias/noise measurement model. Stationary bias correction is used; the
+                        paper's EKF is not implemented here.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Battery SOC · slides 10–11</th>
+                      <td>
+                        <a
+                          class="model-paper-link"
+                          data-model-paper="soc"
+                          href="https://doi.org/10.3390/en14144074"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="A Critical Look at Coulomb Counting Approach for State of Charge Estimation in Batteries"
+                        >
+                          Paper B · pp. 7–8 Eqs. (5–9)
+                        </a>
+                      </td>
+                      <td>
+                        Coulomb counting with discharge-positive sign and efficiency set to 1. P=VI
+                        and Wh integration are standard definitions, not numbered equations from
+                        this paper.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Residual alerts and forecasts · slides 12–14</th>
+                      <td>Project extensions</td>
+                      <td>
+                        The threshold/hold detector, constant-speed projection and assumed-current
+                        runtime forecast are not validated implementations from these papers.
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Inventory and task workflow · slide 15</th>
+                      <td>
+                        <a
+                          class="model-paper-link"
+                          data-model-paper="inventory"
+                          href="https://doi.org/10.1007/s00170-023-12660-y"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="A method for developing and validating simulation models for automated storage and retrieval system digital twins"
+                        >
+                          Ferrari et al. (2024) · Section 4
+                        </a>
+                      </td>
+                      <td>
+                        WMS/WCS and discrete-event modelling background; our reserve/transit/pick
+                        accounting is a project adaptation.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <p>
-                Slides 4–5: wheel distance Δs = 2πrΔn/N. Slides 6–7: nonlinear differential-drive
-                midpoint odometry. Slides 8–9: gyro bias correction z−b. Slides 10–11: P=VI, Wh
-                integration and discharge-positive SOC coulomb counting. Slides 12–13: sustained
-                gyro/encoder residual advisory. Slide 14: constant-wheel-speed and assumed-current
-                forecasts. Slide 15: independent inventory/task events.
+                <strong>Paper A:</strong>
+                <a
+                  class="model-paper-link"
+                  data-model-paper="motion"
+                  href="https://doi.org/10.3390/s26185729"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost Multi-Sensor UGV Digital Twin"
+                >
+                  Real-to-Sim Calibration and Cross-Domain Trajectory Validation of a Low-Cost
+                  Multi-Sensor UGV Digital Twin
+                </a>
+                — Villagomez Alfaro et al., Sensors (2026).
               </p>
               <p>
-                Motion: Villagomez Alfaro et al., Sensors 2026, DOI
-                <a href="https://doi.org/10.3390/s26185729" target="_blank" rel="noopener">
-                  10.3390/s26185729
+                <strong>Paper B:</strong>
+                <a
+                  class="model-paper-link"
+                  data-model-paper="soc"
+                  href="https://doi.org/10.3390/en14144074"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="A Critical Look at Coulomb Counting Approach for State of Charge Estimation in Batteries"
+                >
+                  A Critical Look at Coulomb Counting Approach for State of Charge Estimation in
+                  Batteries
                 </a>
-                , PDF pp.8, 10–11 and 38. Battery: Movassagh et al., Energies 2021, DOI
-                <a href="https://doi.org/10.3390/en14144074" target="_blank" rel="noopener">
-                  10.3390/en14144074
-                </a>
-                , PDF pp.7–8. Threshold detector and forecasts are project extensions, not validated
-                results from these papers. No EKF is implemented.
+                — Movassagh et al., Energies (2021).
               </p>
               <p>
-                SI units except labelled Ah, Wh and hours. SOC is displayed as %. Runtime assumes
-                the latest positive current stays constant; the 20% reserve is illustrative.
-                Gap/stale data suspend forecasts and mark partial integrals. See
-                project_documentation/slide_to_code_mapping.md for complete nomenclature and
-                attribution.
+                <strong>Workflow reference:</strong>
+                <a
+                  class="model-paper-link"
+                  data-model-paper="inventory"
+                  href="https://doi.org/10.1007/s00170-023-12660-y"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="A method for developing and validating simulation models for automated storage and retrieval system digital twins"
+                >
+                  A method for developing and validating simulation models for automated storage and
+                  retrieval system digital twins
+                </a>
+                — Ferrari et al., The International Journal of Advanced Manufacturing Technology
+                (2024).
+              </p>
+              <p>
+                PDF page numbers count from the first PDF page. SI units are used except labelled
+                Ah, Wh and hours; SOC is displayed as %. The runtime reserve is illustrative. The
+                complete slide-to-code mapping is in the detailed model inspection view.
               </p>
             </details>
           </div>
@@ -2106,6 +2333,21 @@
               <span class="model-chevron">+</span>
             </summary>
             <div class="model-content">
+              <p class="paper-attribution">
+                Workflow background:
+                <a
+                  class="model-paper-link"
+                  data-model-paper="inventory"
+                  href="https://doi.org/10.1007/s00170-023-12660-y"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="A method for developing and validating simulation models for automated storage and retrieval system digital twins"
+                >
+                  Ferrari et al. (2024), Section 4 — simulation architecture
+                </a>
+                . The replenishment task and inventory workflow is adapted for this project; routing
+                heuristics, battery assumptions and forecasts are project implementations.
+              </p>
               <p>
                 This interactive 3D scene uses the project's single-AMR replenishment workflow. Each
                 robot carries 30 units along simplified aisle routes. Battery drains during motion
