@@ -49,6 +49,11 @@
       href="./dashboard_stylesheets/dashboard_animation_and_transition_styles.css"
     />
     <link rel="stylesheet" href="./dashboard_stylesheets/robot_model_validation_panel_styles.css" />
+    <link rel="stylesheet" href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css" />
+    <script
+      defer
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js"
+    ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
       rel="stylesheet"
@@ -1165,6 +1170,150 @@
           tabindex="0"
           hidden
         >
+          <div id="python-sensor-panel">
+            <div class="lab-banner">
+              <div>
+                <span class="eyebrow">Predictive digital twin · Python backend</span>
+                <h2>Two robots. Measured inputs. Modelled state.</h2>
+                <p class="python-sensor-note">
+                  Encoder odometry, gyro consistency, battery SOC and advisory forecasts, calculated
+                  in Streamlit and displayed in this warehouse workspace.
+                </p>
+              </div>
+            </div>
+            <div class="python-sensor-toolbar" role="group" aria-label="Sensor twin source">
+              <button id="python-source-demo" type="button" aria-pressed="true">
+                Synthetic demonstration
+              </button>
+              <button id="python-source-live" type="button" aria-pressed="false">
+                Live MQTT sensors
+              </button>
+              <strong id="python-source-label">Waiting for Python</strong>
+            </div>
+            <p id="python-source-status" role="status"></p>
+            <div class="python-sensor-cards">
+              <article class="panel python-sensor-card" aria-labelledby="python-amr01-title">
+                <span class="eyebrow">ESP32 · encoders · MPU6050 · INA219</span>
+                <h2 id="python-amr01-title">AMR01</h2>
+                <span id="python-amr01-quality">WAITING</span>
+                <dl>
+                  <dt>Estimated SOC</dt>
+                  <dd id="python-amr01-soc">—</dd>
+                  <dt>Local x / y / θ (m / m / rad)</dt>
+                  <dd id="python-amr01-pose">—</dd>
+                  <dt>Left / right speed (m/s)</dt>
+                  <dd id="python-amr01-speed">—</dd>
+                  <dt>Pack voltage</dt>
+                  <dd id="python-amr01-voltage">—</dd>
+                  <dt>Current (+ discharge)</dt>
+                  <dd id="python-amr01-current">—</dd>
+                  <dt>Electrical power</dt>
+                  <dd id="python-amr01-power">—</dd>
+                  <dt>Net energy used</dt>
+                  <dd id="python-amr01-energy">—</dd>
+                  <dt>Gyro–encoder residual</dt>
+                  <dd id="python-amr01-residual">—</dd>
+                  <dt>5 s forecast x / y / θ</dt>
+                  <dd id="python-amr01-forecast">—</dd>
+                  <dt>Runtime to 20% reserve</dt>
+                  <dd id="python-amr01-runtime">—</dd>
+                  <dt>Firmware state</dt>
+                  <dd id="python-amr01-state">—</dd>
+                  <dt>Server receive age</dt>
+                  <dd id="python-amr01-age">—</dd>
+                </dl>
+                <p id="python-amr01-advisory" role="status">Waiting for Python results.</p>
+                <svg
+                  viewBox="0 0 500 120"
+                  role="img"
+                  aria-label="AMR01 residual versus sample time"
+                >
+                  <line x1="10" y1="60" x2="490" y2="60" stroke="currentColor" opacity=".25" />
+                  <polyline id="python-amr01-plot" points="" />
+                </svg>
+                <small id="python-amr01-plot-range">Residual history</small>
+              </article>
+              <article class="panel python-sensor-card" aria-labelledby="python-amr02-title">
+                <span class="eyebrow">ESP32 · encoders · MPU6050 · INA219</span>
+                <h2 id="python-amr02-title">AMR02</h2>
+                <span id="python-amr02-quality">WAITING</span>
+                <dl>
+                  <dt>Estimated SOC</dt>
+                  <dd id="python-amr02-soc">—</dd>
+                  <dt>Local x / y / θ (m / m / rad)</dt>
+                  <dd id="python-amr02-pose">—</dd>
+                  <dt>Left / right speed (m/s)</dt>
+                  <dd id="python-amr02-speed">—</dd>
+                  <dt>Pack voltage</dt>
+                  <dd id="python-amr02-voltage">—</dd>
+                  <dt>Current (+ discharge)</dt>
+                  <dd id="python-amr02-current">—</dd>
+                  <dt>Electrical power</dt>
+                  <dd id="python-amr02-power">—</dd>
+                  <dt>Net energy used</dt>
+                  <dd id="python-amr02-energy">—</dd>
+                  <dt>Gyro–encoder residual</dt>
+                  <dd id="python-amr02-residual">—</dd>
+                  <dt>5 s forecast x / y / θ</dt>
+                  <dd id="python-amr02-forecast">—</dd>
+                  <dt>Runtime to 20% reserve</dt>
+                  <dd id="python-amr02-runtime">—</dd>
+                  <dt>Firmware state</dt>
+                  <dd id="python-amr02-state">—</dd>
+                  <dt>Server receive age</dt>
+                  <dd id="python-amr02-age">—</dd>
+                </dl>
+                <p id="python-amr02-advisory" role="status">Waiting for Python results.</p>
+                <svg
+                  viewBox="0 0 500 120"
+                  role="img"
+                  aria-label="AMR02 residual versus sample time"
+                >
+                  <line x1="10" y1="60" x2="490" y2="60" stroke="currentColor" opacity=".25" />
+                  <polyline id="python-amr02-plot" points="" />
+                </svg>
+                <small id="python-amr02-plot-range">Residual history</small>
+              </article>
+            </div>
+            <p class="python-sensor-note">
+              Synthetic mode is a fixed 6 s teaching trial; AMR01 has an injected gyro disagreement
+              at 3–4 s. Live mode uses private server-side broker settings. Local odometry is not
+              registered to the warehouse map. Floor, Missions and Insights retain the virtual
+              reference fleet; sensor readings never move physical inventory or send motor commands.
+            </p>
+            <button id="python-model-inspection" type="button">
+              Open detailed model inspection
+            </button>
+            <details class="panel python-sensor-card">
+              <summary>Equations, units and evidence</summary>
+              <p>
+                Slides 4–5: wheel distance Δs = 2πrΔn/N. Slides 6–7: nonlinear differential-drive
+                midpoint odometry. Slides 8–9: gyro bias correction z−b. Slides 10–11: P=VI, Wh
+                integration and discharge-positive SOC coulomb counting. Slides 12–13: sustained
+                gyro/encoder residual advisory. Slide 14: constant-wheel-speed and assumed-current
+                forecasts. Slide 15: independent inventory/task events.
+              </p>
+              <p>
+                Motion: Villagomez Alfaro et al., Sensors 2026, DOI
+                <a href="https://doi.org/10.3390/s26185729" target="_blank" rel="noopener">
+                  10.3390/s26185729
+                </a>
+                , PDF pp.8, 10–11 and 38. Battery: Movassagh et al., Energies 2021, DOI
+                <a href="https://doi.org/10.3390/en14144074" target="_blank" rel="noopener">
+                  10.3390/en14144074
+                </a>
+                , PDF pp.7–8. Threshold detector and forecasts are project extensions, not validated
+                results from these papers. No EKF is implemented.
+              </p>
+              <p>
+                SI units except labelled Ah, Wh and hours. SOC is displayed as %. Runtime assumes
+                the latest positive current stays constant; the 20% reserve is illustrative.
+                Gap/stale data suspend forecasts and mark partial integrals. See
+                project_documentation/slide_to_code_mapping.md for complete nomenclature and
+                attribution.
+              </p>
+            </details>
+          </div>
           <div class="hardware-intro">
             <div>
               <span class="eyebrow">ESP32 / Wi-Fi telemetry</span>

@@ -186,3 +186,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `research_baseline/web/app.js` | Display the research API inventory and event experiment in a browser. |
 | `research_baseline/web/index.html` | Define the research API web view. |
 | `research_baseline/web/style.css` | Style the research API web view. |
+| `automated_software_checks/browser_behavior_checks/test_python_sensor_twin_workspace.cjs` | Verify trusted Python display messages, text-only rendering, freshness, preserved floor state and source-selection actions. |
+| `automated_software_checks/predictive_twin_checks/test_workspace_payload.py` | Verify public component data, bounded history, private-setting isolation and stale forecast suppression. |
+| `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the existing warehouse Hardware view. |
+| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values in the original Hardware design without recalculating the models. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Match integrated two-robot sensor cards to the existing warehouse theme and responsive layout. |

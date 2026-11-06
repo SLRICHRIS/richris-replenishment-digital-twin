@@ -7,11 +7,11 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-The default page runs a clearly labelled deterministic **synthetic demonstration** without broker credentials. Choose Live MQTT sensors only after commissioning both robots and setting private Streamlit secrets. No physical connection or hardware validation is implied by a working demo.
+The **previously designed warehouse dashboard is the default screen**, with its floor scene, routes, missions, inventory and styling preserved. Open **Hardware** for the two-robot Python sensor twin. It starts with a labelled synthetic trial without broker credentials; select Live MQTT sensors only after commissioning both robots and setting private Streamlit secrets. The new sensor results are integrated into the existing design, rather than replacing it with a separate app. No physical connection or hardware validation is implied by a working demo.
 
 ## Active architecture
 
-ESP32 `amr01` / `amr02` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → per-robot models → Streamlit browser view. Topics: `robot/amr01/state`, `robot/amr02/state`. The active app does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to each ESP32; no separate UART AMR controller is required by the current BOM.
+ESP32 `amr01` / `amr02` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → per-robot models → Streamlit browser view. Topics: `robot/amr01/state`, `robot/amr02/state`. The active raw-sensor path does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to each ESP32; no separate UART AMR controller is required by the current BOM.
 
 - [Exact slide, equation, variable and paper-page mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/two_robot_sensor_twin_setup.md)
@@ -19,11 +19,13 @@ ESP32 `amr01` / `amr02` → MQTT/TLS **8883** → EMQX → read-only Python subs
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
 
-The Inventory & tasks tab preserves the research branch's synthetic replenishment model. Reserve, transit and picking stock change through explicit demand/pickup/delivery events with conservation checks. Its FIFO/urgency policy experiment has **one virtual robot per run**, separate from the two physical sensor nodes. This preserves the warehouse research scope without inventing physical inventory observations.
+The Hardware view's **Open detailed model inspection** button opens the native scientific view; its Inventory & tasks tab preserves the research branch's synthetic replenishment model. Reserve, transit and picking stock change through explicit demand/pickup/delivery events with conservation checks. Its FIFO/urgency policy experiment has **one virtual robot per run**, separate from the two physical sensor nodes. This preserves the warehouse research scope without inventing physical inventory observations.
 
-## Preserved reference work
+## Existing dashboard and deployment
 
-The sidebar's **Legacy 3D reference** retains the earlier three-AMR browser dashboard, route planning, animation and experiments. It is separate from the active Python sensor state. Existing browser MQTT connections, UART firmware, recorder/coordinator and LabVIEW adapters are legacy interfaces, not part of the current two-robot path. Earlier documents under `project_documentation/` describe that historical design unless explicitly listed above. Do not use the legacy downloadable UART starter kit to commission the new direct-sensor publisher.
+The existing three-AMR virtual warehouse dashboard remains the main workspace. Its route planning, animation and experiments are separate from the two physical sensor nodes. The Hardware screen receives calculated sensor results from Python through the Streamlit component protocol; JavaScript formats these readouts and sends only source-selection/inspection actions back. Periodic model updates preserve the current view, scroll and virtual mission state. Local encoder pose has no surveyed map transform, so it is not silently placed into the 3D warehouse. Existing browser MQTT connections, UART firmware, recorder/coordinator and LabVIEW adapters are legacy interfaces, not part of the current two-robot path. Earlier documents under `project_documentation/` describe that historical design unless explicitly listed above. Do not use the legacy downloadable UART starter kit to commission the new direct-sensor publisher.
+
+**Use the existing Streamlit deployment**, repository `SLRICHRIS/richris-replenishment-digital-twin`, branch `main`, entry point `streamlit_app.py`, Python 3.12. An existing app already using these settings picks up changes from main; no second app or private-app slot is required. If it uses the older research entry point, update that deployment to the root entry point. Deployment changes and live connection still require access to the existing Streamlit app.
 
 The full inventory API/walkthrough remains under `research_baseline/`; its original deployment instructions are local to that experiment. This branch preserves both main's UI and the research baseline commits.
 
