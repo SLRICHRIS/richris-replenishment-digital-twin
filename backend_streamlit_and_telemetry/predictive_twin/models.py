@@ -86,25 +86,38 @@ def battery_step(soc, energy_wh, voltage_v, discharge_current_a, dt_s, capacity_
 @dataclass
 class ResidualDetector:
     duration_s: float = 0.0
+    exceeding: bool = False
 
     def reset(self):
         self.duration_s = 0.0
+        self.exceeding = False
 
     def update(self, gyro_z, bias, v_left, v_right, track, dt, threshold, hold):
         """Slides 12–13: sustained consistency residual, not fault classification."""
         finite(gyro_z, bias, v_left, v_right)
         positive(track, dt, threshold, hold)
         residual = gyro_z - bias - (v_right - v_left) / track
-        self.duration_s = self.duration_s + dt if abs(residual) > threshold else 0.0
-        return residual, self.duration_s >= hold
+        # Slide 13 starts the timer at the first abnormal sample, not one dt earlier.
+        if abs(residual) <= threshold:
+            self.reset()
+        elif self.exceeding:
+            self.duration_s += dt
+        else:
+            self.exceeding = True
+            self.duration_s = 0.0
+        return residual, self.exceeding and self.duration_s >= hold
 
 
-def motion_forecast(pose, v_left, v_right, track, horizon_s=5.0, dt_s=0.1):
+def motion_forecast(pose, v_left, v_right, track, horizon_s=5.0, dt_s=None):
     """Slide 14 extension: hold wheel speeds fixed; no obstacle/route prediction."""
     finite(*pose, v_left, v_right, horizon_s)
-    positive(track, dt_s)
+    positive(track)
     if not 0 <= horizon_s <= 300:
         raise ValueError("Forecast horizon must be between 0 and 300 seconds")
+    # Slide 14 uses 20 midpoint substeps. An explicit dt remains available for trials.
+    if dt_s is None:
+        dt_s = horizon_s / 20 if horizon_s else 1.0
+    positive(dt_s)
     if horizon_s / dt_s > 10000:
         raise ValueError("Forecast step count too large")
     result = [tuple(pose)]
@@ -125,3 +138,26 @@ def runtime_hours(soc, reserve_soc, capacity_ah, future_discharge_a):
     if future_discharge_a <= 0:
         return None
     return max(0, soc - reserve_soc) * capacity_ah / future_discharge_a
+
+
+def stock_step(stock, delivered, consumed):
+    """Slide 15: confirmed integer stock balance at one location."""
+    if any(type(value) is not int for value in (stock, delivered, consumed)):
+        raise ValueError("Stock quantities must be integer units")
+    stock_next = stock + delivered - consumed
+    if min(stock, delivered, consumed, stock_next) < 0:
+        raise ValueError("Invalid stock event")
+    return stock_next
+
+
+def task_step(state, event):
+    """Slide 15 finite-state machine; unknown events do not change state."""
+    transitions = {
+        ("idle", "assign"): "assigned",
+        ("assigned", "start"): "travelling",
+        ("travelling", "arrive"): "servicing",
+        ("servicing", "complete"): "idle",
+    }
+    if event == "fault":
+        return "fault"
+    return transitions.get((state, event), state)

@@ -1370,17 +1370,17 @@ const pages = {
       'Measure agreement, calibrate each asset and evaluate decisions against a frozen state.',
   },
   hardware: {
-    title: 'Hardware connections',
+    title: 'Sensor models',
     context: 'Physical observations',
-    summary: 'Inspect the AMR-01 device stream and connect your physical testbed.',
+    summary: 'Encoder motion, pose, gyro, battery, residual alerts and forecasts in slide order.',
   },
   environment: {
     title: 'Facility overview',
     context: 'Spatial workspace',
-    summary: 'Inspect your fleet, review the next delivery and follow every movement.',
+    summary: 'Inspect AMR-01 and follow the single-robot virtual replenishment example.',
   },
   missions: {
-    title: 'Mission coordination',
+    title: 'AMR-01 virtual missions',
     context: 'Supervised dispatch',
     summary: 'Review each delivery, reserve the aisle and keep human approval in the loop.',
   },
@@ -1397,6 +1397,11 @@ const pages = {
 };
 function activatePage(name, writeHash = true) {
   if (!pages[name]) name = 'environment';
+  if (
+    document.documentElement.dataset.pythonTwin === 'true' &&
+    ['routes', 'engineering', 'telemetry'].includes(name)
+  )
+    name = 'hardware';
   if (
     name !== 'environment' &&
     document.querySelector('.stage-panel').classList.contains('expanded')
@@ -1599,7 +1604,11 @@ document.querySelectorAll('[data-page]').forEach((button) => {
   button.addEventListener('keydown', (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
-    const tabs = [...document.querySelectorAll('[data-page]')],
+    const tabs = [...document.querySelectorAll('[data-page]')].filter(
+        (tab) =>
+          document.documentElement.dataset.pythonTwin !== 'true' ||
+          !tab.hasAttribute('data-slide-outside'),
+      ),
       i = tabs.indexOf(button),
       next =
         e.key === 'Home'
@@ -1620,6 +1629,12 @@ function navOrientation() {
 navOrientation();
 window.addEventListener('resize', navOrientation);
 window.addEventListener('hashchange', () => activatePage(location.hash.slice(1), false));
+function applySlideWorkspaceScope() {
+  if (document.documentElement.dataset.pythonTwin !== 'true') return;
+  if (['routes', 'engineering', 'telemetry'].includes(activePage)) activatePage('hardware');
+}
+document.addEventListener('python-twin:render', applySlideWorkspaceScope);
+
 $('views').onclick = (e) => {
   const b = e.target.closest('[data-view]');
   if (b) scene.setView(b.dataset.view);
@@ -2109,4 +2124,5 @@ function frame(now) {
 }
 reset();
 activatePage(location.hash.slice(1), false);
+applySlideWorkspaceScope();
 requestAnimationFrame(frame);

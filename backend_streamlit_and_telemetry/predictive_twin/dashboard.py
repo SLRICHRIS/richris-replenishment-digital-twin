@@ -5,7 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from .demo import demo_fleet
-from .models import Calibration, motion_forecast, runtime_hours
+from .models import Calibration, motion_forecast, runtime_hours, stock_step, task_step
 from .mqtt_service import MQTTService
 from .telemetry import ROBOT_IDS
 
@@ -76,28 +76,42 @@ def live_view(service):
 
 
 def inventory_view():
-    from research_baseline.warehouse_twin.simulation import new_state, step, run_until, metrics, assert_invariants
-    st.subheader("Warehouse replenishment experiment")
-    st.info("Synthetic discrete-event experiment: one virtual robot per policy run. It is separate from the physical AMR-01 sensor node; no telemetry automatically confirms inventory movement.")
-    policy = st.selectbox("Dispatch policy", ("fifo", "urgency"))
-    if "inventory_experiment" not in st.session_state or st.session_state.inventory_experiment["policy"] != policy:
-        st.session_state.inventory_experiment = new_state(policy)[0]
-    state = st.session_state.inventory_experiment
-    a, b, c = st.columns(3)
-    if a.button("Next warehouse event"):
-        step(state)
-    if b.button("Run to 120 s"):
-        run_until(state, max(120, state["time"]))
-    if c.button("Reset warehouse experiment"):
-        state = st.session_state.inventory_experiment = new_state(policy)[0]
-    assert_invariants(state)
-    st.caption(f"Simulation time: {state['time']:.1f} s. Stock changes only through scheduled demand, pickup and delivery events.")
-    st.dataframe([{"sku": sku, **values} for sku, values in state["inventory"].items()], hide_index=True)
-    st.caption("Reserved is a subset of reserve. Conservation: initial − fulfilled = reserve + transit + pick.")
-    st.dataframe(list(state["tasks"].values()), hide_index=True)
-    with st.expander("Experiment metrics and robot state"):
-        st.json({"metrics": metrics(state), "robot": state["robot"]})
-    st.caption("Detailed walkthrough/API and comparison tests remain in research_baseline/. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) provides the WMS/WCS and discrete-event background. Our replenishment workflow is an adaptation; sensor equations are mapped separately.")
+    st.subheader("Stock and task events · slide 15")
+    st.caption("Manual software example for one stock location and AMR-01. These inputs are not sensor measurements or physical commands.")
+    if "slide15_state" not in st.session_state:
+        st.session_state.slide15_state = dict(stock=100, task="idle")
+    state = st.session_state.slide15_state
+    left, right = st.columns(2)
+    with left:
+        st.metric("Stock (units)", state["stock"])
+        st.code("stock_next = stock + delivered - consumed", language="python")
+        with st.form("slide15_stock"):
+            delivered = st.number_input("Delivered units", min_value=0, value=0, step=1)
+            consumed = st.number_input("Consumed units", min_value=0, value=0, step=1)
+            apply_stock = st.form_submit_button("Apply stock event")
+        if apply_stock:
+            try:
+                updated = stock_step(state["stock"], delivered, consumed)
+            except ValueError as error:
+                st.error(str(error))
+            else:
+                state["stock"] = updated
+                st.rerun()
+        st.caption("stock: current units; delivered: received units; consumed: removed units. Inputs must be non-negative integers; negative resulting stock is rejected.")
+    with right:
+        st.metric("AMR-01 task state", state["task"])
+        st.code("idle → assigned → travelling → servicing → idle", language=None)
+        with st.form("slide15_task"):
+            event = st.selectbox("Confirmed task event", ("assign", "start", "arrive", "complete", "fault"))
+            apply_task = st.form_submit_button("Apply task event")
+        if apply_task:
+            state["task"] = task_step(state["task"], event)
+            st.rerun()
+        st.caption("assign/start/arrive/complete advance the matching state. Other events leave it unchanged. fault enters the fault state; automatic recovery is not defined.")
+    if st.button("Reset slide 15 example"):
+        st.session_state.slide15_state = dict(stock=100, task="idle")
+        st.rerun()
+    st.caption("Project extension from slide 15; no numbered equation in the two sensor papers. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) is workflow background only. No policy comparison or fleet-allocation model is added here.")
 
 
 def render_sensor_dashboard():

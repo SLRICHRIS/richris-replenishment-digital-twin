@@ -48,5 +48,6 @@ def workspace_payload(mode):
         if history and (not rows or rows[-1] is not history[-1]):
             rows.append(history[-1])
         robots[rid] = dict(**snapshot, forecast_pose=forecast, runtime_hours=runtime,
+            gyro_bias_rad_s=c.gyro_bias_rad_s,
             history=[{key: row[key] for key in ('sample_time_s', 'x_m', 'y_m', 'soc', 'residual_rad_s', 'advisory')} for row in rows])
     return dict(mode=mode, status=status, robots=robots)
