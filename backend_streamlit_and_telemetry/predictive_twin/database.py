@@ -285,7 +285,7 @@ class SensorDatabase:
                     pose=(0., 0., 0.), soc=None, energy_wh=None, quality="NO_DATA",
                     age_s=None, stale=True, continuity_lost=False,
                     invalid_packets=0, ignored_packets=0, raw=None, derived={},
-                    history=[], calibration_match=None,
+                    history=[], calibration_match=None, pipeline_events=[],
                 )
             sample, state = latest
             age_s = max(0.0, (datetime.now(timezone.utc) - utc_aware(sample.received_at)).total_seconds())
@@ -306,6 +306,17 @@ class SensorDatabase:
                      **s.derived)
                 for s in reversed(result) if s.derived
             ]
+            events = session.execute(
+                select(PipelineEvent)
+                .where(PipelineEvent.robot_id == robot_id)
+                .order_by(PipelineEvent.id.desc())
+                .limit(10)
+            ).scalars().all()
+            pipeline_events = [
+                dict(event_type=e.event_type, boot_id=e.boot_id, seq=e.seq,
+                     observed_at=utc_aware(e.observed_at).isoformat(), details=e.details)
+                for e in events
+            ]
             raw = {
                 field: getattr(sample, field) for field in (
                     "robot_id", "boot_id", "seq", "schema_version", "sample_time_s",
@@ -323,4 +334,5 @@ class SensorDatabase:
                 invalid_packets=0, ignored_packets=0, raw=raw,
                 derived={} if stale or not calibration_match else dict(state.derived),
                 history=history, calibration_match=calibration_match,
+                pipeline_events=pipeline_events,
             )
