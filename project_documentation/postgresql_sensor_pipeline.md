@@ -132,9 +132,10 @@ CI passing.
 
 ## Installation and deployment
 
-Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all credentials **out of GitHub**. Use a dedicated worker role for writing and a separate Streamlit role restricted to SELECT. Database schema creation needs a provisioning/admin role, and should not remain a general permission of the routine worker in mature deployments.
+Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all credentials **out of GitHub**. Use a dedicated worker role for writing and a separate Streamlit role restricted to SELECT. Database schema creation uses a separate provisioning/admin role. The live worker never creates tables or views.
 
-1. Provision PostgreSQL. Configure automatic backups and limited network access. Create restricted users for worker and read-only dashboard. Bootstrap schema with a dedicated migration/provisioning identity.
+1. Provision PostgreSQL with TLS, backups and limited network access. Create separate identities: a temporary DDL-capable administrator for schema provisioning, a worker with limited INSERT/SELECT permissions and SELECT/USAGE on the pipeline-event ID sequence, and a read-only dashboard account. The ingestion worker also requires permission to hold the PostgreSQL advisory lock.
+   Set the private environment variable `AMR_DATABASE_ADMIN_URL` to a **provisioning account** connection string and run `python -m project_maintenance_scripts.provision_amr_sensor_database` once. Keep this administrator credential outside both the ingestion worker and Streamlit. Apply reviewed migrations separately before worker restarts.
 2. Deploy the **independent always-on worker** (holds a PostgreSQL advisory lease to reject a concurrent AMR-01 writer) from this repository with `python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker`. Do not embed an ingestion daemon inside a Streamlit rerun or browser tab.
 3. Give the worker these private environment variables:
    - `AMR_DATABASE_URL`: `postgresql+psycopg://<writer>:<password>@<host>:5432/<database>?sslmode=require`
@@ -170,7 +171,7 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
 
 - Current database mode **stores** samples from an actively running worker; it does not replay the entire history back into a new online estimator on restart. After a restart or lost interval, pose/SOC from the worker must be treated as partial and reset with physically measured initial state before quantitative use.
 - The dashboard's freshness status depends on latest persisted receive time; a stale row cannot be presented as fresh.
-- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
+- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. The worker validates database schema v2 and its three sensor views without DDL permissions. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
 - Original raw JSON bytes are not stored; normalized typed fields are stored. For a publication-grade evidence trail, deploy a raw event recorder, verify clock offsets and retention, document device firmware revisions, and run reproducible calibration trials.
 - The synthetic demonstration is intentionally separate from physical-trial tables.
 - Avoid enabling any remote motor command path without independent local safety checks and physical testing.
