@@ -249,6 +249,19 @@ class SensorDatabase:
             ))
         return True
 
+    def record_rejected_packet(self, reason, topic):
+        """Audit rejected AMR-01 source data without storing untrusted payloads."""
+        if reason not in {"invalid_schema", "retained_message"}:
+            raise ValueError("Unknown packet rejection category")
+        if topic != "robot/amr01/state":
+            return
+        with Session(self.engine) as session, session.begin():
+            session.add(PipelineEvent(
+                robot_id="amr01", boot_id="", seq=-1,
+                observed_at=datetime.now(timezone.utc),
+                event_type=reason, details={"topic": topic},
+            ))
+
     def recent_quality_events(self, robot_id="amr01", limit=20):
         """Read bounded, durable evidence of gaps/reboots for operators."""
         if robot_id != "amr01" or not 1 <= limit <= 100:
