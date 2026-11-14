@@ -6,15 +6,13 @@ import streamlit as st
 
 from .demo import demo_fleet
 from .models import Calibration, motion_forecast, runtime_hours, stock_step, task_step
-from .mqtt_service import MQTTService
+from .database import SensorDatabase, calibration_fingerprint
 from .telemetry import ROBOT_IDS
 
 
 @st.cache_resource(show_spinner=False)
-def live_service(host, username, password, calibration_json):
-    values = json.loads(calibration_json)
-    calibrations = {rid: Calibration(**values[rid]) for rid in ROBOT_IDS}
-    return MQTTService(host, username, password, calibrations)
+def database_reader(database_url):
+    return SensorDatabase(database_url, initialize=False)
 
 
 def show_robot(rid, snapshot, calibration):
@@ -67,16 +65,14 @@ def show_robot(rid, snapshot, calibration):
 
 
 @st.fragment(run_every="1s")
-def live_view(service):
-    st.caption(f"MQTT/TLS 8883 · {service.status} · rejected packets: {service.fleet.rejected_packets}")
-    snapshots = service.fleet.snapshots()
-    for column, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
-        with column:
-            show_robot(rid, snapshots[rid], service.fleet.robots[rid].calibration)
+def live_view(db, calibration):
+    snapshot = db.read_snapshot(expected_fingerprint=calibration_fingerprint(calibration))
+    st.caption("PostgreSQL-backed AMR-01: persisted measurements and model results")
+    show_robot("amr01", snapshot, calibration)
 
 
 def inventory_view():
-    st.subheader("Stock and task events · slide 15")
+    st.subheader("Stock and task events · legacy stock example")
     st.caption("Manual software example for one stock location and AMR-01. These inputs are not sensor measurements or physical commands.")
     if "slide15_state" not in st.session_state:
         st.session_state.slide15_state = dict(stock=100, task="idle")
@@ -130,19 +126,20 @@ def render_sensor_dashboard():
             with st.expander("Residual demonstration history"):
                 st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
         else:
-            st.caption("The backend subscribes to robot/amr01/state. Configure private Streamlit secrets and measured calibrations; no credentials are sent to the browser.")
+            st.caption("The dedicated worker subscribes to robot/amr01/state and persists validated samples. Configure a read-only database connection and measured calibration privately.")
             try:
-                if not st.secrets["commissioning"]["measured_calibration_confirmed"]:
+                if st.secrets["commissioning"]["measured_calibration_confirmed"] is not True:
                     raise ValueError("Measured calibration must be confirmed")
-                config = st.secrets["mqtt"]
                 calibration = st.secrets["calibration"].to_dict()
-                service = live_service(config["host"], config["username"], config["password"], json.dumps(calibration, sort_keys=True))
-            except (KeyError, FileNotFoundError, ValueError, TypeError):
-                st.warning("Live mode is not configured. Copy .streamlit/secrets.example.toml to private secrets and replace all illustrative calibration values with measured values.")
-                service = None
-            if service is not None:
-                st.caption("Local origin is (0, 0, 0) at first accepted packet. Live models use session memory, not a durable measurement archive. Restarting Streamlit resets the integrals.")
-                live_view(service)
+                if set(calibration) != {"amr01"}:
+                    raise ValueError("Only one measured AMR-01 calibration is supported")
+                c = Calibration(**calibration["amr01"])
+                db = database_reader(st.secrets["database"]["url"])
+            except Exception:
+                st.warning("Live database is not configured or reachable. Check private read-only database URL, measured calibration and ingestion worker.")
+            else:
+                st.caption("The independent ingestion worker persists AMR-01 samples. Dashboard reads stored estimates, without publishing commands.")
+                live_view(db, c)
     with inventory:
         inventory_view()
     with mapping:
