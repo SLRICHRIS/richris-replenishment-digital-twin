@@ -88,3 +88,82 @@ def test_invalid_emqx_host_is_rejected(bad_host):
 def test_unencrypted_port_is_rejected():
     with pytest.raises(ValueError):
         MQTTService("cloud.example", "reader", "secret", example_calibrations(), port=1883)
+
+
+def test_bounded_queue_processes_samples_in_order_without_motor_control():
+    import json
+    import time
+    from dataclasses import asdict
+    from backend_streamlit_and_telemetry.predictive_twin.telemetry import Packet
+
+    class DatabaseRecorder:
+        def __init__(self):
+            self.sequences = []
+        def read_snapshot(self, robot_id):
+            return {"quality": "NO_DATA"}
+        def persist(self, packet, robot, quality_events=()):
+            self.sequences.append(packet.seq)
+            return True
+
+    store = DatabaseRecorder()
+    with patch('backend_streamlit_and_telemetry.predictive_twin.mqtt_service.mqtt.Client') as factory:
+        client = factory.return_value
+        service = MQTTService("broker.example.com", "reader", "password",
+                              example_calibrations(), database=store)
+        try:
+            for seq in range(20):
+                packet = asdict(Packet("amr01", "ci-boot", seq, seq * .05,
+                                      seq * 10, seq * 10, .01, 7.4, .6, "standby"))
+                service._message(client, None, SimpleNamespace(
+                    topic=TOPIC, payload=json.dumps(packet).encode(), retain=False
+                ))
+            stop = time.monotonic() + 5
+            while service.metrics["persisted"] < 20 and time.monotonic() < stop:
+                time.sleep(.01)
+            assert store.sequences == list(range(20))
+            assert service.metrics["received"] == 20
+            assert service.metrics["rejected"] == 0
+            assert service.metrics["queue_depth"] == 0
+            assert not service.fatal_error
+            client.publish.assert_not_called()
+        finally:
+            service.close()
+
+
+def test_backpressure_is_explicit_when_database_stalls():
+    import json
+    import threading
+    from dataclasses import asdict
+    from backend_streamlit_and_telemetry.predictive_twin.telemetry import Packet
+
+    entered, release = threading.Event(), threading.Event()
+
+    class SlowDatabase:
+        def read_snapshot(self, robot_id):
+            return {"quality": "NO_DATA"}
+        def persist(self, packet, robot, quality_events=()):
+            entered.set()
+            release.wait(timeout=4)
+            return True
+
+    with patch('backend_streamlit_and_telemetry.predictive_twin.mqtt_service.mqtt.Client') as factory:
+        client = factory.return_value
+        service = MQTTService("broker.example.com", "reader", "password",
+                              example_calibrations(), database=SlowDatabase())
+        def msg(seq):
+            packet = asdict(Packet("amr01", "ci-boot", seq, seq * .05,
+                                  seq * 10, seq * 10, .01, 7.4, .6, "standby"))
+            return SimpleNamespace(topic=TOPIC, payload=json.dumps(packet).encode(),
+                                   retain=False)
+        try:
+            service._message(client, None, msg(0))
+            assert entered.wait(timeout=2)
+            for seq in range(1, 270):
+                service._message(client, None, msg(seq))
+            assert service.fatal_error
+            assert service.metrics["queue_overflows"] >= 1
+            assert service.status == "Ingestion queue overflow; worker stopping"
+            client.publish.assert_not_called()
+        finally:
+            release.set()
+            service.close()
