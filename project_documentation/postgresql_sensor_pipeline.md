@@ -116,13 +116,19 @@ policy before long-duration trials. The existing primary key does not contain
 a partitioning timestamp, so it cannot be converted to a time-partitioned
 parent table safely with a simple unreviewed DDL change.
 
-**Current limitations:** The MQTT callback writes synchronously to
-PostgreSQL; storage or network stalls may create backpressure and QoS-0
-packet loss. Benchmark sustained real 20 Hz write latency, and introduce
-a bounded asynchronous staging queue and durable replay path if measurements
-exceed the processing budget. MQTT QoS-1 with publisher-side buffering is a
-separate firmware upgrade; upgrading the subscriber QoS alone does not fix
-publisher loss. These are explicit commissioning gates, not implemented claims.
+**Current ingestion design:** Paho MQTT uses an ordered **bounded queue**
+(256 packets). A separate single-writer thread processes samples and
+commits each admitted packet and derived state in a PostgreSQL transaction.
+The network callback is not blocked by PostgreSQL write latency. On queue
+overflow or database failure, the worker **fails closed** and surfaces an
+error; it does not claim telemetry is healthy. Worker logs report MQTT
+received, persisted, rejected, queue depth, overflows and latest processing
+time every 30 seconds. The queue is **in RAM only**: abrupt power loss
+may discard queued records, and MQTT QoS-0 on the ESP32 does not guarantee
+delivery. Benchmark the actual 20 Hz flow and implement publisher-side
+QoS-1 buffering plus a **durable staging/replay design** if research
+requires loss-bounded collection. Do not infer a hard real-time SLA from
+CI passing.
 
 ## Installation and deployment
 
