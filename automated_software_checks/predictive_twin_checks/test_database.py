@@ -133,3 +133,54 @@ def test_schema_migration_from_existing_v1_keeps_raw_history(tmp_path):
         assert len(session.execute(select(SensorSample)).all()) == 1
     assert "amr_encoder_readings" in inspect(migrated.engine).get_view_names()
     migrated.engine.dispose()
+
+
+
+def test_bad_sensor_packets_are_audited_without_raw_payload_persistence(tmp_path):
+    db = SensorDatabase("sqlite+pysqlite:///" + str(tmp_path / "reject.sqlite3"), initialize=True)
+    fleet = FleetTwin(example_calibrations(), database=db)
+    topic = "robot/amr01/state"
+    assert not fleet.ingest(asdict(packet(0, 0, 0)), topic, received=0, retained=True)
+    invalid = asdict(packet(0, 0, 0))
+    invalid["gyro_z_rad_s"] = None
+    assert not fleet.ingest(invalid, topic, received=0)
+    with Session(db.engine) as session:
+        assert len(session.execute(select(SensorSample)).scalars().all()) == 0
+        events = session.execute(select(PipelineEvent)).scalars().all()
+        assert {event.event_type for event in events} == {"invalid_schema", "retained_message"}
+        assert all(event.details == {"topic": topic} for event in events)
+    db.engine.dispose()
+
+
+def test_sequence_gap_invalidates_cross_interval_gyro_residual(tmp_path):
+    db = SensorDatabase("sqlite+pysqlite:///" + str(tmp_path / "residual.sqlite3"), initialize=True)
+    fleet = FleetTwin(example_calibrations(), database=db)
+    topic = "robot/amr01/state"
+    assert fleet.ingest(asdict(packet(0, 0, 0)), topic, received=0)
+    assert fleet.ingest(asdict(packet(2, .10, 20, gyro=.2)), topic, received=.1)
+    state = db.read_snapshot(stale_after_s=999999999)
+    assert state["quality"] == "SEQUENCE_GAP"
+    assert state["derived"]["residual_rad_s"] is None
+    assert state["derived"]["residual_valid"] is False
+    assert not state["derived"]["advisory"]
+    assert state["derived"]["sequence_gap_count"] == 1
+    assert state["derived"]["v_left_m_s"] > 0
+    assert fleet.ingest(asdict(packet(3, .15, 30, gyro=.01)), topic, received=.15)
+    assert db.read_snapshot(stale_after_s=999999999)["derived"]["residual_valid"]
+    db.engine.dispose()
+
+
+def test_logical_20hz_sample_stream_is_append_only(tmp_path):
+    """Functional volume test; not a claim of deployed 20 Hz timing performance."""
+    db = SensorDatabase("sqlite+pysqlite:///" + str(tmp_path / "volume.sqlite3"), initialize=True)
+    fleet = FleetTwin(example_calibrations(), database=db)
+    for seq in range(200):
+        t = seq * .05
+        assert fleet.ingest(
+            asdict(packet(seq, t, seq * 10)), "robot/amr01/state", received=t
+        )
+    with Session(db.engine) as session:
+        assert len(session.execute(select(SensorSample)).all()) == 200
+        assert len(session.execute(select(TwinState)).all()) == 200
+        assert len(session.execute(select(PipelineEvent)).all()) == 0
+    db.engine.dispose()
