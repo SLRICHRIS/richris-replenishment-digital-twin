@@ -11,10 +11,11 @@ The **previously designed warehouse dashboard is the default screen**, with its 
 
 ## Active architecture
 
-ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → AMR-01 models → Streamlit browser view. Topic: `robot/amr01/state`. The active raw-sensor path requires an independently deployed Python worker and managed PostgreSQL. Streamlit does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
+ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → AMR-01 models → Streamlit browser view. Topic: `robot/amr01/state`. The active raw-sensor path requires an independently deployed, single-instance Python worker and managed PostgreSQL. EMQX TLS authentication and topic SUBACK are explicitly checked; PostgreSQL enforces a single-writer lease. Streamlit does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
 
 - Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Hardware. The workflow reference is also linked in the warehouse model explanation.
 - [Structured PostgreSQL ingest worker, database and deployment](project_documentation/postgresql_sensor_pipeline.md)
+- [EMQX Cloud Serverless: TLS, topic permissions and live broker connection probe](project_documentation/emqx_cloud_amr01_integration.md)
 - [Exact final **17-slide** equation/variable/paper mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
 - [Current capability scope and outstanding live-3D registration](project_documentation/implemented_dashboard_features_and_limits.md)
