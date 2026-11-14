@@ -38,6 +38,7 @@ def test_real_postgres_raw_and_derived_roundtrip():
         assert len(conn.execute(select(TwinState.robot_id)).all()) == 2
     db.engine.dispose()
 
+@pytest.mark.skipif(not os.getenv("TEST_POSTGRES_URL"), reason="PostgreSQL test service not configured")
 def test_postgresql_single_writer_lease():
     url = os.environ["TEST_POSTGRES_URL"]
     writer1 = SensorDatabase(url, initialize=True)
