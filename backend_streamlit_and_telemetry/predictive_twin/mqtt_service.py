@@ -4,9 +4,11 @@ The sole production consumer is the independent ingestion worker. Persisted
 readings reach Streamlit through PostgreSQL, not through browser MQTT.
 """
 import logging
+import queue
 import re
 import ssl
 import threading
+import time
 
 import paho.mqtt.client as mqtt
 
@@ -37,6 +39,18 @@ class MQTTService:
         self._status = "Connecting"
         self._fatal = threading.Event()
         self._subscription_confirmed = threading.Event()
+        # The Paho networking callback must not wait for a remote database.
+        # This bounded, ordered queue is volatile; it is NOT a durable event log.
+        self._ingest_queue = queue.Queue(maxsize=256) if database is not None else None
+        self._worker_stop = threading.Event()
+        self._worker = None
+        self._metrics = {
+            "received": 0,
+            "persisted": 0,
+            "rejected": 0,
+            "queue_overflows": 0,
+            "processing_last_ms": None,
+        }
         self.client = mqtt.Client(
             mqtt.CallbackAPIVersion.VERSION2, client_id=client_id,
             protocol=mqtt.MQTTv311, clean_session=True,
@@ -51,6 +65,11 @@ class MQTTService:
         self.client.on_subscribe = self._subscribed
         self.client.on_disconnect = self._disconnected
         self.client.on_message = self._message
+        if self._ingest_queue is not None:
+            self._worker = threading.Thread(
+                target=self._drain_samples, name="amr01-pg-writer", daemon=True
+            )
+            self._worker.start()
         self.client.connect_async(host, port, keepalive=30)
         self.client.loop_start()
 
@@ -66,6 +85,56 @@ class MQTTService:
     @property
     def subscription_confirmed(self):
         return self._subscription_confirmed.is_set()
+
+    @property
+    def metrics(self):
+        with self._lock:
+            result = dict(self._metrics)
+        result["queue_depth"] = (
+            self._ingest_queue.qsize() if self._ingest_queue is not None else 0
+        )
+        result["subscription_confirmed"] = self.subscription_confirmed
+        return result
+
+    def _drain_samples(self):
+        """Single ordered consumer. DB updates never block the Paho socket loop."""
+        while True:
+            if self._worker_stop.is_set() and self._ingest_queue.empty():
+                return
+            try:
+                kind, payload, topic, retained, received = self._ingest_queue.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            try:
+                if self.fatal_error:
+                    continue
+                if kind == "disconnect":
+                    with self.fleet.lock:
+                        for robot in self.fleet.robots.values():
+                            robot.invalidate()
+                    continue
+                started = time.monotonic()
+                accepted = self.fleet.ingest(
+                    payload, topic, received=received, retained=retained
+                )
+                elapsed_ms = (time.monotonic() - started) * 1000
+                with self._lock:
+                    self._metrics["persisted" if accepted else "rejected"] += 1
+                    self._metrics["processing_last_ms"] = elapsed_ms
+            except Exception:
+                LOGGER.exception("Persisted AMR-01 telemetry processing failed")
+                self._fail(self.client, "Database/ingestion failure; worker stopping")
+            finally:
+                self._ingest_queue.task_done()
+
+    def _enqueue(self, item):
+        try:
+            self._ingest_queue.put_nowait(item)
+        except queue.Full:
+            LOGGER.error("AMR-01 ingestion buffer overflow; stopping to prevent silent loss")
+            with self._lock:
+                self._metrics["queue_overflows"] += 1
+            self._fail(self.client, "Ingestion queue overflow; worker stopping")
 
     def _fail(self, client, status):
         self._subscription_confirmed.clear()
@@ -104,10 +173,15 @@ class MQTTService:
         if not self.fatal_error:
             with self._lock:
                 self._status = "Disconnected; reconnecting"
-        # Network interruption invalidates the integrals; never bridge unknown dt.
-        with self.fleet.lock:
-            for robot in self.fleet.robots.values():
-                robot.invalidate()
+        # Preserve delivery order: queued records are processed before the
+        # disconnect invalidates the model anchor. No unknown interval is joined.
+        if self._ingest_queue is not None:
+            if not self.fatal_error:
+                self._enqueue(("disconnect", b"", TOPIC, False, time.monotonic()))
+        else:
+            with self.fleet.lock:
+                for robot in self.fleet.robots.values():
+                    robot.invalidate()
 
     def _message(self, client, userdata, message):
         if self.fatal_error:
@@ -115,14 +189,30 @@ class MQTTService:
         if message.topic != TOPIC:
             LOGGER.warning("Ignoring unexpected MQTT topic")
             return
+        # Queue the sample immediately. Capture receive time on the MQTT thread,
+        # NOT after PostgreSQL latency. A full queue is a fatal observable error.
+        if self._ingest_queue is not None:
+            with self._lock:
+                self._metrics["received"] += 1
+            self._enqueue(("sample", bytes(message.payload), message.topic,
+                           message.retain, time.monotonic()))
+            return
         try:
-            self.fleet.ingest(message.payload, message.topic, retained=message.retain)
+            accepted = self.fleet.ingest(message.payload, message.topic, retained=message.retain)
+            with self._lock:
+                self._metrics["received"] += 1
+                self._metrics["persisted" if accepted else "rejected"] += 1
         except Exception:
             LOGGER.exception("AMR telemetry modelling/storage failure")
-            # Fail closed. The supervisor will terminate this worker instead
-            # of repeatedly reconnecting and silently discarding samples.
             self._fail(client, "Database/ingestion failure; worker stopping")
 
     def close(self):
+        # Stop receiving new MQTT packets, drain the bounded volatile queue,
+        # and only then allow the application to dispose of the DB connection.
         self.client.disconnect()
         self.client.loop_stop()
+        if self._worker is not None:
+            self._worker_stop.set()
+            self._worker.join(timeout=15)
+            if self._worker.is_alive():
+                raise RuntimeError("Timed out draining the sensor-to-PostgreSQL queue")
