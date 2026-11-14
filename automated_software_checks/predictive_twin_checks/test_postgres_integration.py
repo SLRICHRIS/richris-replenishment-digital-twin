@@ -37,3 +37,19 @@ def test_real_postgres_raw_and_derived_roundtrip():
         assert len(conn.execute(select(SensorSample.robot_id)).all()) == 2
         assert len(conn.execute(select(TwinState.robot_id)).all()) == 2
     db.engine.dispose()
+
+def test_postgresql_single_writer_lease():
+    url = os.environ["TEST_POSTGRES_URL"]
+    writer1 = SensorDatabase(url, initialize=True)
+    writer2 = SensorDatabase(url, initialize=False)
+    try:
+        writer1.acquire_worker_lease()
+        with pytest.raises(RuntimeError, match="Another AMR-01"):
+            writer2.acquire_worker_lease()
+        writer1.release_worker_lease()
+        writer2.acquire_worker_lease()
+    finally:
+        writer2.release_worker_lease()
+        writer1.release_worker_lease()
+        writer1.engine.dispose()
+        writer2.engine.dispose()
