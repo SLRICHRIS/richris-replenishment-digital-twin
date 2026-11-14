@@ -29,7 +29,10 @@ def main():
     if set(values) != {"amr01"}:
         raise ValueError("Exactly one measured AMR-01 calibration is required")
     calibrations = {"amr01": Calibration(**values["amr01"])}
-    store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=True)
+    # Schema creation is a separate one-time administrator operation.
+    # The always-on worker requires only limited data-write privileges.
+    store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=False)
+    store.assert_schema_ready()
     service = None
     try:
         store.acquire_worker_lease()
