@@ -197,3 +197,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_database.py` | Test SQLite-isolated telemetry persistence, packet replay suppression and calibration mismatch. |
 | `automated_software_checks/predictive_twin_checks/test_postgres_integration.py` | Integration-check actual PostgreSQL persistence with linked raw and derived measurements. |
 | `project_documentation/postgresql_sensor_pipeline.md` | Installation, schema, private credentials, database roles, and live physical commissioning limitations. |
+| `project_maintenance_scripts/probe_emqx_connection.py` | Read-only EMQX Cloud TLS authorization and schema-v2 sensor packet smoke test, with no SQL writes. |
+| `project_documentation/emqx_cloud_amr01_integration.md` | Official EMQX Serverless broker configuration, topic ACLs, ESP32 publisher, ingestion-worker and PostgreSQL integration guide. |
