@@ -14,16 +14,115 @@ Wheel encoders + MPU6050 gyro + INA219 voltage/current
 
 This is **one AMR-01**. The older warehouse scene, missions and inventory simulation are distinct from the physical telemetry and are not synchronized to surveyed warehouse coordinates. The LabVIEW return/command path on slide 16 is still a proposal, not a live motor-control feature. GitHub holds source code; it cannot run the always-on telemetry worker.
 
-## Structured database
+## Structured physical sensor schema (v2)
 
-| Relation | Purpose |
-| --- | --- |
-| `amr_calibrations` | Versioned calibration parameters, identified by SHA-256 parameter fingerprint |
-| `amr_sensor_samples` | Raw accepted v2 fields with database receive timestamp; unique `robot_id + boot_id + seq` |
-| `amr_twin_states` | Resulting x/y/heading, SOC fraction, Wh, residual/advisory, freshness/quality metadata, linked to the raw packet |
-| `amr_database_version` | Initial schema version |
+**One canonical, typed, append-only physical sensor fact table** stores each
+admitted 20 Hz MQTT packet once. Three sensor-specific, read-only SQL **views**
+provide clean per-sensor attributes without triplicating write traffic. This is
+an intentional data-engineering choice: at 20 Hz one continuously active AMR
+generates 1,728,000 packets per day. The existing v1 sensor table and its
+primary-key shape are retained for non-destructive migration.
 
-Do not present the computed values as independently validated ground truth. Source ingestion can lose intervals; unknown motion, charge and magnetic/gyro effects cannot be reconstructed by the database. A worker restart also breaks model continuity until independently reinitialized.
+| Object | Kind | Primary attributes | Purpose |
+| --- | --- | --- | --- |
+| `amr_sensor_samples` | Physical fact table | `robot_id` (varchar 16), `boot_id` (varchar 64), `seq` (bigint), `schema_version` (int), `sample_time_s` (double), `received_at` (timestamptz), `robot_state` (varchar 64), `calibration_fingerprint` (varchar 64 FK) and the typed encoder/gyro/battery columns listed below | Single source of truth for actually received measurements |
+| `amr_encoder_readings` | SQL view | `robot_id`, `boot_id`, `seq`, `sample_time_s`, `received_at`, `encoder_left_count` (bigint), `encoder_right_count` (bigint), `calibration_fingerprint` | Physically observed cumulative encoder counts, signed, including x4 decoding |
+| `amr_imu_readings` | SQL view | `robot_id`, `boot_id`, `seq`, `sample_time_s`, `received_at`, `gyro_z_rad_s` (double), `calibration_fingerprint` | MPU6050 measured z-axis angular rate only, not corrected yaw or absolute heading |
+| `amr_ina219_readings` | SQL view | `robot_id`, `boot_id`, `seq`, `sample_time_s`, `received_at`, `battery_voltage_v` (double), `battery_current_a` (double), `calibration_fingerprint` | INA219 terminal voltage and signed current (positive means discharge) |
+| `amr_calibrations` | Physical table | `fingerprint` (SHA-256 PK), `robot_id`, `parameters` (JSON), `created_at` | Sensor/wheel/battery calibrations linked to every packet |
+| `amr_twin_states` | Physical table | Same 3-part packet PK/FK, `received_at`, `sample_time_s`, `quality`, `continuity_lost`, `x_m`, `y_m`, `theta_rad`, `soc_fraction`, `energy_wh`, `derived` (JSON) | Calculated odometry, power, SOC, angular residual, advisory and model quality |
+| `amr_pipeline_events` | Physical sparse event table | `id` (PK), `robot_id`, `boot_id`, `seq`, `observed_at`, `event_type`, `details` (JSON) | Persisted sequence gaps, excessive sample-time gaps, reboot and rejected-packet evidence |
+| `amr_database_version` | Physical table | `id` (PK), `schema_version=2` | Safeguard against incompatible versions |
+
+**Raw versus computed:** `battery_voltage_v`, `battery_current_a` and
+`gyro_z_rad_s` come from physical sensor readings. `soc_fraction`, battery
+Wh, bias-corrected yaw rate, position, angular residual and forecasts are
+**model outputs**. MPU6050 acceleration and other sensor readings are **not**
+advertised as stored because our schema-v2 firmware does not publish them.
+
+**Keys and validation:** unique `(robot_id, boot_id, seq)` prevents duplicate
+packets from duplicating sensor records. The database constrains schema v2,
+non-negative device sample time and positive battery voltage on new tables;
+the Python validator additionally enforces exact fields, finite numerical
+measurements and correct `robot/amr01/state` topic identity. Raw sample and
+derived state are stored together in one PostgreSQL transaction.
+
+**Timestamp interpretation:** `sample_time_s` is the ESP32's monotonic time
+since boot, *not* an absolute timestamp. `received_at` is the server's
+UTC database-ingest time, not a hardware acquisition wall clock. Their
+difference cannot be used to claim network latency without clock alignment.
+
+### Query the sensor views
+
+```sql
+SELECT seq, sample_time_s, encoder_left_count, encoder_right_count
+FROM amr_encoder_readings
+WHERE robot_id = 'amr01' AND boot_id = '<actual-boot-id>'
+ORDER BY seq DESC
+LIMIT 100;
+
+SELECT seq, battery_voltage_v, battery_current_a
+FROM amr_ina219_readings
+WHERE robot_id = 'amr01'
+ORDER BY received_at DESC
+LIMIT 100;
+
+SELECT event_type, seq, observed_at, details
+FROM amr_pipeline_events
+WHERE robot_id = 'amr01'
+ORDER BY id DESC
+LIMIT 20;
+```
+
+### Real-time engineering and data-quality rules
+
+1. **Ingestion:** ESP32 publishes non-retained schema-v2 JSON through EMQX
+   TLS 8883. Worker subscribes to one AMR-01 topic. Source firmware currently
+   uses **MQTT QoS 0**; delivery is best effort and outage gaps are possible.
+2. **Validate:** Reject malformed, non-finite, wrong-robot, wrong-topic,
+   retained or out-of-order packets. Store an audit **category** for malformed
+   or retained AMR-01 samples, never the untrusted payload body.
+3. **Sequence quality:** Count missing `seq` values, record long device-time
+   gaps, and log boot-ID transitions. Never synthesize missing physical samples.
+   A missing intermediate packet suppresses that interval's gyro–encoder
+   consistency residual and short-term forecast rather than reporting
+   a potentially misleading fault result.
+4. **Transform:** Apply only the equations from the final 17-slide deck.
+   Net encoder count displacement across short losses is an approximation;
+   battery current is integrated from the available endpoint sample.
+5. **Persist:** Commit accepted typed raw packet, calculated model state,
+   calibration link and any quality event atomically. Failed database writes
+   terminate the ingester rather than claiming successful delivery.
+6. **Serve:** Streamlit queries the authoritative database (read-only account),
+   displays recorded quality evidence, marks readings stale after 2 s by default
+   and refreshes its component approximately once per second.
+7. **Govern:** Separate database roles, private TLS credentials, backups and
+   restore drills; never auto-delete research evidence without an approved
+   retention and archive policy.
+
+**Timing boundary:** 20 Hz is the *target ESP32 acquisition period* (50 ms).
+The Streamlit view refreshes near 1 Hz. This is a **soft real-time telemetry and
+advisory pipeline**, not a hard real-time motor or safety controller. PostgreSQL
+write latency, EMQX packet loss, WAN jitter and real-hardware calibration
+must be measured during commissioning. Do not claim latency SLAs until
+production traces confirm them.
+
+**Scale plan:** A raw table and matching derived table can accumulate about
+3.46 million rows/day at continuous 20 Hz even before indexes and
+calibration/event rows. We deliberately avoid three duplicate physical sensor
+tables. Monitor actual database size and query plans; implement a
+**reviewed PostgreSQL range-partitioning migration** and archive/retention
+policy before long-duration trials. The existing primary key does not contain
+a partitioning timestamp, so it cannot be converted to a time-partitioned
+parent table safely with a simple unreviewed DDL change.
+
+**Current limitations:** The MQTT callback writes synchronously to
+PostgreSQL; storage or network stalls may create backpressure and QoS-0
+packet loss. Benchmark sustained real 20 Hz write latency, and introduce
+a bounded asynchronous staging queue and durable replay path if measurements
+exceed the processing budget. MQTT QoS-1 with publisher-side buffering is a
+separate firmware upgrade; upgrading the subscriber QoS alone does not fix
+publisher loss. These are explicit commissioning gates, not implemented claims.
 
 ## Installation and deployment
 
@@ -59,7 +158,7 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
    ```
    These numeric values are **illustrations only**. Replace them with measured values, and set the commissioning flag only after physical validation.
 5. ESP32 uses the existing raw-sensor sketch and publishes to `robot/amr01/state`. It is an observation-only firmware, with the TB6612 standby held low; it does not autonomously navigate or issue LabVIEW motor commands.
-6. Use the dashboard's **Live MQTT sensors** selection to display *persisted* sensor/twin results. The label indicates the acquisition source, not a browser broker connection. Unconfigured live mode shows no fabricated robot measurements.
+6. Use the dashboard's **Live EMQX sensor data** selection to display *persisted* sensor/twin results. The label indicates the acquisition source, not a browser broker connection. Unconfigured live mode shows no fabricated robot measurements.
 
 ### Important constraints
 
