@@ -1,6 +1,6 @@
 # AMR-01 Warehouse Digital Twin — S. L. Richris
 
-One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measurements. The **Streamlit Python backend** computes wheel odometry, motion, power/energy/SOC, residual advisories and illustrative forecasts. The browser displays those results. GitHub hosts the source; it does not execute the online twin.
+One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measurements. The **Python ingestion worker** computes wheel odometry, motion, power/energy/SOC, residual advisories and illustrative forecasts. The independent worker stores typed sensor samples and derived state in PostgreSQL; the Streamlit browser reads stored results. Synthetic demonstration is separate from physical records. GitHub hosts the source; it does not execute the online twin.
 
 ```sh
 python -m pip install -r requirements.txt
@@ -11,17 +11,19 @@ The **previously designed warehouse dashboard is the default screen**, with its 
 
 ## Active architecture
 
-ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → AMR-01 models → Streamlit browser view. Topic: `robot/amr01/state`. The active raw-sensor path does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
+ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber → AMR-01 models → Streamlit browser view. Topic: `robot/amr01/state`. The active raw-sensor path requires an independently deployed, single-instance Python worker and managed PostgreSQL. EMQX TLS authentication and topic SUBACK are explicitly checked; PostgreSQL enforces a single-writer lease. Streamlit does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
 
 - Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Hardware. The workflow reference is also linked in the warehouse model explanation.
-- [Exact slide, equation, variable and paper-page mapping](project_documentation/slide_to_code_mapping.md)
+- [Structured PostgreSQL ingest worker, database and deployment](project_documentation/postgresql_sensor_pipeline.md)
+- [EMQX Cloud Serverless: TLS, topic permissions and live broker connection probe](project_documentation/emqx_cloud_amr01_integration.md)
+- [Exact final **17-slide** equation/variable/paper mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
 - [Current capability scope and outstanding live-3D registration](project_documentation/implemented_dashboard_features_and_limits.md)
 - [Validation evidence and remaining hardware work](project_documentation/single_amr_alignment_validation.md)
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
 
-The **Sensor models** view follows the presentation in six compact stages: wheel travel/speed (slides 4–5), pose (6–7), gyro bias (8–9), battery (10–11), sustained residual alert (12–13) and forecasts (14). Equation/variable details open on demand. **Inspect models and slide 15 stock/tasks** opens the scientific view with slide 15's exact stock-balance and minimal task-state functions. The larger FIFO/urgency research experiment remains in source, outside this user flow.
+The **Sensor models** view follows the final 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Equation/variable details open on demand. **Inspect models and separate legacy stock/tasks demo** opens the scientific view with historical stock-balance and minimal task-state functions, which are not part of the final 17-slide sensor modelling presentation. The larger FIFO/urgency research experiment remains in source, outside this user flow.
 
 The hosted navigation contains **Floor, Sensor models, Missions and Activity**. Route playback, the separate older observer/calibration lab and simulated energy analytics are hidden from this focused workspace; historical deep links return to Sensor models. The Floor and Missions preserve the original single-AMR warehouse illustration, with their virtual nature explicit.
 

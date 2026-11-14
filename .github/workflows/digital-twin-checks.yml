@@ -39,3 +39,29 @@ jobs:
           sketch=esp32_telemetry_firmware/publish_raw_sensor_telemetry
           cp "$sketch/example_esp32_wifi_and_mqtt_settings.h" "$sketch/esp32_wifi_and_mqtt_settings.h"
           arduino-cli compile --fqbn esp32:esp32:esp32 "$sketch"
+
+  postgres-sensor-ingestion:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: amr_ci
+          POSTGRES_PASSWORD: ci_test_only
+          POSTGRES_DB: amr_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U amr_ci -d amr_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_POSTGRES_URL: postgresql+psycopg://amr_ci:ci_test_only@localhost:5432/amr_ci
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest automated_software_checks/predictive_twin_checks/test_postgres_integration.py -q

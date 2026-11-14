@@ -1228,7 +1228,7 @@
                 Synthetic demonstration
               </button>
               <button id="python-source-live" type="button" aria-pressed="false">
-                Live MQTT sensors
+                Live EMQX sensor data
               </button>
               <strong id="python-source-label">Waiting for Python</strong>
             </div>
@@ -1247,7 +1247,7 @@
             </div>
             <div class="python-sensor-cards">
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slides 4–5 · encoders</span>
+                <span class="eyebrow">Slides 5–6 · encoders</span>
                 <h3>01 · Wheel travel and speed</h3>
                 <dl>
                   <dt>Left / right travel (m)</dt>
@@ -1278,7 +1278,7 @@
                 </p>
               </article>
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slides 6–7 · nonlinear kinematics</span>
+                <span class="eyebrow">Slides 7–8 · nonlinear kinematics</span>
                 <h3>02 · Robot position and heading</h3>
                 <dl>
                   <dt>Local x / y / θ (m / m / rad)</dt>
@@ -1314,7 +1314,7 @@
                 </p>
               </article>
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slides 8–9 · MPU6050</span>
+                <span class="eyebrow">Slides 9–10 · MPU6050</span>
                 <h3>03 · Gyro bias correction</h3>
                 <dl>
                   <dt>Raw yaw rate (rad/s)</dt>
@@ -1349,7 +1349,7 @@
                 </p>
               </article>
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slides 10–11 · INA219</span>
+                <span class="eyebrow">Slides 11–12 · INA219</span>
                 <h3>04 · Battery energy and charge</h3>
                 <dl>
                   <dt>Voltage / current (V / A)</dt>
@@ -1390,7 +1390,7 @@
                 </p>
               </article>
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slides 12–13 · advisory</span>
+                <span class="eyebrow">Slides 13–14 · advisory</span>
                 <h3>05 · Sustained disagreement alert</h3>
                 <dl>
                   <dt>Gyro–encoder residual (rad/s)</dt>
@@ -1435,7 +1435,7 @@
                 </p>
               </article>
               <article class="panel python-sensor-card">
-                <span class="eyebrow">Slide 14 · explicit assumptions</span>
+                <span class="eyebrow">Slide 15 · explicit assumptions</span>
                 <h3>06 · Motion and runtime forecasts</h3>
                 <dl>
                   <dt>5 s forecast x / y / θ</dt>
@@ -1465,12 +1465,12 @@
             </div>
             <p class="python-sensor-note">
               Synthetic mode is a fixed 6 s teaching trial; AMR01 has an injected gyro disagreement
-              at 3–4 s. Live mode uses private server-side broker settings. Local odometry is not
+              at 3–4 s. Live mode reads PostgreSQL results from a separately deployed MQTT ingestion worker. Local odometry is not
               registered to the warehouse map. Floor and Missions retain the single virtual AMR;
               sensor readings never move physical inventory or send motor commands.
             </p>
             <button id="python-model-inspection" type="button">
-              Inspect models and slide 15 stock/tasks
+              Inspect scientific models and separate stock/tasks demo
             </button>
             <details class="panel python-sensor-card" id="python-model-evidence">
               <summary>Equations, papers and page references</summary>
@@ -1485,7 +1485,7 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <th>Encoder conversion · slides 4–5</th>
+                      <th>Encoder conversion · slides 5–6</th>
                       <td>
                         <a
                           class="model-paper-link"
@@ -1503,7 +1503,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <th>Motion update · slides 6–7</th>
+                      <th>Motion update · slides 7–8</th>
                       <td>
                         <a
                           class="model-paper-link"
@@ -1522,7 +1522,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <th>Gyro input · slides 8–9</th>
+                      <th>Gyro input · slides 9–10</th>
                       <td>
                         <a
                           class="model-paper-link"
@@ -1541,7 +1541,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <th>Battery SOC · slides 10–11</th>
+                      <th>Battery SOC · slides 11–12</th>
                       <td>
                         <a
                           class="model-paper-link"
@@ -1561,7 +1561,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <th>Residual alerts and forecasts · slides 12–14</th>
+                      <th>Residual alerts and forecasts · slides 13–15</th>
                       <td>Project extensions</td>
                       <td>
                         The threshold/hold detector, constant-speed projection and assumed-current
@@ -1569,7 +1569,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <th>Inventory and task workflow · slide 15</th>
+                      <th>Inventory and task workflow · separate simulation</th>
                       <td>
                         <a
                           class="model-paper-link"
@@ -1583,7 +1583,7 @@
                         </a>
                       </td>
                       <td>
-                        Workflow context only. Slide 15 uses stock + delivered − consumed and a
+                        Workflow context only. The separate stock example uses stock + delivered − consumed and a
                         minimal idle/assigned/travelling/servicing task state machine; no fleet
                         policy is added.
                       </td>

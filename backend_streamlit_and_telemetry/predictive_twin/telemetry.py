@@ -4,6 +4,7 @@ Device monotonic sample time drives equations; server monotonic time drives
 freshness. No packet can move inventory or issue motor commands.
 """
 from collections import deque
+import copy
 from dataclasses import asdict, dataclass
 import json
 import threading
@@ -146,7 +147,7 @@ class RobotTwin:
 
 
 class FleetTwin:
-    def __init__(self, calibrations, stale_after_s=2.0):
+    def __init__(self, calibrations, stale_after_s=2.0, database=None):
         if set(calibrations) != set(ROBOT_IDS):
             raise ValueError("Configure the measured amr01 calibration only")
         finite(stale_after_s)
@@ -154,8 +155,14 @@ class FleetTwin:
             raise ValueError("Freshness timeout must be positive")
         self.robots = {rid: RobotTwin(calibrations[rid]) for rid in ROBOT_IDS}
         self.stale_after_s = stale_after_s
+        self.database = database
         self.lock = threading.RLock()
         self.rejected_packets = 0
+        if self.database is not None:
+            # A restarted worker cannot infer movement or charge over downtime.
+            previous = self.database.read_snapshot("amr01")
+            if previous["quality"] != "NO_DATA":
+                self.robots["amr01"].continuity_lost = True
 
     def ingest(self, payload, topic, received=None, retained=False):
         received = time.monotonic() if received is None else received
@@ -179,7 +186,20 @@ class FleetTwin:
             robot = self.robots[packet.robot_id]
             if robot.last_received is not None and received - robot.last_received > self.stale_after_s:
                 robot.invalidate()
-            return robot.accept(packet, received)
+            # Stage model updates independently. On failed DB commit, never advance
+            # the authoritative in-process model. The DB transaction owns durability.
+            if self.database is None:
+                return robot.accept(packet, received)
+            staged = copy.deepcopy(robot)
+            admitted = staged.accept(packet, received)
+            if not admitted:
+                self.robots[packet.robot_id] = staged
+                return False
+            if not self.database.persist(packet, staged):
+                self.robots[packet.robot_id].ignored_packets += 1
+                return False
+            self.robots[packet.robot_id] = staged
+            return True
 
     def snapshots(self, now=None):
         now = time.monotonic() if now is None else now
