@@ -56,6 +56,15 @@ def show_robot(rid, snapshot, calibration):
         raw = snapshot["raw"]
         remaining = runtime_hours(snapshot["soc"], .20, calibration.capacity_ah, raw["battery_current_a"])
         st.caption("Runtime to assumed 20% reserve: " + ("unavailable" if remaining is None else f"{remaining:.2f} h at the latest current held constant"))
+    recent_events = snapshot.get("pipeline_events") or []
+    if recent_events:
+        with st.expander(f"Packet-quality evidence ({len(recent_events)} recent events)"):
+            st.caption(
+                "Sequence gaps, long sampling gaps and reboot events are recorded "
+                "separately from physical sensor measurements. Missing intervals "
+                "are not fabricated or treated as independent fault diagnoses."
+            )
+            st.dataframe(recent_events, hide_index=True, use_container_width=True)
     with st.expander("Raw packet and derived values"):
         st.json({"raw": snapshot["raw"], "derived": derived,
                  "invalid_packets": snapshot["invalid_packets"], "ignored_packets": snapshot["ignored_packets"]})
