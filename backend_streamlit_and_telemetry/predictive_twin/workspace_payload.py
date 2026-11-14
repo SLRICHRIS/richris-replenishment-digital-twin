@@ -35,8 +35,8 @@ def workspace_payload(mode):
             )}
             calibrations = {'amr01': c}
             status = 'Structured database: AMR-01 persisted measurements'
-        except (KeyError, FileNotFoundError, ValueError, TypeError, RuntimeError, OSError, Exception):
-            return dict(mode=mode, status='Live readings unavailable: configure the private database and measured calibration, and verify worker/DB connectivity.', robots={})
+        except Exception:
+            return dict(mode=mode, status='Live is not configured or database is unavailable: add private DB and measured calibration, then verify worker connectivity.', robots={})
     robots = {}
     for rid in ROBOT_IDS:
         snapshot = snapshots[rid]
