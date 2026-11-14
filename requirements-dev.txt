@@ -1,2 +1,3 @@
 -r requirements.txt
 -r research_baseline/requirements-dev.txt
+pytest>=8,<10
