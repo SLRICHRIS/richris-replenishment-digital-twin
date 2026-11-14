@@ -190,12 +190,38 @@ class FleetTwin:
             # the authoritative in-process model. The DB transaction owns durability.
             if self.database is None:
                 return robot.accept(packet, received)
+            # Data-quality events survive worker restarts in PostgreSQL. They
+            # are linked to the new accepted packet, not guessed sensor data.
+            quality_events = []
+            previous = robot.previous
+            if previous is not None:
+                if packet.boot_id != previous.boot_id:
+                    quality_events.append({
+                        "event_type": "reboot",
+                        "details": {"previous_boot_id": previous.boot_id},
+                    })
+                else:
+                    missing = packet.seq - previous.seq - 1
+                    if missing > 0:
+                        quality_events.append({
+                            "event_type": "sequence_gap",
+                            "details": {"missing_packets": missing},
+                        })
+                    elapsed = packet.sample_time_s - previous.sample_time_s
+                    if elapsed > robot.calibration.max_gap_s:
+                        quality_events.append({
+                            "event_type": "time_gap",
+                            "details": {
+                                "observed_gap_s": elapsed,
+                                "allowed_gap_s": robot.calibration.max_gap_s,
+                            },
+                        })
             staged = copy.deepcopy(robot)
             admitted = staged.accept(packet, received)
             if not admitted:
                 self.robots[packet.robot_id] = staged
                 return False
-            if not self.database.persist(packet, staged):
+            if not self.database.persist(packet, staged, quality_events=quality_events):
                 self.robots[packet.robot_id].ignored_packets += 1
                 return False
             self.robots[packet.robot_id] = staged
