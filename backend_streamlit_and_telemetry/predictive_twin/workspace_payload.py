@@ -3,10 +3,15 @@ import json
 
 import streamlit as st
 
-from .dashboard import live_service
+from .database import SensorDatabase, calibration_fingerprint
 from .demo import demo_fleet
-from .models import motion_forecast, runtime_hours
+from .models import Calibration, motion_forecast, runtime_hours
 from .telemetry import ROBOT_IDS
+
+
+@st.cache_resource(show_spinner=False)
+def database_reader(url):
+    return SensorDatabase(url, initialize=False)
 
 
 def workspace_payload(mode):
@@ -20,19 +25,22 @@ def workspace_payload(mode):
         try:
             if st.secrets['commissioning']['measured_calibration_confirmed'] is not True:
                 raise ValueError('Calibration not confirmed')
-            mqtt = st.secrets['mqtt']
-            calibration = st.secrets['calibration'].to_dict()
-            service = live_service(mqtt['host'], mqtt['username'], mqtt['password'],
-                                   json.dumps(calibration, sort_keys=True))
-        except (KeyError, FileNotFoundError, ValueError, TypeError):
-            return dict(mode=mode, status='Live mode is not configured. Add private MQTT settings and measured calibration in Streamlit secrets.', robots={})
-        fleet = service.fleet
-        snapshots = fleet.snapshots()
-        status = service.status
+            values = st.secrets['calibration'].to_dict()
+            if set(values) != {'amr01'}:
+                raise ValueError('Only AMR-01 calibration is supported')
+            c = Calibration(**values['amr01'])
+            db = database_reader(st.secrets['database']['url'])
+            snapshots = {'amr01': db.read_snapshot(
+                expected_fingerprint=calibration_fingerprint(c)
+            )}
+            calibrations = {'amr01': c}
+            status = 'Structured database: AMR-01 persisted measurements'
+        except (KeyError, FileNotFoundError, ValueError, TypeError, RuntimeError, OSError, Exception):
+            return dict(mode=mode, status='Live readings unavailable: configure the private database and measured calibration, and verify worker/DB connectivity.', robots={})
     robots = {}
     for rid in ROBOT_IDS:
         snapshot = snapshots[rid]
-        c = fleet.robots[rid].calibration
+        c = fleet.robots[rid].calibration if mode == 'demo' else calibrations[rid]
         derived = snapshot['derived']
         forecast = None
         runtime = None
