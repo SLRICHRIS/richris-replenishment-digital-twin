@@ -47,7 +47,7 @@ def workspace_payload(mode):
         derived = snapshot['derived']
         forecast = None
         runtime = None
-        if not snapshot['stale'] and not snapshot['continuity_lost'] and derived:
+        if snapshot['quality'] == 'OK' and not snapshot['stale'] and not snapshot['continuity_lost'] and derived:
             forecast = motion_forecast(snapshot['pose'], derived['v_left_m_s'],
                                        derived['v_right_m_s'], c.track_m)[-1]
             runtime = runtime_hours(snapshot['soc'], .2, c.capacity_ah,

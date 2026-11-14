@@ -38,11 +38,15 @@ def show_robot(rid, snapshot, calibration):
     if derived.get("soc_out_of_bounds"):
         st.error("Raw SOC is outside [0, 1]. Check initial charge, current calibration and usable capacity.")
     if derived:
-        st.metric("Gyro–encoder residual (rad/s)", f"{derived['residual_rad_s']:.5f}")
+        if derived.get("residual_valid", True) and derived.get("residual_rad_s") is not None:
+            st.metric("Gyro–encoder residual (rad/s)", f"{derived['residual_rad_s']:.5f}")
+        else:
+            st.metric("Gyro–encoder residual (rad/s)", "Unavailable")
+            st.warning("A sensor sequence gap prevents a trustworthy residual at this sample.")
         st.caption("Residual detector: project extension. Gyro input model: [Villagomez Alfaro et al. (2026), p. 10 Eq. (8)](https://doi.org/10.3390/s26185729). This is not the paper’s EKF or a validated fault classifier.")
         if derived["advisory"]:
             st.warning("Sustained model disagreement: inspect motion/sensors. This does not identify a specific fault.")
-        else:
+        elif derived.get("residual_valid", True):
             st.success("No sustained residual advisory at this sample.")
     if snapshot["history"]:
         st.vega_lite_chart({"data": {"values": snapshot["history"]}, "mark": "line",
@@ -50,12 +54,21 @@ def show_robot(rid, snapshot, calibration):
                          "y": {"field": "y_m", "type": "quantitative", "title": "Local y (m)"},
                          "order": {"field": "sample_time_s", "type": "quantitative"}}}, width="stretch")
         st.caption("Odometry trajectory in an unsurveyed local frame; axis scales may differ. No absolute position or heading sensor is available.")
-    if derived and not snapshot["continuity_lost"]:
+    if derived and snapshot["quality"] == "OK" and not snapshot["continuity_lost"]:
         path = motion_forecast(snapshot["pose"], derived["v_left_m_s"], derived["v_right_m_s"], calibration.track_m)
         st.caption(f"5 s constant-wheel-speed forecast: x={path[-1][0]:.3f} m, y={path[-1][1]:.3f} m. No obstacle model.")
         raw = snapshot["raw"]
         remaining = runtime_hours(snapshot["soc"], .20, calibration.capacity_ah, raw["battery_current_a"])
         st.caption("Runtime to assumed 20% reserve: " + ("unavailable" if remaining is None else f"{remaining:.2f} h at the latest current held constant"))
+    recent_events = snapshot.get("pipeline_events") or []
+    if recent_events:
+        with st.expander(f"Packet-quality evidence ({len(recent_events)} recent events)"):
+            st.caption(
+                "Sequence gaps, long sampling gaps and reboot events are recorded "
+                "separately from physical sensor measurements. Missing intervals "
+                "are not fabricated or treated as independent fault diagnoses."
+            )
+            st.dataframe(recent_events, hide_index=True, use_container_width=True)
     with st.expander("Raw packet and derived values"):
         st.json({"raw": snapshot["raw"], "derived": derived,
                  "invalid_packets": snapshot["invalid_packets"], "ignored_packets": snapshot["ignored_packets"]})

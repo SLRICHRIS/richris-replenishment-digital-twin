@@ -55,6 +55,8 @@
           ? 'Observation gap: integrals are partial; reinitialise from measured state.'
           : d.soc_out_of_bounds
             ? 'SOC outside [0, 1]: check capacity, initial charge and current calibration.'
+            : d.residual_valid === false
+              ? 'Sensor packet gap: residual and short-term forecasts suppressed for this sample.'
             : d.advisory
               ? 'Sustained gyro/encoder disagreement. Inspect motion and sensors.'
               : Object.keys(d).length

@@ -58,6 +58,9 @@ class RobotTwin:
     def __init__(self, calibration: Calibration):
         self.calibration = calibration
         self.previous = None
+        # Last accepted physical observation is *audit evidence*, even if the
+        # integration anchor has to be discarded after disconnect or a gap.
+        self.last_observed = None
         self.last_received = None
         self.pose = (0.0, 0.0, 0.0)  # local starting frame; not surveyed warehouse coordinates
         self.soc = calibration.initial_soc
@@ -101,6 +104,7 @@ class RobotTwin:
             self.detector.reset()
             old = None
         self.previous = packet
+        self.last_observed = packet
         self.seen_boots.add(packet.boot_id)
         self.active_boot = packet.boot_id
         self.last_seq = packet.seq
@@ -117,14 +121,30 @@ class RobotTwin:
         self.pose = midpoint_pose(*self.pose, ds_l, ds_r, c.track_m)
         power, self.energy_wh, self.soc = battery_step(self.soc, self.energy_wh,
             packet.battery_voltage_v, packet.battery_current_a, dt, c.capacity_ah)
-        residual, alert = self.detector.update(packet.gyro_z_rad_s, c.gyro_bias_rad_s,
-            ds_l / dt, ds_r / dt, c.track_m, dt, c.residual_threshold_rad_s, c.residual_hold_s)
-        self.quality = "CONTINUITY_LOST" if self.continuity_lost else "OK"
+        # With a missing intermediate sample, encoder displacement is net
+        # travel, not a simultaneous wheel/gyro rate pair. Do not use it as a
+        # valid anomaly residual or extend a sustained-alert hold timer.
+        sequence_gap = packet.boot_id == old.boot_id and packet.seq > old.seq + 1
+        if sequence_gap:
+            self.detector.reset()
+            residual, alert = None, False
+        else:
+            residual, alert = self.detector.update(
+                packet.gyro_z_rad_s, c.gyro_bias_rad_s,
+                ds_l / dt, ds_r / dt, c.track_m, dt,
+                c.residual_threshold_rad_s, c.residual_hold_s
+            )
+        self.quality = (
+            "CONTINUITY_LOST" if self.continuity_lost
+            else "SEQUENCE_GAP" if sequence_gap else "OK"
+        )
         self.last_result = dict(ds_left_m=ds_l, ds_right_m=ds_r,
             dt_s=dt, v_left_m_s=ds_l / dt, v_right_m_s=ds_r / dt,
             yaw_rate_rad_s=(ds_r - ds_l) / (c.track_m * dt),
             corrected_gyro_rad_s=packet.gyro_z_rad_s - c.gyro_bias_rad_s,
-            residual_rad_s=residual, advisory=alert, power_w=power,
+            residual_rad_s=residual, advisory=alert,
+            residual_valid=not sequence_gap, sequence_gap_count=packet.seq - old.seq - 1,
+            power_w=power,
             soc_out_of_bounds=not 0 <= self.soc <= 1)
         self.history.append(dict(sample_time_s=packet.sample_time_s, x_m=self.pose[0],
             y_m=self.pose[1], theta_rad=self.pose[2], soc=self.soc,
@@ -170,6 +190,8 @@ class FleetTwin:
             # Retained snapshots cannot establish freshness or initialize an integral.
             if retained:
                 self.rejected_packets += 1
+                if self.database is not None:
+                    self.database.record_rejected_packet("retained_message", topic)
                 return False
             try:
                 if isinstance(payload, (str, bytes)):
@@ -179,23 +201,54 @@ class FleetTwin:
                 packet = Packet.parse(payload, topic)
             except (ValueError, TypeError, UnicodeDecodeError):
                 self.rejected_packets += 1
+                if self.database is not None:
+                    self.database.record_rejected_packet("invalid_schema", topic)
                 for rid in ROBOT_IDS:
                     if topic == f"robot/{rid}/state":
                         self.robots[rid].invalidate()
                 return False
             robot = self.robots[packet.robot_id]
+            # Capture the last accepted packet before an inbound network gap
+            # invalidates the integration anchor. Otherwise a time_gap is lost
+            # precisely when it is most important to retain the evidence.
+            previous = robot.last_observed
             if robot.last_received is not None and received - robot.last_received > self.stale_after_s:
                 robot.invalidate()
             # Stage model updates independently. On failed DB commit, never advance
             # the authoritative in-process model. The DB transaction owns durability.
             if self.database is None:
                 return robot.accept(packet, received)
+            # Data-quality events survive worker restarts in PostgreSQL. They
+            # are linked to the new accepted packet, not guessed sensor data.
+            quality_events = []
+            if previous is not None:
+                if packet.boot_id != previous.boot_id:
+                    quality_events.append({
+                        "event_type": "reboot",
+                        "details": {"previous_boot_id": previous.boot_id},
+                    })
+                else:
+                    missing = packet.seq - previous.seq - 1
+                    if missing > 0:
+                        quality_events.append({
+                            "event_type": "sequence_gap",
+                            "details": {"missing_packets": missing},
+                        })
+                    elapsed = packet.sample_time_s - previous.sample_time_s
+                    if elapsed > robot.calibration.max_gap_s:
+                        quality_events.append({
+                            "event_type": "time_gap",
+                            "details": {
+                                "observed_gap_s": elapsed,
+                                "allowed_gap_s": robot.calibration.max_gap_s,
+                            },
+                        })
             staged = copy.deepcopy(robot)
             admitted = staged.accept(packet, received)
             if not admitted:
                 self.robots[packet.robot_id] = staged
                 return False
-            if not self.database.persist(packet, staged):
+            if not self.database.persist(packet, staged, quality_events=quality_events):
                 self.robots[packet.robot_id].ignored_packets += 1
                 return False
             self.robots[packet.robot_id] = staged

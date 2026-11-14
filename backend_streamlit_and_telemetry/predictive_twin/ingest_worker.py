@@ -29,7 +29,10 @@ def main():
     if set(values) != {"amr01"}:
         raise ValueError("Exactly one measured AMR-01 calibration is required")
     calibrations = {"amr01": Calibration(**values["amr01"])}
-    store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=True)
+    # Schema creation is a separate one-time administrator operation.
+    # The always-on worker requires only limited data-write privileges.
+    store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=False)
+    store.assert_schema_ready()
     service = None
     try:
         store.acquire_worker_lease()
@@ -51,9 +54,24 @@ def main():
         signal.signal(signal.SIGINT, stop)
         signal.signal(signal.SIGTERM, stop)
         logging.info("AMR-01 ingester started; broker topic robot/amr01/state")
+        next_metrics_log = time.monotonic() + 30
         while running:
             if service.fatal_error:
                 raise RuntimeError("EMQX subscription or database ingestion failed: " + service.status)
+            if time.monotonic() >= next_metrics_log:
+                stats = service.metrics
+                log = logging.warning if stats["queue_depth"] >= 128 else logging.info
+                log(
+                    "AMR-01 MQTT -> PostgreSQL status=%s "
+                    "received=%d persisted=%d rejected=%d "
+                    "queue_depth=%d overflows=%d last_processing_ms=%s",
+                    service.status,
+                    stats["received"], stats["persisted"], stats["rejected"],
+                    stats["queue_depth"], stats["queue_overflows"],
+                    (f'{stats["processing_last_ms"]:.2f}'
+                     if stats["processing_last_ms"] is not None else "unknown"),
+                )
+                next_metrics_log = time.monotonic() + 30
             time.sleep(0.5)
     finally:
         if service is not None:

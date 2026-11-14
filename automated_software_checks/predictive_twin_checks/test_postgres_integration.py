@@ -34,6 +34,24 @@ def test_real_postgres_raw_and_derived_roundtrip():
     assert snapshot["derived"]["v_left_m_s"] > 0
     assert snapshot["soc"] < .9
     with db.engine.connect() as conn:
+        encoder = conn.execute(
+            select(SensorSample.encoder_left_count).where(SensorSample.seq == 1)
+        ).scalar_one()
+        view_encoder = conn.exec_driver_sql(
+            "SELECT encoder_left_count FROM amr_encoder_readings "
+            "WHERE robot_id='amr01' AND boot_id='ci-postgres' AND seq=1"
+        ).scalar_one()
+        gyro = conn.exec_driver_sql(
+            "SELECT gyro_z_rad_s FROM amr_imu_readings "
+            "WHERE robot_id='amr01' AND boot_id='ci-postgres' AND seq=1"
+        ).scalar_one()
+        current = conn.exec_driver_sql(
+            "SELECT battery_current_a FROM amr_ina219_readings "
+            "WHERE robot_id='amr01' AND boot_id='ci-postgres' AND seq=1"
+        ).scalar_one()
+        assert encoder == view_encoder == 10
+        assert gyro == pytest.approx(.01)
+        assert current == pytest.approx(.6)
         assert len(conn.execute(select(SensorSample.robot_id)).all()) == 2
         assert len(conn.execute(select(TwinState.robot_id)).all()) == 2
     db.engine.dispose()
