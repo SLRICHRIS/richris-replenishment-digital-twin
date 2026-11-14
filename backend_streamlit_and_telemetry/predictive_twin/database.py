@@ -124,6 +124,38 @@ class SensorDatabase:
                     raise RuntimeError("Unknown database schema version; apply a reviewed migration")
         self.healthcheck()
 
+    def acquire_worker_lease(self):
+        """Hold one PostgreSQL advisory lock for the sole AMR-01 writer.
+
+        The lock connection must stay checked out while ingesting telemetry.
+        Reader clients should never acquire this lock.
+        """
+        if hasattr(self, "_lease_conn") and self._lease_conn is not None:
+            raise RuntimeError("Worker lease already acquired")
+        if self.engine.dialect.name != "postgresql":
+            # Test-only SQLite has no PostgreSQL advisory locks.
+            return
+        conn = self.engine.connect()
+        try:
+            acquired = conn.execute(
+                text("SELECT pg_try_advisory_lock(:id)"), {"id": 19031901}
+            ).scalar_one()
+            if not acquired:
+                raise RuntimeError("Another AMR-01 ingestion worker holds the PostgreSQL lease")
+        except Exception:
+            conn.close()
+            raise
+        self._lease_conn = conn
+
+    def release_worker_lease(self):
+        conn = getattr(self, "_lease_conn", None)
+        if conn is not None:
+            try:
+                conn.execute(text("SELECT pg_advisory_unlock(:id)"), {"id": 19031901})
+            finally:
+                conn.close()
+                self._lease_conn = None
+
     def healthcheck(self):
         with self.engine.connect() as conn:
             conn.execute(text("SELECT 1"))
