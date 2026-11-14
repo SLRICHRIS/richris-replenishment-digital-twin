@@ -34,7 +34,10 @@ def workspace_payload(mode):
                 expected_fingerprint=calibration_fingerprint(c)
             )}
             calibrations = {'amr01': c}
-            status = 'Structured database: AMR-01 persisted measurements'
+            snapshot = snapshots['amr01']
+            age = snapshot.get('age_s')
+            status = ('EMQX → PostgreSQL: ' + snapshot['quality']
+                      + ('' if age is None else f' · last stored sample {age:.1f}s ago'))
         except Exception:
             return dict(mode=mode, status='Live is not configured or database is unavailable: add private DB and measured calibration, then verify worker connectivity.', robots={})
     robots = {}
