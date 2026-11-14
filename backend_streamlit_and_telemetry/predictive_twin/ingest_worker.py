@@ -30,34 +30,34 @@ def main():
         raise ValueError("Exactly one measured AMR-01 calibration is required")
     calibrations = {"amr01": Calibration(**values["amr01"])}
     store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=True)
-    store.acquire_worker_lease()
-    service = MQTTService(
-        required("AMR_MQTT_HOST"),
-        required("AMR_MQTT_USERNAME"),
-        required("AMR_MQTT_PASSWORD"),
-        calibrations,
-        database=store,
-        ca_file=os.environ.get("AMR_EMQX_CA_FILE") or None,
-        client_id=os.environ.get("AMR_MQTT_CLIENT_ID", "amr01-db-ingester"),
-    )
-    running = True
-
-    def stop(_signum, _frame):
-        nonlocal running
-        running = False
-
-    signal.signal(signal.SIGINT, stop)
-    signal.signal(signal.SIGTERM, stop)
-    logging.info("AMR-01 ingester started; broker topic robot/amr01/state")
+    service = None
     try:
+        store.acquire_worker_lease()
+        service = MQTTService(
+            required("AMR_MQTT_HOST"),
+            required("AMR_MQTT_USERNAME"),
+            required("AMR_MQTT_PASSWORD"),
+            calibrations,
+            database=store,
+            ca_file=os.environ.get("AMR_EMQX_CA_FILE") or None,
+            client_id=os.environ.get("AMR_MQTT_CLIENT_ID", "amr01-db-ingester"),
+        )
+        running = True
+
+        def stop(_signum, _frame):
+            nonlocal running
+            running = False
+
+        signal.signal(signal.SIGINT, stop)
+        signal.signal(signal.SIGTERM, stop)
+        logging.info("AMR-01 ingester started; broker topic robot/amr01/state")
         while running:
             if service.fatal_error:
-                # Let the process supervisor surface a failed broker ACL,
-                # authentication attempt or database transaction.
                 raise RuntimeError("EMQX subscription or database ingestion failed: " + service.status)
             time.sleep(0.5)
     finally:
-        service.close()
+        if service is not None:
+            service.close()
         store.release_worker_lease()
         store.engine.dispose()
         logging.info("AMR-01 ingester stopped")
