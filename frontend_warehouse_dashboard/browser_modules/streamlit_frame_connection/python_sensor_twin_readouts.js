@@ -18,7 +18,7 @@
     text('python-source-status', payload.status || 'Waiting for Python');
     text(
       'python-source-label',
-      payload.mode === 'live' ? 'Live MQTT sensors' : 'Synthetic demonstration',
+      payload.mode === 'live' ? 'EMQX to PostgreSQL' : 'Synthetic demonstration',
     );
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
