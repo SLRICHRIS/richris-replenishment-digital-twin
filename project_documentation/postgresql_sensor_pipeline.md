@@ -30,7 +30,7 @@ Do not present the computed values as independently validated ground truth. Sour
 Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all credentials **out of GitHub**. Use a dedicated worker role for writing and a separate Streamlit role restricted to SELECT. Database schema creation needs a provisioning/admin role, and should not remain a general permission of the routine worker in mature deployments.
 
 1. Provision PostgreSQL. Configure automatic backups and limited network access. Create restricted users for worker and read-only dashboard. Bootstrap schema with a dedicated migration/provisioning identity.
-2. Deploy the **independent always-on worker** from this repository with `python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker`. Do not embed an ingestion daemon inside a Streamlit rerun or browser tab.
+2. Deploy the **independent always-on worker** (holds a PostgreSQL advisory lease to reject a concurrent AMR-01 writer) from this repository with `python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker`. Do not embed an ingestion daemon inside a Streamlit rerun or browser tab.
 3. Give the worker these private environment variables:
    - `AMR_DATABASE_URL`: `postgresql+psycopg://<writer>:<password>@<host>:5432/<database>?sslmode=require`
    - `AMR_MQTT_HOST`, `AMR_MQTT_USERNAME`, `AMR_MQTT_PASSWORD`: TLS MQTT read credentials, scoped to one topic
@@ -77,7 +77,9 @@ python -m pip install -r requirements-dev.txt
 python -m pytest automated_software_checks/predictive_twin_checks -q
 ```
 
-The database integration tests run against isolated SQLite files to check schema relationships, duplicate suppression, model feeding, calibration mismatch and demo isolation. **They are not PostgreSQL deployment or physical hardware validation tests.** The standard CI also checks browser and ESP32 firmware compilation.
+Isolated SQLite tests check schema relationships, duplicate suppression, model feeding, calibration mismatch and demo isolation. An additional GitHub Actions job tests database transactions, duplicate rejection and the single-writer advisory lease on a real PostgreSQL 16 instance. These tests are not physical hardware validation or a live cloud broker handshake. The standard CI also checks browser and ESP32 firmware compilation.
+
+For EMQX Cloud setup and a real-world, read-only broker SUBACK/packet probe, see [EMQX Cloud AMR-01 guide](emqx_cloud_amr01_integration.md).
 
 ## Paper and presentation consistency
 
