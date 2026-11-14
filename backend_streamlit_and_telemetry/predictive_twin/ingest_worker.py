@@ -30,6 +30,7 @@ def main():
         raise ValueError("Exactly one measured AMR-01 calibration is required")
     calibrations = {"amr01": Calibration(**values["amr01"])}
     store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=True)
+    store.acquire_worker_lease()
     service = MQTTService(
         required("AMR_MQTT_HOST"),
         required("AMR_MQTT_USERNAME"),
@@ -57,6 +58,7 @@ def main():
             time.sleep(0.5)
     finally:
         service.close()
+        store.release_worker_lease()
         store.engine.dispose()
         logging.info("AMR-01 ingester stopped")
 
