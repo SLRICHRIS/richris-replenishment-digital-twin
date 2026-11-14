@@ -186,6 +186,8 @@ class FleetTwin:
             # Retained snapshots cannot establish freshness or initialize an integral.
             if retained:
                 self.rejected_packets += 1
+                if self.database is not None:
+                    self.database.record_rejected_packet("retained_message", topic)
                 return False
             try:
                 if isinstance(payload, (str, bytes)):
@@ -195,6 +197,8 @@ class FleetTwin:
                 packet = Packet.parse(payload, topic)
             except (ValueError, TypeError, UnicodeDecodeError):
                 self.rejected_packets += 1
+                if self.database is not None:
+                    self.database.record_rejected_packet("invalid_schema", topic)
                 for rid in ROBOT_IDS:
                     if topic == f"robot/{rid}/state":
                         self.robots[rid].invalidate()
