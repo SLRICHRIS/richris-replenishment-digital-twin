@@ -184,3 +184,23 @@ def test_logical_20hz_sample_stream_is_append_only(tmp_path):
         assert len(session.execute(select(TwinState)).all()) == 200
         assert len(session.execute(select(PipelineEvent)).all()) == 0
     db.engine.dispose()
+
+
+def test_running_worker_requires_preprovisioned_schema(tmp_path):
+    """DDL and worker responsibilities cannot accidentally be conflated."""
+    import pytest
+
+    url = "sqlite+pysqlite:///" + str(tmp_path / "provision.sqlite3")
+    unprovisioned_worker = SensorDatabase(url, initialize=False)
+    with pytest.raises(RuntimeError, match="schema"):
+        unprovisioned_worker.assert_schema_ready()
+    unprovisioned_worker.engine.dispose()
+
+    admin = SensorDatabase(url, initialize=True)
+    admin.assert_schema_ready()
+    admin.engine.dispose()
+
+    worker = SensorDatabase(url, initialize=False)
+    worker.assert_schema_ready()
+    assert "amr_encoder_readings" in inspect(worker.engine).get_view_names()
+    worker.engine.dispose()
