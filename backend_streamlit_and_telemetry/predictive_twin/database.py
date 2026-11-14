@@ -9,8 +9,8 @@ import hashlib
 import json
 
 from sqlalchemy import (
-    BigInteger, Boolean, DateTime, Float, ForeignKeyConstraint, Index, Integer,
-    JSON, String, create_engine, select, text,
+    BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKeyConstraint,
+    Index, Integer, JSON, String, create_engine, inspect, select, text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
@@ -50,6 +50,9 @@ class SensorSample(Base):
     __table_args__ = (
         ForeignKeyConstraint(["calibration_fingerprint"], ["amr_calibrations.fingerprint"]),
         Index("ix_amr_samples_received", "robot_id", "received_at"),
+        CheckConstraint("schema_version = 2", name="ck_amr_schema_v2"),
+        CheckConstraint("sample_time_s >= 0", name="ck_amr_nonnegative_sample_time"),
+        CheckConstraint("battery_voltage_v > 0", name="ck_amr_positive_battery_voltage"),
     )
 
 
@@ -78,6 +81,43 @@ class TwinState(Base):
         Index("ix_amr_states_received", "robot_id", "received_at"),
     )
 
+
+
+class PipelineEvent(Base):
+    """Sparse quality-event ledger; no duplicate raw sensor observations."""
+    __tablename__ = "amr_pipeline_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    robot_id: Mapped[str] = mapped_column(String(16), nullable=False)
+    boot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    seq: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    __table_args__ = (
+        Index("ix_amr_pipeline_events_robot_time", "robot_id", "observed_at"),
+    )
+
+
+# Views show individual sensor attributes but require no extra writes at 20 Hz.
+# There is one authoritative append-only measurement table with typed columns.
+SENSOR_VIEWS = {
+    "amr_encoder_readings": (
+        "SELECT robot_id, boot_id, seq, sample_time_s, received_at, "
+        "encoder_left_count, encoder_right_count, calibration_fingerprint "
+        "FROM amr_sensor_samples"
+    ),
+    "amr_imu_readings": (
+        "SELECT robot_id, boot_id, seq, sample_time_s, received_at, "
+        "gyro_z_rad_s, calibration_fingerprint FROM amr_sensor_samples"
+    ),
+    "amr_ina219_readings": (
+        "SELECT robot_id, boot_id, seq, sample_time_s, received_at, "
+        "battery_voltage_v, battery_current_a, calibration_fingerprint "
+        "FROM amr_sensor_samples"
+    ),
+}
 
 class DatabaseVersion(Base):
     __tablename__ = "amr_database_version"
@@ -116,11 +156,19 @@ class SensorDatabase:
         self.engine = create_engine(url, pool_pre_ping=True)
         if initialize:
             Base.metadata.create_all(self.engine)
+            # Additive migration: never delete or rewrite older physical samples.
+            with self.engine.begin() as connection:
+                existing_views = set(inspect(connection).get_view_names())
+                for name, query in SENSOR_VIEWS.items():
+                    if name not in existing_views:
+                        connection.execute(text(f"CREATE VIEW {name} AS {query}"))
             with Session(self.engine) as session, session.begin():
                 version = session.get(DatabaseVersion, 1)
                 if version is None:
-                    session.add(DatabaseVersion(id=1, schema_version=1))
-                elif version.schema_version != 1:
+                    session.add(DatabaseVersion(id=1, schema_version=2))
+                elif version.schema_version == 1:
+                    version.schema_version = 2
+                elif version.schema_version != 2:
                     raise RuntimeError("Unknown database schema version; apply a reviewed migration")
         self.healthcheck()
 
@@ -160,7 +208,7 @@ class SensorDatabase:
         with self.engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-    def persist(self, packet, robot):
+    def persist(self, packet, robot, quality_events=()):
         """Atomically store one admitted packet plus the state produced from it.
 
         A duplicate (robot, boot, seq) returns False and is never integrated.
@@ -182,6 +230,14 @@ class SensorDatabase:
             session.add(SensorSample(
                 **data, received_at=stamp, calibration_fingerprint=fp
             ))
+            for event in quality_events:
+                if event["event_type"] not in {"sequence_gap", "time_gap", "reboot"}:
+                    raise ValueError("Invalid quality event")
+                session.add(PipelineEvent(
+                    robot_id=packet.robot_id, boot_id=packet.boot_id,
+                    seq=packet.seq, observed_at=stamp,
+                    event_type=event["event_type"], details=event["details"],
+                ))
             session.add(TwinState(
                 robot_id=packet.robot_id, boot_id=packet.boot_id,
                 seq=packet.seq, received_at=stamp,
@@ -192,6 +248,23 @@ class SensorDatabase:
                 derived=dict(robot.last_result),
             ))
         return True
+
+    def recent_quality_events(self, robot_id="amr01", limit=20):
+        """Read bounded, durable evidence of gaps/reboots for operators."""
+        if robot_id != "amr01" or not 1 <= limit <= 100:
+            raise ValueError("Only AMR-01 and bounded event history are supported")
+        with Session(self.engine) as session:
+            events = session.execute(
+                select(PipelineEvent)
+                .where(PipelineEvent.robot_id == robot_id)
+                .order_by(PipelineEvent.id.desc()).limit(limit)
+            ).scalars().all()
+            return [
+                dict(event_type=e.event_type, boot_id=e.boot_id, seq=e.seq,
+                     observed_at=utc_aware(e.observed_at).isoformat(),
+                     details=e.details)
+                for e in events
+            ]
 
     def read_snapshot(self, robot_id="amr01", stale_after_s=2.0, expected_fingerprint=None):
         """Read a complete stored snapshot. No robot state is inferred in browser."""
