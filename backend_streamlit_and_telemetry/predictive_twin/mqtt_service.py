@@ -1,5 +1,8 @@
 """Server-side MQTT subscriber. No command publishing; credentials stay in Python."""
 import ssl
+import logging
+
+LOGGER = logging.getLogger(__name__)
 import threading
 
 import paho.mqtt.client as mqtt
@@ -8,12 +11,12 @@ from .telemetry import FleetTwin, ROBOT_IDS
 
 
 class MQTTService:
-    def __init__(self, host, username, password, calibrations, port=8883):
+    def __init__(self, host, username, password, calibrations, port=8883, database=None):
         if not host or "://" in host or not username or not password:
             raise ValueError("Configure the broker host, subscriber username and password")
         if port != 8883:
             raise ValueError("This deployment requires verified MQTT/TLS on port 8883")
-        self.fleet = FleetTwin(calibrations)
+        self.fleet = FleetTwin(calibrations, database=database)
         self._lock = threading.Lock()
         self._status = "Connecting"
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -46,7 +49,15 @@ class MQTTService:
                 robot.invalidate()
 
     def _message(self, client, userdata, message):
-        self.fleet.ingest(message.payload, message.topic, retained=message.retain)
+        try:
+            self.fleet.ingest(message.payload, message.topic, retained=message.retain)
+        except Exception:
+            # Do not acknowledge a false successful model update to operators.
+            LOGGER.exception("Failed to store or model AMR telemetry")
+            with self._lock:
+                self._status = "Database/ingestion error"
+            # Halt subscription rather than silently lose writes.
+            client.disconnect()
 
     def close(self):
         self.client.disconnect()
