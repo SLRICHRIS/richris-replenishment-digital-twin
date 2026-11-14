@@ -172,6 +172,19 @@ class SensorDatabase:
                     raise RuntimeError("Unknown database schema version; apply a reviewed migration")
         self.healthcheck()
 
+    def assert_schema_ready(self):
+        """Worker-side read-only schema check, never DDL at runtime."""
+        with Session(self.engine) as session:
+            version = session.get(DatabaseVersion, 1)
+            if version is None or version.schema_version != 2:
+                raise RuntimeError(
+                    "Sensor database schema v2 not provisioned; run admin provisioning first"
+                )
+        available_views = set(inspect(self.engine).get_view_names())
+        missing = set(SENSOR_VIEWS).difference(available_views)
+        if missing:
+            raise RuntimeError("Missing required physical-sensor database views")
+
     def acquire_worker_lease(self):
         """Hold one PostgreSQL advisory lock for the sole AMR-01 writer.
 
