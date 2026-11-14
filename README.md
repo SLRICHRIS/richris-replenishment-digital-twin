@@ -15,6 +15,7 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → read-only Python subscriber →
 
 - Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Hardware. The workflow reference is also linked in the warehouse model explanation.
 - [Structured PostgreSQL ingest worker, database and deployment](project_documentation/postgresql_sensor_pipeline.md)
+  - Schema v2: one append-only physical sensor table, typed encoder/MPU6050/INA219 SQL views, derived-state table and sparse sequence-gap/reboot/rejection quality-event audit; never duplicate readings across physical tables.
 - [EMQX Cloud Serverless: TLS, topic permissions and live broker connection probe](project_documentation/emqx_cloud_amr01_integration.md)
 - [Exact final **17-slide** equation/variable/paper mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
