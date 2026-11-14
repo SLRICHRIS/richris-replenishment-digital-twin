@@ -117,14 +117,30 @@ class RobotTwin:
         self.pose = midpoint_pose(*self.pose, ds_l, ds_r, c.track_m)
         power, self.energy_wh, self.soc = battery_step(self.soc, self.energy_wh,
             packet.battery_voltage_v, packet.battery_current_a, dt, c.capacity_ah)
-        residual, alert = self.detector.update(packet.gyro_z_rad_s, c.gyro_bias_rad_s,
-            ds_l / dt, ds_r / dt, c.track_m, dt, c.residual_threshold_rad_s, c.residual_hold_s)
-        self.quality = "CONTINUITY_LOST" if self.continuity_lost else "OK"
+        # With a missing intermediate sample, encoder displacement is net
+        # travel, not a simultaneous wheel/gyro rate pair. Do not use it as a
+        # valid anomaly residual or extend a sustained-alert hold timer.
+        sequence_gap = packet.boot_id == old.boot_id and packet.seq > old.seq + 1
+        if sequence_gap:
+            self.detector.reset()
+            residual, alert = None, False
+        else:
+            residual, alert = self.detector.update(
+                packet.gyro_z_rad_s, c.gyro_bias_rad_s,
+                ds_l / dt, ds_r / dt, c.track_m, dt,
+                c.residual_threshold_rad_s, c.residual_hold_s
+            )
+        self.quality = (
+            "CONTINUITY_LOST" if self.continuity_lost
+            else "SEQUENCE_GAP" if sequence_gap else "OK"
+        )
         self.last_result = dict(ds_left_m=ds_l, ds_right_m=ds_r,
             dt_s=dt, v_left_m_s=ds_l / dt, v_right_m_s=ds_r / dt,
             yaw_rate_rad_s=(ds_r - ds_l) / (c.track_m * dt),
             corrected_gyro_rad_s=packet.gyro_z_rad_s - c.gyro_bias_rad_s,
-            residual_rad_s=residual, advisory=alert, power_w=power,
+            residual_rad_s=residual, advisory=alert,
+            residual_valid=not sequence_gap, sequence_gap_count=packet.seq - old.seq - 1,
+            power_w=power,
             soc_out_of_bounds=not 0 <= self.soc <= 1)
         self.history.append(dict(sample_time_s=packet.sample_time_s, x_m=self.pose[0],
             y_m=self.pose[1], theta_rad=self.pose[2], soc=self.soc,
