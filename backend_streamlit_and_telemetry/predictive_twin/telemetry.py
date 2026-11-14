@@ -204,6 +204,10 @@ class FleetTwin:
                         self.robots[rid].invalidate()
                 return False
             robot = self.robots[packet.robot_id]
+            # Capture the last accepted packet before an inbound network gap
+            # invalidates the integration anchor. Otherwise a time_gap is lost
+            # precisely when it is most important to retain the evidence.
+            previous = robot.previous
             if robot.last_received is not None and received - robot.last_received > self.stale_after_s:
                 robot.invalidate()
             # Stage model updates independently. On failed DB commit, never advance
@@ -213,7 +217,6 @@ class FleetTwin:
             # Data-quality events survive worker restarts in PostgreSQL. They
             # are linked to the new accepted packet, not guessed sensor data.
             quality_events = []
-            previous = robot.previous
             if previous is not None:
                 if packet.boot_id != previous.boot_id:
                     quality_events.append({
