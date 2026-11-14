@@ -192,3 +192,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values in the original Hardware design without recalculating the models. |
 | `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Match integrated single-AMR sensor cards to the existing warehouse theme and responsive layout. |
 | `automated_software_checks/browser_behavior_checks/test_single_amr_configuration.mjs` | Construct warehouse geometry and verify exactly one robot, one dock and one registered telemetry identity. |
+| `backend_streamlit_and_telemetry/predictive_twin/database.py` | Structured PostgreSQL raw sample, calibration and derived-state SQLAlchemy records and read-only snapshot query. |
+| `backend_streamlit_and_telemetry/predictive_twin/ingest_worker.py` | Independent always-on MQTT-to-PostgreSQL ingestion service; models sensors before transactional persistence. |
+| `automated_software_checks/predictive_twin_checks/test_database.py` | Test SQLite-isolated telemetry persistence, packet replay suppression and calibration mismatch. |
+| `automated_software_checks/predictive_twin_checks/test_postgres_integration.py` | Integration-check actual PostgreSQL persistence with linked raw and derived measurements. |
+| `project_documentation/postgresql_sensor_pipeline.md` | Installation, schema, private credentials, database roles, and live physical commissioning limitations. |
