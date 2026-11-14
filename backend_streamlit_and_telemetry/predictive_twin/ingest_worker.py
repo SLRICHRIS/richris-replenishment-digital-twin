@@ -36,6 +36,8 @@ def main():
         required("AMR_MQTT_PASSWORD"),
         calibrations,
         database=store,
+        ca_file=os.environ.get("AMR_EMQX_CA_FILE") or None,
+        client_id=os.environ.get("AMR_MQTT_CLIENT_ID", "amr01-db-ingester"),
     )
     running = True
 
@@ -48,7 +50,11 @@ def main():
     logging.info("AMR-01 ingester started; broker topic robot/amr01/state")
     try:
         while running:
-            time.sleep(1)
+            if service.fatal_error:
+                # Let the process supervisor surface a failed broker ACL,
+                # authentication attempt or database transaction.
+                raise RuntimeError("EMQX subscription or database ingestion failed: " + service.status)
+            time.sleep(0.5)
     finally:
         service.close()
         store.engine.dispose()
