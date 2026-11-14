@@ -58,6 +58,9 @@ class RobotTwin:
     def __init__(self, calibration: Calibration):
         self.calibration = calibration
         self.previous = None
+        # Last accepted physical observation is *audit evidence*, even if the
+        # integration anchor has to be discarded after disconnect or a gap.
+        self.last_observed = None
         self.last_received = None
         self.pose = (0.0, 0.0, 0.0)  # local starting frame; not surveyed warehouse coordinates
         self.soc = calibration.initial_soc
@@ -101,6 +104,7 @@ class RobotTwin:
             self.detector.reset()
             old = None
         self.previous = packet
+        self.last_observed = packet
         self.seen_boots.add(packet.boot_id)
         self.active_boot = packet.boot_id
         self.last_seq = packet.seq
@@ -207,7 +211,7 @@ class FleetTwin:
             # Capture the last accepted packet before an inbound network gap
             # invalidates the integration anchor. Otherwise a time_gap is lost
             # precisely when it is most important to retain the evidence.
-            previous = robot.previous
+            previous = robot.last_observed
             if robot.last_received is not None and received - robot.last_received > self.stale_after_s:
                 robot.invalidate()
             # Stage model updates independently. On failed DB commit, never advance
