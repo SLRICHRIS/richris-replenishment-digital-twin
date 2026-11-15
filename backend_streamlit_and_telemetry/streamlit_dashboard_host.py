@@ -42,9 +42,11 @@ def render_warehouse_workspace():
         st.session_state.warehouse_database_refresh = nonce
     elif result['action'] in ('model_inspection', 'database_inspection'):
         st.session_state.pending_workspace_view = ('Database' if result['action'] == 'database_inspection' else 'Model inspection')
+        st.rerun()
     else:
         st.session_state.warehouse_sensor_mode = choice
-    st.rerun()
+    # The next scheduled fragment tick delivers source/archive changes without
+    # remounting the iframe or resetting its page, focus and scroll position.
 
 
 def render_dashboard():
