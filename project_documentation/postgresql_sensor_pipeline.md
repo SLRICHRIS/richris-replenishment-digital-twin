@@ -163,10 +163,16 @@ Neither runtime account is a superuser, database/role creator, RLS bypass role
 or member of `neon_superuser`. Credentials remain private and are never
 included in this repository.
 
-**Deployment connection remains pending:** saving the private reader URL
-requires authenticated access to the app's Streamlit deployment settings.
-The always-on MQTT worker and measured hardware calibration also remain to
-be configured. An initialized database does not establish a live robot feed.
+**Streamlit connection is live:** the production `amr_reader` TLS connection
+is saved in the app's private deployment secrets. The deployed **Sensor models
+→ Database** page successfully reports **Connected; schema v3 verified** and
+reads `amr_sensor_samples` as an empty dataset. No database credential is
+included in GitHub, browser display payloads or this deployment record.
+
+**Physical commissioning remains:** an operating MQTT ingestion worker and
+measured hardware calibration have not been verified. No physical sensor
+records have arrived. A working database connection does not establish a live
+robot feed or validate the model's physical accuracy.
 
 The app's **Sensor models → Database** button opens a SELECT-only browser.
 It checks storage independently from measured calibration and distinguishes
