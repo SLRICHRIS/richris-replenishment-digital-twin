@@ -61,7 +61,9 @@ def database_preview(dataset='amr_sensor_samples', refresh_token=''):
         raise ValueError('Choose a known sensor dataset')
     db, state = database_connection()
     label, detail = STATUS[state]
-    result = dict(state=state, label=label, detail=detail, dataset=dataset,
+    # The request ID also changes component args when identical rows are re-requested.
+    # Otherwise Streamlit can memoize A → B → A and leave the browser's loading state stuck.
+    result = dict(state=state, label=label, detail=detail, dataset=dataset, request_id=refresh_token,
                   title=DATASET_LABELS[dataset], description=DESCRIPTIONS[dataset],
                   attributes=attributes(dataset), columns=list(DATABASE_DATASETS[dataset].c.keys()),
                   kind='View' if dataset in SENSOR_VIEWS else 'Table',
