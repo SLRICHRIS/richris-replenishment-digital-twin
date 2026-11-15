@@ -1,4 +1,4 @@
-/* Display Python results in the existing Hardware view. No model equations here. */
+/* Display Python results in Sensor models. No model equations here. */
 (() => {
   'use strict';
   let latest;
@@ -23,11 +23,8 @@
     document.documentElement.dataset.pythonTwin = 'true';
     document.documentElement.dataset.pythonSource = payload.mode;
     $('python-connection-details').hidden = payload.mode !== 'live';
-    text('python-source-status', payload.status || 'Waiting for Python');
-    text(
-      'python-source-label',
-      payload.mode === 'live' ? 'Physical sensor records' : 'Synthetic example only',
-    );
+    text('python-source-status', payload.status || 'Waiting for sensor status');
+    text('python-source-label', payload.mode === 'live' ? 'Stored sensor data' : 'Demo data');
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
     }
@@ -39,18 +36,21 @@
       const d = available ? r.derived || {} : {};
       const raw = available ? r.raw || {} : {};
       const demo = payload.mode === 'demo';
-      const label = r?.quality_label || (demo ? 'Demonstration data' : 'No sensor data');
-      text('hardware-summary', demo ? 'Sensor data: demonstration' : 'Sensor data: ' + label);
+      const label =
+        r?.quality_label || payload.notice?.label || (demo ? 'Demo data' : 'No sensor data');
+      text('hardware-summary', demo ? 'Sensor data: demo' : 'Sensor data: ' + label);
       text(key + 'quality', label);
       text('python-data-title', label);
       text(
         'python-data-detail',
         r?.quality_detail ||
+          payload.notice?.detail ||
           (demo
-            ? 'Synthetic teaching example. No physical robot is connected.'
+            ? 'Generated sensor values for a fixed teaching example.'
             : 'No validated physical reading is available. Check the sensor connection and ingestion worker.'),
       );
-      $('python-data-notice').dataset.tone = r?.quality_tone || (demo ? 'info' : 'neutral');
+      $('python-data-notice').dataset.tone =
+        r?.quality_tone || payload.notice?.tone || (demo ? 'info' : 'neutral');
       text(key + 'age', demo ? 'Fixed demo trial' : number(r?.age_s, 1, ' s'));
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
       text(key + 'pose', available ? position(r.pose) : 'Unavailable');
@@ -79,7 +79,9 @@
       text(
         key + 'forecast-note',
         !available
-          ? 'Waiting for current, valid readings. Forecasts are withheld.'
+          ? payload.notice
+            ? payload.notice.label + '. Forecasts are unavailable.'
+            : 'Waiting for current, valid readings. Forecasts are withheld.'
           : r.continuity_lost
             ? 'Unavailable after data loss: the accumulated estimates are partial. A new measured trial is needed for quantitative forecasts.'
             : !Object.keys(d).length
@@ -90,9 +92,11 @@
                   ? 'Runtime is unavailable while charging or at zero current. Motion projection assumes unchanged wheel speeds.'
                   : 'Assumes unchanged wheel speeds and battery current, until an assumed 20% charge reserve. This is not a planned route or a battery-life guarantee.',
       );
-      text(key + 'state', raw.robot_state || 'No fresh packet');
+      text(key + 'state', raw.robot_state || 'Unavailable');
       const message = !available
-        ? 'No fresh readings; alerts and forecasts suspended.'
+        ? payload.notice
+          ? payload.notice.label + '. Alerts and forecasts are unavailable.'
+          : 'No fresh readings; alerts and forecasts suspended.'
         : r.continuity_lost
           ? 'Data was lost: position, charge and energy estimates are partial. Forecasts are withheld.'
           : d.soc_out_of_bounds
@@ -120,7 +124,7 @@
         key + 'threshold',
         hasThreshold
           ? `Advisory requires a difference beyond ±${number(threshold, 3)} rad/s for ${number(r.residual_hold_s, 2)} s continuously. Dashed lines show this threshold.`
-          : 'Alert threshold is unavailable. Wait for the configured calibration.',
+          : 'Alert threshold requires measured calibration.',
       );
       const rows = (r?.history || []).filter((row) => Number.isFinite(row.sample_time_s));
       const start = rows[0]?.sample_time_s || 0;
@@ -163,7 +167,7 @@
         key + 'plot-range',
         rows.some((row) => Number.isFinite(row.residual_rad_s))
           ? `Recorded difference · scale ±${scale.toFixed(3)} rad/s · time ${start.toFixed(2)}–${(start + duration).toFixed(2)} s since device boot${available ? '' : ' · historical data; current readings unavailable'}`
-          : 'No valid comparison history yet.',
+          : 'No comparison history available in this view.',
       );
     }
   }

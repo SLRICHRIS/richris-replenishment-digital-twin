@@ -427,10 +427,10 @@ run("applySlideWorkspaceScope({detail:{mode:'demo'}})");
 run("activatePage('hardware')");
 assert.equal(get('page-mode').textContent, 'Demo data');
 assert.equal(get('page-context').textContent, 'AMR-01 · Telemetry');
-assert.equal(get('source-badge').textContent, 'Synthetic example only');
+assert.equal(get('source-badge').textContent, 'Demo data');
 run("applySlideWorkspaceScope({detail:{mode:'live'}})");
-assert.equal(get('page-mode').textContent, 'Physical data');
-assert.equal(get('source-badge').textContent, 'Physical sensor records');
+assert.equal(get('page-mode').textContent, 'Stored sensor data');
+assert.equal(get('source-badge').textContent, 'Stored sensor data');
 assert.equal(run('robots.length'), 1, 'source labels do not alter the virtual robot');
 console.log(
   'PASS: original dashboard with one AMR, three sequential deliveries, approval exclusivity, pause/resume, cancellation, recharge, route closure and manager relocation.',

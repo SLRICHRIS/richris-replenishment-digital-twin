@@ -1,12 +1,12 @@
 # Single-AMR alignment: software evidence and physical limits
 
-The implementation is aligned to the final 17-slide modelling deck and integrated into the previously designed warehouse dashboard. The default remains the original floor UI; Sensor models shows backend calculations. This revision keeps only AMR-01: one robot assembly, one dock, one set of six model cards and one raw-sensor topic. The inventory research baseline remains in source; the inspection workflow retains separate legacy stock/task functions, outside the final presentation. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
+The implementation is aligned to the final 17-slide modelling deck and integrated into the warehouse dashboard. The default remains the original floor UI; Sensor models shows backend calculations. This revision keeps only AMR-01: one robot assembly, one dock, one set of six model cards and one raw-sensor topic. The inventory research baseline remains in source; the inspection workflow retains separate manual stock/task functions, outside the final presentation. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
 
 ## Verified locally
 
 | Check | Result / scope |
 |---|---|
-| Python sensor and host checks | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; removed-identity rejection; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and separate legacy stock/task event forms. See the dated recovery checks below. |
+| Python sensor and host checks | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; removed-identity rejection; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and separate manual stock/task event forms. See the dated recovery checks below. |
 | MQTT service test | Mock client verifies TLS context, the single AMR-01 subscription, callback isolation and absence of command publishing; this is not a broker connectivity test. |
 | Research baseline | 21 tests pass: API/quarantine, synthetic discrete events, graph/event explanations, inventory conservation, shared-input policy comparison and legacy gateway. |
 | Legacy Python services | 13 tests pass: recorder and coordinator lifecycle. These services remain outside the new active sensor path. |
@@ -49,7 +49,7 @@ A visible Floor note identifies the remaining local-to-map registration and live
 
 ## Presentation-model alignment
 
-The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow final slides 5–15, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view includes separate legacy stock-balance and task-state functions, outside the final presentation.
+The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow final slides 5–15, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view includes separate manual stock-balance and task-state functions, outside the final presentation.
 
 The residual timer now starts at the first above-threshold sample, matching final slide 14 rather than counting the preceding interval. Forecasts use final slide 15’s 20 midpoint substeps by default. Software checks compare timestamp persistence behavior, integer stock conservation, permitted task transitions, invalid stock rejection and hosted navigation/replay isolation. No physical validation is implied.
 

@@ -17,7 +17,7 @@ The [file-purpose catalog](all_repository_file_purposes.md) lists every current 
 
 The root entrypoint calls the Streamlit host, which serves `frontend_warehouse_dashboard/index.html`. The page loads the trusted-parent scroll/viewport bridge and dashboard modules. Mission routing, route-map previews and policy branches share the graph solver. Mission execution and forecasts share the reservation model.
 
-AMR-01 direct sensors publish raw v2 telemetry to EMQX. The Python subscriber validates it and computes motion, battery, residuals and conditional forecasts. The Streamlit component sends public results to Hardware; broker credentials stay server-side. The browser owns a separate single-AMR mission/stock simulation. Local odometry has no surveyed transform into the 3D floor yet. The older browser v1 subscriber, SQLite/LabVIEW adapter and Coordinator are legacy reference services, outside the active sensor path. [System architecture](dashboard_and_telemetry_system_architecture.md) defines the current boundary.
+AMR-01 direct sensors publish raw v2 telemetry to EMQX. The independent Python worker validates it, computes motion/battery/residuals and writes PostgreSQL. Streamlit reads stored results and sends public values to Sensor models; credentials stay private. The browser owns a separate single-AMR mission/stock simulation. Local odometry has no surveyed transform into the 3D floor yet. The older browser v1 subscriber, SQLite/LabVIEW adapter and Coordinator are legacy reference services, outside the active sensor path. [System architecture](dashboard_and_telemetry_system_architecture.md) defines the current boundary.
 
 ## Generated downloads
 

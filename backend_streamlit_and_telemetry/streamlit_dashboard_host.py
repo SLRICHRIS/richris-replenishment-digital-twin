@@ -1,4 +1,4 @@
-"""Host the previously designed warehouse UI, with Python sensor-model readouts."""
+"""Host the warehouse dashboard and Python sensor-model readouts."""
 from pathlib import Path
 
 import streamlit as st
@@ -42,7 +42,9 @@ def render_dashboard():
     pending = st.session_state.pop('pending_workspace_view', None)
     if pending in ('Warehouse dashboard', 'Model inspection', 'Database'):
         st.session_state.workspace_view = pending
-    view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection', 'Database'), key='workspace_view')
+    view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection', 'Database'),
+                            format_func=lambda name: 'Detailed readings' if name == 'Model inspection' else name,
+                            key='workspace_view')
     if view == 'Database':
         from .predictive_twin.database_inspection import render_database_inspection
         render_database_inspection()

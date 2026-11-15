@@ -22,7 +22,7 @@ python3.12 -m venv .venv
 .venv/bin/python -m streamlit run streamlit_app.py
 ```
 
-Streamlit serves the whole local component, including ES modules, workers, styles, fonts and downloadable kits. A separate HTTP server, Node runtime and ChatGPT Site session are not needed for deployment.
+Streamlit serves the whole local component, including ES modules, workers, styles, fonts and downloadable kits. A separate HTTP server or Node runtime is not needed for deployment.
 
 ## Streamlit Community Cloud
 
@@ -39,7 +39,7 @@ For a new app, open [Streamlit Community Cloud](https://share.streamlit.io/), co
 
 For a private repository, authorize that repository in Streamlit's linked GitHub account. Keep the repository private unless you deliberately change its audience. Preserve the existing app's sharing settings when updating it.
 
-Deploy from the repository root with the complete repository, including `frontend_warehouse_dashboard/` and `backend_streamlit_and_telemetry/`. The default synthetic trial needs no secrets. For live sensors, configure private Streamlit server secrets using `.streamlit/secrets.example.toml`; do not commit credentials. The Python subscriber connects to MQTT/TLS 8883 and the browser receives calculated readouts. Follow [current single-AMR commissioning](single_amr_sensor_twin_setup.md). Reuse the existing private app; no second deployment is required.
+Deploy from the repository root with the complete repository, including `frontend_warehouse_dashboard/` and `backend_streamlit_and_telemetry/`. The default synthetic trial needs no secrets. For live sensors, configure private Streamlit server secrets using `.streamlit/secrets.example.toml`; do not commit credentials. The independent worker connects to MQTT/TLS 8883 and writes PostgreSQL. Streamlit reads stored records through its private reader connection. Choose Stored sensor data in Sensor models or inspect saved rows in Database. Follow [current single-AMR commissioning](single_amr_sensor_twin_setup.md). Reuse the existing app; no second deployment is required.
 
 ## Optional hardware and development
 

@@ -226,7 +226,7 @@ function managerPositionsChanged(zones) {
   if (floorSource === 'hardware')
     return {
       ok: false,
-      message: 'Switch the floor source to Simulation to move managers and reroute virtual robots.',
+      message: 'Switch the floor source to Simulation to move managers and reroute AMR-01.',
     };
   try {
     zones = checkedManagerRelocation(zones);
@@ -273,7 +273,7 @@ function managerPositionsChanged(zones) {
   generation++;
   predictionBusy = false;
   const message = replanned.held
-    ? 'Fleet waiting: ' + replanned.reason + ' Move the manager to restore a clear route.'
+    ? 'AMR-01 waiting: ' + replanned.reason + ' Move the manager to restore a clear route.'
     : `Manager position applied. ${replanned.plans.length} active routes replanned; ${queued} queued missions require fresh approval.`;
   log(
     message +
@@ -423,7 +423,7 @@ function stopFleet() {
     r.velocity = 0;
   });
   lastOverride = performance.now() - start;
-  log('Fleet STOP latched. All virtual motion halted; reservations retained.', true);
+  log('Simulation stop latched. AMR-01 motion halted; reservations retained.', true);
   render();
   predict();
 }
@@ -445,7 +445,7 @@ function resumeFleet() {
               : 'Idle';
     r.wasPausedBeforeStop = false;
   });
-  log('Operator explicitly released fleet stop.', true);
+  log('Operator released the simulation stop.', true);
   startNextMission();
   render();
   predict();
@@ -876,7 +876,7 @@ function renderBrief() {
     : managerHoldReason
       ? 'Manager zone holds traffic'
       : stopped
-        ? 'Fleet stop latched'
+        ? 'Simulation stop latched'
         : !running
           ? 'Simulation paused'
           : owner
@@ -887,7 +887,7 @@ function renderBrief() {
               ? 'Queue on hold'
               : pending.length
                 ? eligible + ' ready for review'
-                : 'Fleet standing by';
+                : 'AMR-01 standing by';
   $('brief-note').textContent =
     pending.length + ' awaiting approval · ' + queued.length + ' in the approved queue';
   $('brief-label-a').textContent = 'Traffic reservations';
@@ -1163,7 +1163,7 @@ function render() {
       ? active + ' on mission'
       : queued
         ? queued + ' reserved'
-        : 'Fleet ready';
+        : 'AMR-01 ready';
   setHTML(
     'health',
     Math.round((bins.filter((b) => b.stock >= 35).length / 4) * 100) + '<small>%</small>',
@@ -1173,7 +1173,7 @@ function render() {
     ':' +
     String(Math.floor(elapsed % 60)).padStart(2, '0');
   setHTML('run', icon(running ? 'pause' : 'play') + (running ? 'Pause' : 'Resume'));
-  setHTML('stop', icon(stopped ? 'play' : 'stop') + (stopped ? 'Release stop' : 'Stop fleet'));
+  setHTML('stop', icon(stopped ? 'play' : 'stop') + (stopped ? 'Release stop' : 'Stop simulation'));
   $('stop').classList.toggle('latched', stopped);
   $('scene-state').classList.toggle('stopped', stopped);
   $('scene-state').classList.toggle(
@@ -1193,7 +1193,7 @@ function render() {
               : '#e7be7a'}"
       ></i>
       ${stopped
-        ? 'Fleet stopped'
+        ? 'Simulation stopped'
         : managerPlacementActive
           ? 'Placement hold'
           : managerHoldReason
@@ -1208,7 +1208,7 @@ function render() {
     pending + ' mission' + (pending === 1 ? '' : 's') + ' awaiting approval';
   $('demo').disabled = pending === 0 || stopped;
   $('demo').querySelector('span').textContent = stopped
-    ? 'Fleet stop is active'
+    ? 'Simulation stop is active'
     : pending
       ? 'Review ' + pending + ' mission' + (pending === 1 ? '' : 's')
       : active || queued
@@ -1219,7 +1219,7 @@ function render() {
     : pending
       ? 'Check arrival, aisle timing and return reserve.'
       : active
-        ? 'Select a unit on the floor to inspect its state.'
+        ? 'Select AMR-01 on the floor to inspect its state.'
         : 'Create a mission in the Missions view.';
   $('nav-task-count').textContent = String(pending + active + queued).padStart(2, '0');
   $('mission-pending-count').textContent = pending;
@@ -1387,12 +1387,12 @@ const pages = {
   telemetry: {
     title: 'Telemetry & inventory',
     context: 'Operational analysis',
-    summary: 'Follow material availability, fleet energy and the effects of operating conditions.',
+    summary: 'Follow material availability, AMR-01 energy and the effects of operating conditions.',
   },
   activity: {
     title: 'Operator activity',
     context: 'Session records',
-    summary: 'Trace assignments, approvals and fleet events across this simulation session.',
+    summary: 'Trace AMR-01 assignments, approvals and events in this simulation session.',
   },
 };
 function activatePage(name, writeHash = true) {
@@ -1442,7 +1442,7 @@ function forecastUnavailable() {
   $('horizon').disabled = true;
   setHTML(
     'alerts',
-    '<div class="alert">Forecast unavailable<small>Manual fleet controls remain available. Reload the page to retry the forecast engine.</small></div>',
+    '<div class="alert">Forecast unavailable<small>Simulation controls remain available. Reload the page to retry the forecast engine.</small></div>',
   );
 }
 function predict() {
@@ -1891,7 +1891,7 @@ function updateSourceUI() {
         ? 'Physical control stays with the Coordinator'
         : physical
           ? 'Control remains with the physical system'
-          : 'Supervised virtual fleet';
+          : 'Supervised AMR-01 simulation';
   if (activePage === 'environment')
     $('page-summary').textContent = live
       ? 'Inspect measured poses and stream freshness in the reference facility.'
@@ -1907,12 +1907,12 @@ function updateSourceUI() {
   if (activePage === 'hardware' && document.documentElement.dataset.pythonTwin === 'true') {
     const demo = document.documentElement.dataset.pythonSource !== 'live';
     $('page-context').textContent = 'AMR-01 · Telemetry';
-    $('page-mode').textContent = demo ? 'Demo data' : 'Physical data';
+    $('page-mode').textContent = demo ? 'Demo data' : 'Stored sensor data';
     $('page-mode').dataset.kind = demo ? 'simulation' : 'hardware';
     $('rail-detail').textContent = demo
-      ? 'Synthetic trial · no robot connection'
+      ? 'Generated sensor example'
       : 'Stored sensor records · no motor commands';
-    $('source-badge').textContent = demo ? 'Synthetic example only' : 'Physical sensor records';
+    $('source-badge').textContent = demo ? 'Demo data' : 'Stored sensor data';
   }
   document
     .querySelectorAll('[data-floor-source]')
@@ -1960,7 +1960,7 @@ function renderHardwareFloor() {
     p = slot.data,
     live = slots.filter((s) => s.status === 'live').length,
     tracked = slots.filter((s) => s.tracked).length;
-  $('brief-eyebrow').textContent = 'Measured fleet';
+  $('brief-eyebrow').textContent = 'AMR-01 telemetry';
   $('brief-title').textContent = live + ' of 3 streams live';
   $('brief-note').textContent = tracked + ' measured poses available on the floor';
   $('brief-label-a').textContent = 'Viewer connection';
@@ -2014,7 +2014,7 @@ function renderHardwareFloor() {
   $('scene-empty').classList.toggle('hidden', tracked > 0);
   $('scene-ready-text').textContent = live
     ? 'Devices online. Waiting for measured positions.'
-    : 'Connect your ESP32 slots in Hardware.';
+    : 'Open Sensor models for AMR-01 readings and connection status.';
   $('alert-count').textContent = String(
     slots.filter((s) => s.status === 'stale' || s.status === 'offline').length,
   );

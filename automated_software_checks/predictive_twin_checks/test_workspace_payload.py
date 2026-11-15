@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from backend_streamlit_and_telemetry.predictive_twin.workspace_payload import workspace_payload, quality_display
+from backend_streamlit_and_telemetry.predictive_twin.database import DatabaseSchemaError
 
 
 def test_existing_dashboard_receives_only_derived_sensor_display_data():
@@ -14,7 +15,7 @@ def test_existing_dashboard_receives_only_derived_sensor_display_data():
     assert a['forecast_pose'] is not None
     assert len(a['history']) <= 241
     assert any(row['advisory'] for row in a['history'])
-    assert a['quality_label'] == 'Demonstration data'
+    assert a['quality_label'] == 'Demo data'
     assert a['quality_tone'] == 'info'
     assert a['residual_threshold_rad_s'] > 0
     assert a['residual_hold_s'] > 0
@@ -25,7 +26,7 @@ def test_unconfigured_live_returns_no_synthetic_robot_state():
     with patch('backend_streamlit_and_telemetry.predictive_twin.workspace_payload.st.secrets', {}):
         result = workspace_payload('live')
     assert result['robots'] == {}
-    assert 'not configured' in result['status']
+    assert result['notice']['label'] == 'Database not configured'
 
 
 def test_storage_check_does_not_require_calibration_and_sanitizes_errors():
@@ -43,6 +44,34 @@ def test_storage_check_does_not_require_calibration_and_sanitizes_errors():
         assert database_connection() == (None, 'unreachable')
     with patch(module + '.st.secrets', {}):
         assert database_connection() == (None, 'not_configured')
+
+
+def test_configured_database_without_calibration_is_not_labelled_disconnected():
+    from backend_streamlit_and_telemetry.predictive_twin.database import SensorDatabase
+    from unittest.mock import Mock
+    module = 'backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    with patch(module + '.st.secrets', {'database': {'url': 'postgresql://private:secret@host/db'}}), \
+         patch(module + '.database_reader', return_value=Mock(spec=SensorDatabase)):
+        payload = workspace_payload('live')
+    assert payload['robots'] == {}
+    assert payload['notice']['label'] == 'Measured calibration required'
+    assert 'database is configured' in payload['notice']['detail']
+    assert 'private' not in str(payload)
+    assert 'secret' not in str(payload)
+
+
+@pytest.mark.parametrize('error,label', [
+    (RuntimeError('private:secret@host'), 'Database connection failed'),
+    (DatabaseSchemaError('private:secret@host'), 'Database schema needs attention'),
+])
+def test_connection_failure_keeps_its_own_source_label(error, label):
+    module = 'backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    with patch(module + '.st.secrets', {'database': {'url': 'postgresql://private:secret@host/db'}}), \
+         patch(module + '.database_reader', side_effect=error):
+        payload = workspace_payload('live')
+    assert payload['notice']['label'] == label
+    assert payload['robots'] == {}
+    assert 'secret' not in str(payload)
 
 
 def test_live_display_does_not_leak_database_credentials_or_forecast_stale_robots():

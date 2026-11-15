@@ -11,7 +11,7 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertFalse(app.exception)
         app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)
         self.assertFalse(app.exception)
-        self.assertEqual(app.title[0].value, 'Warehouse Robot Digital Twin')
+        self.assertEqual(app.title[0].value, 'Detailed sensor readings')
         self.assertEqual(len(app.get('component_instance')), 0)
         next(n for n in app.number_input if n.label == 'Delivered units').set_value(30)
         next(n for n in app.number_input if n.label == 'Consumed units').set_value(10)
@@ -26,7 +26,7 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.session_state.slide15_state['stock'], 120)
         self.assertTrue(any('Invalid stock event' in item.value for item in app.error))
-        next(r for r in app.radio if r.label == 'Data source').set_value('Live MQTT sensors').run(timeout=30)
+        next(r for r in app.radio if r.label == 'Data source').set_value('live').run(timeout=30)
         self.assertFalse(app.exception)
         self.assertTrue(any('not configured' in item.value for item in app.warning))
 
@@ -47,6 +47,20 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.get('component_instance')[0].proto.id, first)
 
+    def test_detailed_readings_distinguish_calibration_from_database_configuration(self):
+        from unittest.mock import patch, Mock
+        from backend_streamlit_and_telemetry.predictive_twin.database import SensorDatabase
+        module = 'backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+        app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+        app.secrets['database'] = {'url': 'postgresql://private:secret@host/db'}
+        with patch(module + '.database_reader', return_value=Mock(spec=SensorDatabase)):
+            app.run(timeout=30)
+            app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)
+            next(r for r in app.radio if r.label == 'Data source').set_value('live').run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertTrue(any('Measured calibration required' in item.value for item in app.warning))
+        self.assertFalse(any('not configured or reachable' in item.value for item in app.warning))
+
     def test_component_can_open_model_inspection_without_mutating_an_existing_widget(self):
         from unittest.mock import patch
         from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
@@ -54,7 +68,7 @@ class StreamlitHostTests(unittest.TestCase):
         with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action):
             app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
         self.assertFalse(app.exception)
-        self.assertEqual(app.title[0].value, 'Warehouse Robot Digital Twin')
+        self.assertEqual(app.title[0].value, 'Detailed sensor readings')
         self.assertEqual(app.sidebar.radio[0].value, 'Model inspection')
 
     def test_database_is_visible_without_calibration_or_connection(self):

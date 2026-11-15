@@ -6,7 +6,9 @@ The app opens in the existing 3D warehouse design. Only AMR-01 and its middle le
 | --- | --- |
 | Floor | Inspect the single virtual AMR, reference racks and its simulated missions; camera and appearance controls preserve the original design |
 | Reference source only: Route map | Preview distance/time routes on the 19-node/24-link graph; closures, manager placement and Dijkstra playback are simulation tools |
-| Sensor models | View Python-computed AMR-01 motion, power, energy, SOC, residual advisories and conditional forecasts; select synthetic trial or commissioned live MQTT |
+| Sensor models | View Python-computed AMR-01 motion, power, energy, SOC, residual advisories and conditional forecasts; choose Demo data or Stored sensor data |
+| Detailed readings | Open from Sensor models for packet values, charts, exports and references |
+| Database | Open from Sensor models for saved records, table attributes and connection details |
 | Missions | Review, approve, pause or cancel virtual replenishment jobs; actions do not command the physical motors |
 | Reference source only: Insights | Inspect simulated stock/mission projections, separate from physical battery sensing |
 | Reference source only: Reference lab | Optional recording/replay, older observer and policy studies; not connected to raw v2 Python sensor packets |
@@ -18,9 +20,9 @@ The hosted navigation shows only Floor, Sensor models, Missions and Activity. Re
 
 1. Follow [direct-sensor commissioning](single_amr_sensor_twin_setup.md), not the legacy UART kit. Configure private Streamlit secrets and replace all example calibration values.
 2. Open **Sensor models**. The default fixed synthetic trial is labelled; it is not a physical reading.
-3. Select **Physical sensor data** only with the commissioned AMR-01 publisher and independent ingestion worker. The worker subscribes to `robot/amr01/state` and stores readings; the dashboard reads the database.
+3. Select **Stored sensor data** only with the commissioned AMR-01 publisher and independent ingestion worker. The worker subscribes to `robot/amr01/state` and stores readings; the dashboard reads the database.
 4. Check freshness, continuity and units before interpreting estimates. Missing or stale samples suspend advisories/forecasts; long gaps leave partial integrals.
-5. Use **Open detailed readings and evidence** for equations, variables, exports and the separate legacy stock/task example. Paper links and exact source pages also appear beside the six sensor models. The stock/task example is outside the final 17-slide presentation.
+5. Use **Open detailed readings** for equations, variables, exports and the manual stock/task example. Paper links and exact source pages also appear beside the six sensor models. The stock/task example is outside the final 17-slide presentation.
 
 ### Interpret the readouts
 
