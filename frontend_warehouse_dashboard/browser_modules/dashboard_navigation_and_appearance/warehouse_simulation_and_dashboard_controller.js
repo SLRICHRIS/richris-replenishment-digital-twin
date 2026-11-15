@@ -1371,7 +1371,7 @@ const pages = {
   },
   hardware: {
     title: 'Sensor models',
-    context: 'Physical observations',
+    context: 'Readings and estimates',
     summary: 'Encoder motion, pose, gyro, battery, residual alerts and forecasts in slide order.',
   },
   environment: {
@@ -1629,9 +1629,12 @@ function navOrientation() {
 navOrientation();
 window.addEventListener('resize', navOrientation);
 window.addEventListener('hashchange', () => activatePage(location.hash.slice(1), false));
-function applySlideWorkspaceScope() {
+function applySlideWorkspaceScope(event) {
+  if (['demo', 'live'].includes(event?.detail?.mode))
+    document.documentElement.dataset.pythonSource = event.detail.mode;
   if (document.documentElement.dataset.pythonTwin !== 'true') return;
   if (['routes', 'engineering', 'telemetry'].includes(activePage)) activatePage('hardware');
+  else updateSourceUI();
 }
 document.addEventListener('python-twin:render', applySlideWorkspaceScope);
 
@@ -1901,6 +1904,16 @@ function updateSourceUI() {
         : activePage === 'hardware' || live
           ? 'Hardware · read only'
           : 'Simulation';
+  if (activePage === 'hardware' && document.documentElement.dataset.pythonTwin === 'true') {
+    const demo = document.documentElement.dataset.pythonSource !== 'live';
+    $('page-context').textContent = demo ? 'Demonstration readings' : 'Physical sensor records';
+    $('page-mode').textContent = demo ? 'Demo data' : 'Physical data · read only';
+    $('page-mode').dataset.kind = demo ? 'simulation' : 'hardware';
+    $('rail-detail').textContent = demo
+      ? 'Synthetic trial · no robot connection'
+      : 'Stored sensor records · no motor commands';
+    $('source-badge').textContent = demo ? 'Synthetic example only' : 'Physical sensor records';
+  }
   document
     .querySelectorAll('[data-floor-source]')
     .forEach((b) =>

@@ -423,8 +423,8 @@
             <span id="floor-source-note">12 racks · 4 active bins · 8 reserve racks</span>
           </div>
           <p class="python-floor-scope">
-            Simulation · AMR-01 sensor estimates are in Hardware. Live 3D synchronisation awaits
-            measured coordinate calibration. Shelf stock and mission actions are simulated.
+            Simulation · AMR-01 sensor estimates are in Sensor models. Live 3D synchronisation
+            awaits measured coordinate calibration. Shelf stock and mission actions are simulated.
           </p>
           <div class="operation-brief" id="operation-brief" aria-label="Operational readiness">
             <div class="brief-lead">
@@ -1215,46 +1215,62 @@
           <div id="python-sensor-panel">
             <header class="python-model-header">
               <div>
-                <span class="eyebrow">Predictive digital twin · Python backend</span>
-                <h2>AMR-01 · models from the presentation.</h2>
+                <span class="eyebrow">AMR-01 · sensor readings and model estimates</span>
+                <h2>Understand the robot, one model at a time.</h2>
                 <p class="python-sensor-note">
-                  Six stages, in slide order. Encoders, MPU6050 and INA219 supply the inputs; Python
-                  calculates the states, forecasts and advisory alerts.
+                  Check the data source and quality first. Then follow the six stages below: wheel
+                  motion, position, gyro correction, battery, motion disagreement and forecasts.
                 </p>
               </div>
             </header>
             <div class="python-sensor-toolbar" role="group" aria-label="Sensor twin source">
-              <button id="python-source-demo" type="button" aria-pressed="true">
-                Synthetic demonstration
-              </button>
+              <button id="python-source-demo" type="button" aria-pressed="true">Demo data</button>
               <button id="python-source-live" type="button" aria-pressed="false">
-                Live EMQX sensor data
+                Physical sensor data
               </button>
               <strong id="python-source-label">Waiting for Python</strong>
             </div>
             <p id="python-source-status" role="status"></p>
+            <div
+              class="python-data-notice"
+              id="python-data-notice"
+              data-tone="neutral"
+              role="status"
+            >
+              <strong id="python-data-title">Waiting for readings</strong>
+              <p id="python-data-detail">Choose a source to inspect its readings and estimates.</p>
+            </div>
             <div class="python-model-status" aria-label="AMR-01 sensor status">
               <strong id="python-amr01-title">AMR-01</strong>
-              <span id="python-amr01-quality">WAITING</span>
+              <span id="python-amr01-quality">Waiting for readings</span>
               <span>
-                Age:
+                Sample age:
                 <b id="python-amr01-age">—</b>
               </span>
               <span>
-                Firmware:
+                Reported robot state:
                 <b id="python-amr01-state">—</b>
               </span>
             </div>
+            <p class="python-reading-key">
+              L = left wheel; R = right wheel. Values marked “Unavailable” have no valid estimate.
+              Physical sample age is time since receipt, not network latency. The dashboard
+              refreshes about once per second.
+            </p>
             <div class="python-sensor-cards">
               <article class="panel python-sensor-card">
                 <span class="eyebrow">Slides 5–6 · encoders</span>
                 <h3>01 · Wheel travel and speed</h3>
                 <dl>
-                  <dt>Left / right travel (m)</dt>
+                  <dt>Wheel travel this interval</dt>
                   <dd id="python-amr01-travel">—</dd>
-                  <dt>Left / right speed (m/s)</dt>
+                  <dt>Wheel speed</dt>
                   <dd id="python-amr01-speed">—</dd>
                 </dl>
+                <p class="python-card-meaning">
+                  Calculated from encoder count changes. Positive travel follows the calibrated
+                  forward direction.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">Δs = 2πrΔn/N; v = Δs/Δt</p>
@@ -1281,9 +1297,13 @@
                 <span class="eyebrow">Slides 7–8 · nonlinear kinematics</span>
                 <h3>02 · Robot position and heading</h3>
                 <dl>
-                  <dt>Local x / y / θ (m / m / rad)</dt>
+                  <dt>Estimated local position</dt>
                   <dd id="python-amr01-pose">—</dd>
                 </dl>
+                <p class="python-card-meaning">
+                  x and y are metres from the trial origin; heading is in radians. These coordinates
+                  are not registered to the warehouse floor map.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">
@@ -1319,11 +1339,15 @@
                 <dl>
                   <dt>Raw yaw rate (rad/s)</dt>
                   <dd id="python-amr01-gyro">—</dd>
-                  <dt>Estimated bias (rad/s)</dt>
+                  <dt>Calibrated stationary bias (rad/s)</dt>
                   <dd id="python-amr01-bias">—</dd>
                   <dt>Corrected yaw rate (rad/s)</dt>
                   <dd id="python-amr01-corrected-gyro">—</dd>
                 </dl>
+                <p class="python-card-meaning">
+                  Subtract the stationary bias from the measured turning rate. The corrected gyro
+                  checks wheel motion; position still comes from wheel odometry.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">
@@ -1352,15 +1376,19 @@
                 <span class="eyebrow">Slides 11–12 · INA219</span>
                 <h3>04 · Battery energy and charge</h3>
                 <dl>
-                  <dt>Voltage / current (V / A)</dt>
+                  <dt>Measured battery input</dt>
                   <dd id="python-amr01-battery-input">—</dd>
                   <dt>Electrical power (W)</dt>
                   <dd id="python-amr01-power">—</dd>
                   <dt>Net energy used (Wh)</dt>
                   <dd id="python-amr01-energy">—</dd>
-                  <dt>Estimated SOC (%)</dt>
+                  <dt>Estimated charge (SOC)</dt>
                   <dd id="python-amr01-soc">—</dd>
                 </dl>
+                <p class="python-card-meaning">
+                  SOC means state of charge. Positive current means discharge; negative current
+                  means charging. Charge and net energy are calculated estimates.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">
@@ -1391,21 +1419,49 @@
               </article>
               <article class="panel python-sensor-card">
                 <span class="eyebrow">Slides 13–14 · advisory</span>
-                <h3>05 · Sustained disagreement alert</h3>
+                <h3>05 · Do the motion sensors agree?</h3>
                 <dl>
                   <dt>Gyro–encoder residual (rad/s)</dt>
                   <dd id="python-amr01-residual">—</dd>
                 </dl>
                 <p id="python-amr01-advisory" role="status">Waiting for Python results.</p>
+                <p id="python-amr01-threshold" class="python-card-meaning">
+                  Waiting for the configured alert threshold.
+                </p>
                 <svg
                   viewBox="0 0 500 120"
                   role="img"
-                  aria-label="AMR01 residual versus sample time"
+                  aria-label="Recorded gyro minus encoder turning-rate difference versus sample time"
                 >
-                  <line x1="10" y1="60" x2="490" y2="60" stroke="currentColor" opacity=".25" />
-                  <polyline id="python-amr01-plot" points="" />
+                  <line x1="50" y1="60" x2="490" y2="60" class="python-plot-zero" />
+                  <line
+                    id="python-amr01-threshold-upper"
+                    x1="50"
+                    y1="30"
+                    x2="490"
+                    y2="30"
+                    class="python-plot-threshold"
+                    visibility="hidden"
+                  />
+                  <line
+                    id="python-amr01-threshold-lower"
+                    x1="50"
+                    y1="90"
+                    x2="490"
+                    y2="90"
+                    class="python-plot-threshold"
+                    visibility="hidden"
+                  />
+                  <text id="python-amr01-plot-max" x="2" y="18">rad/s</text>
+                  <text x="30" y="64">0</text>
+                  <text id="python-amr01-plot-min" x="2" y="111"></text>
+                  <path id="python-amr01-plot" d="" />
                 </svg>
                 <small id="python-amr01-plot-range">Residual history</small>
+                <p class="python-card-meaning">
+                  A larger difference means the gyro and wheels report different turning rates. An
+                  advisory asks for inspection; it does not identify a specific fault.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">
@@ -1438,11 +1494,15 @@
                 <span class="eyebrow">Slide 15 · explicit assumptions</span>
                 <h3>06 · Motion and runtime forecasts</h3>
                 <dl>
-                  <dt>5 s forecast x / y / θ</dt>
+                  <dt>Estimated position in 5 seconds</dt>
                   <dd id="python-amr01-forecast">—</dd>
-                  <dt>Runtime to 20% reserve (h)</dt>
+                  <dt>Time until 20% charge</dt>
                   <dd id="python-amr01-runtime">—</dd>
                 </dl>
+                <p id="python-amr01-forecast-note" class="python-card-meaning">
+                  Assumes unchanged wheel speeds and battery current. This is not a planned route or
+                  a battery-life guarantee.
+                </p>
                 <details class="slide-equation">
                   <summary>Equation &amp; variables</summary>
                   <p class="slide-equation-text">
@@ -1465,12 +1525,13 @@
             </div>
             <p class="python-sensor-note">
               Synthetic mode is a fixed 6 s teaching trial; AMR01 has an injected gyro disagreement
-              at 3–4 s. Live mode reads PostgreSQL results from a separately deployed MQTT ingestion worker. Local odometry is not
-              registered to the warehouse map. Floor and Missions retain the single virtual AMR;
-              sensor readings never move physical inventory or send motor commands.
+              at 3–4 s. Live mode reads PostgreSQL results from a separately deployed MQTT ingestion
+              worker. Local odometry is not registered to the warehouse map. Floor and Missions
+              retain the single virtual AMR; sensor readings never move physical inventory or send
+              motor commands.
             </p>
             <button id="python-model-inspection" type="button">
-              Inspect scientific models and separate stock/tasks demo
+              Open detailed readings and evidence
             </button>
             <details class="panel python-sensor-card" id="python-model-evidence">
               <summary>Equations, papers and page references</summary>
@@ -1583,9 +1644,9 @@
                         </a>
                       </td>
                       <td>
-                        Workflow context only. The separate stock example uses stock + delivered − consumed and a
-                        minimal idle/assigned/travelling/servicing task state machine; no fleet
-                        policy is added.
+                        Workflow context only. The separate stock example uses stock + delivered −
+                        consumed and a minimal idle/assigned/travelling/servicing task state
+                        machine; no fleet policy is added.
                       </td>
                     </tr>
                   </tbody>
@@ -1890,7 +1951,7 @@
               <h2>Observe. Calibrate. Compare.</h2>
               <p>
                 Optional reference replay and legacy v1 observer studies. Current encoder, gyro and
-                battery models are in Hardware → Open detailed model inspection.
+                battery models are in Sensor models → Open detailed readings and evidence.
               </p>
             </div>
             <span class="lab-badge" id="lab-provenance">Live telemetry · awaiting devices</span>
@@ -2706,8 +2767,8 @@
           <svg class="icon" aria-hidden="true"><use href="#i-help" /></svg>
           <p>
             Forecast +5s projects the assigned virtual route. The cone overlay and manager markers
-            are illustrations. Drive and mission controls operate only on the virtual AMR-01;
-            Hardware receives read-only sensor estimates. Route map is a simulation preview.
+            are illustrations. Drive and mission controls operate only on the virtual AMR-01; Sensor
+            models displays read-only sensor estimates. Route map is a simulation preview.
           </p>
         </div>
         <p class="guide-attribution">

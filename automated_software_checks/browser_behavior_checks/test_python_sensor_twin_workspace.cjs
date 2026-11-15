@@ -36,11 +36,16 @@ const payload = {
   robots: {
     amr01: {
       quality: 'OK',
+      quality_label: 'Demonstration data',
+      quality_detail: 'Synthetic trial. No physical robot is connected.',
+      quality_tone: 'info',
       stale: false,
       age_s: 0.1,
       soc: 0.8,
       energy_wh: 0.01,
       gyro_bias_rad_s: 0.01,
+      residual_threshold_rad_s: 0.04,
+      residual_hold_s: 0.5,
       pose: [1, 2, 0.3],
       raw: {
         gyro_z_rad_s: 0.2,
@@ -82,9 +87,19 @@ deliver(parent, 'https://untrusted.example');
 assert.equal(doc.documentElement.dataset.pythonTwin, undefined);
 deliver(parent, w.location.origin);
 assert.equal(doc.documentElement.dataset.pythonTwin, 'true');
-assert.equal(doc.getElementById('python-amr01-soc').textContent, '80.000%');
-assert.equal(doc.getElementById('python-amr01-battery-input').textContent, '7.400 / 0.6000');
-assert.equal(doc.getElementById('python-amr01-travel').textContent, '0.01000 / 0.02000');
+assert.equal(doc.getElementById('python-amr01-soc').textContent, '80.0%');
+assert.equal(
+  doc.getElementById('python-amr01-battery-input').textContent,
+  'Voltage = 7.40 V\nCurrent = 0.600 A',
+);
+assert.equal(doc.getElementById('python-amr01-travel').textContent, 'L = 0.0100 m\nR = 0.0200 m');
+assert.equal(
+  doc.getElementById('python-amr01-pose').textContent,
+  'x = 1.000 m\ny = 2.000 m\nHeading = 0.300 rad',
+);
+assert.equal(doc.getElementById('python-data-notice').dataset.tone, 'info');
+assert.match(doc.getElementById('python-data-detail').textContent, /No physical robot/);
+assert.equal(doc.getElementById('python-amr01-age').textContent, 'Fixed demo trial');
 assert.equal(doc.getElementById('python-amr01-corrected-gyro').textContent, '0.19000');
 assert.equal(doc.querySelectorAll('.python-sensor-cards > article').length, 6);
 assert.equal(doc.querySelectorAll('.slide-equation').length, 6);
@@ -96,7 +111,12 @@ assert.equal(
   null,
   'text-only sensor values',
 );
-assert.match(doc.getElementById('python-amr01-plot').getAttribute('points'), /490\.00/);
+assert.match(doc.getElementById('python-amr01-plot').getAttribute('d'), /L490\.00/);
+assert.match(doc.getElementById('python-amr01-threshold').textContent, /0\.040 rad\/s for 0\.50 s/);
+assert.equal(
+  doc.getElementById('python-amr01-threshold-upper').getAttribute('visibility'),
+  'visible',
+);
 const floor = doc.getElementById('environment').innerHTML;
 doc.body.dataset.view = 'hardware';
 doc.getElementById('main-content').scrollTop = 200;
@@ -121,10 +141,61 @@ doc.dispatchEvent(
   new w.CustomEvent('python-twin:action', { detail: { action: 'motor_command', mode: 'live' } }),
 );
 assert.equal(sent.length, before, 'no arbitrary action bridge');
-payload.robots.amr01 = { quality: 'STALE', stale: true, history: [] };
+const current = payload.robots.amr01;
+payload.mode = 'live';
+payload.robots.amr01 = {
+  ...current,
+  quality: 'STALE',
+  quality_label: 'Readings out of date',
+  quality_detail: 'No current reading is available.',
+  quality_tone: 'warning',
+  stale: true,
+};
 deliver(parent, w.location.origin);
-assert.equal(doc.getElementById('python-amr01-soc').textContent, '—');
+assert.equal(doc.getElementById('python-amr01-soc').textContent, 'Unavailable');
 assert.match(doc.getElementById('python-amr01-advisory').textContent, /suspended/);
+assert.equal(
+  doc.getElementById('python-amr01-forecast').textContent,
+  'Unavailable',
+  'stale payload cannot retain an earlier forecast',
+);
+assert.equal(doc.getElementById('python-amr01-runtime').textContent, 'Unavailable');
+assert.equal(doc.getElementById('python-data-title').textContent, 'Readings out of date');
+assert.equal(doc.getElementById('python-data-notice').dataset.tone, 'warning');
+assert.match(doc.getElementById('python-amr01-plot-range').textContent, /historical data/);
+payload.robots.amr01 = { ...current, quality: 'CONTINUITY_LOST', continuity_lost: true };
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-amr01-runtime').textContent, 'Unavailable');
+assert.match(doc.getElementById('python-amr01-forecast-note').textContent, /partial/);
+payload.robots.amr01 = {
+  ...current,
+  quality: 'SEQUENCE_GAP',
+  derived: { ...current.derived, residual_valid: false, residual_rad_s: null },
+  history: [
+    { sample_time_s: 0, residual_rad_s: 0 },
+    { sample_time_s: 1, residual_rad_s: null },
+    { sample_time_s: 2, residual_rad_s: 0.1 },
+  ],
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+assert.equal(
+  (doc.getElementById('python-amr01-plot').getAttribute('d').match(/M/g) || []).length,
+  2,
+  'plot does not join across missing comparisons',
+);
+payload.robots.amr01 = {
+  ...current,
+  raw: { ...current.raw, battery_current_a: 0 },
+  runtime_hours: null,
+};
+deliver(parent, w.location.origin);
+assert.match(doc.getElementById('python-amr01-forecast-note').textContent, /zero current/);
+assert.match(doc.getElementById('python-amr01-battery-input').textContent, /0\.000 A/);
+payload.robots = {};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-amr01-pose').textContent, 'Unavailable');
+assert.equal(doc.getElementById('python-data-title').textContent, 'No sensor data');
 setImmediate(() => dom.window.close());
 console.log(
   'PASS: original workspace receives Python-only sensor values; source identity, XSS-safe text, freshness, no floor mutation, navigation/scroll preservation and allowlisted source/inspection actions.',

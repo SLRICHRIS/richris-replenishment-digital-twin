@@ -8,6 +8,7 @@ from .demo import demo_fleet
 from .models import Calibration, motion_forecast, runtime_hours, stock_step, task_step
 from .database import SensorDatabase, calibration_fingerprint
 from .telemetry import ROBOT_IDS
+from .workspace_payload import quality_display
 
 
 @st.cache_resource(show_spinner=False)
@@ -15,10 +16,12 @@ def database_reader(database_url):
     return SensorDatabase(database_url, initialize=False)
 
 
-def show_robot(rid, snapshot, calibration):
+def show_robot(rid, snapshot, calibration, demo=False):
     st.subheader(rid.upper())
     age = snapshot["age_s"]
-    st.caption(f"Data: {snapshot['quality']} · age: {'no sample' if age is None else f'{age:.2f} s'}")
+    display = quality_display(snapshot, demo=demo)
+    st.caption(f"Data quality: {display['label']} · sample age: {'fixed demo trial' if demo else 'no sample' if age is None else f'{age:.1f} s'}")
+    st.caption(display['detail'])
     if snapshot["stale"]:
         st.warning("No fresh valid sensor data. Forecasts and alerts are suspended.")
         return
@@ -31,7 +34,8 @@ def show_robot(rid, snapshot, calibration):
     c.metric("Heading (rad)", f"{theta:.3f}")
     st.caption("Motion background: [Villagomez Alfaro et al. (2026)](https://doi.org/10.3390/s26185729) · PDF p. 8, Eqs. (1–3); encoder conversion p. 11 Eq. (9), p. 38 Eq. (A4). Midpoint discretisation is our implementation.")
     a, b = st.columns(2)
-    a.metric("Estimated SOC (%)", f"{snapshot['soc'] * 100:.3f}")
+    a.metric("Estimated charge / SOC (%)", f"{snapshot['soc'] * 100:.1f}")
+    st.caption("SOC means state of charge. Positive current means discharge; negative current means charging. Charge is calculated from measured current and calibrated capacity.")
     b.metric("Net energy (Wh)", f"{snapshot['energy_wh']:.5f}")
     st.caption("SOC reference: [Movassagh et al. (2021)](https://doi.org/10.3390/en14144074) · PDF pp. 7–8, Eqs. (5–9), adapted to discharge-positive current and efficiency 1. Power and Wh integration use standard definitions.")
     derived = snapshot["derived"]
@@ -47,7 +51,8 @@ def show_robot(rid, snapshot, calibration):
         if derived["advisory"]:
             st.warning("Sustained model disagreement: inspect motion/sensors. This does not identify a specific fault.")
         elif derived.get("residual_valid", True):
-            st.success("No sustained residual advisory at this sample.")
+            st.info("No sustained motion disagreement at this sample. This does not establish that the robot is fault-free.")
+        st.caption(f"Advisory requires an absolute gyro–encoder difference above {calibration.residual_threshold_rad_s:.3f} rad/s continuously for {calibration.residual_hold_s:.2f} s.")
     if snapshot["history"]:
         st.vega_lite_chart({"data": {"values": snapshot["history"]}, "mark": "line",
             "encoding": {"x": {"field": "x_m", "type": "quantitative", "title": "Local x (m)"},
@@ -70,8 +75,8 @@ def show_robot(rid, snapshot, calibration):
             )
             st.dataframe(recent_events, hide_index=True, use_container_width=True)
     with st.expander("Raw packet and derived values"):
-        st.json({"raw": snapshot["raw"], "derived": derived,
-                 "invalid_packets": snapshot["invalid_packets"], "ignored_packets": snapshot["ignored_packets"]})
+        st.json({"raw": snapshot["raw"], "derived": derived})
+        st.caption("Use the recorded packet-quality events to inspect rejected readings and missing samples. This view does not report lifetime rejection totals.")
     if snapshot["history"]:
         st.download_button("Download derived history (JSON)", json.dumps(snapshot["history"], indent=2),
                            file_name=f"{rid}_derived_sensor_history.json", key=f"history-{rid}")
@@ -117,10 +122,10 @@ def inventory_view():
             state["task"] = task_step(state["task"], event)
             st.rerun()
         st.caption("assign/start/arrive/complete advance the matching state. Other events leave it unchanged. fault enters the fault state; automatic recovery is not defined.")
-    if st.button("Reset slide 15 example"):
+    if st.button("Reset legacy stock/task example"):
         st.session_state.slide15_state = dict(stock=100, task="idle")
         st.rerun()
-    st.caption("Project extension from slide 15; no numbered equation in the two sensor papers. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) is workflow background only. No policy comparison or fleet-allocation model is added here.")
+    st.caption("Separate legacy example, outside the final 17-slide sensor presentation. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) is workflow background only.")
 
 
 def render_sensor_dashboard():
@@ -135,7 +140,7 @@ def render_sensor_dashboard():
             snapshots = fleet.snapshots(now=6)
             for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
                 with col:
-                    show_robot(rid, snapshots[rid], fleet.robots[rid].calibration)
+                    show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True)
             with st.expander("Residual demonstration history"):
                 st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
         else:

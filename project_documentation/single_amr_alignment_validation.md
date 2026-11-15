@@ -23,6 +23,12 @@ New cases cover the original receive timestamp through a blocked writer queue, s
 
 Deployment requires the schema-v3 provisioning step and new checkpoint-table grants in the [pipeline guide](postgresql_sensor_pipeline.md). Packet schema remains v2. The RAM queue and QoS-0 source are still not lossless; these checks do not validate the live EMQX deployment, sensor accuracy, physical timing or ground truth.
 
+## Interface interpretation review: 15 November 2026
+
+The six sensor cards retain the final slide order. Source badges now distinguish demo data from physical records, including the page heading. Data-quality codes have plain-language labels and explanations shared by the workspace and detailed view. Left/right values, x/y/heading and voltage/current are individually named with units. SOC is expanded as state of charge, with the current sign and local coordinate frame explained beside the values.
+
+Regression cases exercise stale readings with an old forecast still present in the payload, partial estimates, missing packets, no physical data, zero-current runtime, text-only sensor content, threshold/hold labels and chart breaks across missing residuals, including display decimation. The local sensor/hosting suite has **66 passing checks**, with two PostgreSQL tests deferred to CI; all 15 browser regression suites pass. The new styling uses the existing semantic colors and responsive breakpoints. New screenshot or desktop/mobile pixel verification was unavailable in this environment and is not claimed for this revision.
+
 ## Physical commissioning still required
 
 Measure effective x4 counts per wheel revolution, left/right radii and effective track; validate straight, square and turning trials with an independent reference. Verify encoder sign and IMU orientation; collect stationary gyro bias; compare INA219 readings with a meter and measure usable pack capacity/initial SOC. Run healthy/fault/slip trials to select the residual threshold/hold and evaluate false alerts, missed faults and latency on separate validation runs. Demonstrate loss/reboot handling against real network outages. Explicitly confirm pickup/delivery events before any future live inventory integration.
