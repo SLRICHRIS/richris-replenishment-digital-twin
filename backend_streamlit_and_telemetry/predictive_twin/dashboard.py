@@ -94,7 +94,6 @@ def render_sensor_dashboard():
                     horizontal=True)
     st.session_state.warehouse_sensor_mode = mode
     if mode == "demo":
-        st.info(quality_display({}, demo=True)['detail'])
         fleet = demo_fleet()
         snapshots = fleet.snapshots(now=6)
         for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
