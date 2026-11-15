@@ -222,6 +222,21 @@ assert.equal(doc.activeElement.id, 'python-db-records-tab');
 const archiveChoice = doc.getElementById('python-db-dataset');
 archiveChoice.value = 'amr_encoder_readings';
 archiveChoice.dispatchEvent(new w.Event('change'));
+assert.equal(
+  doc.querySelector('#python-db-attributes-table table'),
+  null,
+  'old field definitions disappear while another dataset loads',
+);
+archiveChoice.value = 'amr_sensor_samples';
+archiveChoice.dispatchEvent(new w.Event('change'));
+deliver(parent, w.location.origin);
+assert(
+  doc.querySelector('#python-db-attributes-table table'),
+  'rapid return to the original dataset still renders an identical response',
+);
+assert.equal(doc.getElementById('python-db-export').disabled, false);
+archiveChoice.value = 'amr_encoder_readings';
+archiveChoice.dispatchEvent(new w.Event('change'));
 assert.equal(sent.at(-1).value.dataset, 'amr_encoder_readings');
 assert.equal(doc.getElementById('python-db-export').disabled, true);
 deliver(parent, w.location.origin);
