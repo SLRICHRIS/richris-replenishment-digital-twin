@@ -14,9 +14,14 @@ WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND
 def render_warehouse_workspace():
     from .predictive_twin.workspace_payload import workspace_payload
     mode = st.session_state.get('warehouse_sensor_mode', 'demo')
-    result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None,
-                                 python_twin=workspace_payload(mode))
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection'):
+    payload = workspace_payload(mode)
+    if st.session_state.get('warehouse_database_requested'):
+        from .predictive_twin.database_inspection import database_preview
+        payload['database'] = database_preview(
+            st.session_state.get('warehouse_database_dataset', 'amr_sensor_samples'),
+            st.session_state.get('warehouse_database_refresh', ''))
+    result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection', 'database_browse'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
@@ -24,10 +29,18 @@ def render_warehouse_workspace():
         return
     if result['action'] == 'sensor_source' and choice not in ('demo', 'live'):
         return
+    if result['action'] == 'database_browse':
+        from .predictive_twin.database_inspection import DATASET_LABELS
+        if result.get('dataset') not in DATASET_LABELS or type(result.get('active')) is not bool:
+            return
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] in ('model_inspection', 'database_inspection'):
+    if result['action'] == 'database_browse':
+        st.session_state.warehouse_database_requested = result['active']
+        st.session_state.warehouse_database_dataset = result['dataset']
+        st.session_state.warehouse_database_refresh = nonce
+    elif result['action'] in ('model_inspection', 'database_inspection'):
         st.session_state.pending_workspace_view = ('Database' if result['action'] == 'database_inspection' else 'Model inspection')
     else:
         st.session_state.warehouse_sensor_mode = choice

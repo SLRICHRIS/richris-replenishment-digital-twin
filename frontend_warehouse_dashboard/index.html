@@ -6,13 +6,13 @@
     <meta id="theme-meta" name="theme-color" content="#0b1118" />
     <meta
       name="description"
-      content="An educational digital twin by S L RICHRIS for exploring supervised single-AMR warehouse replenishment. Simulation and optional live ESP32 telemetry are shown as separate data sources."
+      content="A single-AMR digital twin by S L RICHRIS for interpreting motion, battery and sensor consistency. Demo values and stored physical measurements remain separate."
     />
     <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js"></script>
     <script src="./browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js"></script>
     <meta name="author" content="S L RICHRIS" />
     <meta name="copyright" content="© 2026 S L RICHRIS. All rights reserved." />
-    <title>Replenish | Facility overview</title>
+    <title>Replenish | AMR-01</title>
     <link
       rel="icon"
       href="./dashboard_images_and_fonts/warehouse_dashboard_application_icon.svg"
@@ -63,6 +63,10 @@
   <body data-view="environment">
     <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
+        <symbol id="i-database" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="5" rx="8" ry="3" />
+          <path d="M4 5v7c0 4 16 4 16 0V5M4 12v7c0 4 16 4 16 0v-7" />
+        </symbol>
         <symbol id="i-motion" viewBox="0 0 24 24">
           <path d="M3 8h4m-6 4h5m-3 4h4m4-11 9 7-9 7V5Z" />
         </symbol>
@@ -142,6 +146,10 @@
       </defs>
     </svg>
     <a class="skip-link" href="#main-content">Skip to workspace</a>
+    <div class="twin-initializing" role="status">
+      <span class="loading-ring"></span>
+      Preparing workspace
+    </div>
     <header class="masthead">
       <a class="brand" href="#environment" aria-label="Replenish floor control">
         <svg viewBox="0 0 32 32" aria-hidden="true">
@@ -155,7 +163,7 @@
       </a>
       <div class="header-project">
         <span class="project-divider"></span>
-        <span>Warehouse 01</span>
+        <span>AMR-01</span>
         <span class="project-badge" id="source-badge">Simulation</span>
       </div>
 
@@ -300,11 +308,20 @@
           <svg class="icon" aria-hidden="true"><use href="#i-log" /></svg>
           <span>Activity</span>
         </button>
+        <button
+          id="python-database-inspection"
+          class="python-database-nav"
+          type="button"
+          role="tab"
+          aria-controls="database"
+          aria-selected="false"
+          tabindex="-1"
+          data-page="database"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-database" /></svg>
+          <span>Database</span>
+        </button>
       </nav>
-      <button id="python-database-inspection" class="python-database-nav" type="button">
-        <svg class="icon" aria-hidden="true"><use href="#i-log" /></svg>
-        <span>Database</span>
-      </button>
       <div class="rail-footer">
         <div class="rail-facility">
           <svg class="icon" aria-hidden="true"><use href="#i-floor" /></svg>
@@ -323,6 +340,11 @@
     <main class="app-main" id="main-content">
       <div class="page-heading">
         <div class="page-title-block">
+          <div class="twin-eyebrow">
+            AMR-01
+            <span>/</span>
+            DIGITAL TWIN
+          </div>
           <div class="breadcrumb">
             <span class="facility-mark">W/01</span>
             <span>Operations</span>
@@ -1211,6 +1233,105 @@
           </section>
         </section>
         <section
+          id="database"
+          data-screen
+          role="tabpanel"
+          aria-labelledby="python-database-inspection"
+          tabindex="0"
+          hidden
+        >
+          <div class="twin-database-status" role="status">
+            <span class="twin-database-icon">
+              <svg class="icon" aria-hidden="true"><use href="#i-database" /></svg>
+            </span>
+            <div>
+              <strong>Physical sensor archive</strong>
+              <p id="python-db-connection-detail">
+                Checking read-only access to the sensor database.
+              </p>
+            </div>
+            <span class="twin-connection-chip" id="python-db-status" data-state="loading">
+              Checking connection
+            </span>
+          </div>
+          <section class="panel twin-records-browser" aria-label="Sensor record browser">
+            <div class="twin-records-toolbar">
+              <div class="twin-dataset-field">
+                <label for="python-db-dataset">Dataset</label>
+                <select id="python-db-dataset">
+                  <option value="amr_sensor_samples">All sensor measurements</option>
+                  <option value="amr_encoder_readings">Wheel encoders</option>
+                  <option value="amr_imu_readings">Gyroscope</option>
+                  <option value="amr_ina219_readings">Battery voltage and current</option>
+                  <option value="amr_twin_states">Model estimates</option>
+                  <option value="amr_pipeline_events">Packet quality events</option>
+                  <option value="amr_calibrations">Calibration records</option>
+                </select>
+              </div>
+              <button id="python-db-refresh" type="button">
+                <svg class="icon" aria-hidden="true"><use href="#i-reset" /></svg>
+                Refresh
+              </button>
+              <button id="python-db-export" type="button" disabled>
+                <svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>
+                Export JSON
+              </button>
+            </div>
+            <div class="twin-records-heading">
+              <div>
+                <h2 id="python-db-title">All sensor measurements</h2>
+                <p id="python-db-description">Received encoder, gyro and battery measurements</p>
+              </div>
+              <span id="python-db-kind">Table</span>
+            </div>
+            <div class="twin-record-tabs" role="tablist" aria-label="Database inspection">
+              <button
+                id="python-db-records-tab"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="python-db-records"
+              >
+                Records
+              </button>
+              <button
+                id="python-db-attributes-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="python-db-attributes"
+                tabindex="-1"
+              >
+                Table attributes
+              </button>
+            </div>
+            <div id="python-db-records" role="tabpanel" aria-labelledby="python-db-records-tab">
+              <div class="twin-empty-state" id="python-db-empty" role="status">
+                <svg class="icon" aria-hidden="true"><use href="#i-database" /></svg>
+                <h3 id="python-db-empty-title">Loading records</h3>
+                <p id="python-db-empty-detail">Checking the physical sensor archive.</p>
+              </div>
+              <div class="twin-table-scroll" id="python-db-records-table" hidden></div>
+            </div>
+            <div
+              id="python-db-attributes"
+              role="tabpanel"
+              aria-labelledby="python-db-attributes-tab"
+              hidden
+            >
+              <div class="twin-table-scroll" id="python-db-attributes-table"></div>
+            </div>
+            <footer class="twin-records-footer">
+              <span id="python-db-row-count">Latest 50 records</span>
+              <span>AMR-01 · read-only</span>
+            </footer>
+          </section>
+          <p class="twin-database-footnote">
+            Physical records only. Demo values are generated separately. Historical records do not
+            indicate current robot health.
+          </p>
+        </section>
+        <section
           id="hardware"
           data-screen
           role="tabpanel"
@@ -1226,6 +1347,10 @@
                 Stored sensor data
               </button>
               <strong id="python-source-label">Waiting for sensor status</strong>
+              <span class="twin-observation">
+                <i></i>
+                <span id="python-observation-label">Fixed demo trial</span>
+              </span>
             </div>
             <div
               class="python-data-notice"
@@ -1236,33 +1361,17 @@
               <strong id="python-data-title">Waiting for readings</strong>
               <p id="python-data-detail">Choose a source to inspect its readings and estimates.</p>
             </div>
-            <details class="python-connection-details" id="python-connection-details" hidden>
-              <summary>Source details</summary>
-              <p id="python-source-status"></p>
-            </details>
-            <details class="python-reading-guide">
-              <summary>Reading guide and sample details</summary>
-              <div class="python-model-status" aria-label="AMR-01 sensor status">
-                <strong id="python-amr01-title">AMR-01</strong>
-                <span id="python-amr01-quality">Waiting for readings</span>
-                <span>
-                  Sample age:
-                  <b id="python-amr01-age">—</b>
-                </span>
-                <span>
-                  Reported robot state:
-                  <b id="python-amr01-state">—</b>
-                </span>
-              </div>
-              <p class="python-reading-key">
-                L = left wheel; R = right wheel. x and y are local metres; heading is in radians.
-                “Unavailable” means no valid reading. Sample age is time since receipt, not network
-                latency. The dashboard refreshes about once per second.
-              </p>
-            </details>
             <div class="python-sensor-cards">
-              <article class="panel python-sensor-card">
-                <h3>Wheel travel and speed</h3>
+              <article class="panel python-sensor-card" data-model="wheel">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-motion" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">ENCODERS</span>
+                    <h3>Wheel motion</h3>
+                  </div>
+                </header>
                 <dl>
                   <dt>Wheel travel this interval</dt>
                   <dd id="python-amr01-travel">—</dd>
@@ -1295,8 +1404,16 @@
                   </p>
                 </details>
               </article>
-              <article class="panel python-sensor-card">
-                <h3>Robot position and heading</h3>
+              <article class="panel python-sensor-card" data-model="pose">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-focus" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">WHEEL ODOMETRY</span>
+                    <h3>Position &amp; heading</h3>
+                  </div>
+                </header>
                 <dl>
                   <dt>Estimated local position</dt>
                   <dd id="python-amr01-pose">—</dd>
@@ -1334,8 +1451,16 @@
                   </p>
                 </details>
               </article>
-              <article class="panel python-sensor-card">
-                <h3>Gyro bias correction</h3>
+              <article class="panel python-sensor-card" data-model="gyro">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-orbit" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">MPU6050</span>
+                    <h3>Gyro bias correction</h3>
+                  </div>
+                </header>
                 <dl>
                   <dt>Raw yaw rate (rad/s)</dt>
                   <dd id="python-amr01-gyro">—</dd>
@@ -1372,17 +1497,25 @@
                   </p>
                 </details>
               </article>
-              <article class="panel python-sensor-card">
-                <h3>Battery energy and charge</h3>
+              <article class="panel python-sensor-card" data-model="battery">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-box" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">INA219</span>
+                    <h3>Battery state</h3>
+                  </div>
+                </header>
                 <dl>
+                  <dt>Estimated charge (SOC)</dt>
+                  <dd id="python-amr01-soc">—</dd>
                   <dt>Measured battery input</dt>
                   <dd id="python-amr01-battery-input">—</dd>
                   <dt>Electrical power (W)</dt>
                   <dd id="python-amr01-power">—</dd>
                   <dt>Net energy used (Wh)</dt>
                   <dd id="python-amr01-energy">—</dd>
-                  <dt>Estimated charge (SOC)</dt>
-                  <dd id="python-amr01-soc">—</dd>
                 </dl>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
@@ -1416,16 +1549,21 @@
                   </p>
                 </details>
               </article>
-              <article class="panel python-sensor-card">
-                <h3>Do the motion sensors agree?</h3>
+              <article class="panel python-sensor-card" data-model="residual">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">SENSOR CONSISTENCY</span>
+                    <h3>Motion agreement</h3>
+                  </div>
+                </header>
                 <dl>
                   <dt>Gyro–encoder residual (rad/s)</dt>
                   <dd id="python-amr01-residual">—</dd>
                 </dl>
                 <p id="python-amr01-advisory" role="status">Waiting for Python results.</p>
-                <p id="python-amr01-threshold" class="python-card-meaning">
-                  Waiting for the configured alert threshold.
-                </p>
                 <svg
                   viewBox="0 0 500 120"
                   role="img"
@@ -1455,9 +1593,16 @@
                   <text id="python-amr01-plot-min" x="2" y="111"></text>
                   <path id="python-amr01-plot" d="" />
                 </svg>
-                <small id="python-amr01-plot-range">Residual history</small>
+                <small class="twin-plot-caption" id="python-amr01-plot-caption">
+                  Time since boot (s)
+                </small>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
+                  <p id="python-amr01-threshold" class="python-card-meaning">
+                    Waiting for the configured alert threshold.
+                  </p>
+                  <small id="python-amr01-plot-range">Residual history</small>
+
                   <p class="python-card-meaning">
                     A larger difference means the gyro and wheels report different turning rates. An
                     advisory asks for inspection; it does not identify a specific fault.
@@ -1488,8 +1633,16 @@
                   </p>
                 </details>
               </article>
-              <article class="panel python-sensor-card">
-                <h3>Motion and runtime forecasts</h3>
+              <article class="panel python-sensor-card" data-model="forecast">
+                <header class="twin-card-heading">
+                  <span class="twin-model-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-clock" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">CONSTANT-INPUT MODEL</span>
+                    <h3>Short-term forecast</h3>
+                  </div>
+                </header>
                 <dl>
                   <dt>Estimated position in 5 seconds</dt>
                   <dd id="python-amr01-forecast">—</dd>
@@ -1521,6 +1674,30 @@
                 </details>
               </article>
             </div>
+            <details class="python-connection-details" id="python-connection-details" hidden>
+              <summary>Source details</summary>
+              <p id="python-source-status"></p>
+            </details>
+            <details class="python-reading-guide">
+              <summary>Reading guide and sample details</summary>
+              <div class="python-model-status" aria-label="AMR-01 sensor status">
+                <strong id="python-amr01-title">AMR-01</strong>
+                <span id="python-amr01-quality">Waiting for readings</span>
+                <span>
+                  Sample age:
+                  <b id="python-amr01-age">—</b>
+                </span>
+                <span>
+                  Reported robot state:
+                  <b id="python-amr01-state">—</b>
+                </span>
+              </div>
+              <p class="python-reading-key">
+                L = left wheel; R = right wheel. x and y are local metres; heading is in radians.
+                “Unavailable” means no valid reading. Sample age is time since receipt, not network
+                latency. The dashboard refreshes about once per second.
+              </p>
+            </details>
             <div class="python-more-readings">
               <button id="python-model-inspection" type="button">
                 Detailed readings and export

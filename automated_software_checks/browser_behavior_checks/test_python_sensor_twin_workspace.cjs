@@ -171,12 +171,107 @@ assert.equal(typeof action.value.nonce, 'string');
 doc.getElementById('python-model-inspection').click();
 assert.equal(sent.at(-1).value.action, 'model_inspection');
 doc.getElementById('python-database-inspection').click();
-assert.equal(sent.at(-1).value.action, 'database_inspection');
+assert.equal(sent.at(-1).value.action, 'database_browse');
+assert.equal(sent.at(-1).value.active, true);
+assert.equal(sent.at(-1).value.dataset, 'amr_sensor_samples');
 const before = sent.length;
 doc.dispatchEvent(
   new w.CustomEvent('python-twin:action', { detail: { action: 'motor_command', mode: 'live' } }),
 );
 assert.equal(sent.length, before, 'no arbitrary action bridge');
+// Shared archive: real records, safe cell rendering, selection races and stable refresh.
+payload.database = {
+  state: 'ready',
+  label: 'Connected',
+  detail: 'Read only',
+  dataset: 'amr_sensor_samples',
+  title: 'All sensor measurements',
+  description: 'Physical records',
+  kind: 'Table',
+  limit: 50,
+  columns: ['robot_id', 'robot_state'],
+  rows: [{ robot_id: 'amr01', robot_state: '<img src=x onerror=alert(1)>' }],
+  attributes: [
+    { Attribute: 'robot_id', 'PostgreSQL type': 'VARCHAR(16)', Required: true, Key: 'Primary key' },
+  ],
+  rows_state: 'ready',
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-db-status').textContent, 'Connected');
+assert.equal(doc.getElementById('python-db-export').disabled, false);
+assert.equal(
+  doc.querySelector('#python-db-records-table img'),
+  null,
+  'stored strings never become markup',
+);
+assert.match(doc.querySelector('#python-db-records-table').textContent, /<img src=x/);
+const stableTable = doc.querySelector('#python-db-records-table table');
+deliver(parent, w.location.origin);
+assert.equal(
+  doc.querySelector('#python-db-records-table table'),
+  stableTable,
+  'unchanged rows preserve table DOM',
+);
+doc.getElementById('python-db-attributes-tab').click();
+assert.equal(doc.getElementById('python-db-records').hidden, true);
+doc
+  .getElementById('python-db-attributes-tab')
+  .dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+assert.equal(doc.getElementById('python-db-records').hidden, false);
+assert.equal(doc.activeElement.id, 'python-db-records-tab');
+const archiveChoice = doc.getElementById('python-db-dataset');
+archiveChoice.value = 'amr_encoder_readings';
+archiveChoice.dispatchEvent(new w.Event('change'));
+assert.equal(sent.at(-1).value.dataset, 'amr_encoder_readings');
+assert.equal(doc.getElementById('python-db-export').disabled, true);
+deliver(parent, w.location.origin);
+assert.equal(
+  doc.getElementById('python-db-title').textContent,
+  'Wheel encoders',
+  'late old rows cannot relabel a new selection',
+);
+payload.database = {
+  ...payload.database,
+  dataset: 'amr_encoder_readings',
+  title: 'Wheel encoders',
+  kind: 'View',
+  rows: [],
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-db-empty-title').textContent, 'Awaiting sensor records');
+assert.equal(doc.getElementById('python-db-export').disabled, true);
+payload.database = { ...payload.database, rows_state: 'error' };
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-db-empty-title').textContent, 'Records could not be read');
+assert.equal(doc.getElementById('python-db-row-count').textContent, 'Records unavailable');
+payload.database = {
+  ...payload.database,
+  state: 'unreachable',
+  label: 'Database connection failed',
+  rows_state: 'unavailable',
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-db-empty-title').textContent, 'Archive unavailable');
+assert(
+  doc.querySelector('#python-db-attributes-table table'),
+  'field definitions remain available without storage',
+);
+let actionCount = sent.length;
+for (const bad of [
+  { dataset: 'pg_authid', active: true },
+  { dataset: 'amr_sensor_samples', active: 'true' },
+])
+  doc.dispatchEvent(
+    new w.CustomEvent('python-twin:action', { detail: { action: 'database_browse', ...bad } }),
+  );
+assert.equal(
+  sent.length,
+  actionCount,
+  'the archive bridge only accepts known datasets and a boolean visibility flag',
+);
+doc.dispatchEvent(new w.CustomEvent('python-twin:database-close'));
+assert.equal(sent.at(-1).value.active, false, 'leaving the archive stops database polling');
+delete payload.database;
 const current = payload.robots.amr01;
 payload.mode = 'live';
 payload.robots.amr01 = {

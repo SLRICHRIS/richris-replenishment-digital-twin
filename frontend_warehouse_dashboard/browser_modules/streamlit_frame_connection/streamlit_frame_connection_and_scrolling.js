@@ -91,12 +91,35 @@
   let actionSequence = 0;
   document.addEventListener('python-twin:action', (event) => {
     const action = event.detail;
-    if (!action || !['sensor_source', 'model_inspection', 'database_inspection'].includes(action.action)) return;
+    if (
+      !action ||
+      !['sensor_source', 'model_inspection', 'database_inspection', 'database_browse'].includes(
+        action.action,
+      )
+    )
+      return;
     if (action.action === 'sensor_source' && !['demo', 'live'].includes(action.mode)) return;
+    if (
+      action.action === 'database_browse' &&
+      (![
+        'amr_sensor_samples',
+        'amr_encoder_readings',
+        'amr_imu_readings',
+        'amr_ina219_readings',
+        'amr_twin_states',
+        'amr_pipeline_events',
+        'amr_calibrations',
+      ].includes(action.dataset) ||
+        typeof action.active !== 'boolean')
+    )
+      return;
     send('streamlit:setComponentValue', {
       value: {
         action: action.action,
         ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
+        ...(action.action === 'database_browse'
+          ? { dataset: action.dataset, active: action.active }
+          : {}),
         nonce: `${Date.now()}-${++actionSequence}`,
       },
       dataType: 'json',

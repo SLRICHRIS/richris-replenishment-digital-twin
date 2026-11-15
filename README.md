@@ -31,7 +31,7 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python ingestion worker and AMR
 
 The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Each model has one collapsed **How it works & source** section containing explanations, equations and paper links. **Detailed readings and export** opens sensor values, charts and exports. The larger stock/task and FIFO/urgency experiments remain in source.
 
-The hosted navigation contains **Floor, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shows saved physical records and their attributes without deployment settings.
+The hosted navigation contains **Floor, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shares the dashboard shell and shows saved physical records and their attributes without deployment settings. It supports seven allowlisted datasets, bounded 50-row reads, explicit empty/error states and JSON export. The six sensor models use a responsive three/two/one-column layout, with Dark/Bright appearance and local fonts.
 
 ## Dashboard and deployment
 

@@ -136,6 +136,7 @@ doc = {
   body: create(),
   documentElement: create(),
   addEventListener: (k, f) => (documentEvents[k] = f),
+  dispatchEvent: (event) => documentEvents[event.type]?.(event),
   createElement: () => create(),
   querySelector(s) {
     return s.startsWith('.') ? all.find((n) => n.classList.contains(s.slice(1))) : null;
@@ -194,6 +195,12 @@ const win = {
 };
 const ctx = {
   document: doc,
+  CustomEvent: class {
+    constructor(type, args = {}) {
+      this.type = type;
+      this.detail = args.detail;
+    }
+  },
   window: win,
   location,
   TwinScene: Scene,
@@ -439,6 +446,12 @@ for (const retired of ['routes', 'engineering', 'telemetry', 'missions', 'activi
   assert.equal(get('tab-' + retired).hasAttribute('data-slide-outside'), true);
 }
 get('tab-hardware').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
+assert.equal(
+  doc.body.dataset.view,
+  'database',
+  'keyboard navigation includes the shared database view',
+);
+get('python-database-inspection').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(doc.body.dataset.view, 'environment', 'keyboard navigation skips retired views');
 assert.equal(
   run('sceneState().sensorWorkspace'),

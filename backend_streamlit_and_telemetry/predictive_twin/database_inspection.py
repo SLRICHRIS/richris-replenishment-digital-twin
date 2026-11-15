@@ -54,6 +54,30 @@ def attributes(dataset):
     return result
 
 
+@st.cache_data(ttl=5, max_entries=32, show_spinner=False)
+def database_preview(dataset='amr_sensor_samples', refresh_token=''):
+    """Sanitized, bounded SELECT results for the shared dashboard shell."""
+    if dataset not in DATASET_LABELS:
+        raise ValueError('Choose a known sensor dataset')
+    db, state = database_connection()
+    label, detail = STATUS[state]
+    result = dict(state=state, label=label, detail=detail, dataset=dataset,
+                  title=DATASET_LABELS[dataset], description=DESCRIPTIONS[dataset],
+                  attributes=attributes(dataset), columns=list(DATABASE_DATASETS[dataset].c.keys()),
+                  kind='View' if dataset in SENSOR_VIEWS else 'Table',
+                  limit=50, rows=[], rows_state='unavailable')
+    if db is not None:
+        try:
+            rows = db.read_records(dataset, limit=50)
+            # SQL timestamps stay explicit ISO strings; no driver or engine objects cross the bridge.
+            result['rows'] = json.loads(json.dumps(rows, default=lambda value:
+                value.isoformat() if hasattr(value, 'isoformat') else str(value)))
+            result['rows_state'] = 'ready'
+        except Exception:
+            result['rows_state'] = 'error'
+    return result
+
+
 def render_database_inspection():
     if st.button('Back to dashboard'):
         st.session_state.pending_workspace_view = 'Warehouse dashboard'
