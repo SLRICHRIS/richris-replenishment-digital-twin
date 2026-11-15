@@ -146,13 +146,27 @@ the plan's default suspension behavior. Database: `amr_twin`.
 Production branch: `br-small-water-azc8jgij`; isolated development branch:
 `br-floral-hat-azct1esl` (`dev-database-integration`).
 
-**Schema initialization remains pending:** automatic approval review required
-explicit approval for the additive CREATE/INSERT transaction. Read-only checks
-confirmed both new databases contain zero public tables/views. No physical
-sensor data or synthetic trial records have been inserted. Restricted reader
-and writer roles, the Streamlit private connection secret, and the always-on
-MQTT worker remain to be configured. Project creation alone does not complete
-the sensor pipeline.
+**Schema v3 is initialized in both branches:** six tables, three sensor views,
+the primary/foreign/check constraints and the schema-version record were
+created after approval. The production `amr_reader` account successfully read
+the version marker and all expected datasets. Production sensor and derived
+tables contain zero records; no synthetic trial records were inserted.
+
+Production accounts are restricted as follows:
+
+| Account | Verified access |
+| --- | --- |
+| `amr_reader` | SELECT on the six tables and three views; no INSERT, UPDATE, DELETE or schema CREATE |
+| `amr_worker` | SELECT; INSERT on calibration/sample/state/event/checkpoint tables; UPDATE only `boot_id` and `seq` in the checkpoint; USAGE/SELECT on the event sequence; no DELETE or schema CREATE |
+
+Neither runtime account is a superuser, database/role creator, RLS bypass role
+or member of `neon_superuser`. Credentials remain private and are never
+included in this repository.
+
+**Deployment connection remains pending:** saving the private reader URL
+requires authenticated access to the app's Streamlit deployment settings.
+The always-on MQTT worker and measured hardware calibration also remain to
+be configured. An initialized database does not establish a live robot feed.
 
 The app's **Sensor models → Database** button opens a SELECT-only browser.
 It checks storage independently from measured calibration and distinguishes
