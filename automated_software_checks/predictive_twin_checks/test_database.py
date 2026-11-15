@@ -70,6 +70,30 @@ def test_demo_does_not_write_to_physical_tables(tmp_path):
     db.engine.dispose()
 
 
+def test_database_browser_is_bounded_allowlisted_and_select_only(tmp_path):
+    from backend_streamlit_and_telemetry.predictive_twin.database import DATABASE_DATASETS
+    from backend_streamlit_and_telemetry.predictive_twin.database_inspection import attributes
+    db = SensorDatabase('sqlite+pysqlite:///' + str(tmp_path / 'browse.sqlite3'), initialize=True)
+    fleet = FleetTwin(example_calibrations(), database=db)
+    for seq in range(3):
+        assert fleet.ingest(asdict(packet(seq, seq * .05, seq * 10)), 'robot/amr01/state', received=seq * .05)
+    # Reject every write at the database level while browsing all nine objects.
+    with db.engine.connect() as conn:
+        conn.execute(text('PRAGMA query_only=ON'))
+    db.assert_schema_ready()
+    for dataset in DATABASE_DATASETS:
+        assert isinstance(db.read_records(dataset, limit=2), list)
+        assert attributes(dataset)
+    rows = db.read_records('amr_encoder_readings', limit=2)
+    assert [row['seq'] for row in rows] == [2, 1]
+    assert rows[0]['encoder_left_count'] == 20
+    for name, limit in [('amr_sensor_samples; DROP TABLE amr_sensor_samples', 50),
+                        ('amr_sensor_samples', 201), ('amr_sensor_samples', True)]:
+        with pytest.raises(ValueError):
+            db.read_records(name, limit)
+    db.engine.dispose()
+
+
 
 def test_real_sensor_views_use_single_canonical_packet_storage(tmp_path):
     """One physical observation -> three typed sensor-specific SQL views."""

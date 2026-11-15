@@ -137,6 +137,8 @@ assert.equal(action.value.action, 'sensor_source');
 assert.equal(typeof action.value.nonce, 'string');
 doc.getElementById('python-model-inspection').click();
 assert.equal(sent.at(-1).value.action, 'model_inspection');
+doc.getElementById('python-database-inspection').click();
+assert.equal(sent.at(-1).value.action, 'database_inspection');
 const before = sent.length;
 doc.dispatchEvent(
   new w.CustomEvent('python-twin:action', { detail: { action: 'motor_command', mode: 'live' } }),

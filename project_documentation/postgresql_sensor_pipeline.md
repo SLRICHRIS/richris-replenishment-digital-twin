@@ -138,11 +138,38 @@ CI passing.
 
 ## Installation and deployment
 
+### Deployment state, 15 November 2026
+
+The Neon free-plan project `richris-amr-digital-twin` (`round-hat-75413619`)
+now exists in Singapore, using PostgreSQL 16 and fixed 0.25 CU compute with
+the plan's default suspension behavior. Database: `amr_twin`.
+Production branch: `br-small-water-azc8jgij`; isolated development branch:
+`br-floral-hat-azct1esl` (`dev-database-integration`).
+
+**Schema initialization remains pending:** automatic approval review required
+explicit approval for the additive CREATE/INSERT transaction. Read-only checks
+confirmed both new databases contain zero public tables/views. No physical
+sensor data or synthetic trial records have been inserted. Restricted reader
+and writer roles, the Streamlit private connection secret, and the always-on
+MQTT worker remain to be configured. Project creation alone does not complete
+the sensor pipeline.
+
+The app's **Sensor models → Database** button opens a SELECT-only browser.
+It checks storage independently from measured calibration and distinguishes
+missing app configuration, an unreachable server, an unreadable/unprovisioned
+schema, and a verified schema with an empty selected dataset. It shows up to
+200 stored rows per request, with attributes and bounded CSV export. Expected
+schema definitions remain visible when storage is disconnected; they are
+explicitly labeled as definitions, not proof of hosted tables.
+
+### Provisioning steps
+
 Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all credentials **out of GitHub**. Use a dedicated worker role for writing and a separate Streamlit role restricted to SELECT. Database schema creation uses a separate provisioning/admin role. The live worker never creates tables or views.
 
 1. Provision PostgreSQL with TLS, backups and limited network access. Create separate identities: a temporary DDL-capable administrator for schema provisioning, a worker with limited INSERT/SELECT permissions on evidence tables, INSERT/SELECT/UPDATE on `amr_worker_checkpoints`, and SELECT/USAGE on the pipeline-event ID sequence, and a read-only dashboard account. The dashboard needs SELECT on the checkpoint as well as existing sample/state/event/calibration tables and views. The ingestion worker also requires permission to hold the PostgreSQL advisory lock.
    Set the private environment variable `AMR_DATABASE_ADMIN_URL` to a **provisioning account** connection string and run `python -m project_maintenance_scripts.provision_amr_sensor_database` once. Keep this administrator credential outside both the ingestion worker and Streamlit. Apply reviewed migrations separately before worker restarts.
 2. Deploy the **independent always-on worker** (holds a PostgreSQL advisory lease to reject a concurrent AMR-01 writer) from this repository with `python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker`. Do not embed an ingestion daemon inside a Streamlit rerun or browser tab.
+   Use a **direct, non-pooled PostgreSQL URL** for this worker and for schema provisioning: its single-writer lease depends on a session-level advisory lock. A transaction pooler does not preserve that lock's session. The SELECT-only Streamlit reader may use the pooled endpoint. See [Neon connection pooling](https://neon.com/docs/connect/connection-pooling).
 3. Give the worker these private environment variables:
    - `AMR_DATABASE_URL`: `postgresql+psycopg://<writer>:<password>@<host>:5432/<database>?sslmode=require`
    - `AMR_MQTT_HOST`, `AMR_MQTT_USERNAME`, `AMR_MQTT_PASSWORD`: TLS MQTT read credentials, scoped to one topic

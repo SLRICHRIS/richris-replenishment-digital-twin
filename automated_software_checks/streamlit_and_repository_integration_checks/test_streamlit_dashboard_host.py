@@ -56,3 +56,32 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.title[0].value, 'Warehouse Robot Digital Twin')
         self.assertEqual(app.sidebar.radio[0].value, 'Model inspection')
+
+    def test_database_is_visible_without_calibration_or_connection(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        action = dict(action='database_inspection', nonce='test-database-1')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertEqual(app.title[0].value, 'Sensor database')
+        self.assertEqual(app.sidebar.radio[0].value, 'Database')
+        self.assertTrue(any('Database not connected' in item.value for item in app.warning))
+        self.assertEqual(len(app.tabs), 4)
+        self.assertIn('amr_sensor_samples', app.selectbox[0].options[0])
+
+    def test_database_empty_and_read_failure_are_distinct(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        db = SimpleNamespace(read_records=lambda *args, **kwargs: [])
+        module = 'backend_streamlit_and_telemetry.predictive_twin.database_inspection'
+        with patch(module + '.database_connection', return_value=(db, 'ready')):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            app.sidebar.radio[0].set_value('Database').run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(any('no stored records' in item.value for item in app.info))
+            self.assertFalse(app.download_button)
+        with patch(module + '.database_connection', return_value=(None, 'schema_not_ready')):
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(any('schema needs attention' in item.value for item in app.warning))

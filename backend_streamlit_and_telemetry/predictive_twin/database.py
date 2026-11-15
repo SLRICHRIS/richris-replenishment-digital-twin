@@ -10,7 +10,7 @@ import json
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKeyConstraint,
-    Index, Integer, JSON, String, create_engine, inspect, select, text, update,
+    Index, Integer, JSON, String, column, create_engine, inspect, select, table, text, update,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.exc import SQLAlchemyError
@@ -143,6 +143,24 @@ class DatabaseVersion(Base):
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+# Explicit allowlist: the public browser never accepts SQL or arbitrary names.
+DATABASE_DATASETS = {
+    model.__tablename__: model.__table__ for model in (
+        SensorSample, TwinState, PipelineEvent, CalibrationRecord,
+        WorkerCheckpoint, DatabaseVersion,
+    )
+}
+for _name, _query in SENSOR_VIEWS.items():
+    _fields = _query.split("SELECT ", 1)[1].split(" FROM ", 1)[0].split(", ")
+    DATABASE_DATASETS[_name] = table(_name, *(
+        column(field, SensorSample.__table__.c[field].type) for field in _fields
+    ))
+
+
+class DatabaseSchemaError(RuntimeError):
+    """A reachable database lacks the required, readable AMR schema."""
+
+
 def calibration_fingerprint(calibration):
     data = json.dumps(asdict(calibration), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
@@ -170,7 +188,8 @@ class SensorDatabase:
             url = "postgresql+psycopg://" + url[len("postgresql://"):]
         if not url.startswith(("postgresql+psycopg://", "sqlite+pysqlite://", "sqlite://")):
             raise ValueError("Only PostgreSQL and local test SQLite URLs are supported")
-        self.engine = create_engine(url, pool_pre_ping=True)
+        connect_args = {"connect_timeout": 5} if url.startswith("postgresql+") else {}
+        self.engine = create_engine(url, pool_pre_ping=True, connect_args=connect_args)
         if initialize:
             Base.metadata.create_all(self.engine)
             # Additive migration: never delete or rewrite older physical samples.
@@ -206,16 +225,38 @@ class SensorDatabase:
             with Session(self.engine) as session:
                 version = session.get(DatabaseVersion, 1)
                 if version is None or version.schema_version != 3:
-                    raise RuntimeError(
+                    raise DatabaseSchemaError(
                         "Sensor database schema v3 not provisioned; run admin provisioning first"
                     )
-                session.execute(select(WorkerCheckpoint.robot_id).limit(1))
+                for source in DATABASE_DATASETS.values():
+                    session.execute(select(source).limit(0))
             available_views = set(inspect(self.engine).get_view_names())
         except SQLAlchemyError as error:
             # Database URLs and SQL driver diagnostics are never returned to UI.
-            raise RuntimeError("Physical sensor schema is not provisioned or readable") from error
+            raise DatabaseSchemaError("Physical sensor schema is not provisioned or readable") from error
         if set(SENSOR_VIEWS).difference(available_views):
-            raise RuntimeError("Missing required physical-sensor database views")
+            raise DatabaseSchemaError("Missing required physical-sensor database views")
+
+    def read_records(self, dataset, limit=50):
+        """Bounded SELECT-only inspection of known tables and sensor views.
+
+        These are historical stored records, independent of model calibration
+        confirmation and freshness. Database grants enforce read-only access.
+        """
+        if dataset not in DATABASE_DATASETS or type(limit) is not int or not 1 <= limit <= 200:
+            raise ValueError("Choose a known dataset and a row limit from 1 to 200")
+        source = DATABASE_DATASETS[dataset]
+        query = select(source)
+        if "robot_id" in source.c:
+            query = query.where(source.c.robot_id == "amr01")
+        if "received_at" in source.c:
+            query = query.order_by(source.c.received_at.desc(), source.c.seq.desc(), source.c.boot_id.desc())
+        elif "created_at" in source.c:
+            query = query.order_by(source.c.created_at.desc(), source.c.fingerprint)
+        elif "id" in source.c:
+            query = query.order_by(source.c.id.desc())
+        with self.engine.connect() as connection:
+            return [dict(row) for row in connection.execute(query.limit(limit)).mappings()]
 
     def acquire_worker_lease(self):
         """Hold one PostgreSQL advisory lock for the sole AMR-01 writer.

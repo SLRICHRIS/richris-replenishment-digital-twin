@@ -91,7 +91,7 @@
   let actionSequence = 0;
   document.addEventListener('python-twin:action', (event) => {
     const action = event.detail;
-    if (!action || !['sensor_source', 'model_inspection'].includes(action.action)) return;
+    if (!action || !['sensor_source', 'model_inspection', 'database_inspection'].includes(action.action)) return;
     if (action.action === 'sensor_source' && !['demo', 'live'].includes(action.mode)) return;
     send('streamlit:setComponentValue', {
       value: {

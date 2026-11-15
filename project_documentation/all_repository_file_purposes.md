@@ -45,6 +45,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/operator_override_control_channel/labview_operator_override_http_adapter.py` | Implement labview operator override http adapter. |
 | `backend_streamlit_and_telemetry/operator_override_control_channel/operator_override_command_coordinator.py` | Implement operator override command coordinator. |
 | `backend_streamlit_and_telemetry/streamlit_dashboard_host.py` | Implement streamlit dashboard host. |
+| `backend_streamlit_and_telemetry/predictive_twin/database_inspection.py` | Inspect physical database connection, bounded stored records and expected table attributes without writes or measured-calibration gating. |
 | `esp32_telemetry_firmware/esp32_telemetry_firmware_file_guide.md` | Explain esp32 telemetry firmware file guide. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/.gitignore` | Configuration or reference data for .gitignore. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/example_esp32_wifi_and_mqtt_settings.h` | ESP32 source or native contract check for example esp32 wifi and mqtt settings. |
