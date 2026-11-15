@@ -50,7 +50,7 @@ def render_dashboard():
             [data-testid="stHeader"] { display: none; }
             [data-testid="stMainBlockContainer"] { padding: 2rem; max-width: 1280px; }
             [data-testid="stMainBlockContainer"] h1 { font-size: 1.75rem; font-weight: 600; }
-            [data-testid="stCaptionContainer"] { color: var(--text-color); }
+            [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: inherit; }
         </style>''')
     if view == 'Database':
         from .predictive_twin.database_inspection import render_database_inspection
