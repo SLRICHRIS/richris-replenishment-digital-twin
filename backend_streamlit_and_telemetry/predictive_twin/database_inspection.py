@@ -25,7 +25,7 @@ STATUS = {
     'not_configured': ('Database not connected', 'No database URL is configured for this app. The definitions below describe the expected schema; they do not establish that a hosted database exists.'),
     'unreachable': ('Database connection failed', 'The configured database could not be reached. Check its availability, TLS settings and the private reader credentials.'),
     'schema_not_ready': ('Connected; schema needs attention', 'PostgreSQL responded, but the required schema v3 or read permissions could not be verified. Complete administrator provisioning and reader grants.'),
-    'ready': ('Connected; schema v3 verified', 'Stored records are available through SELECT queries. Calibration confirmation is only required for live model interpretation.'),
+    'ready': ('Connected; schema v3 verified', 'Read-only access to saved AMR-01 records. Measured calibration is required for model estimates.'),
 }
 
 
@@ -56,13 +56,13 @@ def render_database_inspection():
         db, state = database_connection()
     label, detail = STATUS[state]
     (st.success if state == 'ready' else st.warning)(label + '. ' + detail)
-    st.caption('Demonstration data are never written into these physical-trial tables. This page performs no database writes.')
+    st.caption('These tables store physical sensor records and their model results. Demo data is generated separately.')
 
     dataset = st.selectbox('Table or sensor view', list(DATABASE_DATASETS),
                            format_func=lambda name: name + ' · ' + ('view' if name in SENSOR_VIEWS else 'table'))
     st.write(DESCRIPTIONS[dataset])
     records_tab, attributes_tab, schema_tab, setup_tab = st.tabs([
-        'Stored records', 'Attributes', 'Schema overview', 'Connection setup',
+        'Stored records', 'Table attributes', 'Schema overview', 'Connection details',
     ])
     with records_tab:
         limit = st.selectbox('Maximum rows', [50, 100, 200])
@@ -76,7 +76,7 @@ def render_database_inspection():
                 st.error('Records could not be read. Check connection and SELECT permissions for this dataset.')
             else:
                 if not rows:
-                    st.info('Connected, but this dataset has no stored records. The ingestion worker writes records when it receives validated physical packets.')
+                    st.info('This dataset has no stored records yet. The ingestion worker saves validated physical sensor packets.')
                 else:
                     # JSON objects stay exact in the export; render consistently in the grid.
                     display = [{key: json.dumps(value, sort_keys=True) if isinstance(value, (dict, list)) else value
@@ -98,7 +98,12 @@ def render_database_inspection():
                        'Purpose': DESCRIPTIONS[name]} for name in DATABASE_DATASETS],
                      hide_index=True, width='stretch')
     with setup_tab:
-        st.write('Create the hosted PostgreSQL database, provision schema v3 with the administrator account, then configure a separate SELECT-only reader in the app’s private Streamlit secrets.')
-        st.code('[database]\nurl = "postgresql+psycopg://<reader>:<password>@<host>/<database>?sslmode=require"', language='toml')
-        st.write('The independent MQTT worker uses a separate writer account. Connecting storage does not connect the robot or confirm measured calibration.')
+        if state == 'ready':
+            st.write('The app is connected to PostgreSQL using its private reader account. Schema v3 and read access have been verified.')
+        else:
+            st.write('Configure a private PostgreSQL reader connection, then verify schema v3 and read permissions. The connection status above identifies the current issue.')
+        st.write('The MQTT ingestion worker uses a separate writer account. Sensor data collection and measured calibration are checked independently from the database connection.')
+        with st.expander('Private connection configuration'):
+            st.caption('Use a reader account in Streamlit deployment secrets. The example below contains placeholders.')
+            st.code('[database]\nurl = "postgresql+psycopg://<reader>:<password>@<host>/<database>?sslmode=require"', language='toml')
         st.link_button('Database deployment instructions', 'https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/postgresql_sensor_pipeline.md')

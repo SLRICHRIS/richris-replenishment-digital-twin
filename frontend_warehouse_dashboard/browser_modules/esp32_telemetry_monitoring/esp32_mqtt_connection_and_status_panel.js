@@ -30,7 +30,10 @@ export function createHardwareWorkspace({
       live = slots.filter((s) => s.status === 'live').length;
     set('hardware-live-count', String(live));
     if (document.documentElement.dataset.pythonTwin !== 'true')
-      set('hardware-summary', `${live} / 1 hardware slot live`);
+      set(
+        'hardware-summary',
+        live ? 'AMR-01 telemetry: current' : 'AMR-01 telemetry: no current reading',
+      );
     set(
       'hardware-broker-state',
       {

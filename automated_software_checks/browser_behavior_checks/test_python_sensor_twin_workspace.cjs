@@ -36,8 +36,8 @@ const payload = {
   robots: {
     amr01: {
       quality: 'OK',
-      quality_label: 'Demonstration data',
-      quality_detail: 'Synthetic trial. No physical robot is connected.',
+      quality_label: 'Demo data',
+      quality_detail: 'Fixed teaching trial with generated sensor values.',
       quality_tone: 'info',
       stale: false,
       age_s: 0.1,
@@ -98,9 +98,9 @@ assert.equal(
   'x = 1.000 m\ny = 2.000 m\nHeading = 0.300 rad',
 );
 assert.equal(doc.getElementById('python-data-notice').dataset.tone, 'info');
-assert.match(doc.getElementById('python-data-detail').textContent, /No physical robot/);
+assert.match(doc.getElementById('python-data-detail').textContent, /generated sensor values/);
 assert.equal(doc.getElementById('python-amr01-age').textContent, 'Fixed demo trial');
-assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: demonstration');
+assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: demo');
 assert.equal(doc.getElementById('python-amr01-corrected-gyro').textContent, '0.19000');
 assert.equal(doc.querySelectorAll('.python-sensor-cards > article').length, 6);
 assert.equal(doc.querySelectorAll('.slide-equation').length, 6);
@@ -200,6 +200,18 @@ deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.equal(doc.getElementById('python-data-title').textContent, 'No sensor data');
 assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: No sensor data');
+payload.notice = {
+  label: 'Measured calibration required',
+  detail: 'The database is configured. Confirm measured calibration before interpreting estimates.',
+  tone: 'warning',
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-data-title').textContent, 'Measured calibration required');
+assert.match(doc.getElementById('python-data-detail').textContent, /database is configured/);
+assert.equal(doc.getElementById('python-data-notice').dataset.tone, 'warning');
+assert.equal(doc.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+assert.match(doc.querySelector('#activity .session-card').textContent, /AMR-01 · 1 virtual robot/);
+assert.doesNotMatch(doc.querySelector('#help-dialog').textContent, /Hardware displays/);
 
 // Production loads the bridge in <head> and the readout at the end of <body>.
 // Streamlit may send only one render for identical fragment arguments.

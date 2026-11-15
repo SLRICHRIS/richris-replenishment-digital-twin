@@ -21,9 +21,9 @@ The exact [v2 packet contract and commissioning procedure](single_amr_sensor_twi
 
 ## Data quality and synchronisation
 
-Use device time for integration and receiver monotonic time for freshness. Reject malformed/retained/reordered/retired-boot samples; do not fill long gaps with invented data. History is bounded server memory, not a durable raw experiment archive. Independently record raw samples and calibration versions for evaluation.
+Use device time for integration and the original MQTT UTC receive timestamp for dashboard freshness. Reject malformed/retained/reordered/retired-boot samples; do not fill long gaps with invented data. The worker keeps a bounded in-memory history and stores normalized samples and model states in PostgreSQL. Original raw JSON bytes are not archived by this path. Independently record raw samples and calibration versions for evaluation.
 
-Before linking live pose to the 3D scene, survey map scale/origin/axes, measure the initial pose and heading, and define a local-to-map transform. Validate that transform using independent checkpoints and rotation trials. The current interface intentionally shows sensor pose in Hardware while retaining separate Floor simulation state. Motor control is local and outside this observation sketch; physical navigation, obstacle avoidance and personnel tracking are not supplied.
+Before linking live pose to the 3D scene, survey map scale/origin/axes, measure the initial pose and heading, and define a local-to-map transform. Validate that transform using independent checkpoints and rotation trials. The current interface intentionally shows sensor pose in Sensor models while retaining separate Floor simulation state. Motor control is local and outside this observation sketch; physical navigation, obstacle avoidance and personnel tracking are not supplied.
 
 ## Evaluation plan
 

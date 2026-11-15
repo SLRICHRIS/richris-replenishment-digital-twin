@@ -5,19 +5,14 @@ from pathlib import Path
 import streamlit as st
 
 from .demo import demo_fleet
-from .models import Calibration, motion_forecast, runtime_hours, stock_step, task_step
-from .database import SensorDatabase, calibration_fingerprint
+from .models import motion_forecast, runtime_hours, stock_step, task_step
+from .database import calibration_fingerprint
 from .telemetry import ROBOT_IDS
-from .workspace_payload import quality_display
-
-
-@st.cache_resource(show_spinner=False)
-def database_reader(database_url):
-    return SensorDatabase(database_url, initialize=False)
+from .workspace_payload import SOURCE_LABELS, quality_display, stored_sensor_context
 
 
 def show_robot(rid, snapshot, calibration, demo=False):
-    st.subheader(rid.upper())
+    st.subheader(rid.upper().replace('AMR', 'AMR-', 1))
     age = snapshot["age_s"]
     display = quality_display(snapshot, demo=demo)
     st.caption(f"Data quality: {display['label']} · sample age: {'fixed demo trial' if demo else 'no sample' if age is None else f'{age:.1f} s'}")
@@ -90,7 +85,7 @@ def live_view(db, calibration):
 
 
 def inventory_view():
-    st.subheader("Stock and task events · legacy stock example")
+    st.subheader("Stock and task example")
     st.caption("Manual software example for one stock location and AMR-01. These inputs are not sensor measurements or physical commands.")
     if "slide15_state" not in st.session_state:
         st.session_state.slide15_state = dict(stock=100, task="idle")
@@ -122,41 +117,39 @@ def inventory_view():
             state["task"] = task_step(state["task"], event)
             st.rerun()
         st.caption("assign/start/arrive/complete advance the matching state. Other events leave it unchanged. fault enters the fault state; automatic recovery is not defined.")
-    if st.button("Reset legacy stock/task example"):
+    if st.button("Reset stock and task example"):
         st.session_state.slide15_state = dict(stock=100, task="idle")
         st.rerun()
-    st.caption("Separate legacy example, outside the final 17-slide sensor presentation. [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y) is workflow background only.")
+    st.caption("Workflow background: [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y). Stock and task inputs are manual simulation events.")
 
 
 def render_sensor_dashboard():
-    st.title("Warehouse Robot Digital Twin")
-    st.caption("S. L. Richris · one ESP32 sensor node · Python models in Streamlit · observer/advisory view")
-    sensors, inventory, mapping = st.tabs(("Sensor twin", "Inventory & tasks", "Equations & evidence"))
+    if st.button('Back to dashboard'):
+        st.session_state.pending_workspace_view = 'Warehouse dashboard'
+        st.rerun()
+    st.title("Detailed sensor readings")
+    st.caption("AMR-01 · sensor measurements, model estimates and references")
+    sensors, inventory, mapping = st.tabs(("Sensor readings", "Stock and task example", "Equations and references"))
     with sensors:
-        mode = st.radio("Data source", ("Synthetic demonstration", "Live MQTT sensors"), horizontal=True)
-        if mode == "Synthetic demonstration":
-            st.info("SYNTHETIC DATA · illustrative calibration, not hardware validation. AMR01 has an injected gyro disagreement at 3–4 s.")
+        mode = st.radio("Data source", tuple(SOURCE_LABELS), format_func=SOURCE_LABELS.get,
+                        index=1 if st.session_state.get('warehouse_sensor_mode') == 'live' else 0,
+                        horizontal=True)
+        st.session_state.warehouse_sensor_mode = mode
+        if mode == "demo":
+            st.info(quality_display({}, demo=True)['detail'])
             fleet = demo_fleet()
             snapshots = fleet.snapshots(now=6)
             for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
                 with col:
                     show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True)
-            with st.expander("Residual demonstration history"):
+            with st.expander("Demo residual history"):
                 st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
         else:
-            st.caption("The dedicated worker subscribes to robot/amr01/state and persists validated samples. Configure a read-only database connection and measured calibration privately.")
-            try:
-                if st.secrets["commissioning"]["measured_calibration_confirmed"] is not True:
-                    raise ValueError("Measured calibration must be confirmed")
-                calibration = st.secrets["calibration"].to_dict()
-                if set(calibration) != {"amr01"}:
-                    raise ValueError("Only one measured AMR-01 calibration is supported")
-                c = Calibration(**calibration["amr01"])
-                db = database_reader(st.secrets["database"]["url"])
-            except Exception:
-                st.warning("Live database is not configured or reachable. Check private read-only database URL, measured calibration and ingestion worker.")
+            st.caption("Read physical sensor records saved in PostgreSQL by the MQTT ingestion worker.")
+            db, c, notice = stored_sensor_context()
+            if notice:
+                st.warning(notice['label'] + '. ' + notice['detail'])
             else:
-                st.caption("The independent ingestion worker persists AMR-01 samples. Dashboard reads stored estimates, without publishing commands.")
                 live_view(db, c)
     with inventory:
         inventory_view()

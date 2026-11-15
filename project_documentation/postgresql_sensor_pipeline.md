@@ -218,7 +218,7 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
    ```
    These numeric values are **illustrations only**. Replace them with measured values, and set the commissioning flag only after physical validation.
 5. ESP32 uses the existing raw-sensor sketch and publishes to `robot/amr01/state`. It is an observation-only firmware, with the TB6612 standby held low; it does not autonomously navigate or issue LabVIEW motor commands.
-6. Use the dashboard's **Live EMQX sensor data** selection to display *persisted* sensor/twin results. The label indicates the acquisition source, not a browser broker connection. Unconfigured live mode shows no fabricated robot measurements.
+6. Use the dashboard's **Stored sensor data** selection to display *persisted* sensor/twin results. The label indicates the acquisition source, not a browser broker connection. Unconfigured live mode shows no fabricated robot measurements.
 
 ### Important constraints
 

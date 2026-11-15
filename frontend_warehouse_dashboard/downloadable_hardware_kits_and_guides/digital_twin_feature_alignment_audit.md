@@ -8,7 +8,7 @@ This audit supersedes the earlier three-AMR/UART control architecture. The curre
 | --- | --- | --- |
 | Multiple robot/bay references | One AMR-01, one middle left-apron bay, one raw topic/calibration/card; virtual jobs are sequential | No multi-AMR coordination claim |
 | Legacy hardware instructions | Current setup points to direct encoders, MPU6050 and INA219 on ESP32 | UART/Coordinator/LabVIEW sources and ZIPs retained only as legacy references |
-| Mixing measured and simulated states | Hardware shows Python sensor estimates; Floor and stock/tasks retain labelled simulation | Coordinate registration and live 3D synchronisation still required |
+| Mixing measured and simulated states | Sensor models shows Python sensor estimates; Floor and stock/tasks retain labelled simulation | Coordinate registration and live 3D synchronisation still required |
 | Sensor/model ambiguity | Counts → wheel motion → nonlinear pose; gyro rate/bias; V/I → power/Wh/SOC | No full EKF, absolute localisation or measured stock |
 | Predictive/anomaly overstatement | Constant-speed/load assumptions and sustained residual advisories identified as project extensions | Physical forecast/fault validation pending; no fault classification or RUL |
 | Unbacked sensing graphics | Manager circles and cones labelled illustrative simulation tools | No people/range sensor or physical collision-safety claim |

@@ -310,7 +310,7 @@
         </div>
         <span>Workspace authority</span>
         <b id="rail-mode">Human approval</b>
-        <span id="rail-detail">Supervised virtual fleet</span>
+        <span id="rail-detail">Supervised AMR-01 simulation</span>
         <span class="rail-signature">S L RICHRIS · Education only</span>
       </div>
     </aside>
@@ -330,7 +330,7 @@
             </span>
           </div>
           <p id="page-summary" class="page-summary">
-            Inspect your fleet, review the next delivery and follow every movement.
+            Inspect AMR-01, review the next delivery and follow its movement.
           </p>
         </div>
         <div class="session-action">
@@ -345,7 +345,7 @@
         <article>
           <div class="metric-label">
             <svg class="icon" aria-hidden="true"><use href="#i-robot" /></svg>
-            Operational units
+            Robot availability
             <span class="metric-code">01</span>
           </div>
           <div class="metric-value">
@@ -353,7 +353,7 @@
               3
               <small>/ 1</small>
             </strong>
-            <span class="metric-foot" id="fleet-caption">Fleet ready</span>
+            <span class="metric-foot" id="fleet-caption">AMR-01 ready</span>
           </div>
         </article>
         <article>
@@ -630,7 +630,7 @@
                     </span>
                     <div>
                       <span class="unit-class" id="unit-class">Autonomous mobile robot</span>
-                      <span class="unit-type">Replenishment fleet</span>
+                      <span class="unit-type">Virtual replenishment robot</span>
                     </div>
                   </div>
                   <span class="unit-monogram" id="unit-number" aria-hidden="true">01</span>
@@ -883,7 +883,7 @@
                 </span>
                 <span>
                   <i class="fleet"></i>
-                  Simulation fleet
+                  Simulated AMR-01
                 </span>
               </div>
               <div class="map-leg-controls">
@@ -1187,7 +1187,7 @@
             <div class="scenario-description">
               <span class="eyebrow">Scenario testing</span>
               <h2>Operating conditions</h2>
-              <p>Change operating conditions and observe the fleet and its advisory forecasts.</p>
+              <p>Change operating conditions and observe AMR-01 and its advisory forecasts.</p>
             </div>
             <div class="scenario">
               <label for="scenario">Operating scenario</label>
@@ -1217,9 +1217,9 @@
               <span class="python-control-label">Data source</span>
               <button id="python-source-demo" type="button" aria-pressed="true">Demo data</button>
               <button id="python-source-live" type="button" aria-pressed="false">
-                Physical sensor data
+                Stored sensor data
               </button>
-              <strong id="python-source-label">Waiting for Python</strong>
+              <strong id="python-source-label">Waiting for sensor status</strong>
               <button id="python-database-inspection" type="button">Database</button>
             </div>
             <div
@@ -1232,7 +1232,7 @@
               <p id="python-data-detail">Choose a source to inspect its readings and estimates.</p>
             </div>
             <details class="python-connection-details" id="python-connection-details" hidden>
-              <summary>Connection details</summary>
+              <summary>Source details</summary>
               <p id="python-source-status"></p>
             </details>
             <div class="python-model-status" aria-label="AMR-01 sensor status">
@@ -1525,15 +1525,12 @@
               </article>
             </div>
             <p class="python-sensor-note">
-              Synthetic mode is a fixed 6 s teaching trial; AMR01 has an injected gyro disagreement
-              at 3–4 s. Live mode reads PostgreSQL results from a separately deployed MQTT ingestion
-              worker. Local odometry is not registered to the warehouse map. Floor and Missions
-              retain the single virtual AMR; sensor readings never move physical inventory or send
-              motor commands.
+              Demo data is a fixed 6 s generated example with a gyro disagreement at 3–4 s. Stored
+              sensor data reads PostgreSQL records written by the MQTT ingestion worker. Local
+              position uses the trial origin. Floor and Missions simulate AMR-01; sensor readings do
+              not update their stock or send motor commands.
             </p>
-            <button id="python-model-inspection" type="button">
-              Open detailed readings and evidence
-            </button>
+            <button id="python-model-inspection" type="button">Open detailed readings</button>
             <details class="panel python-sensor-card" id="python-model-evidence">
               <summary>Equations, papers and page references</summary>
               <div class="model-paper-table">
@@ -1819,7 +1816,7 @@
             <section class="panel hardware-connect-panel">
               <div class="panel-head">
                 <div>
-                  <span class="eyebrow">Fleet connection</span>
+                  <span class="eyebrow">AMR-01 connection</span>
                   <h2>Connect your broker</h2>
                 </div>
                 <span
@@ -1952,7 +1949,7 @@
               <h2>Observe. Calibrate. Compare.</h2>
               <p>
                 Optional reference replay and legacy v1 observer studies. Current encoder, gyro and
-                battery models are in Sensor models → Open detailed readings and evidence.
+                battery models are in Sensor models → Open detailed readings.
               </p>
             </div>
             <span class="lab-badge" id="lab-provenance">Live telemetry · awaiting devices</span>
@@ -2392,7 +2389,8 @@
                     <b>State &amp; asset models</b>
                     <span>
                       Calibrated wheel odometry, gyro bias, power/Wh/SOC and residual advisories.
-                      Hardware displays the results; map registration is pending.
+                      Sensor models displays the results; map registration requires measured
+                      calibration.
                     </span>
                   </li>
                   <li>
@@ -2491,8 +2489,8 @@
               <h2>Session information</h2>
               <dl>
                 <div>
-                  <dt>Fleet</dt>
-                  <dd>3 virtual robots</dd>
+                  <dt>Robot</dt>
+                  <dd>AMR-01 · 1 virtual robot</dd>
                 </div>
                 <div>
                   <dt>Facility</dt>
@@ -2507,8 +2505,8 @@
                   <dd>Simulated telemetry</dd>
                 </div>
                 <div>
-                  <dt>Hardware</dt>
-                  <dd>Separate live workspace</dd>
+                  <dt>Sensor records</dt>
+                  <dd>Sensor models → Database</dd>
                 </div>
                 <div>
                   <dt>Project owner</dt>
@@ -2520,7 +2518,8 @@
                 </div>
               </dl>
               <p>
-                Session data resets when the page reloads. Export the decision log to keep a record.
+                This simulation log resets on reload. Export it to keep a record. Stored sensor
+                records persist in PostgreSQL.
               </p>
               <div class="project-notice">
                 <strong>© 2026 S L RICHRIS.</strong>
@@ -2558,23 +2557,23 @@
                 heuristics, battery assumptions and forecasts are project implementations.
               </p>
               <p>
-                This interactive 3D scene uses the project's single-AMR replenishment workflow. Each
-                robot carries 30 units along simplified aisle routes. Battery drains during motion
+                This interactive 3D scene uses the project's single-AMR replenishment workflow.
+                AMR-01 carries 30 units along simplified aisle routes. Battery drains during motion
                 and recharges at the depot. Shelf inventory decreases at a configured consumption
                 rate. The reference layout has 12 racks: four monitored replenishment stations and
                 eight reserve storage racks. Three cross aisles and four connecting lanes form a
-                shared route graph used by both dispatch and Reference lab defaults. Reserve cartons
-                are decorative and carry no measured inventory. The surrounding cutaway hall adds
-                receiving and dispatch doors, pallet staging, packing and quality benches, service
-                cabinets, structural steel and overhead services. These fixtures are illustrative
-                context outside the 12 × 6.7 m mapped AMR zone; they do not report equipment states
-                or extend the telemetry map. The Facility layer can hide the building and equipment,
-                and Plan view removes the walls and overhead frame for route inspection. Geometry
-                and dimensions are illustrative. Lighting, metal surfaces, concrete and cartons are
-                rendered in real-time 3D. Wheel and payload animation follows simulation state. A
-                simpler compatibility view is used when WebGL 2 is unavailable. AMR-01 completes one
-                virtual journey at a time, including its return to the single middle left-apron bay.
-                Routes are checked against the reference rack footprints with a conservative robot
+                shared route graph for virtual dispatch. Reserve cartons are decorative and carry no
+                measured inventory. The surrounding cutaway hall adds receiving and dispatch doors,
+                pallet staging, packing and quality benches, service cabinets, structural steel and
+                overhead services. These fixtures are illustrative context outside the 12 × 6.7 m
+                mapped AMR zone; they do not report equipment states or extend the telemetry map.
+                The Facility layer can hide the building and equipment, and Plan view removes the
+                walls and overhead frame for route inspection. Geometry and dimensions are
+                illustrative. Lighting, metal surfaces, concrete and cartons are rendered in
+                real-time 3D. Wheel and payload animation follows simulation state. A simpler
+                compatibility view is used when WebGL 2 is unavailable. AMR-01 completes one virtual
+                journey at a time, including its return to the single middle left-apron bay. Routes
+                are checked against the reference rack footprints with a conservative robot
                 clearance envelope. This is a discrete route model, not physical collision avoidance
                 or a dynamics model.
               </p>
@@ -2595,11 +2594,11 @@
               <p>
                 Prediction runs in a separate browser Web Worker. Browser command handling and
                 forecast round-trip timings are diagnostics, not validated physical override
-                latency, Wi-Fi delay or system reliability. In Streamlit, Hardware receives
-                Python-computed results from raw AMR-01 sensors. Live odometry remains in its local
-                frame; a surveyed coordinate transform is required before it can update the 3D
-                floor. Physical accuracy and advisory performance require measured validation. Live
-                data does not drive simulated stock or tasks. This viewer sends no motor commands.
+                latency, Wi-Fi delay or system reliability. Sensor models receives Python-computed
+                results from raw AMR-01 sensors. Live odometry remains in its local frame; a
+                surveyed coordinate transform is required before it can update the 3D floor.
+                Physical accuracy and advisory performance require measured validation. Live data
+                does not drive simulated stock or tasks. This viewer sends no motor commands.
                 LabVIEW, Coordinator/UART control and browser v1 telemetry are legacy references
                 outside the active sensor path. Simulation time pauses while the tab is hidden.
               </p>
@@ -2611,7 +2610,7 @@
       <footer class="statusbar">
         <div class="statusbar-system">
           <span class="footer-brand">WH-01</span>
-          <span id="hardware-summary">0 / 1 hardware slot live</span>
+          <span id="hardware-summary">AMR-01 telemetry: offline</span>
           <span id="sync">Forecast engine connecting</span>
         </div>
         <div class="ownership-line">
@@ -2639,9 +2638,7 @@
           </button>
         </div>
         <h2 id="mission-dialog-title">Create replenishment mission</h2>
-        <p>
-          Deliver up to 30 units. Review the proposed unit before adding it to the approval queue.
-        </p>
+        <p>Deliver up to 30 units. Review the delivery before adding it to the approval queue.</p>
         <div class="form-grid">
           <label for="destination">
             Destination
@@ -2716,17 +2713,37 @@
         <p>
           Explore this educational simulation by reviewing and approving the initial missions.
           AMR-01 completes one journey at a time, including its bay return. Select AMR-01 on the
-          floor or in the robot strip to inspect its simulated state. Hardware displays the separate
+          floor or in the robot strip to inspect its simulated state. Sensor models displays the
           Python sensor models.
         </p>
         <dl class="help-list">
-          <div>
+          <div data-legacy-interface>
             <dt>Route map</dt>
             <dd>Choose stops, close preview lanes, animate directions or step through Dijkstra.</dd>
           </div>
-          <div>
+          <div data-legacy-interface>
             <dt>Reference lab</dt>
             <dd>Inspect observations, fit asset models and compare frozen policies.</dd>
+          </div>
+          <div>
+            <dt>Sensor models</dt>
+            <dd>
+              Choose Demo data or Stored sensor data to inspect AMR-01 motion and battery estimates.
+            </dd>
+          </div>
+          <div>
+            <dt>Detailed readings</dt>
+            <dd>Open from Sensor models for packet values, charts, exports and references.</dd>
+          </div>
+          <div>
+            <dt>Database</dt>
+            <dd>
+              Open from Sensor models for saved records, table attributes and connection status.
+            </dd>
+          </div>
+          <div>
+            <dt>Missions and Activity</dt>
+            <dd>Approve virtual delivery jobs and inspect the simulation decision log.</dd>
           </div>
           <div>
             <dt>Screen appearance</dt>

@@ -6,7 +6,7 @@
 
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
-This starter connects **one ESP32 board** to the digital twin’s Hardware workspace. It publishes measurements only. It does not receive or transmit motor, mission or emergency-stop commands.
+This starter connects **one ESP32 board** to the standalone reference viewer’s Sensor models workspace. It publishes measurements only. It does not receive or transmit motor, mission or emergency-stop commands.
 
 ## What you need
 
@@ -57,11 +57,11 @@ Give every board a different publisher password. Do not put a broker administrat
 
 ## 3. Connect the viewer
 
-1. Open the dashboard’s **Hardware** tab.
+1. Open **Sensor models** in the standalone v1 reference viewer. The hosted Python app uses its PostgreSQL reader instead of this browser WSS form.
 2. Enter the broker’s complete **WSS URL**, for example `wss://your-broker-host:your-wss-port/mqtt`. This is a placeholder, not a working broker.
 3. Enter the read-only viewer username/password and the matching topic prefix.
 4. Choose **Connect AMR-01**. “Subscribed” means the broker approved the AMR-01 subscription. It does not mean AMR-01 is online.
-5. Each slot becomes **Live** only after receiving a fresh, valid packet from its matching device.
+5. AMR-01 becomes **Live** only after receiving a fresh, valid packet from its matching device.
 
 The password is held in this tab only, sent to the specified broker, and cleared from the form after connecting. It is not saved in browser storage. Reloading requires reconnecting. This viewer does not keep a durable telemetry history or run while the page is closed.
 
