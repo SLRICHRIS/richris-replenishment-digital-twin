@@ -553,7 +553,9 @@ export class CanvasTwinScene {
     this.text('AMR CHARGING', 111, AMR_HOME.y - 41, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('LINE SUPPLY', 545, 20, 1, '#344747', Math.max(6, 11 * this.scale));
     this.text('FINISHED GOODS', 545, 490, 1, '#344747', Math.max(6, 11 * this.scale));
-    for (const zone of managerZonesInModelCoordinates(state.routing?.restrictedZones)) {
+    for (const zone of state.sensorWorkspace
+      ? []
+      : managerZonesInModelCoordinates(state.routing?.restrictedZones)) {
       this.circle(zone.x, zone.y, 0.25, zone.radius, '#8b3c2c', 1.5, 1, '#d8a33d');
       for (const [a, b] of managerZoneHatchSegments(zone))
         this.line(
@@ -940,7 +942,7 @@ export class CanvasTwinScene {
     if (!state.live) this.overlays(state, time);
     this.scenery();
     this.industrial();
-    this.managerStandingFigures(state);
+    if (!state.sensorWorkspace) this.managerStandingFigures(state);
     STORAGE_RACKS.forEach((r) => this.rack(r, state.bins.find((b) => b.id === r.binId)?.stock));
     state.robots.forEach((r) => this.robot(r, r.id === state.selected, time));
     if (this.layers.ghosts)
@@ -949,10 +951,10 @@ export class CanvasTwinScene {
         if (ghost) this.robot(ghost, false, time, true);
       });
     this.flush();
-    if (!this.follow)
+    if (!this.follow && !state.sensorWorkspace)
       for (const zone of managerZonesInModelCoordinates(state.routing?.restrictedZones))
         this.label(zone.label, zone.x, zone.y, 150, { color: '#fff0c7', sub: 'No AMR entry' });
-    if (!this.follow)
+    if (!this.follow && !state.sensorWorkspace)
       STORAGE_RACKS.forEach((rack) => {
         const bin = rack.binId ? state.bins.find((b) => b.id === rack.binId) : null,
           hasStock = bin && (!state.live || bin.measured) && Number.isFinite(bin.stock);

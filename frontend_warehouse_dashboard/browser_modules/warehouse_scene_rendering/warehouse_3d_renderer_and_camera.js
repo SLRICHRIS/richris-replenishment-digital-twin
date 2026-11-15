@@ -40,7 +40,7 @@ export function animateWarehouse(
   const managerZones = managerZonesInModelCoordinates(state.routing?.restrictedZones);
   for (const manager of model.managers || []) {
     const zone = managerZones.find((z) => z.id === manager.definition.id);
-    manager.figure.visible = manager.area.visible = !!zone;
+    manager.figure.visible = manager.area.visible = !!zone && !state.sensorWorkspace;
     if (zone) {
       manager.figure.position.copy(worldPosition(zone.x, zone.y));
       manager.area.position.copy(worldPosition(zone.x, zone.y));

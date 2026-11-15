@@ -344,3 +344,163 @@ html[data-python-twin='true'] [data-slide-outside] {
     flex: 1 1 100px;
   }
 }
+
+/* Hosted workspace: one robot, six models and the physical record browser. */
+.python-database-nav {
+  display: none;
+}
+html[data-python-twin='true'] .python-database-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  width: 100%;
+  margin-top: 5px;
+  padding: 13px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--type-label);
+  text-align: left;
+}
+html[data-python-twin='true'] .python-database-nav:hover {
+  background: var(--selected-bg);
+  color: var(--selected-text);
+}
+html[data-python-twin='true'] .breadcrumb,
+html[data-python-twin='true'] #page-mode,
+html[data-python-twin='true'] .session-action,
+html[data-python-twin='true'] .metrics,
+html[data-python-twin='true'] .rail-footer,
+html[data-python-twin='true'] .header-right .connection,
+html[data-python-twin='true'] .header-right .avatar,
+html[data-python-twin='true'] .statusbar-system,
+html[data-python-twin='true'] #environment .source-strip,
+html[data-python-twin='true'] .python-floor-scope,
+html[data-python-twin='true'] #operation-brief,
+html[data-python-twin='true'] #environment .control-actions,
+html[data-python-twin='true'] #environment .facility-register,
+html[data-python-twin='true'] #environment .stage-eyebrow,
+html[data-python-twin='true'] #environment .surface-tag,
+html[data-python-twin='true'] #environment .scene-meta,
+html[data-python-twin='true'] #environment .scene-state,
+html[data-python-twin='true'] #environment .scene-empty,
+html[data-python-twin='true'] #environment #auto-orbit,
+html[data-python-twin='true'] #environment .view-footer,
+html[data-python-twin='true'] #environment .rack-register,
+html[data-python-twin='true'] #environment .fleet-selector,
+html[data-python-twin='true'] #environment .outlook,
+html[data-python-twin='true'] #environment .unit-identity,
+html[data-python-twin='true'] #environment .stat-caption,
+html[data-python-twin='true'] #environment .unit-location > div:nth-child(2),
+html[data-python-twin='true'] #environment .mission-detail,
+html[data-python-twin='true'] #environment .unit-journey,
+html[data-python-twin='true'] #environment .inspector-actions,
+html[data-python-twin='true'] .rack-world-label {
+  display: none !important;
+}
+html[data-python-twin='true'] .page-heading {
+  margin: 0;
+  padding: 0 0 20px;
+}
+html[data-python-twin='true'] #page-title {
+  font-size: clamp(1.5rem, 2vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.25;
+}
+html[data-python-twin='true'] #page-summary {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+html[data-python-twin='true'] #environment .workspace {
+  grid-template-columns: minmax(0, 1fr) 270px;
+  align-items: start;
+}
+html[data-python-twin='true'] #environment .stage-head {
+  min-height: 60px;
+  padding: 16px 20px;
+}
+html[data-python-twin='true'] #environment .inspector-stats,
+html[data-python-twin='true'] #environment .unit-location {
+  padding-block: 18px;
+}
+html[data-python-twin='true'] #environment .viewport {
+  height: clamp(420px, 62vh, 660px);
+  min-height: 420px;
+}
+html[data-python-twin='true'] #environment .compatibility-notice {
+  top: 12px;
+  right: 12px;
+  max-width: 210px;
+  padding: 6px 10px;
+  font-size: 0.6875rem;
+}
+html[data-python-twin='true'] .python-data-notice {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+}
+html[data-python-twin='true'] .python-sensor-cards {
+  gap: 16px;
+}
+html[data-python-twin='true'] .python-sensor-card {
+  padding: 20px;
+}
+html[data-python-twin='true'] .python-sensor-card h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+html[data-python-twin='true'] .python-sensor-card dl {
+  margin: 16px 0;
+}
+html[data-python-twin='true'] .python-sensor-card dt,
+html[data-python-twin='true'] .slide-equation,
+html[data-python-twin='true'] .python-reading-guide {
+  color: var(--text-secondary);
+}
+html[data-python-twin='true'] .python-sensor-card dd {
+  font-weight: 500;
+}
+html[data-python-twin='true'] .slide-equation {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+html[data-python-twin='true'] .python-reading-guide {
+  margin: 14px 0;
+}
+.python-more-readings {
+  margin-top: 20px;
+}
+@media (max-width: 1100px) {
+  html[data-python-twin='true'] #environment .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-python-twin='true'] #environment .inspector {
+    max-width: none;
+  }
+}
+@media (max-width: 899px) {
+  html[data-python-twin='true'] .navigation-rail {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  html[data-python-twin='true'] .rail-label {
+    display: none;
+  }
+  html[data-python-twin='true'] .workspace-nav {
+    flex: 2;
+    display: flex;
+  }
+  html[data-python-twin='true'] .workspace-nav > button {
+    flex: 1;
+    justify-content: center;
+  }
+  html[data-python-twin='true'] .python-database-nav {
+    flex: 1;
+    width: auto;
+    margin: 0;
+    justify-content: center;
+  }
+}

@@ -453,11 +453,19 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   $('tab-hardware').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
   );
-  assert.equal(doc.body.dataset.view, 'missions');
-  $('tab-missions').dispatchEvent(
+  assert.equal(doc.body.dataset.view, 'environment');
+  $('tab-environment').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
   );
-  assert.equal(doc.body.dataset.view, 'activity', 'keyboard navigation skips hidden study views');
+  assert.equal(
+    doc.body.dataset.view,
+    'hardware',
+    'keyboard navigation skips retired simulation views',
+  );
+  for (const retired of ['missions', 'activity']) {
+    $('tab-' + retired).click();
+    assert.equal(doc.body.dataset.view, 'hardware', 'retired deep links stay within sensor scope');
+  }
   await ui.settle();
   ui.dom.window.close();
 

@@ -87,6 +87,28 @@ deliver(parent, 'https://untrusted.example');
 assert.equal(doc.documentElement.dataset.pythonTwin, undefined);
 deliver(parent, w.location.origin);
 assert.equal(doc.documentElement.dataset.pythonTwin, 'true');
+const style = doc.createElement('style');
+style.textContent = fs.readFileSync(
+  path.join(root, 'dashboard_stylesheets/python_sensor_twin_panel_styles.css'),
+  'utf8',
+);
+doc.head.append(style);
+for (const selector of [
+  '#tab-missions',
+  '#tab-activity',
+  '#operation-brief',
+  '.rack-register',
+  '.outlook',
+  '.session-action',
+]) {
+  assert.equal(
+    w.getComputedStyle(doc.querySelector(selector)).display,
+    'none',
+    selector + ' is absent from the hosted UI',
+  );
+}
+assert.equal(w.getComputedStyle(doc.getElementById('python-database-inspection')).display, 'flex');
+
 assert.equal(doc.getElementById('python-amr01-soc').textContent, '80.0%');
 assert.equal(
   doc.getElementById('python-amr01-battery-input').textContent,
@@ -104,6 +126,17 @@ assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: d
 assert.equal(doc.getElementById('python-amr01-corrected-gyro').textContent, '0.19000');
 assert.equal(doc.querySelectorAll('.python-sensor-cards > article').length, 6);
 assert.equal(doc.querySelectorAll('.slide-equation').length, 6);
+for (const card of doc.querySelectorAll('.python-sensor-cards > article')) {
+  assert.equal(
+    card.querySelector('.slide-equation').open,
+    false,
+    'supporting detail starts collapsed',
+  );
+  for (const source of card.querySelectorAll('[data-model-paper]'))
+    assert(source.closest('details'), 'paper links remain with their model inside its disclosure');
+}
+assert(doc.getElementById('python-database-inspection').closest('.navigation-rail'));
+
 assert.match(doc.getElementById('python-amr01-advisory').textContent, /Sustained/);
 assert.equal(doc.getElementById('python-amr01-advisory').dataset.alert, 'true');
 assert.equal(doc.getElementById('python-amr02-quality'), null, 'AMR-02 is removed from the DOM');

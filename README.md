@@ -29,9 +29,9 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python ingestion worker and AMR
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
 
-The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Equation/variable details open on demand. **Open detailed readings** opens **Detailed sensor readings**, including a separate manual stock and task example. That example is outside the sensor modelling presentation. The larger FIFO/urgency research experiment remains in source.
+The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Each model has one collapsed **How it works & source** section containing explanations, equations and paper links. **Detailed readings and export** opens sensor values, charts and exports. The larger stock/task and FIFO/urgency experiments remain in source.
 
-The hosted navigation contains **Floor, Sensor models, Missions and Activity**. Route playback, the separate older observer/calibration lab and simulated energy analytics are hidden from this focused workspace; historical deep links return to Sensor models. The Floor and Missions preserve the original single-AMR warehouse illustration, with their virtual nature explicit.
+The hosted navigation contains **Floor, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shows saved physical records and their attributes without deployment settings.
 
 ## Dashboard and deployment
 

@@ -58,6 +58,7 @@ function create(attrs = {}, owner = null) {
       e.dataset[k.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = attrs[k];
   e.setAttribute = (k, v) => (e.attrs[k] = String(v));
   e.getAttribute = (k) => e.attrs[k];
+  e.hasAttribute = (k) => k in e.attrs;
   e.addEventListener = (k, fn) => (e.handlers[k] = fn);
   e.focus = () => {
     doc.activeElement = e;
@@ -432,6 +433,19 @@ run("applySlideWorkspaceScope({detail:{mode:'live'}})");
 assert.equal(get('page-mode').textContent, 'Stored sensor data');
 assert.equal(get('source-badge').textContent, 'Stored sensor data');
 assert.equal(run('robots.length'), 1, 'source labels do not alter the virtual robot');
+for (const retired of ['routes', 'engineering', 'telemetry', 'missions', 'activity']) {
+  run(`activatePage('${retired}')`);
+  assert.equal(doc.body.dataset.view, 'hardware', 'saved legacy links return to sensor models');
+  assert.equal(get('tab-' + retired).hasAttribute('data-slide-outside'), true);
+}
+get('tab-hardware').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
+assert.equal(doc.body.dataset.view, 'environment', 'keyboard navigation skips retired views');
+assert.equal(
+  run('sceneState().sensorWorkspace'),
+  true,
+  'both renderers receive the focused scene scope',
+);
+
 console.log(
   'PASS: original dashboard with one AMR, three sequential deliveries, approval exclusivity, pause/resume, cancellation, recharge, route closure and manager relocation.',
 );

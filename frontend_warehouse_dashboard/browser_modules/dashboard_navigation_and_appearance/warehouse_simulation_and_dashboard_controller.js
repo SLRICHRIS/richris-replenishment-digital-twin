@@ -1399,7 +1399,7 @@ function activatePage(name, writeHash = true) {
   if (!pages[name]) name = 'environment';
   if (
     document.documentElement.dataset.pythonTwin === 'true' &&
-    ['routes', 'engineering', 'telemetry'].includes(name)
+    ['routes', 'engineering', 'telemetry', 'missions', 'activity'].includes(name)
   )
     name = 'hardware';
   if (
@@ -1633,7 +1633,8 @@ function applySlideWorkspaceScope(event) {
   if (['demo', 'live'].includes(event?.detail?.mode))
     document.documentElement.dataset.pythonSource = event.detail.mode;
   if (document.documentElement.dataset.pythonTwin !== 'true') return;
-  if (['routes', 'engineering', 'telemetry'].includes(activePage)) activatePage('hardware');
+  if (['routes', 'engineering', 'telemetry', 'missions', 'activity'].includes(activePage))
+    activatePage('hardware');
   else updateSourceUI();
 }
 document.addEventListener('python-twin:render', applySlideWorkspaceScope);
@@ -1863,6 +1864,7 @@ function sceneState() {
         trafficClock,
         managerPlacementActive,
         managerHoldReason,
+        sensorWorkspace: document.documentElement.dataset.pythonTwin === 'true',
       };
 }
 function updateSourceUI() {
@@ -1896,6 +1898,11 @@ function updateSourceUI() {
     $('page-summary').textContent = live
       ? 'Inspect measured poses and stream freshness in the reference facility.'
       : pages.environment.summary;
+  if (activePage === 'environment' && document.documentElement.dataset.pythonTwin === 'true') {
+    $('page-title').textContent = 'Warehouse floor';
+    $('page-summary').textContent =
+      'AMR-01 · virtual warehouse view. Open Sensor models for sensor readings.';
+  }
   $('source-badge').textContent =
     activePage === 'routes'
       ? 'Reference route preview'
