@@ -78,6 +78,12 @@ def render_dashboard():
         [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; }
         [data-testid="stVerticalBlock"] { gap: 0; }
         [data-testid="stAppViewContainer"] { overflow-x: hidden; overflow-y: auto; }
+        /* Keep the persistent workspace readable during background reruns.
+           Sensor freshness and database loading are reported inside the component. */
+        [data-testid="stElementContainer"].st-key-warehouse-workspace {
+            opacity: 1 !important;
+            transition: none !important;
+        }
         iframe[title*="replenish_workspace"] { display: block; width: 100%; border: 0; }
     </style>''')
     if not (FRONTEND_DIRECTORY / 'index.html').is_file():
