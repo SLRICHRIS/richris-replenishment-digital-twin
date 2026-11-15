@@ -185,6 +185,7 @@
       render(latest);
       latest = null;
     }
+    document.dispatchEvent(new CustomEvent('python-twin:ready'));
   }
   if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', bind, { once: true });
