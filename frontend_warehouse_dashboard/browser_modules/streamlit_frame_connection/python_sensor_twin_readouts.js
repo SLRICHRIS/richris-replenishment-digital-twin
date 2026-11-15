@@ -39,6 +39,7 @@
       const raw = available ? r.raw || {} : {};
       const demo = payload.mode === 'demo';
       const label = r?.quality_label || (demo ? 'Demonstration data' : 'No sensor data');
+      text('hardware-summary', demo ? 'Sensor data: demonstration' : 'Sensor data: ' + label);
       text(key + 'quality', label);
       text('python-data-title', label);
       text(
