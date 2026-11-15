@@ -174,6 +174,7 @@ doc.getElementById('python-database-inspection').click();
 assert.equal(sent.at(-1).value.action, 'database_browse');
 assert.equal(sent.at(-1).value.active, true);
 assert.equal(sent.at(-1).value.dataset, 'amr_sensor_samples');
+assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'true');
 const before = sent.length;
 doc.dispatchEvent(
   new w.CustomEvent('python-twin:action', { detail: { action: 'motor_command', mode: 'live' } }),
@@ -199,6 +200,16 @@ payload.database = {
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-db-status').textContent, 'Connected');
 assert.equal(doc.getElementById('python-db-export').disabled, false);
+assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'false');
+const recordRegion = doc.getElementById('python-db-records-table');
+recordRegion.focus();
+assert.equal(
+  doc.activeElement,
+  recordRegion,
+  'record table can receive keyboard focus for scrolling',
+);
+assert.equal(recordRegion.getAttribute('role'), 'region');
+assert.equal(recordRegion.getAttribute('aria-label'), 'Stored sensor records');
 assert.equal(
   doc.querySelector('#python-db-records-table img'),
   null,
@@ -214,6 +225,10 @@ assert.equal(
 );
 doc.getElementById('python-db-attributes-tab').click();
 assert.equal(doc.getElementById('python-db-records').hidden, true);
+const fieldRegion = doc.getElementById('python-db-attributes-table');
+fieldRegion.focus();
+assert.equal(doc.activeElement, fieldRegion, 'field definitions can receive keyboard focus');
+assert.equal(fieldRegion.getAttribute('aria-label'), 'Sensor field definitions');
 doc
   .getElementById('python-db-attributes-tab')
   .dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
@@ -227,6 +242,7 @@ assert.equal(
   null,
   'old field definitions disappear while another dataset loads',
 );
+assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'true');
 archiveChoice.value = 'amr_sensor_samples';
 archiveChoice.dispatchEvent(new w.Event('change'));
 deliver(parent, w.location.origin);
@@ -254,6 +270,7 @@ payload.database = {
 };
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-db-empty-title').textContent, 'Awaiting sensor records');
+assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'false');
 assert.equal(doc.getElementById('python-db-export').disabled, true);
 payload.database = { ...payload.database, rows_state: 'error' };
 deliver(parent, w.location.origin);
