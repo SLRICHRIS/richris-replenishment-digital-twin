@@ -463,9 +463,13 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   );
   assert.equal(
     doc.body.dataset.view,
-    'hardware',
-    'keyboard navigation skips retired simulation views',
+    'connection',
+    'keyboard navigation includes the physical connection view',
   );
+  $('tab-connection').dispatchEvent(
+    new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+  );
+  assert.equal(doc.body.dataset.view, 'hardware');
   for (const retired of ['missions', 'activity']) {
     $('tab-' + retired).click();
     assert.equal(doc.body.dataset.view, 'hardware', 'retired deep links stay within sensor scope');

@@ -1,16 +1,23 @@
 # Single-AMR dashboard operator guide
 
-The app opens in the original warehouse with one virtual AMR-01. Floor, Sensor models and Database share one dashboard shell, navigation and Dark/Bright appearance.
+The app opens in the original warehouse with one virtual AMR-01. Floor, Connect AMR, Sensor models and Database share one dashboard shell, navigation and Dark/Bright appearance.
 
 | View | Current use |
 | --- | --- |
 | Floor | Inspect the single virtual AMR and warehouse; drag to orbit, zoom or choose a camera preset |
+| Connect AMR | Start or stop an operator-authorized on-demand EMQX recorder; check device, broker, storage and predictive readiness separately |
 | Sensor models | View six Python-computed motion, gyro, battery, residual and forecast models; choose Demo data or Stored sensor data |
 | Database | Browse seven sensor datasets, inspect table attributes and export displayed records as JSON; calibration is not required |
 
 **Detailed readings and export** opens sensor charts, packet values and exports. Supporting explanations and linked papers are inside each model's **How it works & source** disclosure. The reading guide also contains sample age and reported state. On wide screens, the six models form a three-column grid; smaller screens use two or one column. Each card identifies its sensor/model input and keeps units with its readouts.
 
 Mission approval, stock forecasts, manager placement, activity logs and legacy route/observer studies remain in source, outside the hosted navigation. Old study links open Sensor models.
+
+## Connect the physical AMR
+
+Follow [Connect AMR setup](single_amr_sensor_twin_setup.md#connect-amr-from-the-site) once. The ESP32 joins its configured Wi-Fi and publishes raw sensors to EMQX. The owner enters the private operator access code in Connect AMR to start the on-demand recorder. Broker passwords and database writer credentials stay in private server configuration. Missing setup disables Connect and lists the categories still required; it does not invent a connected device.
+
+EMQX subscribed, fresh device samples, database access and prediction readiness are separate stages. This recorder follows the app session; choose the independent worker for unattended recording. Disconnect preserves committed data. The predictive insights show charge, conditional time to reserve and five-second local position only when the evidence allows them. Recommendations suggest operator checks or recharging from the existing models; they do not command the robot. The Sensor models view labels recommendations from the generated demo separately from physical guidance.
 
 ## Sensor workflow
 

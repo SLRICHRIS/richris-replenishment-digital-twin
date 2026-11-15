@@ -1,7 +1,7 @@
 """Verified TLS subscriber for AMR-01 via EMQX MQTT, never a motor publisher.
 
-The sole production consumer is the independent ingestion worker. Persisted
-readings reach Streamlit through PostgreSQL, not through browser MQTT.
+Consumers are the independent ingestion worker and the optional operator-controlled
+on-demand connector. Persisted readings reach the UI through PostgreSQL, not browser MQTT.
 """
 import logging
 from datetime import datetime, timezone
@@ -71,8 +71,17 @@ class MQTTService:
                 target=self._drain_samples, name="amr01-pg-writer", daemon=True
             )
             self._worker.start()
-        self.client.connect_async(host, port, keepalive=30)
-        self.client.loop_start()
+        try:
+            self.client.connect_async(host, port, keepalive=30)
+            self.client.loop_start()
+        except Exception:
+            self._worker_stop.set()
+            try:
+                self.client.loop_stop()
+            finally:
+                if self._worker is not None:
+                    self._worker.join(timeout=2)
+            raise
 
     @property
     def status(self):

@@ -1,0 +1,223 @@
+html:not([data-python-twin='true']) .python-connection-nav,
+html:not([data-python-twin='true']) .amr-model-guidance {
+  display: none !important;
+}
+.amr-connect-card,
+.amr-insights-panel,
+.amr-setup-details {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.amr-connect-heading,
+.amr-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.amr-connect-heading h2 {
+  margin: 3px 0 0;
+  font-size: 22px;
+}
+.amr-connect-heading h2 span {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+.amr-connect-heading .twin-connection-chip {
+  margin-left: auto;
+}
+.amr-connect-card > p,
+.amr-setup-details p {
+  color: var(--text-secondary);
+  line-height: 1.65;
+  font-size: 13px;
+}
+.amr-link-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 24px;
+}
+.amr-link-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 230px;
+}
+.amr-link-form input {
+  min-height: 44px;
+  font-size: 14px;
+}
+.amr-link-form button {
+  min-height: 44px;
+  padding: 10px 18px;
+}
+.amr-link-footnote {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+#amr-link-feedback {
+  color: var(--amber);
+}
+.amr-pipeline {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0;
+  margin: 0 0 20px;
+  gap: 12px;
+}
+.amr-pipeline li {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 18px;
+  border-top: 2px solid var(--line-strong);
+}
+.amr-pipeline li[data-state='ready'] {
+  border-top-color: var(--green);
+}
+.amr-pipeline li[data-state='blocked'] {
+  border-top-color: var(--amber);
+}
+.amr-pipeline strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.amr-pipeline span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.amr-setup-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  min-height: 24px;
+}
+.amr-setup-details li {
+  font-size: 12px;
+  line-height: 1.9;
+}
+.amr-setup-details a {
+  color: var(--blue);
+  font-size: 13px;
+}
+.amr-section-heading {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.amr-section-heading h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.amr-section-heading > span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.amr-insight-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.amr-insight-metrics article {
+  padding: 18px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.amr-insight-metrics article > span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.amr-insight-metrics strong {
+  display: block;
+  margin-top: 12px;
+  font: 18px var(--font-numeric);
+}
+.amr-insight-metrics p,
+#amr-insights-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.amr-insights-panel h3 {
+  font-size: 14px;
+  margin: 24px 0 12px;
+}
+.amr-recommendations {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.amr-recommendations article {
+  padding: 16px 18px;
+  border-left: 2px solid var(--blue);
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+}
+.amr-recommendations article[data-tone='warning'] {
+  border-left-color: var(--amber);
+}
+.amr-recommendations h4 {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+.amr-recommendations p {
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 0;
+  color: var(--text-secondary);
+}
+.amr-model-guidance {
+  margin-top: 20px;
+}
+@media (max-width: 899px) {
+  .amr-pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .amr-insight-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .amr-connect-card,
+  .amr-insights-panel,
+  .amr-setup-details {
+    padding: 18px;
+  }
+  .amr-connect-heading {
+    flex-wrap: wrap;
+  }
+  .amr-connect-heading .twin-connection-chip {
+    margin-left: 0;
+  }
+  .amr-link-form {
+    flex-wrap: wrap;
+  }
+  .amr-link-form label {
+    width: 100%;
+    min-width: 0;
+  }
+  .amr-link-form input {
+    font-size: 16px;
+  }
+  .amr-link-form button {
+    flex: 1;
+  }
+  .amr-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .amr-setup-details summary {
+    min-height: 44px;
+    align-content: center;
+  }
+}

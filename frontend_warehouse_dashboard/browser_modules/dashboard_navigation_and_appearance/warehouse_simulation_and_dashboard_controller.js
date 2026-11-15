@@ -1357,6 +1357,11 @@ function render() {
   motion.sync();
 }
 const pages = {
+  connection: {
+    title: 'Connect AMR',
+    context: 'Physical sensor connection',
+    summary: 'ESP32 over Wi-Fi, through EMQX, into stored sensor insights.',
+  },
   database: {
     title: 'Sensor database',
     context: 'Physical sensor archive',
@@ -1402,7 +1407,10 @@ const pages = {
 };
 function activatePage(name, writeHash = true) {
   if (!pages[name]) name = 'environment';
-  if (name === 'database' && document.documentElement.dataset.pythonTwin !== 'true')
+  if (
+    ['database', 'connection'].includes(name) &&
+    document.documentElement.dataset.pythonTwin !== 'true'
+  )
     name = 'hardware';
   if (
     document.documentElement.dataset.pythonTwin === 'true' &&
@@ -1416,6 +1424,8 @@ function activatePage(name, writeHash = true) {
     $('expand').click();
   if (activePage === 'database' && name !== 'database')
     document.dispatchEvent(new CustomEvent('python-twin:database-close'));
+  if (activePage === 'connection' && name !== 'connection')
+    document.dispatchEvent(new CustomEvent('python-twin:connection-close'));
   activePage = name;
   document.body.dataset.view = name;
   document.querySelectorAll('[data-screen]').forEach((panel) => (panel.hidden = panel.id !== name));
@@ -1436,6 +1446,7 @@ function activatePage(name, writeHash = true) {
     window.scrollTo(0, 0);
   }
   if (name === 'database') document.dispatchEvent(new CustomEvent('python-twin:database-open'));
+  if (name === 'connection') document.dispatchEvent(new CustomEvent('python-twin:connection-open'));
   if (name === 'environment') requestAnimationFrame(() => scene.resize());
   if (name === 'telemetry') requestAnimationFrame(renderEnergy);
   motion.page(name);
@@ -1617,7 +1628,7 @@ document.querySelectorAll('[data-page]').forEach((button) => {
     const tabs = [...document.querySelectorAll('[data-page]')].filter((tab) =>
         document.documentElement.dataset.pythonTwin === 'true'
           ? !tab.hasAttribute('data-slide-outside')
-          : tab.dataset.page !== 'database',
+          : !['database', 'connection'].includes(tab.dataset.page),
       ),
       i = tabs.indexOf(button),
       next =
@@ -1936,6 +1947,10 @@ function updateSourceUI() {
   if (activePage === 'database') {
     $('source-badge').textContent = 'Read-only archive';
     $('page-mode').textContent = 'Stored physical records';
+  }
+  if (activePage === 'connection') {
+    $('source-badge').textContent = 'Physical connection';
+    $('page-mode').textContent = 'Operator-controlled sensor link';
   }
   document
     .querySelectorAll('[data-floor-source]')

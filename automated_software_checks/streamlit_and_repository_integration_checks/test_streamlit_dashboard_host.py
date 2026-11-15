@@ -6,6 +6,66 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
+    def test_unconfigured_connection_view_uses_the_real_session_resource_without_starting_a_recorder(self):
+        from unittest.mock import patch
+        import json
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        action = dict(action='connection_view', active=True, nonce='unconfigured-link')
+        original_component = host.WAREHOUSE_WORKSPACE
+        def dispatch(**kwargs):
+            original_component(**kwargs)
+            return action
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        link = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']['amr_connection']
+        self.assertFalse(link['configured'])
+        self.assertFalse(link['running'])
+        self.assertFalse(link['subscribed'])
+        self.assertFalse(link['insights']['ready'])
+        self.assertTrue(link['missing'])
+
+    def test_connection_controls_require_authorization_and_never_export_private_configuration(self):
+        from unittest.mock import patch, Mock
+        import json
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        from backend_streamlit_and_telemetry.predictive_twin.amr_connection import ConnectionController, ConnectionProfile
+        from backend_streamlit_and_telemetry.predictive_twin.demo import example_calibrations
+        profile = ConnectionProfile('owner.emqxsl.com', 'private-reader', 'private-mqtt-password',
+                                    'postgresql://private-writer-url', 'private-operator-access-code',
+                                    example_calibrations()['amr01'])
+        controller = Mock(spec=ConnectionController)
+        controller.snapshot.return_value = dict(state='disconnected', detail='Waiting', subscribed=False, metrics={})
+        action = dict(action='connection_view', active=True, nonce='open-link')
+        original_component = host.WAREHOUSE_WORKSPACE
+        def dispatch(**kwargs):
+            original_component(**kwargs)
+            return action
+        module = 'backend_streamlit_and_telemetry.predictive_twin.amr_connection'
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch), \
+                patch(module + '.session_connector', return_value=controller), \
+                patch(module + '.connection_profile', return_value=(profile, [])):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            raw = app.get('component_instance')[0].proto.json_args
+            for private in [profile.password, profile.writer_url, profile.access_code]:
+                self.assertNotIn(private, raw)
+            self.assertTrue(json.loads(raw)['python_twin']['amr_connection']['configured'])
+            action.update(action='connection_control', command='connect', access_code='wrong', nonce='bad-code')
+            app.run(timeout=30)
+            controller.start.assert_not_called()
+            app.session_state.warehouse_connection_attempt = -2
+            action.update(access_code=profile.access_code, nonce='accepted-code')
+            app.run(timeout=30)
+            controller.start.assert_called_once_with(profile)
+            self.assertEqual(app.session_state.warehouse_sensor_mode, 'live')
+            action.update(command='disconnect', access_code='', nonce='stop-link')
+            app.run(timeout=30)
+            controller.disconnect.assert_called_once()
+            self.assertFalse(app.exception)
+
     def test_sensor_details_and_source_switch_stay_within_sensor_scope(self):
         app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
         app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)

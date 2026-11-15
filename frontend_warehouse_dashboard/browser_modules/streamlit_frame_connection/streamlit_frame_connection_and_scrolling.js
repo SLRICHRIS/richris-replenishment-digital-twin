@@ -93,12 +93,25 @@
     const action = event.detail;
     if (
       !action ||
-      !['sensor_source', 'model_inspection', 'database_inspection', 'database_browse'].includes(
-        action.action,
-      )
+      ![
+        'sensor_source',
+        'model_inspection',
+        'database_inspection',
+        'database_browse',
+        'connection_view',
+        'connection_control',
+      ].includes(action.action)
     )
       return;
     if (action.action === 'sensor_source' && !['demo', 'live'].includes(action.mode)) return;
+    if (action.action === 'connection_view' && typeof action.active !== 'boolean') return;
+    if (
+      action.action === 'connection_control' &&
+      (!['connect', 'disconnect'].includes(action.command) ||
+        typeof action.access_code !== 'string' ||
+        action.access_code.length > 256)
+    )
+      return;
     if (
       action.action === 'database_browse' &&
       (![
@@ -117,6 +130,10 @@
       value: {
         action: action.action,
         ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
+        ...(action.action === 'connection_view' ? { active: action.active } : {}),
+        ...(action.action === 'connection_control'
+          ? { command: action.command, access_code: action.access_code }
+          : {}),
         ...(action.action === 'database_browse'
           ? { dataset: action.dataset, active: action.active }
           : {}),

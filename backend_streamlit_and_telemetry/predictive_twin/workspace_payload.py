@@ -6,9 +6,15 @@ import streamlit as st
 from .database import DatabaseSchemaError, SensorDatabase, calibration_fingerprint
 from .demo import demo_fleet
 from .models import Calibration, motion_forecast, runtime_hours
+from .insights import predictive_insights
 from .telemetry import ROBOT_IDS
 
 SOURCE_LABELS = {'demo': 'Demo data', 'live': 'Stored sensor data'}
+
+
+def with_insights(payload):
+    payload['insights'] = predictive_insights(payload)
+    return payload
 
 
 def quality_display(snapshot, demo=False):
@@ -123,7 +129,7 @@ def workspace_payload(mode):
     else:
         db, c, notice = stored_sensor_context()
         if notice:
-            return dict(mode=mode, status=notice['detail'], notice=notice, robots={})
+            return with_insights(dict(mode=mode, status=notice['detail'], notice=notice, robots={}))
         try:
             snapshots = {'amr01': db.read_snapshot(
                 expected_fingerprint=calibration_fingerprint(c)
@@ -136,7 +142,7 @@ def workspace_payload(mode):
         except Exception:
             notice = dict(label='Stored readings unavailable', tone='warning',
                           detail='Stored readings could not be read. Open Database to check connection and schema status.')
-            return dict(mode=mode, status=notice['detail'], notice=notice, robots={})
+            return with_insights(dict(mode=mode, status=notice['detail'], notice=notice, robots={}))
     robots = {}
     for rid in ROBOT_IDS:
         snapshot = snapshots[rid]
@@ -173,4 +179,4 @@ def workspace_payload(mode):
             residual_threshold_rad_s=c.residual_threshold_rad_s,
             residual_hold_s=c.residual_hold_s,
             history=chart_history)
-    return dict(mode=mode, status=status, robots=robots)
+    return with_insights(dict(mode=mode, status=status, robots=robots))
