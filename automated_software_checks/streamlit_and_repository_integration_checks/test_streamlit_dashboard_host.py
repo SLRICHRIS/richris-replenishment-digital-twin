@@ -105,7 +105,12 @@ class StreamlitHostTests(unittest.TestCase):
         action = dict(action='database_browse', dataset='amr_encoder_readings', active=True, nonce='archive-open')
         with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
             app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            first = app.get('component_instance')[0].proto.id
+            initial_args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
+            self.assertNotIn('database', initial_args)
+            app.run(timeout=30)  # The next scheduled fragment tick reads the selected archive.
         self.assertFalse(app.exception)
+        self.assertEqual(app.get('component_instance')[0].proto.id, first)
         args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
         self.assertEqual(app.sidebar.radio[0].value, 'Warehouse dashboard')
         self.assertEqual(args['database']['dataset'], 'amr_encoder_readings')
@@ -115,6 +120,7 @@ class StreamlitHostTests(unittest.TestCase):
         action.update(active=False, nonce='archive-close')
         with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
             app.run(timeout=30)
+            app.run(timeout=30)
         args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
         self.assertNotIn('database', args)
         action.update(dataset='pg_authid', active=True, nonce='bad-dataset')
@@ -122,6 +128,25 @@ class StreamlitHostTests(unittest.TestCase):
             app.run(timeout=30)
         self.assertFalse(app.exception)
         self.assertFalse(app.session_state.warehouse_database_requested)
+
+    def test_source_changes_wait_for_the_next_tick_without_a_full_app_rerun(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        import json
+        original_component = host.WAREHOUSE_WORKSPACE
+        def dispatch(**kwargs):
+            original_component(**kwargs)
+            return dict(action='sensor_source', mode='live', nonce='source-live')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            component = app.get('component_instance')[0]
+            first = component.proto.id
+            self.assertEqual(json.loads(component.proto.json_args)['python_twin']['mode'], 'demo')
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        component = app.get('component_instance')[0]
+        self.assertEqual(component.proto.id, first)
+        self.assertEqual(json.loads(component.proto.json_args)['python_twin']['mode'], 'live')
 
     def test_archive_preview_limits_rows_and_does_not_expose_driver_errors(self):
         from unittest.mock import patch, Mock
