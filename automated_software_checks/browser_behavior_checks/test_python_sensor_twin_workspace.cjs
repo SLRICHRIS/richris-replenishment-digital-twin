@@ -100,6 +100,7 @@ assert.equal(
 assert.equal(doc.getElementById('python-data-notice').dataset.tone, 'info');
 assert.match(doc.getElementById('python-data-detail').textContent, /No physical robot/);
 assert.equal(doc.getElementById('python-amr01-age').textContent, 'Fixed demo trial');
+assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: demonstration');
 assert.equal(doc.getElementById('python-amr01-corrected-gyro').textContent, '0.19000');
 assert.equal(doc.querySelectorAll('.python-sensor-cards > article').length, 6);
 assert.equal(doc.querySelectorAll('.slide-equation').length, 6);
@@ -196,6 +197,7 @@ payload.robots = {};
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.equal(doc.getElementById('python-data-title').textContent, 'No sensor data');
+assert.equal(doc.getElementById('hardware-summary').textContent, 'Sensor data: No sensor data');
 
 // Production loads the bridge in <head> and the readout at the end of <body>.
 // Streamlit may send only one render for identical fragment arguments.

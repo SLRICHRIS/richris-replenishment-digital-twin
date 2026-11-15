@@ -29,7 +29,8 @@ export function createHardwareWorkspace({
     const slots = snapshot(),
       live = slots.filter((s) => s.status === 'live').length;
     set('hardware-live-count', String(live));
-    set('hardware-summary', `${live} / 1 hardware slot live`);
+    if (document.documentElement.dataset.pythonTwin !== 'true')
+      set('hardware-summary', `${live} / 1 hardware slot live`);
     set(
       'hardware-broker-state',
       {
