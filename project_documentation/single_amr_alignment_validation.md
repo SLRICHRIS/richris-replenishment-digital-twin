@@ -29,6 +29,10 @@ The six sensor cards retain the final slide order. Source badges now distinguish
 
 Regression cases exercise stale readings with an old forecast still present in the payload, partial estimates, missing packets, no physical data, zero-current runtime, text-only sensor content, threshold/hold labels and chart breaks across missing residuals, including display decimation. The local sensor/hosting suite has **66 passing checks**, with two PostgreSQL tests deferred to CI; all 15 browser regression suites pass. The new styling uses the existing semantic colors and responsive breakpoints. New screenshot or desktop/mobile pixel verification was unavailable in this environment and is not claimed for this revision.
 
+## Hosted startup regression
+
+The deployed review found that Streamlit could send its initial Python sensor payload while the document was still parsing, before the readout listener at the end of the body existed. The view then remained on the legacy broker form even though the six model cards were present in the HTML. The bridge now waits for DOM readiness before announcing component readiness and retains the latest trusted payload for a late readout listener. Regression cases use the actual head-before-body script order and exercise a single initial render, an early render and a late listener. Parent-window and origin checks remain required; no credential or command path is added.
+
 ## Physical commissioning still required
 
 Measure effective x4 counts per wheel revolution, left/right radii and effective track; validate straight, square and turning trials with an independent reference. Verify encoder sign and IMU orientation; collect stationary gyro bias; compare INA219 readings with a meter and measure usable pack capacity/initial SOC. Run healthy/fault/slip trials to select the residual threshold/hold and evaluate false alerts, missed faults and latency on separate validation runs. Demonstrate loss/reboot handling against real network outages. Explicitly confirm pickup/delivery events before any future live inventory integration.

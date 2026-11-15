@@ -49,6 +49,7 @@
 
   let lastHeight = -1;
   let queued = false;
+  let latestPayload;
   function fitViewport() {
     queued = false;
     let available = 900;
@@ -75,10 +76,17 @@
     if (event.data?.type === 'streamlit:render') {
       const payload = event.data.args?.python_twin;
       if (payload && ['demo', 'live'].includes(payload.mode)) {
+        latestPayload = payload;
         document.dispatchEvent(new CustomEvent('python-twin:render', { detail: payload }));
       }
       scheduleFit();
     }
+  });
+  // The bridge runs in <head>, before the sensor readout listener exists.
+  // Retain an early render so a late listener can request the current payload.
+  document.addEventListener('python-twin:ready', () => {
+    if (latestPayload)
+      document.dispatchEvent(new CustomEvent('python-twin:render', { detail: latestPayload }));
   });
   let actionSequence = 0;
   document.addEventListener('python-twin:action', (event) => {
@@ -107,6 +115,16 @@
       { once: true },
     );
   } catch {}
-  send('streamlit:componentReady', { apiVersion: 1 });
-  scheduleFit();
+  // Do not invite Streamlit's first (possibly only) render until the body and
+  // readout scripts are ready. Identical later fragment args may be memoized.
+  let readySent = false;
+  function ready() {
+    if (readySent) return;
+    readySent = true;
+    send('streamlit:componentReady', { apiVersion: 1 });
+    scheduleFit();
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', ready, { once: true });
+  else ready();
 })();

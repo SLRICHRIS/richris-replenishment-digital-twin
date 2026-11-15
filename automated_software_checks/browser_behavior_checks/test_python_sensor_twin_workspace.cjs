@@ -196,6 +196,69 @@ payload.robots = {};
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.equal(doc.getElementById('python-data-title').textContent, 'No sensor data');
+
+// Production loads the bridge in <head> and the readout at the end of <body>.
+// Streamlit may send only one render for identical fragment arguments.
+function verifyStartup(order) {
+  const markup = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert(
+    markup.indexOf('streamlit_frame_connection_and_scrolling.js') <
+      markup.indexOf('python_sensor_twin_readouts.js'),
+  );
+  const startup = new JSDOM(markup, {
+    url: 'https://example.streamlit.app/~/+/component/workspace/index.html',
+    runScripts: 'outside-only',
+    pretendToBeVisual: true,
+  });
+  const win = startup.window,
+    document = win.document,
+    messages = [];
+  let readyState = order === 'late-readout' ? 'complete' : 'loading';
+  Object.defineProperty(document, 'readyState', { get: () => readyState });
+  const initial = { mode: 'demo', status: 'Synthetic fixed trial', robots: { amr01: current } };
+  const receive = () =>
+    win.dispatchEvent(
+      new win.MessageEvent('message', {
+        source: parentWindow,
+        origin: win.location.origin,
+        data: { type: 'streamlit:render', args: { python_twin: initial } },
+      }),
+    );
+  const parentWindow = {
+    innerHeight: 900,
+    postMessage(message) {
+      messages.push(message);
+      if (message.type === 'streamlit:componentReady') receive();
+    },
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  Object.defineProperty(win, 'parent', { value: parentWindow });
+  win.requestAnimationFrame = () => {};
+  const load = (file) =>
+    vm.runInContext(
+      fs.readFileSync(path.join(root, 'browser_modules/streamlit_frame_connection', file), 'utf8'),
+      startup.getInternalVMContext(),
+    );
+  load('streamlit_frame_connection_and_scrolling.js');
+  if (readyState === 'loading')
+    assert(!messages.some((m) => m.type === 'streamlit:componentReady'), 'wait for body scripts');
+  if (order === 'early-render') receive();
+  load('python_sensor_twin_readouts.js');
+  readyState = 'complete';
+  document.dispatchEvent(new win.Event('DOMContentLoaded'));
+  assert.equal(document.documentElement.dataset.pythonTwin, 'true', order);
+  assert.equal(document.getElementById('python-amr01-soc').textContent, '80.0%', order);
+  assert.equal(messages.filter((m) => m.type === 'streamlit:componentReady').length, 1);
+  document.dispatchEvent(new win.Event('DOMContentLoaded'));
+  assert.equal(
+    messages.filter((m) => m.type === 'streamlit:componentReady').length,
+    1,
+    'ready is sent once',
+  );
+  startup.window.close();
+}
+for (const order of ['normal', 'early-render', 'late-readout']) verifyStartup(order);
 setImmediate(() => dom.window.close());
 console.log(
   'PASS: original workspace receives Python-only sensor values; source identity, XSS-safe text, freshness, no floor mutation, navigation/scroll preservation and allowlisted source/inspection actions.',

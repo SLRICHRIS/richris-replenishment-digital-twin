@@ -2,6 +2,8 @@
 
 One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measurements. The **Python ingestion worker** computes wheel odometry, motion, power/energy/SOC, residual advisories and illustrative forecasts. The independent worker stores typed sensor samples and derived state in PostgreSQL; the Streamlit browser reads stored results. Synthetic demonstration is separate from physical records. GitHub hosts the source; it does not execute the online twin.
 
+[Open the existing Streamlit dashboard](https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/).
+
 ```sh
 python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
