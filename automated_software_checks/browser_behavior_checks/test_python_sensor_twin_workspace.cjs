@@ -172,6 +172,12 @@ assert.equal(typeof action.value.nonce, 'string');
 doc.getElementById('python-model-inspection').click();
 assert.equal(sent.at(-1).value.action, 'model_inspection');
 doc.getElementById('python-database-inspection').click();
+assert.equal(
+  sent.at(-1).value.action,
+  'model_inspection',
+  'the navigation click does not request data before the outgoing view closes',
+);
+doc.dispatchEvent(new w.CustomEvent('python-twin:database-open'));
 assert.equal(sent.at(-1).value.action, 'database_browse');
 assert.equal(sent.at(-1).value.active, true);
 assert.equal(sent.at(-1).value.dataset, 'amr_sensor_samples');
