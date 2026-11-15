@@ -183,6 +183,11 @@
         new CustomEvent('python-twin:action', { detail: { action: 'model_inspection' } }),
       );
     });
+    $('python-database-inspection')?.addEventListener('click', () => {
+      document.dispatchEvent(
+        new CustomEvent('python-twin:action', { detail: { action: 'database_inspection' } }),
+      );
+    });
     if (latest) {
       render(latest);
       latest = null;

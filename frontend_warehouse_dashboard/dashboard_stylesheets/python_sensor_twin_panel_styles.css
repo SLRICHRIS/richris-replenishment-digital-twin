@@ -83,6 +83,9 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
   border-color: var(--selected-border);
   background: var(--selected-bg);
 }
+#python-database-inspection {
+  margin-left: auto;
+}
 #python-source-label,
 #python-amr01-quality {
   display: none;

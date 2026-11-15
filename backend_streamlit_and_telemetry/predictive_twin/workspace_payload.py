@@ -3,7 +3,7 @@ import json
 
 import streamlit as st
 
-from .database import SensorDatabase, calibration_fingerprint
+from .database import DatabaseSchemaError, SensorDatabase, calibration_fingerprint
 from .demo import demo_fleet
 from .models import Calibration, motion_forecast, runtime_hours
 from .telemetry import ROBOT_IDS
@@ -45,6 +45,33 @@ def database_reader(url):
     return SensorDatabase(url, initialize=False)
 
 
+def database_url():
+    """Read private configuration without returning it in a display payload."""
+    try:
+        return st.secrets['database']['url'].strip()
+    except (KeyError, FileNotFoundError):
+        return ''
+
+
+def database_connection():
+    """Check storage independently from calibration; return sanitized status."""
+    url = database_url()
+    if not url:
+        return None, 'not_configured'
+    try:
+        db = database_reader(url)
+        db.healthcheck()
+    except Exception:
+        return None, 'unreachable'
+    try:
+        db.assert_schema_ready()
+    except DatabaseSchemaError:
+        return None, 'schema_not_ready'
+    except Exception:
+        return None, 'unreachable'
+    return db, 'ready'
+
+
 def workspace_payload(mode):
     if mode not in ('demo', 'live'):
         raise ValueError('Unknown sensor source')
@@ -53,6 +80,12 @@ def workspace_payload(mode):
         snapshots = fleet.snapshots(now=6)
         status = 'Demonstration data · fixed 6-second trial · no physical robot connection'
     else:
+        if not database_url():
+            return dict(mode=mode, status='Database is not configured. Open Database to inspect the schema and connection setup.', robots={})
+        try:
+            db = database_reader(database_url())
+        except Exception:
+            return dict(mode=mode, status='Database connection failed. Open Database to check storage connectivity.', robots={})
         try:
             if st.secrets['commissioning']['measured_calibration_confirmed'] is not True:
                 raise ValueError('Calibration not confirmed')
@@ -60,7 +93,9 @@ def workspace_payload(mode):
             if set(values) != {'amr01'}:
                 raise ValueError('Only AMR-01 calibration is supported')
             c = Calibration(**values['amr01'])
-            db = database_reader(st.secrets['database']['url'])
+        except Exception:
+            return dict(mode=mode, status='Database settings found. Measured calibration is not configured and confirmed; live estimates are unavailable. Open Database to inspect storage independently.', robots={})
+        try:
             snapshots = {'amr01': db.read_snapshot(
                 expected_fingerprint=calibration_fingerprint(c)
             )}
@@ -70,7 +105,7 @@ def workspace_payload(mode):
             status = ('Physical sensor records · ' + quality_display(snapshot)['label']
                       + ('' if age is None else f' · last received {age:.1f} s ago'))
         except Exception:
-            return dict(mode=mode, status='Live is not configured or database is unavailable: add private DB and measured calibration, then verify worker connectivity.', robots={})
+            return dict(mode=mode, status='Stored readings could not be read. Open Database to check connection and schema status.', robots={})
     robots = {}
     for rid in ROBOT_IDS:
         snapshot = snapshots[rid]

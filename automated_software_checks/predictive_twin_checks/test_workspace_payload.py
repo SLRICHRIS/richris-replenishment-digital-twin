@@ -28,6 +28,23 @@ def test_unconfigured_live_returns_no_synthetic_robot_state():
     assert 'not configured' in result['status']
 
 
+def test_storage_check_does_not_require_calibration_and_sanitizes_errors():
+    from backend_streamlit_and_telemetry.predictive_twin.workspace_payload import database_connection
+    from backend_streamlit_and_telemetry.predictive_twin.database import DatabaseSchemaError, SensorDatabase
+    from unittest.mock import Mock
+    module = 'backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    db = Mock(spec=SensorDatabase)
+    with patch(module + '.st.secrets', {'database': {'url': 'postgresql://private:secret@host/db'}}), \
+         patch(module + '.database_reader', return_value=db):
+        assert database_connection() == (db, 'ready')
+        db.assert_schema_ready.side_effect = DatabaseSchemaError('private:secret@host')
+        assert database_connection() == (None, 'schema_not_ready')
+        db.healthcheck.side_effect = RuntimeError('private:secret@host')
+        assert database_connection() == (None, 'unreachable')
+    with patch(module + '.st.secrets', {}):
+        assert database_connection() == (None, 'not_configured')
+
+
 def test_live_display_does_not_leak_database_credentials_or_forecast_stale_robots():
     from backend_streamlit_and_telemetry.predictive_twin.demo import demo_fleet, example_calibrations
     calibrations = {'amr01': asdict(example_calibrations()['amr01'])}

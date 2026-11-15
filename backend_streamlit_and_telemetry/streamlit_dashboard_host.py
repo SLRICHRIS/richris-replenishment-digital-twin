@@ -16,7 +16,7 @@ def render_warehouse_workspace():
     mode = st.session_state.get('warehouse_sensor_mode', 'demo')
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None,
                                  python_twin=workspace_payload(mode))
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
@@ -27,8 +27,8 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] == 'model_inspection':
-        st.session_state.pending_workspace_view = 'Model inspection'
+    if result['action'] in ('model_inspection', 'database_inspection'):
+        st.session_state.pending_workspace_view = ('Database' if result['action'] == 'database_inspection' else 'Model inspection')
     else:
         st.session_state.warehouse_sensor_mode = choice
     st.rerun()
@@ -40,9 +40,13 @@ def render_dashboard():
         layout='wide', initial_sidebar_state='collapsed',
         menu_items={'About': f'Replenish {APPLICATION_VERSION}: warehouse dashboard and single-AMR Python sensor twin. © 2026 S L RICHRIS.'})
     pending = st.session_state.pop('pending_workspace_view', None)
-    if pending in ('Warehouse dashboard', 'Model inspection'):
+    if pending in ('Warehouse dashboard', 'Model inspection', 'Database'):
         st.session_state.workspace_view = pending
-    view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection'), key='workspace_view')
+    view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection', 'Database'), key='workspace_view')
+    if view == 'Database':
+        from .predictive_twin.database_inspection import render_database_inspection
+        render_database_inspection()
+        return
     if view == 'Model inspection':
         from .predictive_twin.dashboard import render_sensor_dashboard
         render_sensor_dashboard()

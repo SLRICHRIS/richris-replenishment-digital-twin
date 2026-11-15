@@ -36,6 +36,14 @@ def test_real_postgres_raw_and_derived_roundtrip():
     assert snapshot["raw"]["encoder_left_count"] == 10
     assert snapshot["derived"]["v_left_m_s"] > 0
     assert snapshot["soc"] < .9
+    # The operator's bounded table browser reads PostgreSQL views and JSON
+    # without depending on calibration confirmation or a fresh live snapshot.
+    db.assert_schema_ready()
+    records = db.read_records('amr_encoder_readings', limit=1)
+    assert len(records) == 1
+    assert records[0]['seq'] == 1
+    assert records[0]['encoder_left_count'] == 10
+    assert db.read_records('amr_twin_states', limit=1)[0]['derived']['v_left_m_s'] > 0
     with db.engine.connect() as conn:
         encoder = conn.execute(
             select(SensorSample.encoder_left_count).where(SensorSample.seq == 1)
