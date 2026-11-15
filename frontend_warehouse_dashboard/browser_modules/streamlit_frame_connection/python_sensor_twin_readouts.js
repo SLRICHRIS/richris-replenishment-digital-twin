@@ -28,11 +28,13 @@
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
     }
+    if (payload.database) renderDatabase(payload.database);
     const robots = payload.robots || {};
     for (const rid of ['amr01']) {
       const r = robots[rid],
         key = 'python-' + rid + '-';
       const available = r && !r.stale;
+      document.documentElement.dataset.readingsAvailable = String(Boolean(available));
       const d = available ? r.derived || {} : {};
       const raw = available ? r.raw || {} : {};
       const demo = payload.mode === 'demo';
@@ -52,6 +54,10 @@
       $('python-data-notice').dataset.tone =
         r?.quality_tone || payload.notice?.tone || (demo ? 'info' : 'neutral');
       text(key + 'age', demo ? 'Fixed demo trial' : number(r?.age_s, 1, ' s'));
+      text(
+        'python-observation-label',
+        demo ? 'Fixed demo trial · 6 seconds' : 'Sample age · ' + number(r?.age_s, 1, ' s'),
+      );
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
       text(key + 'pose', available ? position(r.pose) : 'Unavailable');
       text(
@@ -164,6 +170,12 @@
       text(key + 'plot-max', `+${scale.toFixed(2)}`);
       text(key + 'plot-min', `−${scale.toFixed(2)}`);
       text(
+        key + 'plot-caption',
+        rows.some((row) => Number.isFinite(row.residual_rad_s))
+          ? `${available ? 'Time since boot' : 'Historical'} · ${start.toFixed(2)}–${(start + duration).toFixed(2)} s`
+          : 'No comparison history',
+      );
+      text(
         key + 'plot-range',
         rows.some((row) => Number.isFinite(row.residual_rad_s))
           ? `Recorded difference · scale ±${scale.toFixed(3)} rad/s · time ${start.toFixed(2)}–${(start + duration).toFixed(2)} s since device boot${available ? '' : ' · historical data; current readings unavailable'}`
@@ -174,6 +186,101 @@
   document.addEventListener('python-twin:render', (event) => {
     if (event.detail && ['demo', 'live'].includes(event.detail.mode)) render(event.detail);
   });
+  let databaseOpen = false;
+  let databaseRows;
+  let databaseSignature = '';
+  function browseDatabase(active) {
+    document.dispatchEvent(
+      new CustomEvent('python-twin:action', {
+        detail: {
+          action: 'database_browse',
+          dataset: $('python-db-dataset').value,
+          active,
+        },
+      }),
+    );
+  }
+  function openDatabase() {
+    if (databaseOpen) return;
+    databaseOpen = true;
+    browseDatabase(true);
+  }
+  function table(target, columns, rows) {
+    const grid = document.createElement('table');
+    const head = grid.createTHead().insertRow();
+    for (const name of columns) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = name;
+      head.append(th);
+    }
+    const body = grid.createTBody();
+    for (const row of rows) {
+      const tr = body.insertRow();
+      for (const key of columns) {
+        const td = tr.insertCell();
+        const value = row[key];
+        td.textContent =
+          value === null || value === undefined
+            ? '—'
+            : typeof value === 'object'
+              ? JSON.stringify(value)
+              : String(value);
+      }
+    }
+    $(target).replaceChildren(grid);
+  }
+  function renderDatabase(data) {
+    // A late response must never relabel old rows as the newly selected dataset.
+    if (data.dataset !== $('python-db-dataset')?.value) return;
+    const signature = JSON.stringify(data);
+    if (signature === databaseSignature) return;
+    databaseSignature = signature;
+    databaseRows = data;
+    const ready = data.state === 'ready';
+    text('python-db-status', ready ? 'Connected' : data.label || 'Connection unavailable');
+    $('python-db-status').dataset.state = data.state;
+    text(
+      'python-db-connection-detail',
+      ready ? 'PostgreSQL · schema v3 verified · read-only access' : data.detail,
+    );
+    text('python-db-title', data.title);
+    text('python-db-description', data.description);
+    text('python-db-kind', data.kind);
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    const hasRows = data.rows_state === 'ready' && rows.length > 0;
+    $('python-db-empty').hidden = hasRows;
+    $('python-db-records-table').hidden = !hasRows;
+    $('python-db-export').disabled = !hasRows;
+    text(
+      'python-db-empty-title',
+      data.rows_state === 'error'
+        ? 'Records could not be read'
+        : !ready
+          ? 'Archive unavailable'
+          : 'Awaiting sensor records',
+    );
+    text(
+      'python-db-empty-detail',
+      data.rows_state === 'error'
+        ? 'Refresh to try reading this dataset again.'
+        : !ready
+          ? 'The table definitions remain available in Table attributes.'
+          : 'Validated physical measurements will appear here. Demo values are never stored in this archive.',
+    );
+    text(
+      'python-db-row-count',
+      data.rows_state === 'ready'
+        ? rows.length + ' records shown · latest ' + data.limit + ' maximum'
+        : 'Records unavailable',
+    );
+    if (hasRows) table('python-db-records-table', data.columns, rows);
+    table(
+      'python-db-attributes-table',
+      ['Attribute', 'PostgreSQL type', 'Required', 'Key'],
+      data.attributes || [],
+    );
+  }
   function bind() {
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode)?.addEventListener('click', () => {
@@ -187,10 +294,60 @@
         new CustomEvent('python-twin:action', { detail: { action: 'model_inspection' } }),
       );
     });
-    $('python-database-inspection')?.addEventListener('click', () => {
-      document.dispatchEvent(
-        new CustomEvent('python-twin:action', { detail: { action: 'database_inspection' } }),
+    $('python-database-inspection')?.addEventListener('click', openDatabase);
+    document.addEventListener('python-twin:database-open', openDatabase);
+    document.addEventListener('python-twin:database-close', () => {
+      if (!databaseOpen) return;
+      databaseOpen = false;
+      browseDatabase(false);
+    });
+    $('python-db-dataset')?.addEventListener('change', () => {
+      databaseRows = null;
+      $('python-db-export').disabled = true;
+      $('python-db-records-table').hidden = true;
+      $('python-db-empty').hidden = false;
+      text('python-db-title', $('python-db-dataset').selectedOptions[0].textContent);
+      text('python-db-empty-title', 'Loading records');
+      text('python-db-empty-detail', 'Reading the selected sensor dataset.');
+      browseDatabase(true);
+    });
+    $('python-db-refresh')?.addEventListener('click', () => browseDatabase(true));
+    for (const view of ['records', 'attributes']) {
+      const tab = $('python-db-' + view + '-tab');
+      const activate = () => {
+        for (const name of ['records', 'attributes']) {
+          const on = name === view;
+          $('python-db-' + name).hidden = !on;
+          $('python-db-' + name + '-tab').setAttribute('aria-selected', String(on));
+          $('python-db-' + name + '-tab').tabIndex = on ? 0 : -1;
+        }
+      };
+      tab?.addEventListener('click', activate);
+      tab?.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const next =
+          event.key === 'Home'
+            ? 'records'
+            : event.key === 'End'
+              ? 'attributes'
+              : view === 'records'
+                ? 'attributes'
+                : 'records';
+        $('python-db-' + next + '-tab').click();
+        $('python-db-' + next + '-tab').focus();
+      });
+    }
+    $('python-db-export')?.addEventListener('click', () => {
+      if (!databaseRows?.rows?.length) return;
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(databaseRows.rows, null, 2)], { type: 'application/json' }),
       );
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = databaseRows.dataset + '.json';
+      anchor.click();
+      URL.revokeObjectURL(url);
     });
     if (latest) {
       render(latest);

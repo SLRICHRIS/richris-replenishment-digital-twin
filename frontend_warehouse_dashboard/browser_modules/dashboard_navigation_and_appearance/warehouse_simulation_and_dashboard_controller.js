@@ -1357,6 +1357,11 @@ function render() {
   motion.sync();
 }
 const pages = {
+  database: {
+    title: 'Sensor database',
+    context: 'Physical sensor archive',
+    summary: 'Saved measurements, model estimates and their field definitions.',
+  },
   routes: {
     title: 'Route navigation',
     context: 'Interactive facility map',
@@ -1375,7 +1380,7 @@ const pages = {
     summary: 'Motion, battery and sensor checks for AMR-01.',
   },
   environment: {
-    title: 'Facility overview',
+    title: 'Warehouse floor',
     context: 'Spatial workspace',
     summary: 'Inspect AMR-01 and follow the single-robot virtual replenishment example.',
   },
@@ -1397,6 +1402,8 @@ const pages = {
 };
 function activatePage(name, writeHash = true) {
   if (!pages[name]) name = 'environment';
+  if (name === 'database' && document.documentElement.dataset.pythonTwin !== 'true')
+    name = 'hardware';
   if (
     document.documentElement.dataset.pythonTwin === 'true' &&
     ['routes', 'engineering', 'telemetry', 'missions', 'activity'].includes(name)
@@ -1407,6 +1414,8 @@ function activatePage(name, writeHash = true) {
     document.querySelector('.stage-panel').classList.contains('expanded')
   )
     $('expand').click();
+  if (activePage === 'database' && name !== 'database')
+    document.dispatchEvent(new CustomEvent('python-twin:database-close'));
   activePage = name;
   document.body.dataset.view = name;
   document.querySelectorAll('[data-screen]').forEach((panel) => (panel.hidden = panel.id !== name));
@@ -1426,6 +1435,7 @@ function activatePage(name, writeHash = true) {
     window.history.replaceState(null, '', '#' + name);
     window.scrollTo(0, 0);
   }
+  if (name === 'database') document.dispatchEvent(new CustomEvent('python-twin:database-open'));
   if (name === 'environment') requestAnimationFrame(() => scene.resize());
   if (name === 'telemetry') requestAnimationFrame(renderEnergy);
   motion.page(name);
@@ -1604,10 +1614,10 @@ document.querySelectorAll('[data-page]').forEach((button) => {
   button.addEventListener('keydown', (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
-    const tabs = [...document.querySelectorAll('[data-page]')].filter(
-        (tab) =>
-          document.documentElement.dataset.pythonTwin !== 'true' ||
-          !tab.hasAttribute('data-slide-outside'),
+    const tabs = [...document.querySelectorAll('[data-page]')].filter((tab) =>
+        document.documentElement.dataset.pythonTwin === 'true'
+          ? !tab.hasAttribute('data-slide-outside')
+          : tab.dataset.page !== 'database',
       ),
       i = tabs.indexOf(button),
       next =
@@ -1903,6 +1913,8 @@ function updateSourceUI() {
     $('page-summary').textContent =
       'AMR-01 · virtual warehouse view. Open Sensor models for sensor readings.';
   }
+  if (activePage === 'hardware' && document.documentElement.dataset.pythonTwin === 'true')
+    $('page-summary').textContent = 'Motion, battery and sensor consistency in one view.';
   $('source-badge').textContent =
     activePage === 'routes'
       ? 'Reference route preview'
@@ -1920,6 +1932,10 @@ function updateSourceUI() {
       ? 'Generated sensor example'
       : 'Stored sensor records · no motor commands';
     $('source-badge').textContent = demo ? 'Demo data' : 'Stored sensor data';
+  }
+  if (activePage === 'database') {
+    $('source-badge').textContent = 'Read-only archive';
+    $('page-mode').textContent = 'Stored physical records';
   }
   document
     .querySelectorAll('[data-floor-source]')

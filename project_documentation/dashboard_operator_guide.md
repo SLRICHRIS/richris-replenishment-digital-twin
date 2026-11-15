@@ -1,14 +1,14 @@
 # Single-AMR dashboard operator guide
 
-The app opens in the existing 3D warehouse design with one virtual AMR-01. The navigation has three destinations.
+The app opens in the original warehouse with one virtual AMR-01. Floor, Sensor models and Database share one dashboard shell, navigation and Dark/Bright appearance.
 
 | View | Current use |
 | --- | --- |
 | Floor | Inspect the single virtual AMR and warehouse; drag to orbit, zoom or choose a camera preset |
 | Sensor models | View six Python-computed motion, gyro, battery, residual and forecast models; choose Demo data or Stored sensor data |
-| Database | Inspect saved physical records and table attributes; no calibration is needed to browse records |
+| Database | Browse seven sensor datasets, inspect table attributes and export displayed records as JSON; calibration is not required |
 
-**Detailed readings and export** opens sensor charts, packet values and exports. Supporting explanations and linked papers are inside each model's **How it works & source** disclosure. The reading guide also contains sample age and reported state.
+**Detailed readings and export** opens sensor charts, packet values and exports. Supporting explanations and linked papers are inside each model's **How it works & source** disclosure. The reading guide also contains sample age and reported state. On wide screens, the six models form a three-column grid; smaller screens use two or one column. Each card identifies its sensor/model input and keeps units with its readouts.
 
 Mission approval, stock forecasts, manager placement, activity logs and legacy route/observer studies remain in source, outside the hosted navigation. Old study links open Sensor models.
 
@@ -26,7 +26,7 @@ Mission approval, stock forecasts, manager placement, activity logs and legacy r
 - **Wheel motion:** L and R label the left/right wheel, with metres and metres per second on each value. Travel is the increment for one device interval, not total distance.
 - **Position:** x, y and heading are named separately. Metres refer to the local trial origin; radians refer to heading. These are estimates, not surveyed warehouse coordinates.
 - **Battery:** Voltage and current are measured inputs. SOC means state of charge; it and net Wh are calculated. Positive current is discharge and negative current is charging. Display decimals do not establish sensor accuracy.
-- **Motion comparison:** The recorded gyro–encoder difference has a zero line, numeric scale and configured threshold lines. The hold time is explicit. Missing comparison intervals break the plot; an advisory asks for inspection and does not diagnose a particular fault.
+- **Motion comparison:** The recorded gyro–encoder difference has a zero line, numeric scale and configured threshold lines. Open the model details for the numeric threshold, hold time and plot time range. Missing comparison intervals break the plot; an advisory asks for inspection and does not diagnose a particular fault.
 - **Forecasts:** Position after five seconds and time to an assumed 20% charge reserve require constant-input assumptions. A visible explanation says why a result is unavailable, including missing data, partial integrals, a first-sample anchor and zero/charging current.
 
 Sample age is time since MQTT receipt, not measured network latency. The display refreshes about once per second. A fixed demonstration has no physical sample age. Historical plots remain labelled as history when current readings are stale.
@@ -40,3 +40,9 @@ The floor is a virtual illustration. Its position, battery and velocity are simu
 The original warehouse scenery and single robot remain. Overlapping rack labels, manager markers, repeated facility status and stock forecasts are omitted. Camera presets, zoom, reset, expand, Dark/Bright and motion preferences remain available. The compatibility renderer follows the same scope when WebGL 2 is unavailable.
 
 Navigation and model updates preserve the current view and scroll. See [scope and pending work](implemented_dashboard_features_and_limits.md).
+
+## Database workflow
+
+Open Database from the main navigation. A connection chip reports storage connectivity, independently from sensor calibration or freshness. Choose a dataset and switch between Records and Table attributes. Refresh reads the selected dataset again; Export JSON contains only the displayed records and is enabled only when rows are available.
+
+The browser reads at most 50 records at a time. Empty data, a failed record query and unavailable storage have different messages. Field definitions remain available when storage cannot be reached. The archive refreshes while its screen is open; leaving it stops polling. A late response for an earlier dataset cannot relabel the current selection. Schema definitions are displayed from application models; the connection status separately verifies production schema v3.

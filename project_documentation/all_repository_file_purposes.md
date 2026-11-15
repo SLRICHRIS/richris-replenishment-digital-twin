@@ -45,7 +45,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/operator_override_control_channel/labview_operator_override_http_adapter.py` | Implement labview operator override http adapter. |
 | `backend_streamlit_and_telemetry/operator_override_control_channel/operator_override_command_coordinator.py` | Implement operator override command coordinator. |
 | `backend_streamlit_and_telemetry/streamlit_dashboard_host.py` | Implement streamlit dashboard host. |
-| `backend_streamlit_and_telemetry/predictive_twin/database_inspection.py` | Inspect physical database connection, bounded stored records and expected table attributes without writes or measured-calibration gating. |
+| `backend_streamlit_and_telemetry/predictive_twin/database_inspection.py` | Provide sanitized, cached read-only archive payloads and the fallback Streamlit record/attribute browser, independently from measured calibration. |
 | `esp32_telemetry_firmware/esp32_telemetry_firmware_file_guide.md` | Explain esp32 telemetry firmware file guide. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/.gitignore` | Configuration or reference data for .gitignore. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/example_esp32_wifi_and_mqtt_settings.h` | ESP32 source or native contract check for example esp32 wifi and mqtt settings. |
@@ -190,8 +190,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_python_sensor_twin_workspace.cjs` | Verify trusted Python display messages, text-only rendering, freshness, preserved floor state and source-selection actions. |
 | `automated_software_checks/predictive_twin_checks/test_workspace_payload.py` | Verify public component data, bounded history, private-setting isolation and stale forecast suppression. |
 | `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the Sensor models view. |
-| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values in the Sensor models view without recalculating the models. |
-| `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Match integrated single-AMR sensor cards to the existing warehouse theme and responsive layout. |
+| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values and the shared read-only archive browser with safe text cells, dataset selection and JSON export; no browser model calculations. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Define the shared single-AMR visual system, responsive model cards, warehouse view, archive tables and connection/empty states. |
 | `automated_software_checks/browser_behavior_checks/test_single_amr_configuration.mjs` | Construct warehouse geometry and verify exactly one robot, one dock and one registered telemetry identity. |
 | `backend_streamlit_and_telemetry/predictive_twin/database.py` | Structured PostgreSQL raw sample, calibration and derived-state SQLAlchemy records and read-only snapshot query. |
 | `backend_streamlit_and_telemetry/predictive_twin/ingest_worker.py` | Independent always-on MQTT-to-PostgreSQL ingestion service; models sensors before transactional persistence. |

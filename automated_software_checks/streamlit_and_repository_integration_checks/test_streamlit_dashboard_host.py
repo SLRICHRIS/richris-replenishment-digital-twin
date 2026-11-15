@@ -91,3 +91,55 @@ class StreamlitHostTests(unittest.TestCase):
             app.run(timeout=30)
             self.assertFalse(app.exception)
             self.assertTrue(any('schema needs attention' in item.value for item in app.warning))
+
+    def test_shared_archive_actions_preserve_the_workspace_and_stop_polling(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        from backend_streamlit_and_telemetry.predictive_twin.database_inspection import database_preview
+        import json
+        database_preview.clear()
+        original_component = host.WAREHOUSE_WORKSPACE
+        def dispatch(**kwargs):
+            original_component(**kwargs)
+            return action
+        action = dict(action='database_browse', dataset='amr_encoder_readings', active=True, nonce='archive-open')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+        self.assertFalse(app.exception)
+        args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
+        self.assertEqual(app.sidebar.radio[0].value, 'Warehouse dashboard')
+        self.assertEqual(args['database']['dataset'], 'amr_encoder_readings')
+        self.assertEqual(args['database']['rows_state'], 'unavailable')
+        self.assertTrue(args['database']['attributes'])
+        action.update(active=False, nonce='archive-close')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app.run(timeout=30)
+        args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
+        self.assertNotIn('database', args)
+        action.update(dataset='pg_authid', active=True, nonce='bad-dataset')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertFalse(app.session_state.warehouse_database_requested)
+
+    def test_archive_preview_limits_rows_and_does_not_expose_driver_errors(self):
+        from unittest.mock import patch, Mock
+        from datetime import datetime, timezone
+        from backend_streamlit_and_telemetry.predictive_twin.database_inspection import database_preview
+        module = 'backend_streamlit_and_telemetry.predictive_twin.database_inspection'
+        db = Mock()
+        db.read_records.return_value = [{'robot_id':'amr01', 'received_at':datetime(2026, 1, 1, tzinfo=timezone.utc)}]
+        database_preview.clear()
+        with patch(module + '.database_connection', return_value=(db, 'ready')):
+            result = database_preview('amr_sensor_samples', 'read-ok')
+            db.read_records.assert_called_once_with('amr_sensor_samples', limit=50)
+            self.assertEqual(result['rows'][0]['received_at'], '2026-01-01T00:00:00+00:00')
+            db.read_records.side_effect = RuntimeError('postgresql://private:secret@host/db')
+            failed = database_preview('amr_sensor_samples', 'read-failed')
+            self.assertEqual(failed['state'], 'ready')
+            self.assertEqual(failed['rows_state'], 'error')
+            self.assertEqual(failed['rows'], [])
+            self.assertNotIn('secret', str(failed))
+            with self.assertRaises(ValueError):
+                database_preview('pg_authid', 'not-allowed')
+        database_preview.clear()
