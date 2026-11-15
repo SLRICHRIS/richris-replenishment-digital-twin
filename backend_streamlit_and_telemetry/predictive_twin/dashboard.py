@@ -1,11 +1,10 @@
 """Streamlit view over server-computed sensor state; no browser-side modelling."""
 import json
-from pathlib import Path
 
 import streamlit as st
 
 from .demo import demo_fleet
-from .models import motion_forecast, runtime_hours, stock_step, task_step
+from .models import motion_forecast, runtime_hours
 from .database import calibration_fingerprint
 from .telemetry import ROBOT_IDS
 from .workspace_payload import SOURCE_LABELS, quality_display, stored_sensor_context
@@ -84,75 +83,29 @@ def live_view(db, calibration):
     show_robot("amr01", snapshot, calibration)
 
 
-def inventory_view():
-    st.subheader("Stock and task example")
-    st.caption("Manual software example for one stock location and AMR-01. These inputs are not sensor measurements or physical commands.")
-    if "slide15_state" not in st.session_state:
-        st.session_state.slide15_state = dict(stock=100, task="idle")
-    state = st.session_state.slide15_state
-    left, right = st.columns(2)
-    with left:
-        st.metric("Stock (units)", state["stock"])
-        st.code("stock_next = stock + delivered - consumed", language="python")
-        with st.form("slide15_stock"):
-            delivered = st.number_input("Delivered units", min_value=0, value=0, step=1)
-            consumed = st.number_input("Consumed units", min_value=0, value=0, step=1)
-            apply_stock = st.form_submit_button("Apply stock event")
-        if apply_stock:
-            try:
-                updated = stock_step(state["stock"], delivered, consumed)
-            except ValueError as error:
-                st.error(str(error))
-            else:
-                state["stock"] = updated
-                st.rerun()
-        st.caption("stock: current units; delivered: received units; consumed: removed units. Inputs must be non-negative integers; negative resulting stock is rejected.")
-    with right:
-        st.metric("AMR-01 task state", state["task"])
-        st.code("idle → assigned → travelling → servicing → idle", language=None)
-        with st.form("slide15_task"):
-            event = st.selectbox("Confirmed task event", ("assign", "start", "arrive", "complete", "fault"))
-            apply_task = st.form_submit_button("Apply task event")
-        if apply_task:
-            state["task"] = task_step(state["task"], event)
-            st.rerun()
-        st.caption("assign/start/arrive/complete advance the matching state. Other events leave it unchanged. fault enters the fault state; automatic recovery is not defined.")
-    if st.button("Reset stock and task example"):
-        st.session_state.slide15_state = dict(stock=100, task="idle")
-        st.rerun()
-    st.caption("Workflow background: [Ferrari et al. (2024), Section 4](https://doi.org/10.1007/s00170-023-12660-y). Stock and task inputs are manual simulation events.")
-
-
 def render_sensor_dashboard():
     if st.button('Back to dashboard'):
         st.session_state.pending_workspace_view = 'Warehouse dashboard'
         st.rerun()
     st.title("Detailed sensor readings")
     st.caption("AMR-01 · sensor measurements, model estimates and references")
-    sensors, inventory, mapping = st.tabs(("Sensor readings", "Stock and task example", "Equations and references"))
-    with sensors:
-        mode = st.radio("Data source", tuple(SOURCE_LABELS), format_func=SOURCE_LABELS.get,
-                        index=1 if st.session_state.get('warehouse_sensor_mode') == 'live' else 0,
-                        horizontal=True)
-        st.session_state.warehouse_sensor_mode = mode
-        if mode == "demo":
-            st.info(quality_display({}, demo=True)['detail'])
-            fleet = demo_fleet()
-            snapshots = fleet.snapshots(now=6)
-            for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
-                with col:
-                    show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True)
-            with st.expander("Demo residual history"):
-                st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
+    mode = st.radio("Data source", tuple(SOURCE_LABELS), format_func=SOURCE_LABELS.get,
+                    index=1 if st.session_state.get('warehouse_sensor_mode') == 'live' else 0,
+                    horizontal=True)
+    st.session_state.warehouse_sensor_mode = mode
+    if mode == "demo":
+        st.info(quality_display({}, demo=True)['detail'])
+        fleet = demo_fleet()
+        snapshots = fleet.snapshots(now=6)
+        for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
+            with col:
+                show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True)
+        with st.expander("Demo residual history"):
+            st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
+    else:
+        st.caption("Read physical sensor records saved in PostgreSQL by the MQTT ingestion worker.")
+        db, c, notice = stored_sensor_context()
+        if notice:
+            st.warning(notice['label'] + '. ' + notice['detail'])
         else:
-            st.caption("Read physical sensor records saved in PostgreSQL by the MQTT ingestion worker.")
-            db, c, notice = stored_sensor_context()
-            if notice:
-                st.warning(notice['label'] + '. ' + notice['detail'])
-            else:
-                live_view(db, c)
-    with inventory:
-        inventory_view()
-    with mapping:
-        root = Path(__file__).resolve().parents[2]
-        st.markdown((root / "project_documentation/slide_to_code_mapping.md").read_text())
+            live_view(db, c)

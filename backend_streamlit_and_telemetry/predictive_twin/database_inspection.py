@@ -21,11 +21,20 @@ DESCRIPTIONS = {
     'amr_imu_readings': 'Gyroscope columns from the canonical measurement table',
     'amr_ina219_readings': 'Voltage and current columns from the canonical measurement table',
 }
+DATASET_LABELS = {
+    'amr_sensor_samples': 'All sensor measurements',
+    'amr_encoder_readings': 'Wheel encoders',
+    'amr_imu_readings': 'Gyroscope',
+    'amr_ina219_readings': 'Battery voltage and current',
+    'amr_twin_states': 'Model estimates',
+    'amr_pipeline_events': 'Packet quality events',
+    'amr_calibrations': 'Calibration records',
+}
 STATUS = {
     'not_configured': ('Database not connected', 'No database URL is configured for this app. The definitions below describe the expected schema; they do not establish that a hosted database exists.'),
     'unreachable': ('Database connection failed', 'The configured database could not be reached. Check its availability, TLS settings and the private reader credentials.'),
     'schema_not_ready': ('Connected; schema needs attention', 'PostgreSQL responded, but the required schema v3 or read permissions could not be verified. Complete administrator provisioning and reader grants.'),
-    'ready': ('Connected; schema v3 verified', 'Read-only access to saved AMR-01 records. Measured calibration is required for model estimates.'),
+    'ready': ('Connected; schema v3 verified', 'Physical AMR-01 records. Demo values are not stored here.'),
 }
 
 
@@ -50,23 +59,18 @@ def render_database_inspection():
         st.session_state.pending_workspace_view = 'Warehouse dashboard'
         st.rerun()
     st.title('Sensor database')
-    st.write('Inspect physical AMR-01 records, table attributes and storage connectivity.')
-    st.button('Refresh connection and records')  # A normal rerun rechecks the cached engine.
+    st.button('Refresh records')  # A normal rerun rechecks the cached engine.
     with st.spinner('Checking database'):
         db, state = database_connection()
     label, detail = STATUS[state]
     (st.success if state == 'ready' else st.warning)(label + '. ' + detail)
-    st.caption('These tables store physical sensor records and their model results. Demo data is generated separately.')
 
-    dataset = st.selectbox('Table or sensor view', list(DATABASE_DATASETS),
-                           format_func=lambda name: name + ' · ' + ('view' if name in SENSOR_VIEWS else 'table'))
+    dataset = st.selectbox('Sensor records', list(DATASET_LABELS), format_func=DATASET_LABELS.get)
     st.write(DESCRIPTIONS[dataset])
-    records_tab, attributes_tab, schema_tab, setup_tab = st.tabs([
-        'Stored records', 'Table attributes', 'Schema overview', 'Connection details',
-    ])
+    records_tab, attributes_tab = st.tabs(['Stored records', 'Table attributes'])
     with records_tab:
         limit = st.selectbox('Maximum rows', [50, 100, 200])
-        st.caption('Recent stored rows for AMR-01. Historical records may be stale; this is not a live health indicator.')
+        st.caption('Latest saved records. Historical rows do not indicate current robot health.')
         if db is None:
             st.info('Stored records are unavailable until a database with the required schema is connected.')
         else:
@@ -76,7 +80,7 @@ def render_database_inspection():
                 st.error('Records could not be read. Check connection and SELECT permissions for this dataset.')
             else:
                 if not rows:
-                    st.info('This dataset has no stored records yet. The ingestion worker saves validated physical sensor packets.')
+                    st.info('No stored records yet. Physical sensor packets will appear here.')
                 else:
                     # JSON objects stay exact in the export; render consistently in the grid.
                     display = [{key: json.dumps(value, sort_keys=True) if isinstance(value, (dict, list)) else value
@@ -90,20 +94,11 @@ def render_database_inspection():
                     st.download_button('Download displayed rows', output.getvalue(),
                                        file_name=dataset + '.csv', mime='text/csv')
     with attributes_tab:
-        st.caption('Expected schema from the application models. Sensor views inherit their source column constraints; views have no independent primary key.')
+        st.caption(f'{dataset} · ' + ('sensor view' if dataset in SENSOR_VIEWS else 'table'))
         st.dataframe(attributes(dataset), hide_index=True, width='stretch')
-        st.write('Packet identity: robot_id + boot_id + seq. Device sample_time_s is seconds since boot; received_at is server UTC receive time. SOC is stored as a fraction from 0 to 1.')
-    with schema_tab:
-        st.dataframe([{'Dataset': name, 'Kind': 'View' if name in SENSOR_VIEWS else 'Table',
-                       'Purpose': DESCRIPTIONS[name]} for name in DATABASE_DATASETS],
-                     hide_index=True, width='stretch')
-    with setup_tab:
-        if state == 'ready':
-            st.write('The app is connected to PostgreSQL using its private reader account. Schema v3 and read access have been verified.')
-        else:
-            st.write('Configure a private PostgreSQL reader connection, then verify schema v3 and read permissions. The connection status above identifies the current issue.')
-        st.write('The MQTT ingestion worker uses a separate writer account. Sensor data collection and measured calibration are checked independently from the database connection.')
-        with st.expander('Private connection configuration'):
-            st.caption('Use a reader account in Streamlit deployment secrets. The example below contains placeholders.')
-            st.code('[database]\nurl = "postgresql+psycopg://<reader>:<password>@<host>/<database>?sslmode=require"', language='toml')
-        st.link_button('Database deployment instructions', 'https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/postgresql_sensor_pipeline.md')
+        with st.expander('Storage schema and field guide'):
+            st.write('Packet key: robot_id + boot_id + seq. sample_time_s is seconds since device boot; received_at is server UTC. SOC is stored from 0 to 1.')
+            st.caption('Schema definitions come from the application models. Sensor views inherit source column constraints and have no independent primary key.')
+            st.dataframe([{'Dataset': name, 'Kind': 'View' if name in SENSOR_VIEWS else 'Table',
+                           'Purpose': DESCRIPTIONS[name]} for name in DATABASE_DATASETS],
+                         hide_index=True, width='stretch')

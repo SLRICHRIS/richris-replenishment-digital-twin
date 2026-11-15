@@ -6,29 +6,20 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
-    def test_model_inspection_and_inventory_events(self):
+    def test_sensor_details_and_source_switch_stay_within_sensor_scope(self):
         app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
-        self.assertFalse(app.exception)
         app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)
         self.assertFalse(app.exception)
         self.assertEqual(app.title[0].value, 'Detailed sensor readings')
         self.assertEqual(len(app.get('component_instance')), 0)
-        next(n for n in app.number_input if n.label == 'Delivered units').set_value(30)
-        next(n for n in app.number_input if n.label == 'Consumed units').set_value(10)
-        next(b for b in app.button if b.label == 'Apply stock event').click().run(timeout=30)
-        self.assertFalse(app.exception)
-        self.assertEqual(app.session_state.slide15_state['stock'], 120)
-        next(b for b in app.button if b.label == 'Apply task event').click().run(timeout=30)
-        self.assertFalse(app.exception)
-        self.assertEqual(app.session_state.slide15_state['task'], 'assigned')
-        next(n for n in app.number_input if n.label == 'Consumed units').set_value(999)
-        next(b for b in app.button if b.label == 'Apply stock event').click().run(timeout=30)
-        self.assertFalse(app.exception)
-        self.assertEqual(app.session_state.slide15_state['stock'], 120)
-        self.assertTrue(any('Invalid stock event' in item.value for item in app.error))
+        self.assertFalse(app.tabs)
+        self.assertFalse(app.number_input)
+        self.assertFalse(any('stock' in b.label.lower() or 'task event' in b.label.lower() for b in app.button))
         next(r for r in app.radio if r.label == 'Data source').set_value('live').run(timeout=30)
         self.assertFalse(app.exception)
         self.assertTrue(any('not configured' in item.value for item in app.warning))
+        next(b for b in app.button if b.label == 'Back to dashboard').click().run(timeout=30)
+        self.assertEqual(len(app.get('component_instance')), 1)
 
     def test_default_original_workspace_identity_and_python_payload(self):
         app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
@@ -81,8 +72,9 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertEqual(app.title[0].value, 'Sensor database')
         self.assertEqual(app.sidebar.radio[0].value, 'Database')
         self.assertTrue(any('Database not connected' in item.value for item in app.warning))
-        self.assertEqual(len(app.tabs), 4)
-        self.assertIn('amr_sensor_samples', app.selectbox[0].options[0])
+        self.assertEqual([tab.label for tab in app.tabs], ['Stored records', 'Table attributes'])
+        self.assertEqual(app.selectbox[0].options[0], 'All sensor measurements')
+        self.assertFalse(app.code)
 
     def test_database_empty_and_read_failure_are_distinct(self):
         from unittest.mock import patch
@@ -93,7 +85,7 @@ class StreamlitHostTests(unittest.TestCase):
             app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
             app.sidebar.radio[0].set_value('Database').run(timeout=30)
             self.assertFalse(app.exception)
-            self.assertTrue(any('no stored records' in item.value for item in app.info))
+            self.assertTrue(any('no stored records' in item.value.lower() for item in app.info))
             self.assertFalse(app.download_button)
         with patch(module + '.database_connection', return_value=(None, 'schema_not_ready')):
             app.run(timeout=30)

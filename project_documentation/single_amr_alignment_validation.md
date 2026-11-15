@@ -49,7 +49,7 @@ A visible Floor note identifies the remaining local-to-map registration and live
 
 ## Presentation-model alignment
 
-The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow final slides 5–15, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view includes separate manual stock-balance and task-state functions, outside the final presentation.
+The hosted navigation is limited to Floor, Sensor models and Database. Six compact cards follow final slides 5–15, with explanations, equations and linked sources collapsed together. The original single-AMR warehouse stays visible, with manager markers and overlapping rack labels removed in both renderers. Missions, activity, stock forecasts, route studies and older observer tools are outside the hosted UI; their deep links resolve to Sensor models. Detailed readings contains sensor values, charts and exports, with no manual stock/task exercise.
 
 The residual timer now starts at the first above-threshold sample, matching final slide 14 rather than counting the preceding interval. Forecasts use final slide 15’s 20 midpoint substeps by default. Software checks compare timestamp persistence behavior, integer stock conservation, permitted task transitions, invalid stock rejection and hosted navigation/replay isolation. No physical validation is implied.
 
