@@ -422,6 +422,16 @@ assert(!run('managerHoldReason'));
 run('step(500)');
 assert.equal(run('completed'), 1);
 assert.equal(run('robots.length'), 1);
+doc.documentElement.dataset.pythonTwin = 'true';
+run("applySlideWorkspaceScope({detail:{mode:'demo'}})");
+run("activatePage('hardware')");
+assert.equal(get('page-mode').textContent, 'Demo data');
+assert.equal(get('page-context').textContent, 'Demonstration readings');
+assert.equal(get('source-badge').textContent, 'Synthetic example only');
+run("applySlideWorkspaceScope({detail:{mode:'live'}})");
+assert.equal(get('page-mode').textContent, 'Physical data · read only');
+assert.equal(get('source-badge').textContent, 'Physical sensor records');
+assert.equal(run('robots.length'), 1, 'source labels do not alter the virtual robot');
 console.log(
   'PASS: original dashboard with one AMR, three sequential deliveries, approval exclusivity, pause/resume, cancellation, recharge, route closure and manager relocation.',
 );

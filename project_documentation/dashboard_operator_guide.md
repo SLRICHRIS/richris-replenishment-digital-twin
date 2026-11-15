@@ -1,6 +1,6 @@
 # Single-AMR dashboard operator guide
 
-The app opens in the existing 3D warehouse design. Only AMR-01 and its middle left-apron charging bay are present. Three demonstration jobs are sequential tasks for that robot. The Floor is a simulation; the Hardware view is the active sensor-model display.
+The app opens in the existing 3D warehouse design. Only AMR-01 and its middle left-apron charging bay are present. Three demonstration jobs are sequential tasks for that robot. The Floor is a simulation; Sensor models is the active sensor-model display.
 
 | View | Current use |
 | --- | --- |
@@ -18,9 +18,20 @@ The hosted navigation shows only Floor, Sensor models, Missions and Activity. Re
 
 1. Follow [direct-sensor commissioning](single_amr_sensor_twin_setup.md), not the legacy UART kit. Configure private Streamlit secrets and replace all example calibration values.
 2. Open **Sensor models**. The default fixed synthetic trial is labelled; it is not a physical reading.
-3. Select **Live MQTT sensors** only with the commissioned AMR-01 publisher. The server subscribes to `robot/amr01/state`; no browser broker form or WSS setup is needed for this path.
+3. Select **Physical sensor data** only with the commissioned AMR-01 publisher and independent ingestion worker. The worker subscribes to `robot/amr01/state` and stores readings; the dashboard reads the database.
 4. Check freshness, continuity and units before interpreting estimates. Missing or stale samples suspend advisories/forecasts; long gaps leave partial integrals.
-5. Use **Inspect models and slide 15 stock/tasks** for equations, variables, exports and the exact slide 15 manual stock/task example. Paper links and exact source pages also appear beside Hardware models.
+5. Use **Open detailed readings and evidence** for equations, variables, exports and the separate legacy stock/task example. Paper links and exact source pages also appear beside the six sensor models. The stock/task example is outside the final 17-slide presentation.
+
+### Interpret the readouts
+
+- **Data source and quality:** The notice above the cards distinguishes a synthetic example, current physical records, missing packets, old readings, clock/calibration mismatch and partial estimates. “Current readings” describes freshness; the motion advisory is separate.
+- **Wheel motion:** L and R label the left/right wheel, with metres and metres per second on each value. Travel is the increment for one device interval, not total distance.
+- **Position:** x, y and heading are named separately. Metres refer to the local trial origin; radians refer to heading. These are estimates, not surveyed warehouse coordinates.
+- **Battery:** Voltage and current are measured inputs. SOC means state of charge; it and net Wh are calculated. Positive current is discharge and negative current is charging. Display decimals do not establish sensor accuracy.
+- **Motion comparison:** The recorded gyro–encoder difference has a zero line, numeric scale and configured threshold lines. The hold time is explicit. Missing comparison intervals break the plot; an advisory asks for inspection and does not diagnose a particular fault.
+- **Forecasts:** Position after five seconds and time to an assumed 20% charge reserve require constant-input assumptions. A visible explanation says why a result is unavailable, including missing data, partial integrals, a first-sample anchor and zero/charging current.
+
+Sample age is time since MQTT receipt, not measured network latency. The display refreshes about once per second. A fixed demonstration has no physical sample age. Historical plots remain labelled as history when current readings are stale.
 
 INA219 measures voltage/current, not battery percentage directly. Encoders provide relative wheel motion, not independently verified absolute location. MPU6050 z gyro provides angular rate, not a drift-free compass heading. No sensor in the supplied component list measures shelf stock or detects people/obstacles.
 
