@@ -32,9 +32,9 @@ def main():
     # Schema creation is a separate one-time administrator operation.
     # The always-on worker requires only limited data-write privileges.
     store = SensorDatabase(required("AMR_DATABASE_URL"), initialize=False)
-    store.assert_schema_ready()
     service = None
     try:
+        store.assert_schema_ready()
         store.acquire_worker_lease()
         service = MQTTService(
             required("AMR_MQTT_HOST"),
@@ -74,10 +74,14 @@ def main():
                 next_metrics_log = time.monotonic() + 30
             time.sleep(0.5)
     finally:
-        if service is not None:
-            service.close()
-        store.release_worker_lease()
-        store.engine.dispose()
+        try:
+            if service is not None:
+                service.close()
+        finally:
+            try:
+                store.release_worker_lease()
+            finally:
+                store.engine.dispose()
         logging.info("AMR-01 ingester stopped")
 
 

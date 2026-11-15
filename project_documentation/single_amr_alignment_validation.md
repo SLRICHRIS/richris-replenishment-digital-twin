@@ -1,12 +1,12 @@
 # Single-AMR alignment: software evidence and physical limits
 
-The implementation is aligned to the 15-slide modelling deck and integrated into the previously designed warehouse dashboard. The default remains the original floor UI; Sensor models shows backend calculations. This revision keeps only AMR-01: one robot assembly, one dock, one set of six model cards and one raw-sensor topic. The inventory research baseline remains in source; the inspection workflow now uses slide 15’s exact stock/task functions. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
+The implementation is aligned to the final 17-slide modelling deck and integrated into the previously designed warehouse dashboard. The default remains the original floor UI; Sensor models shows backend calculations. This revision keeps only AMR-01: one robot assembly, one dock, one set of six model cards and one raw-sensor topic. The inventory research baseline remains in source; the inspection workflow retains separate legacy stock/task functions, outside the final presentation. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
 
 ## Verified locally
 
 | Check | Result / scope |
 |---|---|
-| 27 Python sensor and host tests | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; removed-identity rejection; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and slide 15 stock/task event forms. |
+| Python sensor and host checks | Equation units/signs, straight/turn/curved motion, bias, unclipped SOC, finite inputs, runtime boundaries; removed-identity rejection; duplicates, reordering, retired boots, gaps, stale/invalid/retained packets; default Streamlit UI and separate legacy stock/task event forms. See the dated recovery checks below. |
 | MQTT service test | Mock client verifies TLS context, the single AMR-01 subscription, callback isolation and absence of command publishing; this is not a broker connectivity test. |
 | Research baseline | 21 tests pass: API/quarantine, synthetic discrete events, graph/event explanations, inventory conservation, shared-input policy comparison and legacy gateway. |
 | Legacy Python services | 13 tests pass: recorder and coordinator lifecycle. These services remain outside the new active sensor path. |
@@ -15,13 +15,21 @@ The implementation is aligned to the 15-slide modelling deck and integrated into
 
 Run the commands in the root README to reproduce these checks. CI compiles the direct-sensor ESP32 sketch with the AMR-01-only identity admission check. Local environment has no Arduino toolchain; **no local firmware build, sensor wiring, motor test or hardware validation is claimed**. Read the Actions result for the actual remote compile status. A successful compile still would not validate sensors or mechanics.
 
+## Restart and freshness verification: 15 November 2026
+
+Local sensor/hosting checks: **57 passed**, with the two PostgreSQL service tests skipped locally. The 15 browser suites pass, and a real local Streamlit WebSocket session serves all 66 application files byte-for-byte. Source-boundary checks, 211 local references and seven generated downloads pass. The real PostgreSQL 16 integration and ESP32 compile are separate GitHub Actions jobs; consult that revision's Actions results for their status.
+
+New cases cover the original receive timestamp through a blocked writer queue, stale delayed commits, checkpoint recovery of pose/SOC/energy, first-sample anchoring after downtime, rejected retired boots and calibration changes, atomic rollback of samples/state/events/checkpoint, missing-checkpoint failure, future-clock rejection and additive v1/v2 provisioning. The checkpoint is independent of receive-time ordering, so a corrected UTC clock cannot select an older current state. A restart records uncertainty instead of reconstructing unobserved motion or charge.
+
+Deployment requires the schema-v3 provisioning step and new checkpoint-table grants in the [pipeline guide](postgresql_sensor_pipeline.md). Packet schema remains v2. The RAM queue and QoS-0 source are still not lossless; these checks do not validate the live EMQX deployment, sensor accuracy, physical timing or ground truth.
+
 ## Physical commissioning still required
 
 Measure effective x4 counts per wheel revolution, left/right radii and effective track; validate straight, square and turning trials with an independent reference. Verify encoder sign and IMU orientation; collect stationary gyro bias; compare INA219 readings with a meter and measure usable pack capacity/initial SOC. Run healthy/fault/slip trials to select the residual threshold/hold and evaluate false alerts, missed faults and latency on separate validation runs. Demonstrate loss/reboot handling against real network outages. Explicitly confirm pickup/delivery events before any future live inventory integration.
 
-The new firmware is a read-only observation sketch with TB6612 standby low; local motor control/navigation remains commissioning work. The models do not implement a full EKF, absolute map localisation, obstacle detection/avoidance, multi-robot traffic control, battery degradation or remaining useful life. Constant-wheel-speed/runtime projections are assumed-load forecasts. The active stock/task example uses the slide 15 functions; the larger policy experiment remains reference source.
+The new firmware is a read-only observation sketch with TB6612 standby low; local motor control/navigation remains commissioning work. The models do not implement a full EKF, absolute map localisation, obstacle detection/avoidance, multi-robot traffic control, battery degradation or remaining useful life. Constant-wheel-speed/runtime projections are assumed-load forecasts. The stock/task example and larger policy experiment remain legacy reference scope, outside the final 17-slide sensor presentation.
 
-Continuous trajectories and battery charge during long data gaps are unknown. Integrals resume as partial estimates; missing data are never silently filled. The backend state is process memory with bounded history, not a publication-grade measurement archive. Export trial data and use an independent durable recorder before drawing experimental conclusions. Paper-to-code attribution and exact PDF pages are in [the slide mapping](slide_to_code_mapping.md).
+Continuous trajectories and battery charge during long data gaps are unknown. PostgreSQL stores accepted physical samples, model states, quality events and a transactional checkpoint. On restart, committed totals survive; a fresh anchor starts the next observed interval and estimates remain partial. The in-memory queue is volatile and source delivery is QoS 0, so this does not guarantee a complete raw evidence archive. Preserve independent trial evidence before drawing experimental conclusions. Paper-to-code attribution and exact PDF pages are in [the slide mapping](slide_to_code_mapping.md).
 
 ## Scope alignment
 
@@ -31,9 +39,9 @@ A visible Floor note identifies the remaining local-to-map registration and live
 
 ## Presentation-model alignment
 
-The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow slides 4–14, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view uses slide 15’s stock-balance and minimal task-state functions, not the larger policy experiment.
+The hosted navigation is limited to Floor, Sensor models, Missions and Activity. Six compact cards follow final slides 5–15, with equations/variables and source details collapsed by default. Competing route-study, legacy observer and simulated energy views are not navigation options in this workflow; their deep links resolve to Sensor models. The detailed view includes separate legacy stock-balance and task-state functions, outside the final presentation.
 
-The residual timer now starts at the first above-threshold sample, matching slide 13 rather than counting the preceding interval. Forecasts use slide 14’s 20 midpoint substeps by default. Software checks compare timestamp persistence behavior, integer stock conservation, permitted task transitions, invalid stock rejection and hosted navigation/replay isolation. No physical validation is implied.
+The residual timer now starts at the first above-threshold sample, matching final slide 14 rather than counting the preceding interval. Forecasts use final slide 15’s 20 midpoint substeps by default. Software checks compare timestamp persistence behavior, integer stock conservation, permitted task transitions, invalid stock rejection and hosted navigation/replay isolation. No physical validation is implied.
 
 ## Rendered sensor-panel layout
 

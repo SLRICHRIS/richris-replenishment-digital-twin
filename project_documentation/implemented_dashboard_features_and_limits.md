@@ -6,9 +6,9 @@
 | Motion twin | Effective encoder counts → wheel distance → differential-drive midpoint pose; stationary gyro bias | [Equations and paper pages](slide_to_code_mapping.md); local relative pose, no EKF or absolute localisation |
 | Battery twin | Power, accumulated Wh and coulomb-counted SOC | Initial SOC, usable capacity and calibrated current required; runtime assumes future load |
 | Advisory models | Sustained gyro/encoder residual, short constant-wheel-speed projection, reserve-based runtime | Project extensions; no validated fault classification or battery remaining useful life |
-| Telemetry quality | Boot/sequence checks, retained-message rejection, device-time integration and freshness/gap gates | [Software evidence](single_amr_alignment_validation.md); bounded process memory, not a durable raw archive |
+| Telemetry quality | Boot/sequence checks, retained-message rejection, device-time integration and freshness/gap gates | [Software evidence](single_amr_alignment_validation.md); original receive-time freshness and PostgreSQL restart checkpoints; volatile pending queue and QoS 0 remain |
 | Existing warehouse interface | One AMR-01, one central left-apron bay, 12 racks and 4 simulated replenishment stations | Preserves the original design; live v2 pose does not yet drive the 3D scene |
-| Stock/task model · slide 15 | `stock_step` balance and `task_step` finite-state machine in the detailed view | Manual software events; no sensor-driven stock or expanded policy experiment |
+| Separate legacy stock/task example | `stock_step` balance and `task_step` finite-state machine in the detailed view | Manual software events; no sensor-driven stock or expanded policy experiment |
 | Route preview | 19 nodes, 24 bidirectional links, distance/time objectives and closures | Optional simulation tool; no physical navigation or collision-avoidance claim |
 | Reference experiments | Older observer, policy comparisons, route playback and energy analytics retained in source | Hidden from the focused hosted navigation; no competing model workflow |
 

@@ -124,7 +124,7 @@ Start exactly **one instance** of the writer:
 python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker
 ```
 
-The worker will not start without explicit measured calibration. MQTT success is shown only after EMQX SUBACK, not TCP connection alone; EMQX authorization refusal and database failures terminate the worker instead of being represented as healthy telemetry. The worker must run on a persistent host; Streamlit Cloud reruns alone are not sufficient.
+The worker will not start without explicit measured calibration and provisioned database schema v3. Existing v1/v2 databases need the additive checkpoint migration and new table grants described in the pipeline guide before starting this version. On restart, committed totals are preserved, downtime is not integrated, and the first new sample records a restart event. MQTT success is shown only after EMQX SUBACK, not TCP connection alone; EMQX authorization refusal and database failures terminate the worker instead of being represented as healthy telemetry. The worker must run on a persistent host; Streamlit Cloud reruns alone are not sufficient.
 
 Configure `[database].url` with a SELECT-only database account in private Streamlit secrets, along with the *same calibration* and `[commissioning].measured_calibration_confirmed=true`. The UI reads persisted records and labels stale/continuity-lost data.
 

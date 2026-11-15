@@ -45,14 +45,14 @@ class Calibration:
 
 
 def wheel_distance(count_delta, radius_m, counts_per_rev):
-    """Slides 4–5: signed counts -> metres (gearing + quadrature included in N)."""
+    """Final slides 5–6: signed counts -> metres (gearing + quadrature included in N)."""
     finite(count_delta)
     positive(radius_m, counts_per_rev)
     return 2 * math.pi * radius_m * count_delta / counts_per_rev
 
 
 def midpoint_pose(x, y, theta, ds_left, ds_right, track_m):
-    """Slides 6–7: nonlinear planar rolling approximation; theta is unwrapped."""
+    """Final slides 7–8: nonlinear planar rolling approximation; theta is unwrapped."""
     finite(x, y, theta, ds_left, ds_right)
     positive(track_m)
     ds = (ds_right + ds_left) / 2
@@ -62,7 +62,7 @@ def midpoint_pose(x, y, theta, ds_left, ds_right, track_m):
 
 
 def stationary_gyro_bias(samples):
-    """Slides 8–9: operator must independently ensure robot is stationary."""
+    """Final slides 9–10: operator must independently ensure robot is stationary."""
     values = list(samples)
     if not values:
         raise ValueError("Stationary samples are required")
@@ -71,7 +71,7 @@ def stationary_gyro_bias(samples):
 
 
 def battery_step(soc, energy_wh, voltage_v, discharge_current_a, dt_s, capacity_ah):
-    """Slides 10–11: right-end sample rectangular integration, eta=1.
+    """Final slides 11–12: right-end sample rectangular integration, eta=1.
 
     Negative current means charging. Energy is signed net consumption; raw SOC
     is intentionally not clipped so calibration/data problems remain visible.
@@ -93,11 +93,11 @@ class ResidualDetector:
         self.exceeding = False
 
     def update(self, gyro_z, bias, v_left, v_right, track, dt, threshold, hold):
-        """Slides 12–13: sustained consistency residual, not fault classification."""
+        """Final slides 13–14: sustained consistency residual, not fault classification."""
         finite(gyro_z, bias, v_left, v_right)
         positive(track, dt, threshold, hold)
         residual = gyro_z - bias - (v_right - v_left) / track
-        # Slide 13 starts the timer at the first abnormal sample, not one dt earlier.
+        # Final slide 14 starts the timer at the first abnormal sample, not one dt earlier.
         if abs(residual) <= threshold:
             self.reset()
         elif self.exceeding:
@@ -109,12 +109,12 @@ class ResidualDetector:
 
 
 def motion_forecast(pose, v_left, v_right, track, horizon_s=5.0, dt_s=None):
-    """Slide 14 extension: hold wheel speeds fixed; no obstacle/route prediction."""
+    """Final slide 15 extension: hold wheel speeds fixed; no obstacle/route prediction."""
     finite(*pose, v_left, v_right, horizon_s)
     positive(track)
     if not 0 <= horizon_s <= 300:
         raise ValueError("Forecast horizon must be between 0 and 300 seconds")
-    # Slide 14 uses 20 midpoint substeps. An explicit dt remains available for trials.
+    # Final slide 15 uses 20 midpoint substeps. An explicit dt remains available for trials.
     if dt_s is None:
         dt_s = horizon_s / 20 if horizon_s else 1.0
     positive(dt_s)
@@ -130,7 +130,7 @@ def motion_forecast(pose, v_left, v_right, track, horizon_s=5.0, dt_s=None):
 
 
 def runtime_hours(soc, reserve_soc, capacity_ah, future_discharge_a):
-    """Slide 14 extension: constant future current, no battery degradation model."""
+    """Final slide 15 extension: constant future current, no battery degradation model."""
     finite(soc, reserve_soc, future_discharge_a)
     positive(capacity_ah)
     if not 0 <= soc <= 1 or not 0 <= reserve_soc <= 1:
@@ -141,7 +141,7 @@ def runtime_hours(soc, reserve_soc, capacity_ah, future_discharge_a):
 
 
 def stock_step(stock, delivered, consumed):
-    """Slide 15: confirmed integer stock balance at one location."""
+    """Legacy example: confirmed integer stock balance at one location."""
     if any(type(value) is not int for value in (stock, delivered, consumed)):
         raise ValueError("Stock quantities must be integer units")
     stock_next = stock + delivered - consumed
@@ -151,7 +151,7 @@ def stock_step(stock, delivered, consumed):
 
 
 def task_step(state, event):
-    """Slide 15 finite-state machine; unknown events do not change state."""
+    """Legacy example finite-state machine; unknown events do not change state."""
     transitions = {
         ("idle", "assign"): "assigned",
         ("assigned", "start"): "travelling",

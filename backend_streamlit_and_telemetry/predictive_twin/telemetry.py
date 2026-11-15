@@ -6,6 +6,7 @@ freshness. No packet can move inventory or issue motor commands.
 from collections import deque
 import copy
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
 import threading
 import time
@@ -75,6 +76,25 @@ class RobotTwin:
         self.invalid_packets = 0
         self.ignored_packets = 0
         self.last_result = {}
+        self.restart_pending = False
+
+    def restore(self, checkpoint):
+        """Keep committed integrals; the first new packet only anchors time/counts."""
+        packet = Packet.parse(checkpoint["packet"], "robot/amr01/state")
+        finite(*checkpoint["pose"], checkpoint["soc"], checkpoint["energy_wh"])
+        self.pose = tuple(checkpoint["pose"])
+        self.soc = checkpoint["soc"]
+        self.energy_wh = checkpoint["energy_wh"]
+        self.last_observed = packet
+        self.active_boot = packet.boot_id
+        self.last_seq = packet.seq
+        self.seen_boots = set(checkpoint["seen_boots"]) | {packet.boot_id}
+        # Do not reuse a previous process's monotonic clock or extrapolate downtime.
+        self.previous = None
+        self.last_received = None
+        self.continuity_lost = True
+        self.quality = "ANCHOR_UNCERTAIN"
+        self.restart_pending = True
 
     def invalidate(self):
         # Anchor after bad/missing observations so no residual bridges an unknown interval.
@@ -179,19 +199,19 @@ class FleetTwin:
         self.lock = threading.RLock()
         self.rejected_packets = 0
         if self.database is not None:
-            # A restarted worker cannot infer movement or charge over downtime.
-            previous = self.database.read_snapshot("amr01")
-            if previous["quality"] != "NO_DATA":
-                self.robots["amr01"].continuity_lost = True
+            checkpoint = self.database.read_resume_state("amr01", calibrations["amr01"])
+            if checkpoint is not None:
+                self.robots["amr01"].restore(checkpoint)
 
-    def ingest(self, payload, topic, received=None, retained=False):
+    def ingest(self, payload, topic, received=None, retained=False, received_at=None):
         received = time.monotonic() if received is None else received
+        received_at = datetime.now(timezone.utc) if received_at is None else received_at
         with self.lock:
             # Retained snapshots cannot establish freshness or initialize an integral.
             if retained:
                 self.rejected_packets += 1
                 if self.database is not None:
-                    self.database.record_rejected_packet("retained_message", topic)
+                    self.database.record_rejected_packet("retained_message", topic, received_at=received_at)
                 return False
             try:
                 if isinstance(payload, (str, bytes)):
@@ -202,7 +222,7 @@ class FleetTwin:
             except (ValueError, TypeError, UnicodeDecodeError):
                 self.rejected_packets += 1
                 if self.database is not None:
-                    self.database.record_rejected_packet("invalid_schema", topic)
+                    self.database.record_rejected_packet("invalid_schema", topic, received_at=received_at)
                 for rid in ROBOT_IDS:
                     if topic == f"robot/{rid}/state":
                         self.robots[rid].invalidate()
@@ -221,6 +241,15 @@ class FleetTwin:
             # Data-quality events survive worker restarts in PostgreSQL. They
             # are linked to the new accepted packet, not guessed sensor data.
             quality_events = []
+            if robot.restart_pending:
+                quality_events.append({
+                    "event_type": "worker_restart",
+                    "details": {
+                        "previous_boot_id": previous.boot_id,
+                        "previous_seq": previous.seq,
+                        "unobserved_interval_integrated": False,
+                    },
+                })
             if previous is not None:
                 if packet.boot_id != previous.boot_id:
                     quality_events.append({
@@ -248,7 +277,9 @@ class FleetTwin:
             if not admitted:
                 self.robots[packet.robot_id] = staged
                 return False
-            if not self.database.persist(packet, staged, quality_events=quality_events):
+            staged.restart_pending = False
+            if not self.database.persist(packet, staged, quality_events=quality_events,
+                                         received_at=received_at):
                 self.robots[packet.robot_id].ignored_packets += 1
                 return False
             self.robots[packet.robot_id] = staged

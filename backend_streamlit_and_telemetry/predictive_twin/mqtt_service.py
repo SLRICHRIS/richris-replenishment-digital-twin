@@ -4,6 +4,7 @@ The sole production consumer is the independent ingestion worker. Persisted
 readings reach Streamlit through PostgreSQL, not through browser MQTT.
 """
 import logging
+from datetime import datetime, timezone
 import queue
 import re
 import ssl
@@ -102,7 +103,7 @@ class MQTTService:
             if self._worker_stop.is_set() and self._ingest_queue.empty():
                 return
             try:
-                kind, payload, topic, retained, received = self._ingest_queue.get(timeout=0.2)
+                kind, payload, topic, retained, received, received_at = self._ingest_queue.get(timeout=0.2)
             except queue.Empty:
                 continue
             try:
@@ -115,7 +116,8 @@ class MQTTService:
                     continue
                 started = time.monotonic()
                 accepted = self.fleet.ingest(
-                    payload, topic, received=received, retained=retained
+                    payload, topic, received=received, retained=retained,
+                    received_at=received_at,
                 )
                 elapsed_ms = (time.monotonic() - started) * 1000
                 with self._lock:
@@ -177,7 +179,8 @@ class MQTTService:
         # disconnect invalidates the model anchor. No unknown interval is joined.
         if self._ingest_queue is not None:
             if not self.fatal_error:
-                self._enqueue(("disconnect", b"", TOPIC, False, time.monotonic()))
+                self._enqueue(("disconnect", b"", TOPIC, False, time.monotonic(),
+                               datetime.now(timezone.utc)))
         else:
             with self.fleet.lock:
                 for robot in self.fleet.robots.values():
@@ -189,16 +192,22 @@ class MQTTService:
         if message.topic != TOPIC:
             LOGGER.warning("Ignoring unexpected MQTT topic")
             return
+        received = time.monotonic()
+        received_at = datetime.now(timezone.utc)
+        # Enforce the byte bound before retaining a payload in the queue.
+        # An oversized body becomes an ordinary invalid-schema audit event.
+        payload = bytes(message.payload) if len(message.payload) <= 4096 else b""
         # Queue the sample immediately. Capture receive time on the MQTT thread,
         # NOT after PostgreSQL latency. A full queue is a fatal observable error.
         if self._ingest_queue is not None:
             with self._lock:
                 self._metrics["received"] += 1
-            self._enqueue(("sample", bytes(message.payload), message.topic,
-                           message.retain, time.monotonic()))
+            self._enqueue(("sample", payload, message.topic,
+                           message.retain, received, received_at))
             return
         try:
-            accepted = self.fleet.ingest(message.payload, message.topic, retained=message.retain)
+            accepted = self.fleet.ingest(payload, message.topic, retained=message.retain,
+                                         received=received, received_at=received_at)
             with self._lock:
                 self._metrics["received"] += 1
                 self._metrics["persisted" if accepted else "rejected"] += 1

@@ -199,4 +199,4 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `project_documentation/postgresql_sensor_pipeline.md` | Installation, schema, private credentials, database roles, and live physical commissioning limitations. |
 | `project_maintenance_scripts/probe_emqx_connection.py` | Read-only EMQX Cloud TLS authorization and schema-v2 sensor packet smoke test, with no SQL writes. |
 | `project_documentation/emqx_cloud_amr01_integration.md` | Official EMQX Serverless broker configuration, topic ACLs, ESP32 publisher, ingestion-worker and PostgreSQL integration guide. |
-| `project_maintenance_scripts/provision_amr_sensor_database.py` | One-time admin-only PostgreSQL schema v2 provisioning and validation, separate from live MQTT worker. |
+| `project_maintenance_scripts/provision_amr_sensor_database.py` | Admin-only PostgreSQL schema v3 provisioning, additive checkpoint migration and validation, separate from live MQTT worker. |
