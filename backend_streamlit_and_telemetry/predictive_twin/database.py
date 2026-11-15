@@ -10,7 +10,7 @@ import json
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKeyConstraint,
-    Index, Integer, JSON, String, create_engine, inspect, select, text,
+    Index, Integer, JSON, String, create_engine, inspect, select, text, update,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.exc import SQLAlchemyError
@@ -101,6 +101,22 @@ class PipelineEvent(Base):
     )
 
 
+class WorkerCheckpoint(Base):
+    """Transactional pointer to the last committed state, independent of UTC order."""
+    __tablename__ = "amr_worker_checkpoints"
+
+    robot_id: Mapped[str] = mapped_column(String(16), primary_key=True)
+    boot_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    seq: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["robot_id", "boot_id", "seq"],
+            ["amr_twin_states.robot_id", "amr_twin_states.boot_id", "amr_twin_states.seq"],
+        ),
+    )
+
+
 # Views show individual sensor attributes but require no extra writes at 20 Hz.
 # There is one authoritative append-only measurement table with typed columns.
 SENSOR_VIEWS = {
@@ -141,7 +157,7 @@ def utc_aware(value):
 class SensorDatabase:
     """SQLAlchemy store: PostgreSQL in deployment; SQLite for isolated tests.
 
-    initialize=True is reserved for the ingestion worker/provisioning.
+    initialize=True is reserved for administrator provisioning and isolated tests.
     The Streamlit read path must set initialize=False.
     """
 
@@ -165,11 +181,22 @@ class SensorDatabase:
                         connection.execute(text(f"CREATE VIEW {name} AS {query}"))
             with Session(self.engine) as session, session.begin():
                 version = session.get(DatabaseVersion, 1)
+                # v1/v2 had only receive-time ordering. Seed their checkpoint
+                # once during administrator provisioning, preserving all history.
+                if version is None or version.schema_version in (1, 2):
+                    latest = session.execute(
+                        select(TwinState).where(TwinState.robot_id == "amr01")
+                        .order_by(TwinState.received_at.desc(), TwinState.seq.desc()).limit(1)
+                    ).scalar_one_or_none()
+                    if latest is not None and session.get(WorkerCheckpoint, "amr01") is None:
+                        session.add(WorkerCheckpoint(
+                            robot_id="amr01", boot_id=latest.boot_id, seq=latest.seq
+                        ))
                 if version is None:
-                    session.add(DatabaseVersion(id=1, schema_version=2))
-                elif version.schema_version == 1:
-                    version.schema_version = 2
-                elif version.schema_version != 2:
+                    session.add(DatabaseVersion(id=1, schema_version=3))
+                elif version.schema_version in (1, 2):
+                    version.schema_version = 3
+                elif version.schema_version != 3:
                     raise RuntimeError("Unknown database schema version; apply a reviewed migration")
         self.healthcheck()
 
@@ -178,10 +205,11 @@ class SensorDatabase:
         try:
             with Session(self.engine) as session:
                 version = session.get(DatabaseVersion, 1)
-                if version is None or version.schema_version != 2:
+                if version is None or version.schema_version != 3:
                     raise RuntimeError(
-                        "Sensor database schema v2 not provisioned; run admin provisioning first"
+                        "Sensor database schema v3 not provisioned; run admin provisioning first"
                     )
+                session.execute(select(WorkerCheckpoint.robot_id).limit(1))
             available_views = set(inspect(self.engine).get_view_names())
         except SQLAlchemyError as error:
             # Database URLs and SQL driver diagnostics are never returned to UI.
@@ -225,13 +253,17 @@ class SensorDatabase:
         with self.engine.connect() as conn:
             conn.execute(text("SELECT 1"))
 
-    def persist(self, packet, robot, quality_events=()):
+    def persist(self, packet, robot, quality_events=(), received_at=None):
         """Atomically store one admitted packet plus the state produced from it.
 
         A duplicate (robot, boot, seq) returns False and is never integrated.
         SQL/database failures propagate; caller must not publish the candidate.
         """
-        stamp = datetime.now(timezone.utc)
+        # Preserve acquisition at the subscriber boundary, not database latency.
+        stamp = datetime.now(timezone.utc) if received_at is None else received_at
+        if not isinstance(stamp, datetime) or stamp.utcoffset() is None:
+            raise ValueError("Receive timestamp must be timezone-aware")
+        stamp = stamp.astimezone(timezone.utc)
         fp = calibration_fingerprint(robot.calibration)
         data = asdict(packet)
         with Session(self.engine) as session, session.begin():
@@ -248,7 +280,7 @@ class SensorDatabase:
                 **data, received_at=stamp, calibration_fingerprint=fp
             ))
             for event in quality_events:
-                if event["event_type"] not in {"sequence_gap", "time_gap", "reboot"}:
+                if event["event_type"] not in {"sequence_gap", "time_gap", "reboot", "worker_restart"}:
                     raise ValueError("Invalid quality event")
                 session.add(PipelineEvent(
                     robot_id=packet.robot_id, boot_id=packet.boot_id,
@@ -264,9 +296,20 @@ class SensorDatabase:
                 soc_fraction=robot.soc, energy_wh=robot.energy_wh,
                 derived=dict(robot.last_result),
             ))
+            # Both the pointer and its target belong to this transaction. The
+            # explicit flush establishes FK targets before checkpoint update.
+            session.flush()
+            updated = session.execute(
+                update(WorkerCheckpoint).where(WorkerCheckpoint.robot_id == packet.robot_id)
+                .values(boot_id=packet.boot_id, seq=packet.seq)
+            )
+            if not updated.rowcount:
+                session.add(WorkerCheckpoint(
+                    robot_id=packet.robot_id, boot_id=packet.boot_id, seq=packet.seq
+                ))
         return True
 
-    def record_rejected_packet(self, reason, topic):
+    def record_rejected_packet(self, reason, topic, received_at=None):
         """Audit rejected AMR-01 source data without storing untrusted payloads."""
         if reason not in {"invalid_schema", "retained_message"}:
             raise ValueError("Unknown packet rejection category")
@@ -275,9 +318,59 @@ class SensorDatabase:
         with Session(self.engine) as session, session.begin():
             session.add(PipelineEvent(
                 robot_id="amr01", boot_id="", seq=-1,
-                observed_at=datetime.now(timezone.utc),
+                observed_at=received_at or datetime.now(timezone.utc),
                 event_type=reason, details={"topic": topic},
             ))
+
+    @staticmethod
+    def _latest_pair(robot_id):
+        return (
+            select(SensorSample, TwinState).join(
+                TwinState,
+                (SensorSample.robot_id == TwinState.robot_id)
+                & (SensorSample.boot_id == TwinState.boot_id)
+                & (SensorSample.seq == TwinState.seq),
+            ).where(SensorSample.robot_id == robot_id)
+            .join(WorkerCheckpoint,
+                  (SensorSample.robot_id == WorkerCheckpoint.robot_id)
+                  & (SensorSample.boot_id == WorkerCheckpoint.boot_id)
+                  & (SensorSample.seq == WorkerCheckpoint.seq))
+        )
+
+    def read_resume_state(self, robot_id, calibration):
+        """Load committed totals and boot watermarks, never a live time anchor.
+
+        The writer must hold its lease before calling this method. A changed
+        calibration needs an explicitly separate trial, not mixed integrals.
+        """
+        if robot_id != "amr01":
+            raise ValueError("Only AMR-01 is supported")
+        with Session(self.engine) as session:
+            latest = session.execute(self._latest_pair(robot_id)).first()
+            if latest is None:
+                if session.execute(select(SensorSample.robot_id).limit(1)).first() is not None:
+                    raise RuntimeError("Missing committed AMR-01 worker checkpoint")
+                return None
+            sample, state = latest
+            if sample.calibration_fingerprint != calibration_fingerprint(calibration):
+                raise RuntimeError(
+                    "Stored AMR-01 calibration differs; use a separate trial database "
+                    "for changed calibration"
+                )
+            boots = session.execute(
+                select(SensorSample.boot_id).where(
+                    SensorSample.robot_id == robot_id
+                ).distinct()
+            ).scalars().all()
+            return dict(
+                packet={field: getattr(sample, field) for field in (
+                    "robot_id", "boot_id", "seq", "schema_version", "sample_time_s",
+                    "encoder_left_count", "encoder_right_count", "gyro_z_rad_s",
+                    "battery_voltage_v", "battery_current_a", "robot_state",
+                )},
+                pose=(state.x_m, state.y_m, state.theta_rad),
+                soc=state.soc_fraction, energy_wh=state.energy_wh, seen_boots=boots,
+            )
 
     def recent_quality_events(self, robot_id="amr01", limit=20):
         """Read bounded, durable evidence of gaps/reboots for operators."""
@@ -301,16 +394,10 @@ class SensorDatabase:
         if robot_id != "amr01" or stale_after_s <= 0:
             raise ValueError("Only AMR-01 and positive freshness windows are supported")
         with Session(self.engine) as session:
-            latest = session.execute(
-                select(SensorSample, TwinState).join(
-                    TwinState,
-                    (SensorSample.robot_id == TwinState.robot_id)
-                    & (SensorSample.boot_id == TwinState.boot_id)
-                    & (SensorSample.seq == TwinState.seq),
-                ).where(SensorSample.robot_id == robot_id)
-                .order_by(SensorSample.received_at.desc(), SensorSample.seq.desc()).limit(1)
-            ).first()
+            latest = session.execute(self._latest_pair(robot_id)).first()
             if latest is None:
+                if session.execute(select(SensorSample.robot_id).limit(1)).first() is not None:
+                    raise RuntimeError("Missing committed AMR-01 worker checkpoint")
                 return dict(
                     pose=(0., 0., 0.), soc=None, energy_wh=None, quality="NO_DATA",
                     age_s=None, stale=True, continuity_lost=False,
@@ -318,17 +405,19 @@ class SensorDatabase:
                     history=[], calibration_match=None, pipeline_events=[],
                 )
             sample, state = latest
-            age_s = max(0.0, (datetime.now(timezone.utc) - utc_aware(sample.received_at)).total_seconds())
+            elapsed = (datetime.now(timezone.utc) - utc_aware(sample.received_at)).total_seconds()
+            clock_skew = elapsed < -1.0
+            age_s = max(0.0, elapsed)
             calibration_match = (
                 expected_fingerprint is None or
                 expected_fingerprint == sample.calibration_fingerprint
             )
-            stale = age_s > stale_after_s
+            stale = clock_skew or age_s > stale_after_s
             result = session.execute(
                 select(TwinState).where(
                     TwinState.robot_id == robot_id,
                     TwinState.boot_id == sample.boot_id,
-                ).order_by(TwinState.received_at.desc(), TwinState.seq.desc()).limit(1200)
+                ).order_by(TwinState.seq.desc()).limit(1200)
             ).scalars().all()
             history = [
                 dict(sample_time_s=s.sample_time_s, x_m=s.x_m, y_m=s.y_m,
@@ -357,7 +446,7 @@ class SensorDatabase:
             return dict(
                 pose=(state.x_m, state.y_m, state.theta_rad), soc=state.soc_fraction,
                 energy_wh=state.energy_wh,
-                quality=("STALE" if stale else
+                quality=("CLOCK_SKEW" if clock_skew else "STALE" if stale else
                          "CALIBRATION_MISMATCH" if not calibration_match else state.quality),
                 age_s=age_s, stale=stale or not calibration_match,
                 continuity_lost=state.continuity_lost,

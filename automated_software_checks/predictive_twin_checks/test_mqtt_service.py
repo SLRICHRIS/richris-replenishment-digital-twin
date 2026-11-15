@@ -99,9 +99,9 @@ def test_bounded_queue_processes_samples_in_order_without_motor_control():
     class DatabaseRecorder:
         def __init__(self):
             self.sequences = []
-        def read_snapshot(self, robot_id):
-            return {"quality": "NO_DATA"}
-        def persist(self, packet, robot, quality_events=()):
+        def read_resume_state(self, robot_id, calibration):
+            return None
+        def persist(self, packet, robot, quality_events=(), received_at=None):
             self.sequences.append(packet.seq)
             return True
 
@@ -139,9 +139,9 @@ def test_backpressure_is_explicit_when_database_stalls():
     entered, release = threading.Event(), threading.Event()
 
     class SlowDatabase:
-        def read_snapshot(self, robot_id):
-            return {"quality": "NO_DATA"}
-        def persist(self, packet, robot, quality_events=()):
+        def read_resume_state(self, robot_id, calibration):
+            return None
+        def persist(self, packet, robot, quality_events=(), received_at=None):
             entered.set()
             release.wait(timeout=4)
             return True
@@ -166,4 +166,65 @@ def test_backpressure_is_explicit_when_database_stalls():
             client.publish.assert_not_called()
         finally:
             release.set()
+            service.close()
+
+
+def test_callback_receive_time_survives_writer_backlog():
+    import json
+    import threading
+    from dataclasses import asdict
+    from datetime import datetime, timezone
+    from backend_streamlit_and_telemetry.predictive_twin.telemetry import Packet
+
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    stamps = []
+
+    class SlowDatabase:
+        def read_resume_state(self, robot_id, calibration):
+            return None
+        def persist(self, packet, robot, quality_events=(), received_at=None):
+            if packet.seq == 0:
+                entered.set()
+                assert release.wait(timeout=5)
+            stamps.append(received_at)
+            if packet.seq == 1:
+                finished.set()
+            return True
+
+    with patch('backend_streamlit_and_telemetry.predictive_twin.mqtt_service.mqtt.Client'):
+        service = MQTTService("broker.example.com", "reader", "password",
+                              example_calibrations(), database=SlowDatabase())
+        try:
+            before = datetime.now(timezone.utc)
+            for seq in range(2):
+                data = asdict(Packet("amr01", "ci-boot", seq, seq * .05,
+                                     seq * 10, seq * 10, .01, 7.4, .6, "standby"))
+                service._message(service.client, None, SimpleNamespace(
+                    topic=TOPIC, payload=json.dumps(data).encode(), retain=False
+                ))
+                if seq == 0:
+                    assert entered.wait(timeout=3)
+            after = datetime.now(timezone.utc)
+            # Both receives precede the release, including the queued packet.
+            release.set()
+            assert finished.wait(timeout=3)
+            assert len(stamps) == 2
+            assert all(before <= stamp <= after for stamp in stamps)
+            assert not service.fatal_error
+        finally:
+            release.set()
+            service.close()
+
+
+def test_oversized_payload_is_bounded_before_queueing():
+    with patch('backend_streamlit_and_telemetry.predictive_twin.mqtt_service.mqtt.Client'):
+        service = MQTTService("broker.example.com", "reader", "password", example_calibrations())
+        try:
+            with patch.object(service.fleet, "ingest", return_value=False) as ingest:
+                service._message(service.client, None, SimpleNamespace(
+                    topic=TOPIC, payload=b"x" * 8192, retain=False
+                ))
+            assert ingest.call_args.args[0] == b""
+            assert service.metrics["rejected"] == 1
+        finally:
             service.close()

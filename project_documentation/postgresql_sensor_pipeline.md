@@ -14,7 +14,7 @@ Wheel encoders + MPU6050 gyro + INA219 voltage/current
 
 This is **one AMR-01**. The older warehouse scene, missions and inventory simulation are distinct from the physical telemetry and are not synchronized to surveyed warehouse coordinates. The LabVIEW return/command path on slide 16 is still a proposal, not a live motor-control feature. GitHub holds source code; it cannot run the always-on telemetry worker.
 
-## Structured physical sensor schema (v2)
+## Structured physical database schema (v3; MQTT packet v2)
 
 **One canonical, typed, append-only physical sensor fact table** stores each
 admitted 20 Hz MQTT packet once. Three sensor-specific, read-only SQL **views**
@@ -31,8 +31,9 @@ primary-key shape are retained for non-destructive migration.
 | `amr_ina219_readings` | SQL view | `robot_id`, `boot_id`, `seq`, `sample_time_s`, `received_at`, `battery_voltage_v` (double), `battery_current_a` (double), `calibration_fingerprint` | INA219 terminal voltage and signed current (positive means discharge) |
 | `amr_calibrations` | Physical table | `fingerprint` (SHA-256 PK), `robot_id`, `parameters` (JSON), `created_at` | Sensor/wheel/battery calibrations linked to every packet |
 | `amr_twin_states` | Physical table | Same 3-part packet PK/FK, `received_at`, `sample_time_s`, `quality`, `continuity_lost`, `x_m`, `y_m`, `theta_rad`, `soc_fraction`, `energy_wh`, `derived` (JSON) | Calculated odometry, power, SOC, angular residual, advisory and model quality |
-| `amr_pipeline_events` | Physical sparse event table | `id` (PK), `robot_id`, `boot_id`, `seq`, `observed_at`, `event_type`, `details` (JSON) | Persisted sequence gaps, excessive sample-time gaps, reboot and rejected-packet evidence |
-| `amr_database_version` | Physical table | `id` (PK), `schema_version=2` | Safeguard against incompatible versions |
+| `amr_worker_checkpoints` | One mutable pointer per robot | `robot_id` (PK), `boot_id`, `seq`; composite FK to `amr_twin_states` | Last committed model state, updated atomically with each accepted sample; receive-time clock corrections cannot rewind the current state |
+| `amr_pipeline_events` | Physical sparse event table | `id` (PK), `robot_id`, `boot_id`, `seq`, `observed_at`, `event_type`, `details` (JSON) | Persisted sequence gaps, excessive sample-time gaps, reboot, worker restart and rejected-packet evidence |
+| `amr_database_version` | Physical table | `id` (PK), `schema_version=3` | Database compatibility guard; independent of MQTT packet version |
 
 **Raw versus computed:** `battery_voltage_v`, `battery_current_a` and
 `gyro_z_rad_s` come from physical sensor readings. `soc_fraction`, battery
@@ -45,12 +46,17 @@ packets from duplicating sensor records. The database constrains schema v2,
 non-negative device sample time and positive battery voltage on new tables;
 the Python validator additionally enforces exact fields, finite numerical
 measurements and correct `robot/amr01/state` topic identity. Raw sample and
-derived state are stored together in one PostgreSQL transaction.
+derived state, quality events and checkpoint pointer are stored together in one PostgreSQL transaction. Historical measurements and model states remain append-only; only the checkpoint pointer is updated.
 
 **Timestamp interpretation:** `sample_time_s` is the ESP32's monotonic time
 since boot, *not* an absolute timestamp. `received_at` is the server's
-UTC database-ingest time, not a hardware acquisition wall clock. Their
+UTC receive time captured in the MQTT callback, before writer-queue or database delay, not a hardware acquisition wall clock. Their
 difference cannot be used to claim network latency without clock alignment.
+The dashboard uses that original receive time for freshness. A row more than
+one second in the future is marked `CLOCK_SKEW` and its live readouts are
+suppressed. Keep the worker and dashboard host clocks synchronized. Current
+state comes from the committed checkpoint; per-boot history uses sequence order.
+Historical v1/v2 timestamps retain their earlier database-processing meaning.
 
 ### Query the sensor views
 
@@ -91,7 +97,7 @@ LIMIT 20;
    Net encoder count displacement across short losses is an approximation;
    battery current is integrated from the available endpoint sample.
 5. **Persist:** Commit accepted typed raw packet, calculated model state,
-   calibration link and any quality event atomically. Failed database writes
+   calibration link, checkpoint and any quality event atomically. Failed database writes
    terminate the ingester rather than claiming successful delivery.
 6. **Serve:** Streamlit queries the authoritative database (read-only account),
    displays recorded quality evidence, marks readings stale after 2 s by default
@@ -134,7 +140,7 @@ CI passing.
 
 Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all credentials **out of GitHub**. Use a dedicated worker role for writing and a separate Streamlit role restricted to SELECT. Database schema creation uses a separate provisioning/admin role. The live worker never creates tables or views.
 
-1. Provision PostgreSQL with TLS, backups and limited network access. Create separate identities: a temporary DDL-capable administrator for schema provisioning, a worker with limited INSERT/SELECT permissions and SELECT/USAGE on the pipeline-event ID sequence, and a read-only dashboard account. The ingestion worker also requires permission to hold the PostgreSQL advisory lock.
+1. Provision PostgreSQL with TLS, backups and limited network access. Create separate identities: a temporary DDL-capable administrator for schema provisioning, a worker with limited INSERT/SELECT permissions on evidence tables, INSERT/SELECT/UPDATE on `amr_worker_checkpoints`, and SELECT/USAGE on the pipeline-event ID sequence, and a read-only dashboard account. The dashboard needs SELECT on the checkpoint as well as existing sample/state/event/calibration tables and views. The ingestion worker also requires permission to hold the PostgreSQL advisory lock.
    Set the private environment variable `AMR_DATABASE_ADMIN_URL` to a **provisioning account** connection string and run `python -m project_maintenance_scripts.provision_amr_sensor_database` once. Keep this administrator credential outside both the ingestion worker and Streamlit. Apply reviewed migrations separately before worker restarts.
 2. Deploy the **independent always-on worker** (holds a PostgreSQL advisory lease to reject a concurrent AMR-01 writer) from this repository with `python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker`. Do not embed an ingestion daemon inside a Streamlit rerun or browser tab.
 3. Give the worker these private environment variables:
@@ -169,12 +175,25 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
 
 ### Important constraints
 
-- Current database mode **stores** samples from an actively running worker; it does not replay the entire history back into a new online estimator on restart. After a restart or lost interval, pose/SOC from the worker must be treated as partial and reset with physically measured initial state before quantitative use.
+- On restart, the worker loads the last committed pose/SOC/energy and all previously observed boot IDs using the checkpoint. It never replays history or reuses another process's monotonic clock. Duplicate sequences and retired boots remain rejected. The first new sample only establishes a count/time anchor and atomically records `worker_restart`; no downtime motion or charge is fabricated. Estimates remain partial with `continuity_lost=true`, and quantitative forecasts stay suppressed. To reset from measured initial pose/SOC or change calibration, start a separately provisioned trial database; restarting against existing evidence does not reset its totals. Preserve the prior trial.
 - The dashboard's freshness status depends on latest persisted receive time; a stale row cannot be presented as fresh.
-- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. The worker validates database schema v2 and its three sensor views without DDL permissions. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
+- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. The worker validates database schema v3, the checkpoint table and its three sensor views without DDL permissions. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
 - Original raw JSON bytes are not stored; normalized typed fields are stored. For a publication-grade evidence trail, deploy a raw event recorder, verify clock offsets and retention, document device firmware revisions, and run reproducible calibration trials.
 - The synthetic demonstration is intentionally separate from physical-trial tables.
 - Avoid enabling any remote motor command path without independent local safety checks and physical testing.
+
+### Upgrade an existing v1/v2 database
+
+1. Stop the ingestion worker and back up the trial database. Use the provisioning administrator, never the worker's restricted credentials.
+2. Run `python -m project_maintenance_scripts.provision_amr_sensor_database` with private `AMR_DATABASE_ADMIN_URL`. Provisioning adds the checkpoint table and seeds its pointer from the most recent stored v1/v2 state by receive time. Existing samples, calibrations, model states and events are retained. If historical clocks were incorrect, review which old row should represent the trial endpoint before migration; old records lack an independent commit-order pointer.
+3. Grant the worker INSERT/SELECT/UPDATE and the dashboard SELECT on the new table. For example, if the existing role names are `amr_worker` and `amr_reader`:
+
+   ```sql
+   GRANT SELECT, INSERT, UPDATE ON TABLE public.amr_worker_checkpoints TO amr_worker;
+   GRANT SELECT ON TABLE public.amr_worker_checkpoints TO amr_reader;
+   ```
+
+4. Start the updated single worker with the same measured calibration. Verify schema readiness and a new `worker_restart` event after the first accepted packet. Readings stay uncertain across the unobserved interval. The runtime worker does not migrate or delete evidence.
 
 ## Tests
 

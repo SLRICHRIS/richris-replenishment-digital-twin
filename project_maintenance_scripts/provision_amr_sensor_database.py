@@ -17,8 +17,8 @@ def main():
     db = SensorDatabase(url, initialize=True)
     try:
         db.assert_schema_ready()
-        print("AMR-01 sensor database v2 ready: canonical measurements, typed "
-              "sensor views, derived states and pipeline-quality events.")
+        print("AMR-01 sensor database v3 ready: canonical measurements, typed "
+              "sensor views, derived states, transactional checkpoint and quality events.")
     finally:
         db.engine.dispose()
 
