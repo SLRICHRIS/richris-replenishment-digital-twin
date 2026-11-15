@@ -31,6 +31,8 @@ Mission approval, stock forecasts, manager placement, activity logs and legacy r
 
 Sample age is time since MQTT receipt, not measured network latency. The display refreshes about once per second. A fixed demonstration has no physical sample age. Historical plots remain labelled as history when current readings are stale.
 
+Background refreshes keep the dashboard at full opacity. Interpret the data-source notice, sample age and database loading status for freshness; the entire screen does not fade while a read is running.
+
 INA219 measures voltage/current, not battery percentage directly. Encoders provide relative wheel motion, not independently verified absolute location. MPU6050 z gyro provides angular rate, not a drift-free compass heading. No sensor in the supplied component list measures shelf stock or detects people/obstacles.
 
 ## Warehouse view
