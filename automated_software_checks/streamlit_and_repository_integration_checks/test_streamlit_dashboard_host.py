@@ -109,6 +109,7 @@ class StreamlitHostTests(unittest.TestCase):
         args = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
         self.assertEqual(app.sidebar.radio[0].value, 'Warehouse dashboard')
         self.assertEqual(args['database']['dataset'], 'amr_encoder_readings')
+        self.assertEqual(args['database']['request_id'], 'archive-open')
         self.assertEqual(args['database']['rows_state'], 'unavailable')
         self.assertTrue(args['database']['attributes'])
         action.update(active=False, nonce='archive-close')
@@ -134,6 +135,10 @@ class StreamlitHostTests(unittest.TestCase):
             result = database_preview('amr_sensor_samples', 'read-ok')
             db.read_records.assert_called_once_with('amr_sensor_samples', limit=50)
             self.assertEqual(result['rows'][0]['received_at'], '2026-01-01T00:00:00+00:00')
+            repeated = database_preview('amr_sensor_samples', 'read-again')
+            self.assertEqual(result['rows'], repeated['rows'])
+            self.assertNotEqual(result, repeated, 'identical re-requested rows must produce new component args')
+            self.assertEqual(repeated['request_id'], 'read-again')
             db.read_records.side_effect = RuntimeError('postgresql://private:secret@host/db')
             failed = database_preview('amr_sensor_samples', 'read-failed')
             self.assertEqual(failed['state'], 'ready')
