@@ -351,6 +351,7 @@ html[data-python-twin='true'] [data-slide-outside] {
 }
 html[data-python-twin='true'] .python-database-nav {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
   gap: 12px;
   min-height: 50px;

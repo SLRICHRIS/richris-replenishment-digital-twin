@@ -45,6 +45,13 @@ def render_dashboard():
     view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection', 'Database'),
                             format_func=lambda name: 'Detailed readings' if name == 'Model inspection' else name,
                             key='workspace_view')
+    if view != 'Warehouse dashboard':
+        st.html('''<style>
+            [data-testid="stHeader"] { display: none; }
+            [data-testid="stMainBlockContainer"] { padding: 2rem; max-width: 1280px; }
+            [data-testid="stMainBlockContainer"] h1 { font-size: 1.75rem; font-weight: 600; }
+            [data-testid="stCaptionContainer"] { color: var(--text-color); }
+        </style>''')
     if view == 'Database':
         from .predictive_twin.database_inspection import render_database_inspection
         render_database_inspection()
