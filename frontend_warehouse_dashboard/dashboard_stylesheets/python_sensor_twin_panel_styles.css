@@ -802,6 +802,10 @@ html[data-python-twin='true'] .statusbar {
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
 }
+.twin-table-scroll:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
 .twin-table-scroll table {
   width: 100%;
   min-width: 600px;
@@ -884,8 +888,8 @@ html[data-python-twin='true'] .statusbar {
   html[data-python-twin='true'] .workspace-nav > button {
     flex: 1;
     justify-content: center;
-    min-height: 38px;
-    padding: 8px;
+    min-height: 44px;
+    padding: 10px 8px;
   }
   html[data-python-twin='true'] .app-main {
     padding: 22px;
@@ -905,8 +909,41 @@ html[data-python-twin='true'] .statusbar {
     padding-inline: 14px;
   }
   html[data-python-twin='true'] .theme-switch button {
-    padding: 5px 7px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 7px;
   }
+  html[data-python-twin='true'] .motion-toggle,
+  html[data-python-twin='true'] #help {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  html[data-python-twin='true'] .workspace-nav > button .icon {
+    display: none;
+  }
+  .python-sensor-toolbar button,
+  .python-more-readings button,
+  .scene-tools button,
+  .view-dock button,
+  .twin-records-toolbar button,
+  .twin-dataset-field select,
+  .twin-record-tabs button {
+    min-height: 44px;
+  }
+  .python-sensor-toolbar button,
+  .python-more-readings button,
+  .twin-record-tabs button {
+    font-size: 12px;
+  }
+  .slide-equation summary,
+  .python-reading-guide summary,
+  .python-connection-details summary {
+    min-height: 44px;
+    font-size: 12px;
+    align-content: center;
+  }
+
   html[data-python-twin='true'] .theme-switch button span {
     display: none;
   }
@@ -921,14 +958,27 @@ html[data-python-twin='true'] .statusbar {
     min-height: 0;
     padding: 20px;
   }
+  .python-reading-guide summary,
+  .python-connection-details summary {
+    padding-block: 10px;
+  }
+  .slide-equation-text,
+  .twin-plot-caption {
+    font-size: 12px;
+  }
+  .slide-model-source .model-paper-link {
+    display: inline-block;
+    padding-block: 12px;
+    font-size: 12px;
+  }
   .python-sensor-card dt {
     font-size: 12px;
   }
   .python-sensor-card dd {
-    font-size: 14px;
+    font-size: 16px;
   }
   .twin-card-kicker {
-    font-size: 9px;
+    font-size: 10px;
   }
   .twin-observation {
     flex-basis: 100%;
@@ -952,6 +1002,7 @@ html[data-python-twin='true'] .statusbar {
   }
   .twin-dataset-field select {
     width: 100%;
+    font-size: 16px;
   }
   .twin-records-heading {
     padding-inline: 16px;
@@ -963,7 +1014,7 @@ html[data-python-twin='true'] .statusbar {
   }
   .python-sensor-card[data-model='pose'] dd,
   .python-sensor-card[data-model='forecast'] #python-amr01-forecast {
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 
@@ -977,4 +1028,11 @@ html[data-python-twin='true'] [hidden] {
   margin: -6px 0 12px;
   font-size: 10px;
   color: var(--text-secondary);
+}
+
+/* Preserve touch spacing in very narrow headers; device motion preferences still apply. */
+@media (max-width: 360px) {
+  html[data-python-twin='true'] .motion-toggle {
+    display: none;
+  }
 }

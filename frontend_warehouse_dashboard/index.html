@@ -1254,7 +1254,11 @@
               Checking connection
             </span>
           </div>
-          <section class="panel twin-records-browser" aria-label="Sensor record browser">
+          <section
+            class="panel twin-records-browser"
+            aria-label="Sensor record browser"
+            aria-busy="true"
+          >
             <div class="twin-records-toolbar">
               <div class="twin-dataset-field">
                 <label for="python-db-dataset">Dataset</label>
@@ -1311,7 +1315,14 @@
                 <h3 id="python-db-empty-title">Loading records</h3>
                 <p id="python-db-empty-detail">Checking the physical sensor archive.</p>
               </div>
-              <div class="twin-table-scroll" id="python-db-records-table" hidden></div>
+              <div
+                class="twin-table-scroll"
+                id="python-db-records-table"
+                tabindex="0"
+                role="region"
+                aria-label="Stored sensor records"
+                hidden
+              ></div>
             </div>
             <div
               id="python-db-attributes"
@@ -1319,7 +1330,13 @@
               aria-labelledby="python-db-attributes-tab"
               hidden
             >
-              <div class="twin-table-scroll" id="python-db-attributes-table"></div>
+              <div
+                class="twin-table-scroll"
+                id="python-db-attributes-table"
+                tabindex="0"
+                role="region"
+                aria-label="Sensor field definitions"
+              ></div>
             </div>
             <footer class="twin-records-footer">
               <span id="python-db-row-count">Latest 50 records</span>

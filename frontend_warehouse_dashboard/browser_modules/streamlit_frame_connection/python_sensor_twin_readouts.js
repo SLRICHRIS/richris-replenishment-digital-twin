@@ -190,6 +190,7 @@
   let databaseRows;
   let databaseSignature = '';
   function browseDatabase(active) {
+    document.querySelector('.twin-records-browser')?.setAttribute('aria-busy', String(active));
     document.dispatchEvent(
       new CustomEvent('python-twin:action', {
         detail: {
@@ -237,6 +238,7 @@
     if (signature === databaseSignature) return;
     databaseSignature = signature;
     databaseRows = data;
+    document.querySelector('.twin-records-browser')?.setAttribute('aria-busy', 'false');
     const ready = data.state === 'ready';
     text('python-db-status', ready ? 'Connected' : data.label || 'Connection unavailable');
     $('python-db-status').dataset.state = data.state;
