@@ -1213,24 +1213,14 @@
           hidden
         >
           <div id="python-sensor-panel">
-            <header class="python-model-header">
-              <div>
-                <span class="eyebrow">AMR-01 · sensor readings and model estimates</span>
-                <h2>Understand the robot, one model at a time.</h2>
-                <p class="python-sensor-note">
-                  Check the data source and quality first. Then follow the six stages below: wheel
-                  motion, position, gyro correction, battery, motion disagreement and forecasts.
-                </p>
-              </div>
-            </header>
             <div class="python-sensor-toolbar" role="group" aria-label="Sensor twin source">
+              <span class="python-control-label">Data source</span>
               <button id="python-source-demo" type="button" aria-pressed="true">Demo data</button>
               <button id="python-source-live" type="button" aria-pressed="false">
                 Physical sensor data
               </button>
               <strong id="python-source-label">Waiting for Python</strong>
             </div>
-            <p id="python-source-status" role="status"></p>
             <div
               class="python-data-notice"
               id="python-data-notice"
@@ -1240,6 +1230,10 @@
               <strong id="python-data-title">Waiting for readings</strong>
               <p id="python-data-detail">Choose a source to inspect its readings and estimates.</p>
             </div>
+            <details class="python-connection-details" id="python-connection-details" hidden>
+              <summary>Connection details</summary>
+              <p id="python-source-status"></p>
+            </details>
             <div class="python-model-status" aria-label="AMR-01 sensor status">
               <strong id="python-amr01-title">AMR-01</strong>
               <span id="python-amr01-quality">Waiting for readings</span>
@@ -1252,11 +1246,17 @@
                 <b id="python-amr01-state">—</b>
               </span>
             </div>
-            <p class="python-reading-key">
-              L = left wheel; R = right wheel. Values marked “Unavailable” have no valid estimate.
-              Physical sample age is time since receipt, not network latency. The dashboard
-              refreshes about once per second.
-            </p>
+            <details class="python-reading-guide">
+              <summary>
+                Reading guide
+                <span>L/R: left/right wheel · local coordinates</span>
+              </summary>
+              <p class="python-reading-key">
+                L = left wheel; R = right wheel. x and y are local metres; heading is in radians.
+                “Unavailable” means no valid reading. Sample age is time since receipt, not network
+                latency. The dashboard refreshes about once per second.
+              </p>
+            </details>
             <div class="python-sensor-cards">
               <article class="panel python-sensor-card">
                 <span class="eyebrow">Slides 5–6 · encoders</span>
