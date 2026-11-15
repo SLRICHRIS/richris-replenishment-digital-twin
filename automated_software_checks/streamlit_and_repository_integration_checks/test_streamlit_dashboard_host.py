@@ -6,6 +6,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
+    def test_final_view_action_also_stops_previous_panel_polling_when_events_are_coalesced(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+        app.session_state.warehouse_connection_requested = True
+        action = dict(action='database_browse', dataset='amr_sensor_samples', active=True, nonce='to-archive')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action):
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertTrue(app.session_state.warehouse_database_requested)
+        self.assertFalse(app.session_state.warehouse_connection_requested)
+        action = dict(action='connection_view', active=True, nonce='to-connection')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action):
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertFalse(app.session_state.warehouse_database_requested)
+        self.assertTrue(app.session_state.warehouse_connection_requested)
+        action = dict(action='sensor_source', mode='demo', nonce='to-models')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action):
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertFalse(app.session_state.warehouse_database_requested)
+        self.assertFalse(app.session_state.warehouse_connection_requested)
+
     def test_unconfigured_connection_view_uses_the_real_session_resource_without_starting_a_recorder(self):
         from unittest.mock import patch
         import json
