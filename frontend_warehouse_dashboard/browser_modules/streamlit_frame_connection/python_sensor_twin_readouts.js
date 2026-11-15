@@ -296,7 +296,8 @@
         new CustomEvent('python-twin:action', { detail: { action: 'model_inspection' } }),
       );
     });
-    $('python-database-inspection')?.addEventListener('click', openDatabase);
+    // Navigation owns the open event, after closing the outgoing view. An
+    // earlier click handler can be overwritten by that view's close action.
     document.addEventListener('python-twin:database-open', openDatabase);
     document.addEventListener('python-twin:database-close', () => {
       if (!databaseOpen) return;
