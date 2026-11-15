@@ -53,6 +53,8 @@ def render_warehouse_workspace():
     st.session_state.warehouse_sensor_action = nonce
     if result['action'] == 'connection_view':
         st.session_state.warehouse_connection_requested = result['active']
+        if result['active']:
+            st.session_state.warehouse_database_requested = False
     elif result['action'] == 'connection_control':
         from .predictive_twin.amr_connection import authorize, connection_profile, session_connector
         profile, missing = connection_profile(st.secrets)
@@ -77,13 +79,19 @@ def render_warehouse_workspace():
             controller.disconnect()
     elif result['action'] == 'database_browse':
         st.session_state.warehouse_database_requested = result['active']
+        if result['active']:
+            st.session_state.warehouse_connection_requested = False
         st.session_state.warehouse_database_dataset = result['dataset']
         st.session_state.warehouse_database_refresh = nonce
     elif result['action'] in ('model_inspection', 'database_inspection'):
+        st.session_state.warehouse_database_requested = False
+        st.session_state.warehouse_connection_requested = False
         st.session_state.pending_workspace_view = ('Database' if result['action'] == 'database_inspection' else 'Model inspection')
         st.rerun()
     else:
         st.session_state.warehouse_sensor_mode = choice
+        st.session_state.warehouse_database_requested = False
+        st.session_state.warehouse_connection_requested = False
     # The next scheduled fragment tick delivers source/archive changes without
     # remounting the iframe or resetting its page, focus and scroll position.
 
