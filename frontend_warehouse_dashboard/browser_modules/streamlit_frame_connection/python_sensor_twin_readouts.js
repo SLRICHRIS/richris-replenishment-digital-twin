@@ -303,6 +303,11 @@
     });
     $('python-db-dataset')?.addEventListener('change', () => {
       databaseRows = null;
+      databaseSignature = '';
+      $('python-db-attributes-table').replaceChildren();
+      text('python-db-description', 'Loading the selected dataset and field definitions.');
+      text('python-db-kind', '…');
+      text('python-db-row-count', 'Loading records');
       $('python-db-export').disabled = true;
       $('python-db-records-table').hidden = true;
       $('python-db-empty').hidden = false;
