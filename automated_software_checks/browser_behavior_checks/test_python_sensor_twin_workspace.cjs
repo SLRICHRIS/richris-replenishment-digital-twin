@@ -22,6 +22,7 @@ Object.defineProperty(w, 'parent', { value: parent });
 w.requestAnimationFrame = () => {};
 for (const file of [
   'python_sensor_twin_readouts.js',
+  'amr_connection_panel.js',
   'streamlit_frame_connection_and_scrolling.js',
 ]) {
   vm.runInContext(
@@ -435,6 +436,75 @@ function verifyStartup(order) {
   startup.window.close();
 }
 for (const order of ['normal', 'early-render', 'late-readout']) verifyStartup(order);
+doc.dispatchEvent(new w.CustomEvent('python-twin:connection-open'));
+assert.equal(sent.at(-1).value.action, 'connection_view');
+assert.equal(sent.at(-1).value.active, true);
+payload.amr_connection = {
+  configured: false,
+  authorized: false,
+  state: 'disconnected',
+  detail: 'Private setup required',
+  missing: ['EMQX subscriber credentials'],
+  stages: [],
+  insights: {
+    ready: false,
+    metrics: [],
+    recommendations: [
+      {
+        title: 'Measured calibration required',
+        detail: 'Confirm measured settings.',
+        tone: 'warning',
+      },
+    ],
+  },
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('amr-link-connect').disabled, true);
+assert.equal(doc.getElementById('amr-link-state').textContent, 'Setup required');
+assert.equal(doc.getElementById('amr-insights-empty').hidden, false);
+assert.match(doc.getElementById('amr-live-recommendations').textContent, /Measured calibration/);
+payload.amr_connection.configured = true;
+payload.amr_connection.missing = [];
+deliver(parent, w.location.origin);
+doc.getElementById('amr-access-code').value = 'private-test-operator-code';
+doc.getElementById('amr-link-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+assert.equal(sent.at(-1).value.action, 'connection_control');
+assert.equal(sent.at(-1).value.command, 'connect');
+assert.equal(sent.at(-1).value.access_code, 'private-test-operator-code');
+assert.equal(
+  doc.getElementById('amr-access-code').value,
+  '',
+  'operator code is cleared after submission',
+);
+assert.equal(w.localStorage.length, 0, 'no connection credentials are persisted');
+const commandsBefore = sent.length;
+doc.dispatchEvent(
+  new w.CustomEvent('python-twin:action', {
+    detail: { action: 'connection_control', command: 'drive', access_code: '' },
+  }),
+);
+assert.equal(sent.length, commandsBefore, 'connection controls cannot publish motor commands');
+payload.amr_connection.state = 'connecting';
+payload.amr_connection.authorized = true;
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('amr-link-connect').disabled, true);
+assert.equal(doc.getElementById('amr-link-disconnect').disabled, false);
+assert.equal(doc.getElementById('amr-code-field').hidden, true);
+payload.amr_connection.state = 'subscribed';
+payload.amr_connection.subscribed = true;
+payload.amr_connection.stages = [
+  { label: 'ESP32 over Wi-Fi', state: 'waiting', detail: 'Waiting for physical samples' },
+];
+payload.amr_connection.insights.recommendations[0].title = '<img src=x onerror=alert(1)>';
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('amr-link-state').textContent, 'EMQX subscribed');
+assert.match(doc.getElementById('amr-pipeline').textContent, /Waiting for physical samples/);
+assert.equal(doc.getElementById('amr-live-recommendations').querySelector('img'), null);
+doc.getElementById('amr-link-disconnect').click();
+assert.equal(sent.at(-1).value.command, 'disconnect');
+doc.dispatchEvent(new w.CustomEvent('python-twin:connection-close'));
+assert.equal(sent.at(-1).value.action, 'connection_view');
+assert.equal(sent.at(-1).value.active, false);
 setImmediate(() => dom.window.close());
 console.log(
   'PASS: original workspace receives Python-only sensor values; source identity, XSS-safe text, freshness, no floor mutation, navigation/scroll preservation and allowlisted source/inspection actions.',

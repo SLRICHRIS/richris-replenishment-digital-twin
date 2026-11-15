@@ -190,6 +190,12 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_python_sensor_twin_workspace.cjs` | Verify trusted Python display messages, text-only rendering, freshness, preserved floor state and source-selection actions. |
 | `automated_software_checks/predictive_twin_checks/test_workspace_payload.py` | Verify public component data, bounded history, private-setting isolation and stale forecast suppression. |
 | `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the Sensor models view. |
+| `backend_streamlit_and_telemetry/predictive_twin/amr_connection.py` | Manage the optional session-bound EMQX subscriber and leased PostgreSQL writer behind operator authorization; expose sanitized pipeline readiness. |
+| `backend_streamlit_and_telemetry/predictive_twin/insights.py` | Derive operator recommendations from current, continuous sensor-model evidence and distinguish generated examples. |
+| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/amr_connection_panel.js` | Render connection stages, protected controls and Python-derived guidance without persisting credentials in the browser. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/amr_connection_panel_styles.css` | Style the responsive connection, pipeline, insight and recommendation panels in both themes. |
+| `automated_software_checks/predictive_twin_checks/test_amr_connection.py` | Verify authorization, subscription timeout, exclusive writer ownership, cleanup and the real sensor-to-database pipeline using isolated test inputs. |
+| `automated_software_checks/predictive_twin_checks/test_insights.py` | Verify freshness and continuity gates, charge-reserve and motion-disagreement guidance, calibration and demo identity. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js` | Render Python sensor values and the shared read-only archive browser with safe text cells, dataset selection and JSON export; no browser model calculations. |
 | `frontend_warehouse_dashboard/dashboard_stylesheets/python_sensor_twin_panel_styles.css` | Define the shared single-AMR visual system, responsive model cards, warehouse view, archive tables and connection/empty states. |
 | `automated_software_checks/browser_behavior_checks/test_single_amr_configuration.mjs` | Construct warehouse geometry and verify exactly one robot, one dock and one registered telemetry identity. |

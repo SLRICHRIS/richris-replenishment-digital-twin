@@ -50,9 +50,14 @@
     />
     <link rel="stylesheet" href="./dashboard_stylesheets/robot_model_validation_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css" />
+    <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
     <script
       defer
       src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js"
+    ></script>
+    <script
+      defer
+      src="./browser_modules/streamlit_frame_connection/amr_connection_panel.js"
     ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
@@ -237,6 +242,18 @@
           <span>Floor</span>
         </button>
         <button
+          id="tab-connection"
+          class="python-connection-nav"
+          role="tab"
+          aria-controls="connection"
+          aria-selected="false"
+          tabindex="-1"
+          data-page="connection"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
+          <span>Connect AMR</span>
+        </button>
+        <button
           id="tab-routes"
           data-slide-outside
           role="tab"
@@ -256,7 +273,7 @@
           tabindex="-1"
           data-page="hardware"
         >
-          <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
+          <svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg>
           <span>Sensor models</span>
         </button>
         <button
@@ -1233,6 +1250,100 @@
           </section>
         </section>
         <section
+          id="connection"
+          data-screen
+          role="tabpanel"
+          aria-labelledby="tab-connection"
+          tabindex="0"
+          hidden
+        >
+          <div class="amr-connect-card">
+            <div class="amr-connect-heading">
+              <span class="twin-database-icon">
+                <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
+              </span>
+              <div>
+                <span class="twin-card-kicker">Physical device</span>
+                <h2>
+                  AMR-01
+                  <span>ESP32</span>
+                </h2>
+              </div>
+              <span class="twin-connection-chip" id="amr-link-state" data-state="loading">
+                Checking setup
+              </span>
+            </div>
+            <p>
+              Power the ESP32 and let it join its configured Wi-Fi. Connect here to receive its
+              sensor data through EMQX.
+            </p>
+            <form id="amr-link-form" class="amr-link-form">
+              <label id="amr-code-field" for="amr-access-code">
+                Operator access code
+                <input
+                  id="amr-access-code"
+                  type="password"
+                  maxlength="256"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Private operator code"
+                  disabled
+                />
+              </label>
+              <button class="primary" type="submit" id="amr-link-connect" disabled>
+                Connect AMR
+              </button>
+              <button type="button" id="amr-link-disconnect" disabled>Disconnect</button>
+            </form>
+            <p id="amr-link-detail" role="status" aria-live="polite">
+              Checking the saved connection profile.
+            </p>
+            <p id="amr-link-feedback" role="alert" hidden></p>
+            <div class="amr-link-footnote">
+              This on-demand recorder runs with this app session. Use the independent worker for
+              unattended recording. Disconnect preserves committed records.
+            </div>
+          </div>
+          <ol class="amr-pipeline" id="amr-pipeline" aria-label="Sensor data pipeline"></ol>
+          <details class="amr-setup-details" id="amr-setup-details">
+            <summary>Connection setup</summary>
+            <p>
+              The owner configures the subscriber, a separate database writer, an operator code and
+              measured calibration in private app settings.
+            </p>
+            <ul id="amr-setup-missing"></ul>
+            <p>
+              First use: flash the raw-sensor firmware with the ESP32 Wi-Fi and EMQX publisher
+              settings. The website cannot scan or join the ESP32's local Wi-Fi.
+            </p>
+            <p>
+              MQTT over TLS · port 8883 · topic
+              <code>robot/amr01/state</code>
+            </p>
+            <a
+              href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/single_amr_sensor_twin_setup.md#connect-amr-from-the-site"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open connection setup guide ↗
+            </a>
+          </details>
+          <section class="amr-insights-panel" aria-labelledby="amr-insights-title">
+            <div class="amr-section-heading">
+              <h2 id="amr-insights-title">Predictive insights</h2>
+              <span>Physical sensor data</span>
+            </div>
+            <div id="amr-live-metrics" class="amr-insight-metrics"></div>
+            <p id="amr-insights-empty">Waiting for calibrated, continuous physical readings.</p>
+            <h3>Recommendations</h3>
+            <div id="amr-live-recommendations" class="amr-recommendations"></div>
+            <p class="amr-link-footnote">
+              Operator guidance from the motion and battery models. Recommendations do not send
+              commands to the AMR.
+            </p>
+          </section>
+        </section>
+        <section
           id="database"
           data-screen
           role="tabpanel"
@@ -1695,6 +1806,16 @@
               <summary>Source details</summary>
               <p id="python-source-status"></p>
             </details>
+            <section
+              class="amr-insights-panel amr-model-guidance"
+              aria-labelledby="amr-model-guidance-title"
+            >
+              <div class="amr-section-heading">
+                <h2 id="amr-model-guidance-title">Recommendations</h2>
+                <span id="amr-model-source">Source unavailable</span>
+              </div>
+              <div id="amr-model-recommendations" class="amr-recommendations"></div>
+            </section>
             <details class="python-reading-guide">
               <summary>Reading guide and sample details</summary>
               <div class="python-model-status" aria-label="AMR-01 sensor status">

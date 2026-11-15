@@ -1,5 +1,6 @@
 """Host the warehouse dashboard and Python sensor-model readouts."""
 from pathlib import Path
+import time
 
 import streamlit as st
 from streamlit.components.v1 import declare_component
@@ -15,13 +16,21 @@ def render_warehouse_workspace():
     from .predictive_twin.workspace_payload import workspace_payload
     mode = st.session_state.get('warehouse_sensor_mode', 'demo')
     payload = workspace_payload(mode)
+    if st.session_state.get('warehouse_connection_requested'):
+        from .predictive_twin.amr_connection import connection_payload, connection_profile, session_connector
+        profile, missing = connection_profile(st.secrets)
+        payload['amr_connection'] = connection_payload(session_connector(), profile, missing,
+            authorized=st.session_state.get('warehouse_connection_authorized', False),
+            live_payload=payload if mode == 'live' else None)
+        payload['amr_connection']['feedback'] = st.session_state.get('warehouse_connection_feedback', '')
+        payload['amr_connection']['request_id'] = st.session_state.get('warehouse_sensor_action', '')
     if st.session_state.get('warehouse_database_requested'):
         from .predictive_twin.database_inspection import database_preview
         payload['database'] = database_preview(
             st.session_state.get('warehouse_database_dataset', 'amr_sensor_samples'),
             st.session_state.get('warehouse_database_refresh', ''))
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection', 'database_browse'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
@@ -33,10 +42,40 @@ def render_warehouse_workspace():
         from .predictive_twin.database_inspection import DATASET_LABELS
         if result.get('dataset') not in DATASET_LABELS or type(result.get('active')) is not bool:
             return
+    if result['action'] == 'connection_view' and type(result.get('active')) is not bool:
+        return
+    if result['action'] == 'connection_control' and (
+            result.get('command') not in ('connect', 'disconnect') or
+            not isinstance(result.get('access_code', ''), str) or len(result.get('access_code', '')) > 256):
+        return
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] == 'database_browse':
+    if result['action'] == 'connection_view':
+        st.session_state.warehouse_connection_requested = result['active']
+    elif result['action'] == 'connection_control':
+        from .predictive_twin.amr_connection import authorize, connection_profile, session_connector
+        profile, missing = connection_profile(st.secrets)
+        if profile is None:
+            st.session_state.warehouse_connection_feedback = 'Complete the private connection setup before connecting.'
+            return
+        if not st.session_state.get('warehouse_connection_authorized'):
+            now = time.monotonic()
+            if now - st.session_state.get('warehouse_connection_attempt', -2) < 1:
+                return
+            st.session_state.warehouse_connection_attempt = now
+            if not authorize(profile, result.get('access_code', '')):
+                st.session_state.warehouse_connection_feedback = 'Operator access code was not accepted.'
+                return
+            st.session_state.warehouse_connection_authorized = True
+        st.session_state.warehouse_connection_feedback = ''
+        controller = session_connector()
+        if result['command'] == 'connect':
+            controller.start(profile)
+            st.session_state.warehouse_sensor_mode = 'live'
+        else:
+            controller.disconnect()
+    elif result['action'] == 'database_browse':
         st.session_state.warehouse_database_requested = result['active']
         st.session_state.warehouse_database_dataset = result['dataset']
         st.session_state.warehouse_database_refresh = nonce

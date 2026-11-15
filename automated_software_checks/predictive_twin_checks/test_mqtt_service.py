@@ -90,6 +90,18 @@ def test_unencrypted_port_is_rejected():
         MQTTService("cloud.example", "reader", "secret", example_calibrations(), port=1883)
 
 
+def test_network_start_failure_cleans_up_the_background_database_writer():
+    import threading
+    store = SimpleNamespace(read_resume_state=lambda *a: None)
+    existing = {t.ident for t in threading.enumerate() if t.name == 'amr01-pg-writer'}
+    with patch('backend_streamlit_and_telemetry.predictive_twin.mqtt_service.mqtt.Client') as factory:
+        factory.return_value.connect_async.side_effect = RuntimeError('network startup failed')
+        with pytest.raises(RuntimeError, match='network startup failed'):
+            MQTTService('broker.example.com', 'reader', 'private', example_calibrations(), database=store)
+        factory.return_value.loop_stop.assert_called_once()
+    assert {t.ident for t in threading.enumerate() if t.name == 'amr01-pg-writer'} == existing
+
+
 def test_bounded_queue_processes_samples_in_order_without_motor_control():
     import json
     import time
