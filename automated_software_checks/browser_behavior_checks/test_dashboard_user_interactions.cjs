@@ -426,10 +426,10 @@ doc.documentElement.dataset.pythonTwin = 'true';
 run("applySlideWorkspaceScope({detail:{mode:'demo'}})");
 run("activatePage('hardware')");
 assert.equal(get('page-mode').textContent, 'Demo data');
-assert.equal(get('page-context').textContent, 'Demonstration readings');
+assert.equal(get('page-context').textContent, 'AMR-01 · Telemetry');
 assert.equal(get('source-badge').textContent, 'Synthetic example only');
 run("applySlideWorkspaceScope({detail:{mode:'live'}})");
-assert.equal(get('page-mode').textContent, 'Physical data · read only');
+assert.equal(get('page-mode').textContent, 'Physical data');
 assert.equal(get('source-badge').textContent, 'Physical sensor records');
 assert.equal(run('robots.length'), 1, 'source labels do not alter the virtual robot');
 console.log(

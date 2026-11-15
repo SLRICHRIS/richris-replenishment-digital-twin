@@ -22,6 +22,7 @@
     }
     document.documentElement.dataset.pythonTwin = 'true';
     document.documentElement.dataset.pythonSource = payload.mode;
+    $('python-connection-details').hidden = payload.mode !== 'live';
     text('python-source-status', payload.status || 'Waiting for Python');
     text(
       'python-source-label',

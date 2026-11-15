@@ -1372,7 +1372,7 @@ const pages = {
   hardware: {
     title: 'Sensor models',
     context: 'Readings and estimates',
-    summary: 'Encoder motion, pose, gyro, battery, residual alerts and forecasts in slide order.',
+    summary: 'Motion, battery and sensor checks for AMR-01.',
   },
   environment: {
     title: 'Facility overview',
@@ -1906,8 +1906,8 @@ function updateSourceUI() {
           : 'Simulation';
   if (activePage === 'hardware' && document.documentElement.dataset.pythonTwin === 'true') {
     const demo = document.documentElement.dataset.pythonSource !== 'live';
-    $('page-context').textContent = demo ? 'Demonstration readings' : 'Physical sensor records';
-    $('page-mode').textContent = demo ? 'Demo data' : 'Physical data · read only';
+    $('page-context').textContent = 'AMR-01 · Telemetry';
+    $('page-mode').textContent = demo ? 'Demo data' : 'Physical data';
     $('page-mode').dataset.kind = demo ? 'simulation' : 'hardware';
     $('rail-detail').textContent = demo
       ? 'Synthetic trial · no robot connection'

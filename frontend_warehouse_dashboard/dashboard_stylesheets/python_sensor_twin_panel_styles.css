@@ -4,31 +4,55 @@
   width: 100%;
   min-width: 0;
 }
-/* A single text column: the legacy lab banner reserves 54px for an icon. */
-.python-model-header {
-  display: block;
-  padding: clamp(18px, 2.5vw, 28px);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--panel);
-}
-.python-model-header > div {
-  width: 100%;
-  min-width: 0;
-}
-.python-model-header h2 {
-  margin: 8px 0 10px;
-  max-width: 32ch;
-  font-size: clamp(1.375rem, 2.3vw, 2rem);
-  line-height: 1.2;
-  letter-spacing: -0.035em;
-}
-.python-model-header p {
+/* A compact title and quiet source label; quality warnings live in the notice. */
+html[data-python-twin='true'] body[data-view='hardware'] .page-heading {
   margin: 0;
-  max-width: 75ch;
-  color: var(--muted);
+  padding: 2px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-python-twin='true'] body[data-view='hardware'] .page-title-block {
+  width: 100%;
+}
+html[data-python-twin='true'] body[data-view='hardware'] .breadcrumb {
+  margin: 0 0 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+html[data-python-twin='true'] body[data-view='hardware'] .breadcrumb > :not(#page-context) {
+  display: none;
+}
+html[data-python-twin='true'] body[data-view='hardware'] .page-title-row {
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+html[data-python-twin='true'] body[data-view='hardware'] #page-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+html[data-python-twin='true'] body[data-view='hardware'] #page-mode {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-alt);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+html[data-python-twin='true'] body[data-view='hardware'] #page-mode::before {
+  display: none;
+}
+html[data-python-twin='true'] body[data-view='hardware'] #page-summary {
+  margin: 8px 0 0;
   font-size: 0.875rem;
-  line-height: 1.65;
+  line-height: 1.6;
+  color: var(--muted);
 }
 html[data-python-twin='true'] #python-sensor-panel {
   display: block;
@@ -40,12 +64,55 @@ html[data-python-twin='true'] #hardware > :not(#python-sensor-panel) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin: 16px 0;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.python-control-label {
+  margin-right: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.python-sensor-toolbar button {
+  min-height: 36px;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
 }
 .python-sensor-toolbar [aria-pressed='true'] {
-  color: var(--accent, #82b6ff);
-  border-color: currentColor;
+  color: var(--selected-text);
+  border-color: var(--selected-border);
+  background: var(--selected-bg);
+}
+#python-source-label,
+#python-amr01-quality {
+  display: none;
+}
+.python-connection-details,
+.python-reading-guide {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.python-connection-details summary,
+.python-reading-guide summary {
+  cursor: pointer;
+}
+.python-connection-details {
+  margin-top: 10px;
+}
+.python-connection-details p {
+  margin: 8px 0 0;
+}
+.python-reading-guide {
+  margin: 0 0 20px;
+}
+.python-reading-guide summary > span {
+  margin-left: 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.python-reading-guide .python-reading-key {
+  margin: 10px 0 0;
 }
 .python-sensor-cards {
   display: grid;
@@ -252,6 +319,14 @@ html[data-python-twin='true'] [data-slide-outside] {
   font-size: 0.875rem;
 }
 @media (max-width: 520px) {
+  .python-control-label {
+    flex-basis: 100%;
+  }
+  .python-reading-guide summary > span {
+    display: block;
+    margin-left: 0;
+    margin-top: 4px;
+  }
   .python-sensor-card {
     padding: 18px;
   }
@@ -263,6 +338,6 @@ html[data-python-twin='true'] [data-slide-outside] {
     margin-bottom: 12px;
   }
   .python-sensor-toolbar button {
-    flex: 1 1 180px;
+    flex: 1 1 100px;
   }
 }
