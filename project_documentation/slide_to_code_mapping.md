@@ -21,7 +21,7 @@
 
 ## Actual data and database path
 
-1. The ESP32 publishes a typed **schema v2**, non-retained `robot/amr01/state` JSON sample with signed wheel counts, gyroscope z angular velocity, INA219 current/voltage, boot ID, sequence and device monotonic sample time.
+1. The ESP32 publishes a typed, non-retained `robot/amr01/state` JSON sample with signed wheel counts, gyroscope z angular velocity, INA219 current/voltage, boot ID, sequence and device monotonic sample time.
 2. The independent Python `ingest_worker`, or the optional operator-protected on-demand connector, subscribes using MQTT/TLS 8883. They use the same sensor pipeline and exclusive writer lease. `FleetTwin` rejects invalid, retained, repeated and reordered readings and excludes unknown long gaps from integration.
 3. The accepted sample feeds **the same `RobotTwin` calculations represented by final slides 5–15**; one transaction stores the raw packet and resulting derived state in PostgreSQL. Unique `(robot_id, boot_id, seq)` prevents replay duplicates even across worker restarts.
 4. The display obtains a read-only persisted snapshot. The optional Connect AMR recorder runs in a separate session-bound background resource with private writer credentials; browser JavaScript is neither the ingester nor a motor controller. Generated demonstration trials remain separate and are **never inserted into physical telemetry tables**.

@@ -2,7 +2,7 @@
 
 | Path | Purpose |
 | --- | --- |
-| `publish_raw_sensor_telemetry/` | Full sensor observation sketch: measured signed quadrature counts, MPU6050 and INA219; schema-v2 `/state` packets for the six Python models. |
+| `publish_raw_sensor_telemetry/` | Full sensor observation sketch: measured signed quadrature counts, MPU6050 and INA219; raw-sensor `/state` packets for the six Python models. |
 | `publish_mh_ir_commissioning/` | Supplied TB6612 GPIO map and local Serial commands, guarded startup/timeout, unsigned MH pulse/RPM diagnostics over TLS. Separate `/commissioning` topic; not admitted into full sensor models. |
 | `publish_esp32_robot_telemetry/` | Historical UART/browser contract and override reference, outside the active six-model sensor path. |
 

@@ -226,7 +226,7 @@ class SensorDatabase:
                 version = session.get(DatabaseVersion, 1)
                 if version is None or version.schema_version != 3:
                     raise DatabaseSchemaError(
-                        "Sensor database schema v3 not provisioned; run admin provisioning first"
+                        "Sensor database schema not provisioned; run admin provisioning first"
                     )
                 for source in DATABASE_DATASETS.values():
                     session.execute(select(source).limit(0))

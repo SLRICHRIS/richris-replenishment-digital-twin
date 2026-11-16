@@ -1,7 +1,7 @@
 /* Local serial control + truthful MH single-channel commissioning telemetry.
  * F/B/L/R/S/+/- remain local Serial commands at 115200 baud. No MQTT commands.
  * Pin map matches the supplied TB6612FNG / MH IR controller.
- * This is NOT the signed-quadrature schema-v2 publisher used by the six models.
+ * This is NOT the signed-quadrature sensor publisher used by the six models.
  * Test on a secured stand with the wheels clear; use a physical power cutoff.
  */
 #include <WiFi.h>

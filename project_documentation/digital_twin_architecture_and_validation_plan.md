@@ -4,7 +4,7 @@ Owner: **S. L. Richris**. The current contribution is a single-AMR motion/batter
 
 ## Acquisition and models
 
-The exact [v2 packet contract and commissioning procedure](single_amr_sensor_twin_setup.md) govern the active path. One ESP32 publishes cumulative x4 left/right counts, raw MPU6050 z angular rate, INA219 voltage/current, device monotonic time, boot/sequence and local state. The server subscribes read-only to `robot/amr01/state` through MQTT/TLS 8883.
+The exact [sensor packet contract and commissioning procedure](single_amr_sensor_twin_setup.md) govern the active path. One ESP32 publishes cumulative x4 left/right counts, raw MPU6050 z angular rate, INA219 voltage/current, device monotonic time, boot/sequence and local state. The server subscribes read-only to `robot/amr01/state` through MQTT/TLS 8883.
 
 | Model | Kind | Calibration / limits |
 | --- | --- | --- |

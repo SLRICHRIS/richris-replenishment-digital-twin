@@ -47,11 +47,11 @@ def probe(timeout=15, require_packet=False):
                 with service.fleet.lock:
                     received = service.fleet.robots["amr01"].last_received
                 if received is not None:
-                    print("PASS: EMQX delivered a valid AMR-01 schema-v2 packet.")
+                    print("PASS: EMQX delivered a valid AMR-01 sensor packet.")
                     print("Model calibration and physical sensor accuracy are unverified.")
                     return 0
             time.sleep(0.1)
-        print("FAIL: " + ("No valid schema-v2 sensor packet received." if require_packet
+        print("FAIL: " + ("No valid sensor packet received." if require_packet
                           else "EMQX TLS/subscription handshake not confirmed."), file=sys.stderr)
         return 1
     finally:

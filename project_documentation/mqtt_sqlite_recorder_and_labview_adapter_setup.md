@@ -1,6 +1,6 @@
 # Replenish edge evidence kit
 
-> **Legacy v1 reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
+> **Archived interface reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
 
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
@@ -56,7 +56,7 @@ The example timestamp is illustrative. Supply the actual acquisition Unix timest
 
 `backend_streamlit_and_telemetry/mqtt_recording_and_inventory_bridge/example_warehouse_route_graph_for_calibration.json` contains the same illustrative 19-node, 24-link route graph used by the twelve-rack reference floor: one AMR-01 bay, four A–D loading stops, three cross aisles and four connecting lanes. Eight additional racks are reserve storage with no measured stock contract. The example is unverified. Survey and replace its coordinates and edges for your testbed before confirming geometry in Twin lab; an imported graph does not change the reference 3D warehouse.
 
-Existing ESP32 v1 packets continue to work. Add these optional fields only when actual localization supplies them:
+Archived ESP32 packets continue to work. Add these optional fields only when actual localization supplies them:
 
 ```json
 {"frame_id":"warehouse-01","pose_source":"overhead_camera","pose_sigma_m":0.03,"angular_speed_rps":0.0}

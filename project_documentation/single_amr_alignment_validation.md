@@ -25,9 +25,9 @@ Run the commands in the root README to reproduce these checks. CI compiles the d
 
 Local sensor/hosting checks: **57 passed**, with the two PostgreSQL service tests skipped locally. The 15 browser suites pass, and a real local Streamlit WebSocket session serves all 66 application files byte-for-byte. Source-boundary checks, 211 local references and seven generated downloads pass. The real PostgreSQL 16 integration and ESP32 compile are separate GitHub Actions jobs; consult that revision's Actions results for their status.
 
-New cases cover the original receive timestamp through a blocked writer queue, stale delayed commits, checkpoint recovery of pose/SOC/energy, first-sample anchoring after downtime, rejected retired boots and calibration changes, atomic rollback of samples/state/events/checkpoint, missing-checkpoint failure, future-clock rejection and additive v1/v2 provisioning. The checkpoint is independent of receive-time ordering, so a corrected UTC clock cannot select an older current state. A restart records uncertainty instead of reconstructing unobserved motion or charge.
+New cases cover the original receive timestamp through a blocked writer queue, stale delayed commits, checkpoint recovery of pose/SOC/energy, first-sample anchoring after downtime, rejected retired boots and calibration changes, atomic rollback of samples/state/events/checkpoint, missing-checkpoint failure, future-clock rejection and additive checkpoint provisioning. The checkpoint is independent of receive-time ordering, so a corrected UTC clock cannot select an older current state. A restart records uncertainty instead of reconstructing unobserved motion or charge.
 
-Deployment requires the schema-v3 provisioning step and new checkpoint-table grants in the [pipeline guide](postgresql_sensor_pipeline.md). Packet schema remains v2. The RAM queue and QoS-0 source are still not lossless; these checks do not validate the live EMQX deployment, sensor accuracy, physical timing or ground truth.
+Deployment requires the database provisioning step and new checkpoint-table grants in the [pipeline guide](postgresql_sensor_pipeline.md). The sensor packet contract is unchanged. The RAM queue and QoS-0 source are still not lossless; these checks do not validate the live EMQX deployment, sensor accuracy, physical timing or ground truth.
 
 ## Interface interpretation review: 15 November 2026
 
@@ -49,7 +49,7 @@ Continuous trajectories and battery charge during long data gaps are unknown. Po
 
 ## Scope alignment
 
-The current architecture, operator guide and feature audit describe one direct-sensor AMR. The hosted UI hides the legacy v1 live-floor selector and legacy kit links. The Reference lab remains in source and is hidden from hosted navigation; it is not connected to the Python v2 state. Manager-movement controls and the unsupported cone-overlay control are hidden in the active hosted workflow; their source remains available as reference simulation code. The original warehouse design, one middle bay, virtual tasks and paper links are retained.
+The current architecture, operator guide and feature audit describe one direct-sensor AMR. The hosted UI hides the reference live-floor selector and legacy kit links. The Reference lab remains in source and is hidden from hosted navigation; it is not connected to the Python sensor state. Manager-movement controls and the unsupported cone-overlay control are hidden in the active hosted workflow; their source remains available as reference simulation code. The original warehouse design, one middle bay, virtual tasks and paper links are retained.
 
 A visible Floor note identifies the remaining local-to-map registration and live 3D synchronisation work. This revision does not implement that transform or claim physical validation. Coordinate calibration requires independent surveyed measurements and a known initial pose.
 
@@ -62,3 +62,7 @@ The residual timer now starts at the first above-threshold sample, matching fina
 ## Rendered sensor-panel layout
 
 The model heading now uses a dedicated single-column header instead of the legacy icon/title/badge grid, which had constrained its only text child to 54 px. Local headless Chromium checks cover 1500, 1024, 768 and 390 px viewports in both themes, with Streamlit scroll-container styles active. They verify header width/height, aligned desktop cards, stacked mobile cards and no horizontal overflow, including expanded mobile equations. Desktop and mobile screenshots were inspected. These are local layout checks, not observation of the deployed Streamlit app or physical hardware.
+
+## Unified interface wording
+
+The dashboard, connection status, database inspection, setup guides and generated downloads use one AMR-01 flow without numbered release labels. Storage readiness is shown as verified access. Packet and database compatibility fields remain internal so existing firmware, stored records and replay exports remain readable.

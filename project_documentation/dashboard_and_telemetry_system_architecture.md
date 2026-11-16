@@ -6,21 +6,21 @@
 
 | Layer | Inputs and processing | Output / authority |
 | --- | --- | --- |
-| Physical acquisition | Two cumulative wheel encoder counts; MPU6050 raw z gyro; INA219 pack voltage/current; firmware state and device time | One non-retained v2 topic: `robot/amr01/state` |
+| Physical acquisition | Two cumulative wheel encoder counts; MPU6050 raw z gyro; INA219 pack voltage/current; firmware state and device time | One non-retained sensor topic: `robot/amr01/state` |
 | Python subscriber | TLS verification, exact identity, boot/sequence and finite-value checks; retained/gap/freshness gates | Accepted sensor samples; no command publishing |
 | Motion and battery | Calibrated wheel conversion, midpoint kinematics, gyro bias, power/energy and coulomb counting | Relative pose, wheel speed, SOC and energy estimates |
 | Advisory computation | Gyro/encoder disagreement and assumed-load/constant-speed projections | Advisory alerts and conditional forecasts; no physical control authority |
 | PostgreSQL | Typed samples, model states, calibration links, quality events and atomic checkpoint | Worker writes and dashboard reads through separate restricted accounts |
 | Sensor models and Detailed readings | Receives public Python results through the Streamlit component protocol | Formats readouts; broker credentials stay on the server |
-| Warehouse simulation | Browser-owned AMR-01, routes, stock and explicit virtual task events | Separate illustrative mission state; does not receive v2 pose yet |
+| Warehouse simulation | Browser-owned AMR-01, routes, stock and explicit virtual task events | Separate illustrative mission state; does not receive sensor pose yet |
 
-GitHub stores code; an independent worker handles MQTT and model computation. Streamlit reads PostgreSQL and serves the browser over HTTPS. Browser MQTT/WSS 8084 belongs to the legacy v1 interface, not this active path. The direct-sensor observation sketch holds TB6612 standby LOW; a commissioned local movement controller remains necessary for physical driving.
+GitHub stores code; an independent worker handles MQTT and model computation. Streamlit reads PostgreSQL and serves the browser over HTTPS. Browser MQTT/WSS 8084 belongs to the archived browser interface, not this active path. The direct-sensor observation sketch holds TB6612 standby LOW; a commissioned local movement controller remains necessary for physical driving.
 
 ## Reference geometry and virtual jobs
 
 The illustrative graph has **19 nodes and 24 bidirectional links**. AMR-01 starts/returns at the middle left-apron bay. Four A–D bins are simulated task destinations; eight reserve racks and the surrounding building are decoration. Dijkstra supplies distance/time route previews. Approved jobs run sequentially on the single virtual robot, with a 15% simulated return reserve and assumed charging/drain rates. These simulation percentages are separate from INA219-based coulomb counting and the sensor runtime's configured reserve.
 
-Manager figures, exclusion circles, route playback and cone overlays are optional simulation aids. They do not establish measured people, range sensing or physical collision safety. The Reference lab uses recordings/older v1 interfaces, not the active v2 Python state, and is hidden from the focused hosted navigation. Sensor models displays six compact stages from slides 5–15. Detailed readings includes a separate manual stock/task example.
+Manager figures, exclusion circles, route playback and cone overlays are optional simulation aids. They do not establish measured people, range sensing or physical collision safety. The Reference lab uses recordings/archived interfaces, not the active Python sensor state, and is hidden from the focused hosted navigation. Sensor models displays six compact stages from slides 5–15. Detailed readings includes a separate manual stock/task example.
 
 ## Synchronisation boundary
 
