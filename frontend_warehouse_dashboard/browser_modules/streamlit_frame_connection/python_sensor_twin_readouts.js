@@ -15,6 +15,22 @@
     Array.isArray(pose) && pose.length === 3
       ? `x = ${number(pose[0], 3, ' m')}\ny = ${number(pose[1], 3, ' m')}\nHeading = ${number(pose[2], 3, ' rad')}`
       : 'Unavailable';
+  function downloadJSON(value, filename) {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }),
+    );
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.hidden = true;
+    document.body.append(anchor);
+    anchor.click();
+    // The browser consumes the URL asynchronously, including inside Streamlit's iframe.
+    setTimeout(() => {
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
   function render(payload) {
     if (!document.body || !$('python-sensor-panel')) {
       latest = payload;
@@ -335,14 +351,7 @@
           'Forecasts assume unchanged inputs and use a local odometry frame.',
         ],
       };
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(evidence, null, 2)], { type: 'application/json' }),
-      );
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = 'amr01_' + trial.id + '_synthetic_trial.json';
-      anchor.click();
-      URL.revokeObjectURL(url);
+      downloadJSON(evidence, 'amr01_' + trial.id + '_synthetic_trial.json');
     });
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode)?.addEventListener('click', () => {
@@ -408,14 +417,7 @@
     }
     $('python-db-export')?.addEventListener('click', () => {
       if (!databaseRows?.rows?.length) return;
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(databaseRows.rows, null, 2)], { type: 'application/json' }),
-      );
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = databaseRows.dataset + '.json';
-      anchor.click();
-      URL.revokeObjectURL(url);
+      downloadJSON(databaseRows.rows, databaseRows.dataset + '.json');
     });
     if (latest) {
       render(latest);

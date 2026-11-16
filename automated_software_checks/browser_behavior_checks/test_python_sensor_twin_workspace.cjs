@@ -478,6 +478,9 @@ assert.equal(doc.getElementById('python-demo-controls').getAttribute('aria-busy'
 assert.equal(doc.getElementById('python-demo-export').disabled, false);
 let evidenceJSON,
   downloadName,
+  downloadAnchor,
+  cleanupDownload,
+  revokedURLs = 0,
   objectURLs = 0;
 w.Blob = class {
   constructor(parts) {
@@ -488,11 +491,19 @@ w.URL.createObjectURL = () => {
   objectURLs++;
   return 'blob:test-evidence';
 };
-w.URL.revokeObjectURL = () => {};
+w.URL.revokeObjectURL = () => revokedURLs++;
 w.HTMLAnchorElement.prototype.click = function () {
   downloadName = this.download;
+  downloadAnchor = this;
+  assert.equal(this.isConnected, true, 'download link is attached before activation');
+};
+const originalSetTimeout = w.setTimeout;
+w.setTimeout = (callback, delay) => {
+  assert.equal(delay, 1000);
+  cleanupDownload = callback;
 };
 doc.getElementById('python-demo-export').click();
+w.setTimeout = originalSetTimeout;
 const exportedTrial = JSON.parse(evidenceJSON);
 assert.equal(exportedTrial.evidence_format, 'amr01.synthetic-trial.v1');
 assert.equal(exportedTrial.source, 'synthetic');
@@ -500,6 +511,14 @@ assert.equal(exportedTrial.hardware_validation, false);
 assert.equal(exportedTrial.trial.id, 'disagreement');
 assert.equal(exportedTrial.outputs.amr01.soc, current.soc);
 assert.equal(downloadName, 'amr01_disagreement_synthetic_trial.json');
+assert.equal(revokedURLs, 0, 'object URL remains available while the browser starts the download');
+cleanupDownload();
+assert.equal(revokedURLs, 1);
+assert.equal(
+  downloadAnchor.isConnected,
+  false,
+  'temporary link is removed after the download starts',
+);
 payload.mode = 'live';
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-demo-controls').hidden, true);
