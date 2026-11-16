@@ -75,8 +75,9 @@ def verify(args):
         print('PASS: multisensor units/nulls/freshness, charge/yaw continuity, final PWM settings and model isolation.')
 
         if not args.native_only:
-            sketch = Path(temporary) / SKETCH.name
+            sketch = Path(temporary) / 'AMR01_Multisensor_WiFi'
             shutil.copytree(SKETCH, sketch)
+            (sketch / (SKETCH.name+'.ino')).rename(sketch / (sketch.name+'.ino'))
             shutil.copyfile(sketch / 'example_esp32_wifi_and_mqtt_settings.h',
                             sketch / 'esp32_wifi_and_mqtt_settings.h')
             command = [args.arduino_cli, 'compile', '--fqbn', args.board, str(sketch)]

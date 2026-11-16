@@ -22,9 +22,9 @@ int main() {
   charge.accept(2.1,.6); assert(!charge.continuous() && !charge.socValid());
   charge.accept(2.3,.6); assert(!charge.socValid());  // A gap cannot silently reset SOC.
   YawTracker yaw; yaw.accept(1,10); yaw.accept(1.05,10);
-  assert(yaw.valid() && std::abs(yaw.degrees()-.5) < 1e-12);
+  assert(yaw.valid() && std::abs(yaw.angleDegrees()-.5) < 1e-12);
   yaw.invalidate(); yaw.accept(1.06,10); assert(!yaw.valid());
-  yaw.reset(); yaw.accept(1.07,10); assert(yaw.valid() && yaw.degrees() == 0);
+  yaw.reset(); yaw.accept(1.07,10); assert(yaw.valid() && yaw.angleDegrees() == 0);
   yaw.accept(2,10); assert(!yaw.valid());
   Observation sample; sample.sampleTimeS = 12; sample.intervalS = .5;
   sample.leftTotal = 26; sample.rightTotal = 44;

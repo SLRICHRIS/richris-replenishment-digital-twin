@@ -58,7 +58,7 @@ class YawTracker {
     anchored_ = true; lastTime_ = now;
   }
   bool valid() const { return continuous_ && anchored_; }
-  double degrees() const { return yaw_; }
+  double angleDegrees() const { return yaw_; }
  private:
   double yaw_ = 0, lastTime_ = 0;
   bool anchored_ = false, continuous_ = true;

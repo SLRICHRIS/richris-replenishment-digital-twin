@@ -151,7 +151,7 @@ void sensorTask(void*) {
     s.imuValid = readImu(s);
     if (s.imuValid && s.biasAvailable) yaw.accept(s.imuTimeS,s.gz-s.biasDps);
     else yaw.invalidate();
-    s.yawValid = s.imuValid && s.biasAvailable && yaw.valid(); s.yawDeg = yaw.degrees();
+    s.yawValid = s.imuValid && s.biasAvailable && yaw.valid(); s.yawDeg = yaw.angleDegrees();
     const uint64_t now = uint64_t(esp_timer_get_time());
     if (now-lastBattery >= 200000) {
       lastBattery = now;
