@@ -1,0 +1,114 @@
+.human-review-panel {
+  margin-top: 1.25rem;
+}
+.human-review-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0;
+  margin: 1.1rem 0;
+  list-style: none;
+  counter-reset: review-step;
+}
+.human-review-flow li {
+  counter-increment: review-step;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.78rem;
+}
+.human-review-flow li::before {
+  content: counter(review-step);
+  color: var(--blue, #a9c7ff);
+  font-weight: 700;
+}
+.human-review-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-left: 3px solid #88ddca;
+  background: var(--panel-raised, var(--panel));
+  border-radius: 0.5rem;
+}
+.human-review-status p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+}
+#human-review-state {
+  font-weight: 600;
+}
+.human-review-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(230px, 2fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.human-review-form label {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+}
+.human-review-form select,
+.human-review-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem;
+  background: var(--panel-raised, var(--panel));
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  font: inherit;
+}
+.human-review-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.human-review-note {
+  line-height: 1.65;
+  font-size: 0.8rem;
+  margin-top: 0.85rem;
+}
+.human-review-events {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.human-review-events li {
+  border-left: 2px solid #7199cf;
+  padding: 0.3rem 0.8rem;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+.human-review-events strong {
+  text-transform: capitalize;
+}
+#human-review-feedback {
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+@media (max-width: 680px) {
+  .human-review-form {
+    grid-template-columns: 1fr;
+  }
+  .human-review-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+html[data-theme='bright'] .human-review-status,
+html[data-theme='bright'] .human-review-form select,
+html[data-theme='bright'] .human-review-form textarea {
+  background: #f1f6fc;
+}

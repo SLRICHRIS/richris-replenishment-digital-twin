@@ -16,7 +16,7 @@
 | **11 → 12** | INA219 voltage/current → power, signed net Wh, coulomb-counted SOC fraction | `models.battery_step` and `RobotTwin.accept` | [B] p. 7 Eqs. (5–7), p. 8 Eqs. (8–9). Discharge-positive current; eta=1; requires measured starting SOC/capacity |
 | **13 → 14** | Encoder-estimated yaw rate vs independent bias-corrected gyro yaw rate → persistent disagreement alert | `models.ResidualDetector` called by `RobotTwin.accept` | **Our project extension**, not an attributed numbered equation in [A]. Threshold/hold require trial calibration |
 | **15** | Constant-wheel-speed pose extrapolation and constant-current runtime to reserve | `models.motion_forecast`; `models.runtime_hours` | **Proposed assumptions**, not obstacle-aware forecasting, battery health, or published validation |
-| **16** | LabVIEW HITL: inspect → authorize → gateway → local motor controller → verification | **Not implemented in active worker**. Stored results are advisory/read-only | No cloud motor control; local emergency protection must remain independent |
+| **16** | LabVIEW HITL: inspect → authorize → gateway → local motor controller → verification | `human_review.py`, `labview_gateway.py` and the Human review & action panel implement review/audit/acknowledgement policy. The native VI and physical receiver remain uncommissioned | No cloud motor control; local emergency protection must remain independent |
 | **17** | Thank you | Presentation only | No model |
 
 ## Actual data and database path

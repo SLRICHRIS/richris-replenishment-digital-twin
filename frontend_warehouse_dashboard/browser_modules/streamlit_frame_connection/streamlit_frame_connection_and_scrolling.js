@@ -101,6 +101,7 @@
         'database_browse',
         'connection_view',
         'connection_control',
+        'human_review',
       ].includes(action.action)
     )
       return;
@@ -137,6 +138,15 @@
         action: action.action,
         ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
         ...(action.action === 'demo_trial' ? { trial: action.trial } : {}),
+        ...(action.action === 'human_review'
+          ? {
+              command: action.command,
+              review_id: action.review_id,
+              decision: action.decision,
+              intervention: action.intervention,
+              reason: action.reason,
+            }
+          : {}),
         ...(action.action === 'connection_view' ? { active: action.active } : {}),
         ...(action.action === 'connection_control'
           ? { command: action.command, access_code: action.access_code }

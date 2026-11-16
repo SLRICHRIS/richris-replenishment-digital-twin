@@ -23,6 +23,7 @@ w.requestAnimationFrame = () => {};
 for (const file of [
   'python_sensor_twin_readouts.js',
   'amr_connection_panel.js',
+  'human_review_panel.js',
   'streamlit_frame_connection_and_scrolling.js',
 ]) {
   vm.runInContext(
@@ -594,6 +595,29 @@ assert.equal(sent.at(-1).value.command, 'disconnect');
 doc.dispatchEvent(new w.CustomEvent('python-twin:connection-close'));
 assert.equal(sent.at(-1).value.action, 'connection_view');
 assert.equal(sent.at(-1).value.active, false);
+payload.human_review = { demo:true, eligible:true, source:'Demo rehearsal', state_label:'Ready for review', detail:'Generated evidence only', recommendations:[], review:null };
+deliver(parent,w.location.origin);
+doc.getElementById('human-review-create').click();
+assert.equal(sent.at(-1).value.action,'human_review');
+assert.equal(sent.at(-1).value.command,'create');
+payload.human_review.review = {review_id:'a'.repeat(32),state:'pending',evidence:{seq:10,source:'demo',recommendations:[{title:'<img src=x onerror=alert(1)>'}]},events:[{state:'pending',detail:'<script>unsafe</script>'}]};
+deliver(parent,w.location.origin);
+assert.equal(doc.getElementById('human-review-form').hidden,false);
+assert.equal(doc.getElementById('human-review').querySelector('img,script'),null);
+doc.getElementById('human-review-action').value='pause';
+doc.getElementById('human-review-reason').value='Inspect sustained disagreement';
+doc.getElementById('human-review-form').dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:doc.querySelector('#human-review-form button[value="approve"]')}));
+assert.equal(sent.at(-1).value.command,'decide');
+assert.equal(sent.at(-1).value.intervention,'pause');
+assert.equal(sent.at(-1).value.reason,'Inspect sustained disagreement');
+payload.human_review.demo=false;
+payload.human_review.source='LabVIEW supervision';
+deliver(parent,w.location.origin);
+assert.equal(doc.getElementById('human-review-demo').hidden,true);
+assert.equal(doc.getElementById('human-review-form').hidden,true);
+const reviewsBefore=sent.length;
+doc.getElementById('human-review-form').dispatchEvent(new w.SubmitEvent('submit',{cancelable:true}));
+assert.equal(sent.length,reviewsBefore,'Physical review cannot be approved by the website');
 setImmediate(() => dom.window.close());
 console.log(
   'PASS: original workspace receives Python-only sensor values; source identity, XSS-safe text, freshness, no floor mutation, navigation/scroll preservation and allowlisted source/inspection actions.',

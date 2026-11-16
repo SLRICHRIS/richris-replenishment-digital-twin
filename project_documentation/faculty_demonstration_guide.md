@@ -48,3 +48,9 @@ The baseline has an independent analytical check: 1,200 counts per wheel, radius
 | Calibrated physical trials | Requires measured sensors, independent ground truth and separate validation runs; software checks do not substitute for it |
 
 Use [model-to-slide mapping](slide_to_code_mapping.md), [connection setup](single_amr_sensor_twin_setup.md#connect-amr-from-the-site) and [capability limits](implemented_dashboard_features_and_limits.md) when answering detailed questions.
+
+## Human review rehearsal
+
+After inspecting a generated recommendation, open **Human review & action** in Sensor models. Capture a review, select a controlled pause, enter a reason and approve. The status must remain awaiting controller acknowledgement. Select **Simulate controller acknowledgement**; the outcome must still wait for evidence. Then select **Simulate new sensor readings** to supply three generated observations. Only then should the rehearsal show a verified observed effect. Review the decision trail. Repeat with no intervention or rejection to confirm that no command is generated.
+
+In Stored sensor data, the website is a read-only monitor of reviews from the separate LabVIEW gateway. The native VI and physical receiver still require commissioning. The rehearsal does not establish real LabVIEW connectivity or motor actuation.

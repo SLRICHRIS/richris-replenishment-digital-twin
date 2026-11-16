@@ -23,6 +23,10 @@ python -m project_maintenance_scripts.replay_generated_trial amr01_disagreement_
 
 The verifier rejects altered outputs and mismatched source files. It checks software reproducibility, not physical validity or signed origin. See the [demonstration and evidence guide](project_documentation/faculty_demonstration_guide.md) for the walkthrough, expected outcomes and evidence boundaries.
 
+## Human review and action
+
+Sensor models includes a generated operator-review rehearsal after its recommendations. Physical decisions belong to the separate authenticated LabVIEW gateway, which records approval, checks current evidence, sends only a permitted intervention when explicitly enabled, and waits for controller acknowledgement plus new sensor observations. The current firmware receiver and native LabVIEW front panel still require physical commissioning; command delivery remains disabled. See the [LabVIEW integration and action guide](project_documentation/labview_human_review_and_action.md).
+
 ## Active architecture
 
 ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python sensor pipeline → PostgreSQL → read-only display. Topic: `robot/amr01/state`. Use the independent worker for unattended recording or the session-bound Connect AMR recorder for attended trials. Both reuse the same sensor engine, verified TLS subscription, transaction boundaries and exclusive PostgreSQL writer lease. Browser JavaScript does not ingest raw MQTT data or publish motor commands. Motor control remains local to the AMR.

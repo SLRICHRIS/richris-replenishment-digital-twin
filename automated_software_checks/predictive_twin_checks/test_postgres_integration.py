@@ -95,3 +95,28 @@ def test_postgresql_single_writer_lease():
         writer1.release_worker_lease()
         writer1.engine.dispose()
         writer2.engine.dispose()
+
+
+@pytest.mark.skipif(not os.getenv('TEST_POSTGRES_URL'), reason='PostgreSQL test service not configured')
+def test_postgresql_review_serializes_competing_operators():
+    from concurrent.futures import ThreadPoolExecutor
+    from backend_streamlit_and_telemetry.predictive_twin.human_review import metadata, reviews, ReviewCoordinator
+    from backend_streamlit_and_telemetry.predictive_twin.workspace_payload import workspace_payload
+    db=SensorDatabase(os.environ['TEST_POSTGRES_URL'], initialize=False)
+    metadata.create_all(db.engine)
+    with db.engine.begin() as c:
+        c.execute(reviews.delete())  # Dedicated CI database only.
+    first=ReviewCoordinator(db.engine, source='demo')
+    second=ReviewCoordinator(db.engine, source='demo')
+    payload=workspace_payload('demo','turning')
+    def create(args):
+        service,rid=args
+        try:
+            return service.create(payload,rid)['state']
+        except ValueError:
+            return 'conflict'
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes=list(pool.map(create,[(first,'a'*32),(second,'b'*32)]))
+    assert sorted(outcomes)==['conflict','pending']
+    assert len(first.history())==1
+    db.engine.dispose()

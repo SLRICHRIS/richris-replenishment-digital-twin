@@ -51,6 +51,8 @@
     <link rel="stylesheet" href="./dashboard_stylesheets/robot_model_validation_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
+    <link rel="stylesheet" href="./dashboard_stylesheets/human_review_panel_styles.css" />
+    <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
     <script
       defer
       src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js"
@@ -1837,6 +1839,93 @@
                 <span id="amr-model-source">Source unavailable</span>
               </div>
               <div id="amr-model-recommendations" class="amr-recommendations"></div>
+            </section>
+            <section
+              class="amr-insights-panel human-review-panel"
+              id="human-review"
+              aria-labelledby="human-review-title"
+              hidden
+            >
+              <div class="amr-section-heading">
+                <h2 id="human-review-title">Human review &amp; action</h2>
+                <span id="human-review-source">LabVIEW supervision</span>
+              </div>
+              <p id="human-review-detail"></p>
+              <ol class="human-review-flow" aria-label="Human intervention flow">
+                <li>Recommendation</li>
+                <li>Human review</li>
+                <li>Gateway checks</li>
+                <li>Controller acknowledgement</li>
+                <li>Sensor verification</li>
+              </ol>
+              <div class="human-review-status" role="status" aria-live="polite">
+                <div>
+                  <strong id="human-review-state">Waiting for sensor evidence</strong>
+                  <p id="human-review-evidence"></p>
+                </div>
+                <p id="human-review-recommendations"></p>
+              </div>
+              <div id="human-review-demo" hidden>
+                <button type="button" id="human-review-create" class="primary">
+                  Review recommendation
+                </button>
+                <form id="human-review-form" class="human-review-form" hidden>
+                  <label>
+                    Operator action
+                    <select id="human-review-action">
+                      <option value="no_action">No intervention</option>
+                      <option value="reduce_speed">Halve the current controller speed limit</option>
+                      <option value="pause">Request controlled pause</option>
+                    </select>
+                  </label>
+                  <label>
+                    Decision reason
+                    <textarea
+                      id="human-review-reason"
+                      rows="2"
+                      maxlength="240"
+                      required
+                      placeholder="Record why you chose this action"
+                    ></textarea>
+                  </label>
+                  <div class="human-review-actions">
+                    <button type="submit" class="primary" value="approve">Approve decision</button>
+                    <button type="submit" value="reject">Reject intervention</button>
+                    <button type="submit" value="defer">Decide later</button>
+                  </div>
+                </form>
+                <button type="button" id="human-review-response" hidden>
+                  Simulate controller response &amp; new readings
+                </button>
+                <p class="human-review-note">
+                  Rehearsal only. Approval, acknowledgement and generated follow-up readings are
+                  separate steps. No device is contacted.
+                </p>
+              </div>
+              <div id="human-review-physical" hidden>
+                <p class="human-review-note">
+                  Review the current evidence in LabVIEW. Its protected gateway records the operator
+                  decision and checks freshness before any permitted intervention. Physical command
+                  delivery requires a commissioned local receiver.
+                </p>
+                <a
+                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/labview_human_review_and_action.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  LabVIEW integration guide ↗
+                </a>
+              </div>
+              <p id="human-review-feedback" role="status" hidden></p>
+              <details id="human-review-log" hidden>
+                <summary>Decision &amp; outcome trail</summary>
+                <ol id="human-review-events" class="human-review-events"></ol>
+              </details>
+              <p class="human-review-note">
+                A sent request is not an executed action. Verification needs a matching controller
+                acknowledgement and three fresh sensor observations. Emergency protection remains
+                local to the AMR.
+              </p>
             </section>
             <details class="python-reading-guide" id="python-evidence-scope">
               <summary>Evidence and validation</summary>

@@ -28,12 +28,16 @@ def render_warehouse_workspace():
         payload['database'] = database_preview(
             st.session_state.get('warehouse_database_dataset', 'amr_sensor_samples'),
             st.session_state.get('warehouse_database_refresh', ''))
+    from .predictive_twin.human_review_workspace import review_workspace
+    payload['human_review'] = review_workspace(payload)
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
     if not isinstance(nonce, str) or len(nonce) > 80:
+        return
+    if result['action'] == 'human_review' and (mode != 'demo' or result.get('command') not in ('create','decide','response')):
         return
     if result['action'] == 'sensor_source' and choice not in ('demo', 'live'):
         return
@@ -54,8 +58,12 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] == 'demo_trial':
+    if result['action'] == 'human_review':
+        from .predictive_twin.human_review_workspace import handle_demo_action
+        handle_demo_action(payload, result)
+    elif result['action'] == 'demo_trial':
         st.session_state.warehouse_demo_trial = result['trial']
+        st.session_state.warehouse_review_feedback = ''
         st.session_state.warehouse_database_requested = False
         st.session_state.warehouse_connection_requested = False
     elif result['action'] == 'connection_view':
@@ -97,6 +105,7 @@ def render_warehouse_workspace():
         st.rerun()
     else:
         st.session_state.warehouse_sensor_mode = choice
+        st.session_state.warehouse_review_feedback = ''
         st.session_state.warehouse_database_requested = False
         st.session_state.warehouse_connection_requested = False
     # The next scheduled fragment tick delivers source/archive changes without

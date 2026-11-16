@@ -122,6 +122,34 @@ class StreamlitHostTests(unittest.TestCase):
             controller.disconnect.assert_called_once()
             self.assertFalse(app.exception)
 
+    def test_human_review_rehearsal_keeps_approval_ack_and_observations_separate(self):
+        import json
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        action = {'action':'human_review','command':'create','nonce':'review-create'}
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=lambda **kw:action):
+            app=AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            self.assertFalse(app.exception)
+            rid=app.session_state['warehouse_review_baseline']
+            action.update(command='decide',review_id=rid,decision='approve',intervention='pause',reason='Inspect the sensor alert',nonce='review-approve')
+            app.run(timeout=30)
+            action.update(command='response',nonce='review-ack')
+            app.run(timeout=30)
+            from backend_streamlit_and_telemetry.predictive_twin.human_review_workspace import demo_coordinator
+            # Inspect the next emitted display snapshot, not an independent controller.
+            snapshots=[]
+            def capture(**kw):
+                snapshots.append(kw['python_twin']['human_review'])
+                return None
+            with patch.object(host,'WAREHOUSE_WORKSPACE',side_effect=capture):app.run(timeout=30)
+            self.assertEqual(snapshots[-1]['review']['state'],'acknowledged')
+            action.update(nonce='review-observations')
+            app.run(timeout=30)
+            with patch.object(host,'WAREHOUSE_WORKSPACE',side_effect=capture):app.run(timeout=30)
+            self.assertEqual(snapshots[-1]['review']['state'],'verified')
+            self.assertEqual(snapshots[-1]['review']['evidence']['source'],'demo')
+            self.assertFalse(app.exception)
+
     def test_sensor_details_and_source_switch_stay_within_sensor_scope(self):
         app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
         app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)

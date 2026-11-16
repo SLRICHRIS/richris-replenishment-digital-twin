@@ -430,7 +430,7 @@ class SensorDatabase:
                 for e in events
             ]
 
-    def read_snapshot(self, robot_id="amr01", stale_after_s=2.0, expected_fingerprint=None):
+    def read_snapshot(self, robot_id="amr01", stale_after_s=2.0, expected_fingerprint=None, include_history=True):
         """Read a complete stored snapshot. No robot state is inferred in browser."""
         if robot_id != "amr01" or stale_after_s <= 0:
             raise ValueError("Only AMR-01 and positive freshness windows are supported")
@@ -459,7 +459,7 @@ class SensorDatabase:
                     TwinState.robot_id == robot_id,
                     TwinState.boot_id == sample.boot_id,
                 ).order_by(TwinState.seq.desc()).limit(1200)
-            ).scalars().all()
+            ).scalars().all() if include_history else []
             history = [
                 dict(sample_time_s=s.sample_time_s, x_m=s.x_m, y_m=s.y_m,
                      theta_rad=s.theta_rad, soc=s.soc_fraction, energy_wh=s.energy_wh,
@@ -471,7 +471,7 @@ class SensorDatabase:
                 .where(PipelineEvent.robot_id == robot_id)
                 .order_by(PipelineEvent.id.desc())
                 .limit(10)
-            ).scalars().all()
+            ).scalars().all() if include_history else []
             pipeline_events = [
                 dict(event_type=e.event_type, boot_id=e.boot_id, seq=e.seq,
                      observed_at=utc_aware(e.observed_at).isoformat(), details=e.details)
