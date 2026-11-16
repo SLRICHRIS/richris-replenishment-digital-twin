@@ -6,6 +6,38 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
+    def test_selected_trial_survives_tick_and_native_detailed_readings(self):
+        from unittest.mock import patch
+        import json
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        original = host.WAREHOUSE_WORKSPACE
+        def dispatch(**kwargs):
+            original(**kwargs)
+            return dict(action='demo_trial', trial='disagreement', nonce='select-fault')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', side_effect=dispatch):
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
+            app.run(timeout=30)
+        self.assertFalse(app.exception)
+        payload = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
+        self.assertEqual(payload['demo_trial']['id'], 'disagreement')
+        self.assertTrue(payload['robots']['amr01']['derived']['advisory'])
+        app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)
+        self.assertFalse(app.exception)
+        self.assertEqual(app.selectbox[0].value, 'disagreement')
+        self.assertTrue(any('Sustained model disagreement' in message.value for message in app.warning))
+
+    def test_generated_trial_actions_cannot_override_live_source_or_admit_unknown_inputs(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        for mode, trial in [('live', 'disagreement'), ('demo', '../private'), ('demo', [])]:
+            app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+            app.session_state.warehouse_sensor_mode = mode
+            with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=dict(action='demo_trial', trial=trial, nonce='invalid-live-trial')):
+                app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertEqual(app.session_state.warehouse_sensor_mode, mode)
+            self.assertNotIn('warehouse_demo_trial', app.session_state)
+
     def test_final_view_action_also_stops_previous_panel_polling_when_events_are_coalesced(self):
         from unittest.mock import patch
         from backend_streamlit_and_telemetry import streamlit_dashboard_host as host

@@ -1,6 +1,12 @@
 # Single-AMR alignment: software evidence and physical limits
 
-The implementation is aligned to the final 17-slide modelling deck and integrated into the warehouse dashboard. The default remains the original floor UI; Sensor models shows backend calculations. This revision keeps only AMR-01: one robot assembly, one dock, one set of six model cards and one raw-sensor topic. The inventory research baseline remains in source; the inspection workflow retains separate manual stock/task functions, outside the final presentation. No existing route-planning or stock simulator is replaced with fabricated hardware evidence.
+The implementation is aligned to the final 17-slide modelling deck and integrated into the warehouse dashboard. Floor, Connect AMR, Sensor models and Database serve one AMR identity, one robot assembly, one dock, six model cards and one raw-sensor topic. Generated trials and the original warehouse simulation remain separate from measured physical records. Inventory, task and routing studies remain in source, outside the hosted interface.
+
+## Reproducible demonstration trials: 16 November 2026
+
+Five generated trials exercise baseline recovery, constant-curvature turning, sustained gyro–encoder disagreement, low charge and missing observations through the same Python engine used by ingestion. Independent checks compare baseline travel/SOC/energy to analytical values and turning to the constant-curvature solution. A missing interval breaks the displayed residual path and withholds quantitative forecasts. Selected trials stay consistent between the main workspace and native detailed readings.
+
+Generated evidence exports include input packets, example calibration, outputs, recommendations and SHA-256 fingerprints of the model, telemetry, trial, guidance and display source files. The replay verifier admits the exported packets through a fresh in-memory engine and compares final state, forecasts and recommendations without opening PostgreSQL. Altered results and mismatched sources are rejected. The browser checks cover acknowledgement, pending selection, safe JSON export and separation from the physical source. Consult this revision's actual CI runs for test results; none of these checks establishes hardware accuracy.
 
 ## Verified locally
 

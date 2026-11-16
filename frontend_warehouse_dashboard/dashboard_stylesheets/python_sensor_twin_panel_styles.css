@@ -326,6 +326,65 @@ html[data-python-twin='true'] #python-sensor-panel {
   font-size: 12px;
   line-height: 1.6;
 }
+.twin-demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.twin-demo-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.twin-demo-controls select {
+  min-width: 250px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+.twin-demo-controls button {
+  min-height: 40px;
+  font-size: 12px;
+}
+.twin-demo-controls > span {
+  margin: auto 0 9px auto;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+#python-evidence-scope p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+#python-evidence-scope a {
+  color: var(--blue);
+}
+@media (max-width: 640px) {
+  .twin-demo-controls label,
+  .twin-demo-controls select {
+    width: 100%;
+    min-width: 0;
+  }
+  .twin-demo-controls select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .twin-demo-controls button {
+    min-height: 44px;
+  }
+  .twin-demo-controls > span {
+    margin: auto 0 auto auto;
+  }
+}
 .python-data-notice strong {
   color: var(--text);
   font-size: 11px;

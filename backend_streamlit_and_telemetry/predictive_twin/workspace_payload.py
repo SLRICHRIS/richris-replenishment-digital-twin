@@ -4,7 +4,7 @@ import json
 import streamlit as st
 
 from .database import DatabaseSchemaError, SensorDatabase, calibration_fingerprint
-from .demo import demo_fleet
+from .demo import build_demo_trial
 from .models import Calibration, motion_forecast, runtime_hours
 from .insights import predictive_insights
 from .telemetry import ROBOT_IDS
@@ -17,11 +17,11 @@ def with_insights(payload):
     return payload
 
 
-def quality_display(snapshot, demo=False):
+def quality_display(snapshot, demo=False, demo_detail=None):
     """Plain-language interpretation shared by both dashboard views."""
-    if demo:
+    if demo and snapshot.get('quality') == 'OK' and not snapshot.get('stale') and not snapshot.get('continuity_lost'):
         return dict(label='Demo data', tone='info', detail=(
-            'Fixed 6-second example with generated sensor values. '
+            demo_detail or 'Fixed 6-second example with generated sensor values. '
             'The example includes an injected gyro disagreement at 3–4 seconds.'
         ))
     code = snapshot.get('quality', 'WAITING')
@@ -45,6 +45,9 @@ def quality_display(snapshot, demo=False):
     label, detail, tone = states.get(code, (
         'Status unavailable', 'Wait for a validated sensor status before interpreting results.', 'warning'
     ))
+    if demo:
+        label = 'Demo · ' + label
+        detail = (demo_detail or 'Generated sensor example.') + ' ' + detail
     return dict(label=label, detail=detail, tone=tone)
 
 
@@ -119,13 +122,13 @@ def stored_sensor_context():
     return db, calibration, None
 
 
-def workspace_payload(mode):
+def workspace_payload(mode, demo_trial='baseline'):
     if mode not in ('demo', 'live'):
         raise ValueError('Unknown sensor source')
     if mode == 'demo':
-        fleet = demo_fleet()
+        fleet, demo_metadata = build_demo_trial(demo_trial)
         snapshots = fleet.snapshots(now=6)
-        status = 'Demo data · fixed 6-second generated example'
+        status = 'Demo data · ' + demo_metadata['label'] + ' · generated 6-second trial'
     else:
         db, c, notice = stored_sensor_context()
         if notice:
@@ -169,14 +172,21 @@ def workspace_payload(mode):
                 **{key: row[key] for key in ('sample_time_s', 'x_m', 'y_m', 'soc', 'residual_rad_s', 'advisory')},
                 'plot_break_before': any(
                     h.get('residual_rad_s') is None for h in history[previous_index + 1:index + 1]
+                ) or any(
+                    history[j]['sample_time_s'] - history[j - 1]['sample_time_s'] > c.max_gap_s
+                    for j in range(max(1, previous_index + 1), index + 1)
                 ),
             })
             previous_index = index
-        display = quality_display(snapshot, demo=mode == 'demo')
+        display = quality_display(snapshot, demo=mode == 'demo',
+            demo_detail=(demo_metadata['description'] + ' ' + demo_metadata['expected']) if mode == 'demo' else None)
         robots[rid] = dict(**snapshot, forecast_pose=forecast, runtime_hours=runtime,
             quality_label=display['label'], quality_detail=display['detail'], quality_tone=display['tone'],
             gyro_bias_rad_s=c.gyro_bias_rad_s,
             residual_threshold_rad_s=c.residual_threshold_rad_s,
             residual_hold_s=c.residual_hold_s,
             history=chart_history)
-    return with_insights(dict(mode=mode, status=status, robots=robots))
+    result = dict(mode=mode, status=status, robots=robots)
+    if mode == 'demo':
+        result['demo_trial'] = demo_metadata
+    return with_insights(result)

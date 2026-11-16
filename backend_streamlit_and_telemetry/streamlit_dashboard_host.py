@@ -15,7 +15,7 @@ WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND
 def render_warehouse_workspace():
     from .predictive_twin.workspace_payload import workspace_payload
     mode = st.session_state.get('warehouse_sensor_mode', 'demo')
-    payload = workspace_payload(mode)
+    payload = workspace_payload(mode, st.session_state.get('warehouse_demo_trial', 'baseline'))
     if st.session_state.get('warehouse_connection_requested'):
         from .predictive_twin.amr_connection import connection_payload, connection_profile, session_connector
         profile, missing = connection_profile(st.secrets)
@@ -30,7 +30,7 @@ def render_warehouse_workspace():
             st.session_state.get('warehouse_database_dataset', 'amr_sensor_samples'),
             st.session_state.get('warehouse_database_refresh', ''))
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
@@ -38,6 +38,10 @@ def render_warehouse_workspace():
         return
     if result['action'] == 'sensor_source' and choice not in ('demo', 'live'):
         return
+    if result['action'] == 'demo_trial':
+        from .predictive_twin.demo import DEMO_TRIALS
+        if mode != 'demo' or not isinstance(result.get('trial'), str) or result['trial'] not in DEMO_TRIALS:
+            return
     if result['action'] == 'database_browse':
         from .predictive_twin.database_inspection import DATASET_LABELS
         if result.get('dataset') not in DATASET_LABELS or type(result.get('active')) is not bool:
@@ -51,7 +55,11 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] == 'connection_view':
+    if result['action'] == 'demo_trial':
+        st.session_state.warehouse_demo_trial = result['trial']
+        st.session_state.warehouse_database_requested = False
+        st.session_state.warehouse_connection_requested = False
+    elif result['action'] == 'connection_view':
         st.session_state.warehouse_connection_requested = result['active']
         if result['active']:
             st.session_state.warehouse_database_requested = False

@@ -1,7 +1,7 @@
 /* Display Python results in Sensor models. No model equations here. */
 (() => {
   'use strict';
-  let latest;
+  let latest, displayPayload, pendingTrial;
   const $ = (id) => document.getElementById(id);
   const text = (id, value) => {
     const node = $(id);
@@ -22,6 +22,7 @@
     }
     document.documentElement.dataset.pythonTwin = 'true';
     document.documentElement.dataset.pythonSource = payload.mode;
+    displayPayload = payload;
     $('python-connection-details').hidden = payload.mode !== 'live';
     text('python-source-status', payload.status || 'Waiting for sensor status');
     text('python-source-label', payload.mode === 'live' ? 'Stored sensor data' : 'Demo data');
@@ -29,6 +30,17 @@
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
     }
     if (payload.database) renderDatabase(payload.database);
+    const trial = payload.mode === 'demo' ? payload.demo_trial : null;
+    $('python-demo-controls').hidden = !trial;
+    if (payload.mode !== 'demo' || trial?.id === pendingTrial) pendingTrial = null;
+    $('python-demo-controls').setAttribute('aria-busy', String(Boolean(pendingTrial)));
+    $('python-sensor-panel').setAttribute('aria-busy', String(Boolean(pendingTrial)));
+    $('python-demo-export').disabled = !trial || Boolean(pendingTrial);
+    if (trial && !pendingTrial) {
+      if ($('python-demo-trial').value !== trial.id) $('python-demo-trial').value = trial.id;
+      text('python-demo-packets', trial.packet_count + ' generated packets');
+    }
+    if (pendingTrial && payload.mode === 'demo') return;
     const robots = payload.robots || {};
     for (const rid of ['amr01']) {
       const r = robots[rid],
@@ -56,7 +68,11 @@
       text(key + 'age', demo ? 'Fixed demo trial' : number(r?.age_s, 1, ' s'));
       text(
         'python-observation-label',
-        demo ? 'Fixed demo trial · 6 seconds' : 'Sample age · ' + number(r?.age_s, 1, ' s'),
+        demo
+          ? trial
+            ? trial.label + ' · 6 seconds'
+            : 'Fixed demo trial · 6 seconds'
+          : 'Sample age · ' + number(r?.age_s, 1, ' s'),
       );
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
       text(key + 'pose', available ? position(r.pose) : 'Unavailable');
@@ -284,6 +300,50 @@
     );
   }
   function bind() {
+    $('python-demo-trial')?.addEventListener('change', () => {
+      pendingTrial = $('python-demo-trial').value;
+      $('python-demo-controls').setAttribute('aria-busy', 'true');
+      $('python-sensor-panel').setAttribute('aria-busy', 'true');
+      $('python-demo-export').disabled = true;
+      text('python-data-detail', 'Loading the selected generated trial…');
+      document.dispatchEvent(
+        new CustomEvent('python-twin:action', {
+          detail: { action: 'demo_trial', trial: pendingTrial },
+        }),
+      );
+    });
+    $('python-demo-export')?.addEventListener('click', () => {
+      const trial = displayPayload?.demo_trial;
+      if (
+        $('python-demo-export').disabled ||
+        pendingTrial ||
+        displayPayload?.mode !== 'demo' ||
+        !trial
+      )
+        return;
+      const evidence = {
+        evidence_format: 'amr01.synthetic-trial.v1',
+        source: 'synthetic',
+        hardware_validation: false,
+        trial,
+        snapshot_time_s: 6,
+        outputs: displayPayload.robots,
+        insights: displayPayload.insights,
+        limits: [
+          'Generated inputs, not physical measurements.',
+          'No packets are written to the physical database.',
+          'Forecasts assume unchanged inputs and use a local odometry frame.',
+        ],
+      };
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(evidence, null, 2)], { type: 'application/json' }),
+      );
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'amr01_' + trial.id + '_synthetic_trial.json';
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode)?.addEventListener('click', () => {
         document.dispatchEvent(

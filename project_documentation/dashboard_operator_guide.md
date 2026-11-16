@@ -21,6 +21,8 @@ EMQX subscribed, fresh device samples, database access and prediction readiness 
 
 ## Sensor workflow
 
+With Demo data selected, choose a generated trial from the Trial selector. Baseline, turning, sustained disagreement, low charge and interrupted-stream cases use the same Python sensor engine. The description states the injected condition and expected behavior. Trial selection is shared with Detailed readings. Export trial evidence contains the example calibration, generated packets, Python outputs, recommendations and source fingerprints; it is disabled until the selected trial response arrives and is unavailable for physical data. Follow the [demonstration guide](faculty_demonstration_guide.md) and replay an export using `python -m project_maintenance_scripts.replay_generated_trial FILE.json`.
+
 1. Follow [direct-sensor commissioning](single_amr_sensor_twin_setup.md), not the legacy UART kit. Configure private Streamlit secrets and replace all example calibration values.
 2. Open **Sensor models**. The default fixed synthetic trial is labelled; it is not a physical reading.
 3. Select **Stored sensor data** only with the commissioned AMR-01 publisher and independent ingestion worker. The worker subscribes to `robot/amr01/state` and stores readings; the dashboard reads the database.
