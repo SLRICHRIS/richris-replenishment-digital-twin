@@ -37,8 +37,11 @@ def render_warehouse_workspace():
     nonce = result.get('nonce')
     if not isinstance(nonce, str) or len(nonce) > 80:
         return
-    if result['action'] == 'human_review' and (mode != 'demo' or result.get('command') not in ('create','decide','response')):
-        return
+    if result['action'] == 'human_review':
+        permitted = ('create','decide','response') if mode == 'demo' else ('login','logout','create','decide')
+        code = result.get('access_code', '')
+        if result.get('command') not in permitted or not isinstance(code, str) or len(code) > 256:
+            return
     if result['action'] == 'sensor_source' and choice not in ('demo', 'live'):
         return
     if result['action'] == 'demo_trial':
@@ -59,8 +62,11 @@ def render_warehouse_workspace():
         return
     st.session_state.warehouse_sensor_action = nonce
     if result['action'] == 'human_review':
-        from .predictive_twin.human_review_workspace import handle_demo_action
-        handle_demo_action(payload, result)
+        from .predictive_twin.human_review_workspace import handle_demo_action, handle_website_action
+        if mode == 'demo':
+            handle_demo_action(payload, result)
+        else:
+            handle_website_action(result)
     elif result['action'] == 'demo_trial':
         st.session_state.warehouse_demo_trial = result['trial']
         st.session_state.warehouse_review_feedback = ''

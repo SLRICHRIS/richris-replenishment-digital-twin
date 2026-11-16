@@ -1,7 +1,7 @@
 """Human review, durable intervention audit and evidence-based outcome checks.
 
-The website rehearses this policy in isolated memory. LabVIEW uses the local
-HTTP gateway for physical reviews. No browser action publishes motor commands.
+The website records physical decisions through its protected server service.
+Generated rehearsals use isolated memory. MQTT credentials stay on the server.
 """
 from copy import deepcopy
 import math
@@ -274,10 +274,10 @@ def panel(payload, row=None, feedback=''):
         eligible = True
     except ValueError:
         proof, eligible = None, False
-    return dict(source='Demo rehearsal' if demo else 'LabVIEW supervision', demo=demo,
+    return dict(source='Demo rehearsal' if demo else 'Website operator review', demo=demo,
         eligible=eligible, feedback=feedback, review=row,
         state_label=LABELS.get(row['state'], row['state']) if row else 'Ready for review' if eligible else 'Waiting for valid sensor evidence',
         detail=('Rehearse the operator decision and response checks. Generated evidence never contacts a device.' if demo else
-                'LabVIEW records the human decision through the protected gateway. The website monitors the outcome.'),
+                'Review the recommendation here. The server records your decision and checks fresh evidence before any enabled intervention.'),
         recommendations=proof['recommendations'] if proof else [],
         steps=['Recommendation', 'Human review', 'Gateway checks', 'Controller acknowledgement', 'Sensor verification'])

@@ -1848,7 +1848,7 @@
             >
               <div class="amr-section-heading">
                 <h2 id="human-review-title">Human review &amp; action</h2>
-                <span id="human-review-source">LabVIEW supervision</span>
+                <span id="human-review-source">Website operator review</span>
               </div>
               <p id="human-review-detail"></p>
               <ol class="human-review-flow" aria-label="Human intervention flow">
@@ -1865,7 +1865,35 @@
                 </div>
                 <p id="human-review-recommendations"></p>
               </div>
-              <div id="human-review-demo" hidden>
+              <div id="human-review-auth" hidden>
+                <form id="human-review-login" class="human-review-form">
+                  <label>
+                    Operator alias
+                    <input
+                      id="human-review-operator"
+                      maxlength="40"
+                      required
+                      pattern="[A-Za-z0-9_-]{1,40}"
+                      autocomplete="off"
+                      placeholder="Your operator alias"
+                    />
+                  </label>
+                  <label>
+                    Private operator code
+                    <input
+                      id="human-review-code"
+                      type="password"
+                      maxlength="256"
+                      required
+                      autocomplete="off"
+                    />
+                  </label>
+                  <div class="human-review-actions">
+                    <button type="submit">Unlock operator review</button>
+                  </div>
+                </form>
+              </div>
+              <div id="human-review-controls" hidden>
                 <button type="button" id="human-review-create" class="primary">
                   Review recommendation
                 </button>
@@ -1897,24 +1925,14 @@
                 <button type="button" id="human-review-response" hidden>
                   Simulate controller response &amp; new readings
                 </button>
-                <p class="human-review-note">
+                <p id="human-review-demo-note" class="human-review-note">
                   Rehearsal only. Approval, acknowledgement and generated follow-up readings are
                   separate steps. No device is contacted.
                 </p>
               </div>
               <div id="human-review-physical" hidden>
-                <p class="human-review-note">
-                  Review the current evidence in LabVIEW. Its protected gateway records the operator
-                  decision and checks freshness before any permitted intervention. Physical command
-                  delivery requires a commissioned local receiver.
-                </p>
-                <a
-                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/labview_human_review_and_action.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LabVIEW integration guide ↗
-                </a>
+                <p id="human-review-availability" class="human-review-note"></p>
+                <button type="button" id="human-review-lock" hidden>Lock operator session</button>
               </div>
               <p id="human-review-feedback" role="status" hidden></p>
               <details id="human-review-log" hidden>
@@ -2713,7 +2731,7 @@
                     href="./downloadable_hardware_kits_and_guides/mqtt_sqlite_recorder_and_labview_adapter_starter_kit.zip"
                     download
                   >
-                    Reference recorder &amp; LabVIEW adapter
+                    Archived observation recorder
                   </a>
                   <a
                     href="./downloadable_hardware_kits_and_guides/digital_twin_feature_alignment_audit.md"
@@ -2888,8 +2906,9 @@
                 results from raw AMR-01 sensors. Live odometry remains in its local frame; a
                 surveyed coordinate transform is required before it can update the 3D floor.
                 Physical accuracy and advisory performance require measured validation. Live data
-                does not drive simulated stock or tasks. This viewer sends no motor commands.
-                LabVIEW, Coordinator/UART control and browser telemetry are legacy references
+                does not drive simulated stock or tasks. Website review passes decisions to the
+                protected Python service; physical command delivery remains disabled until receiver
+                commissioning. Coordinator/UART control and browser telemetry are legacy references
                 outside the active sensor path. Simulation time pauses while the tab is hidden.
               </p>
               <p id="diagnostics"></p>

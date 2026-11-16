@@ -1,6 +1,9 @@
-"""Session-isolated rehearsal and a read-only physical review monitor."""
+"""Session-isolated rehearsal and authenticated website operator decisions."""
 from copy import deepcopy
 import uuid
+import hashlib
+import re
+import time
 import streamlit as st
 from sqlalchemy import create_engine, select
 from sqlalchemy.pool import StaticPool
@@ -27,31 +30,128 @@ def physical_review(url):
     if not row:
         return None
     # Operator identifiers and free-text reasons stay in the protected audit.
-    value = dict(row)
+    return public_review(row)
+
+
+def public_review(row):
+    if row is None:
+        return None
+    value = deepcopy(dict(row))
     if value['decision']:
         value['decision'] = {k:value['decision'][k] for k in ('decision','action')}
     return value
 
 
+@st.cache_resource(max_entries=1, show_spinner=False, on_release=lambda resource: resource.close())
+def website_service(profile, transport):
+    from .intervention_service import WebsiteReviewService
+    return WebsiteReviewService(profile, transport)
+
+
+def auth_tag(profile):
+    return hashlib.sha256(('website-review:'+profile.access_code).encode()).hexdigest() if profile else None
+
+
+def is_authorized(profile):
+    return bool(profile and st.session_state.get('warehouse_review_auth') == auth_tag(profile))
+
+
 def review_workspace(payload):
-    feedback = st.session_state.get('warehouse_review_feedback', '') if payload['mode'] == 'demo' else ''
-    row = None
+    feedback = st.session_state.get('warehouse_review_feedback', '')
+    row, service, authorized, owned, profile = None, None, False, False, None
+    missing = []
     if payload['mode'] == 'demo':
         coordinator = demo_coordinator(payload.get('demo_trial', {}).get('id','baseline'))
         rid = st.session_state.get(active_key(payload))
         if rid:
-            row = coordinator.get(rid)
+            try:
+                row = coordinator.get(rid)
+            except ValueError:
+                st.session_state.pop(active_key(payload), None)
+                feedback = 'The rehearsal session reset. Capture a new recommendation to continue.'
     else:
+        from .amr_connection import connection_profile
+        from .intervention_service import transport_profile
         from .workspace_payload import database_url
+        profile, missing = connection_profile(st.secrets)
+        authorized = is_authorized(profile)
+        if profile:
+            try:
+                service = website_service(profile, transport_profile(st.secrets, profile.host))
+                rid = st.session_state.get('warehouse_physical_review') if authorized else None
+                if rid:
+                    row = service.get(rid)
+                    owned = True
+            except Exception:
+                missing.append('Website review audit permissions or service availability')
         url = database_url()
-        if url:
+        if row is None and url:
             try:
                 row = physical_review(url)
             except Exception:
-                feedback = 'The LabVIEW review service has not been commissioned for this database.'
+                missing.append('Readable operator review audit')
+        if not url:
+            missing.append('Sensor database connection')
+    result = panel(payload, public_review(row), feedback)
+    result.update(authorized=authorized, owns_review=owned, can_unlock=profile is not None,
+                  can_review=payload['mode']=='demo' or bool(service and not service.stop.is_set()),
+                  missing=missing,
+                  commands_enabled=bool(service and service.delivery_ready))
+    return result
+
+
+def handle_website_action(result):
+    """Ignore browser evidence/identity. Recapture physical context on the server."""
+    from .amr_connection import connection_profile, authorize
+    from .intervention_service import transport_profile
+    command = result.get('command')
+    # There is deliberately no physical simulation/ACK endpoint.
+    if command not in {'login','logout','create','decide'}:
+        st.session_state.warehouse_review_feedback = 'Choose a permitted website review action.'
+        return
+    if command == 'logout':
+        for key in ('warehouse_review_auth','warehouse_review_operator','warehouse_physical_review'):
+            st.session_state.pop(key, None)
+        st.session_state.warehouse_review_feedback = 'Operator session locked.'
+        return
+    profile, missing = connection_profile(st.secrets)
+    if profile is None:
+        st.session_state.warehouse_review_feedback = 'Complete measured calibration and the private connection setup before physical review.'
+        return
+    if command == 'login':
+        now = time.monotonic()
+        if now-st.session_state.get('warehouse_review_attempt', -2) < 1:
+            return
+        st.session_state.warehouse_review_attempt = now
+        operator = result.get('operator')
+        if (not authorize(profile, result.get('access_code')) or not isinstance(operator, str)
+                or re.fullmatch(r'[A-Za-z0-9_-]{1,40}', operator) is None):
+            st.session_state.warehouse_review_feedback = 'Enter the private operator code and an alias using letters, numbers, underscore or hyphen.'
+            return
+        st.session_state.warehouse_review_auth = auth_tag(profile)
+        st.session_state.warehouse_review_operator = operator
+        st.session_state.warehouse_review_feedback = 'Operator session unlocked. Capture a recommendation to review.'
+        return
+    if not is_authorized(profile):
+        st.session_state.warehouse_review_feedback = 'Unlock the operator session before recording a physical decision.'
+        return
+    try:
+        service = website_service(profile, transport_profile(st.secrets, profile.host))
+        if command == 'create':
+            row = service.create(uuid.uuid4().hex)
+            st.session_state.warehouse_physical_review = row['review_id']
         else:
-            feedback = 'Connect the sensor database before monitoring physical reviews.'
-    return panel(payload, row, feedback)
+            rid = st.session_state.get('warehouse_physical_review')
+            if not rid or result.get('review_id') != rid:
+                raise ValueError('Capture a review in this operator session before deciding')
+            service.decide(rid, decision=result.get('decision'), action=result.get('intervention'),
+                           operator=st.session_state['warehouse_review_operator'], reason=result.get('reason'))
+        physical_review.clear()
+        st.session_state.warehouse_review_feedback = 'Decision workflow updated in the physical audit. Check the outcome below.'
+    except (ValueError, TypeError) as error:
+        st.session_state.warehouse_review_feedback = str(error)
+    except Exception:
+        st.session_state.warehouse_review_feedback = 'Website review is unavailable. Check audit permissions, service ownership and current sensor evidence.'
 
 
 def handle_demo_action(payload, result):

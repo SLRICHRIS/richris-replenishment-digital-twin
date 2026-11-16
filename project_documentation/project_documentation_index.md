@@ -4,7 +4,7 @@ Start with [single-AMR commissioning](single_amr_sensor_twin_setup.md), [equatio
 
 | Guide | Use it to understand |
 | --- | --- |
-| [Human review and LabVIEW](labview_human_review_and_action.md) | Review recommendations, record operator decisions and verify intervention outcomes |
+| [Website human review and action](website_human_review_and_action.md) | Review recommendations, record operator decisions and verify intervention outcomes |
 | [Repository structure and project flow](repository_structure_and_project_flow.md) | Folder boundaries, source files and execution flow |
 | [System architecture](dashboard_and_telemetry_system_architecture.md) | State sources, route graph, mission lifecycle and authority |
 | [Deployment and local setup](deployment_and_local_setup.md) | Run locally or configure Streamlit Community Cloud |

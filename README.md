@@ -25,7 +25,7 @@ The verifier rejects altered outputs and mismatched source files. It checks soft
 
 ## Human review and action
 
-Sensor models includes a generated operator-review rehearsal after its recommendations. Physical decisions belong to the separate authenticated LabVIEW gateway, which records approval, checks current evidence, sends only a permitted intervention when explicitly enabled, and waits for controller acknowledgement plus new sensor observations. The current firmware receiver and native LabVIEW front panel still require physical commissioning; command delivery remains disabled. See the [LabVIEW integration and action guide](project_documentation/labview_human_review_and_action.md).
+Sensor models places **Human review & action** after recommendations. Operators review evidence and record decisions directly in the website using the private operator code. The server captures fresh context, records the audit and permits delivery only through an explicitly commissioned transport. A matching controller acknowledgement and three new sensor observations are separate outcome checks. Generated rehearsal is isolated from physical records. The current ESP32 command receiver still needs implementation and physical commissioning, so delivery remains disabled. See the [website operator review guide](project_documentation/website_human_review_and_action.md).
 
 ## Active architecture
 

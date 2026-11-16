@@ -12,7 +12,7 @@ Wheel encoders + MPU6050 gyro + INA219 voltage/current
    -> read-only Streamlit database reader -> sensor cards, history and alerts
 ```
 
-This is **one AMR-01**. The older warehouse scene, missions and inventory simulation are distinct from the physical telemetry and are not synchronized to surveyed warehouse coordinates. The LabVIEW return/command path on slide 16 is still a proposal, not a live motor-control feature. GitHub holds source code; it cannot run the always-on telemetry worker.
+This is **one AMR-01**. The older warehouse scene, missions and inventory simulation are distinct from the physical telemetry and are not synchronized to surveyed warehouse coordinates. The current return path is [website operator review](website_human_review_and_action.md), with a separate database audit. Physical command delivery remains disabled until receiver commissioning. GitHub holds source code; it cannot run the always-on telemetry worker.
 
 ## Structured physical database
 
@@ -217,7 +217,7 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
    max_gap_s = 1.0
    ```
    These numeric values are **illustrations only**. Replace them with measured values, and set the commissioning flag only after physical validation.
-5. ESP32 uses the existing raw-sensor sketch and publishes to `robot/amr01/state`. It is an observation-only firmware, with the TB6612 standby held low; it does not autonomously navigate or issue LabVIEW motor commands.
+5. ESP32 uses the existing raw-sensor sketch and publishes to `robot/amr01/state`. It is an observation-only firmware, with the TB6612 standby held low; it does not autonomously navigate or issue remote motor commands.
 6. Use the dashboard's **Stored sensor data** selection to display *persisted* sensor/twin results. The label indicates the acquisition source, not a browser broker connection. Unconfigured live mode shows no fabricated robot measurements.
 
 ### Important constraints

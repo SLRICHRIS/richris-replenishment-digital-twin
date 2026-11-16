@@ -1,10 +1,10 @@
-/* Human review display. Physical approval is only through the LabVIEW gateway. */
+/* Website decisions go through the authenticated Python service. No browser MQTT. */
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
   let current, lastEvents;
   const text = (id, value) => {
-    if ($(id)) $(id).textContent = String(value || '');
+    if ($(id) && $(id).textContent !== String(value || '')) $(id).textContent = String(value || '');
   };
   function send(detail) {
     document.dispatchEvent(
@@ -25,15 +25,32 @@
     text('human-review-state', (current.demo && row ? 'Demo · ' : '') + current.state_label);
     text('human-review-feedback', current.feedback);
     $('human-review-feedback').hidden = !current.feedback;
-    $('human-review-demo').hidden = !current.demo;
+    $('human-review-controls').hidden = !current.demo && !current.authorized;
+    $('human-review-auth').hidden = current.demo || current.authorized || !current.can_unlock;
+    $('human-review-demo-note').hidden = !current.demo;
+    $('human-review-lock').hidden = current.demo || !current.authorized;
+    $('human-review-login').querySelector('button').disabled = !current.can_unlock;
+    text(
+      'human-review-availability',
+      current.missing?.length
+        ? 'Physical review needs: ' + current.missing.join(' · ')
+        : current.commands_enabled
+          ? 'Physical delivery is enabled. Every approval still requires fresh evidence, a matching device response and new sensor readings.'
+          : 'Physical command delivery is disabled until the ESP32 receiver is commissioned. You can record a review; an approval cannot queue a future command.',
+    );
     $('human-review-physical').hidden = current.demo;
     const active =
       row &&
       !['reviewed', 'rejected', 'deferred', 'expired', 'blocked', 'verified', 'uncertain'].includes(
         row.state,
       );
-    $('human-review-create').disabled = !current.demo || !current.eligible || Boolean(active);
-    $('human-review-form').hidden = !current.demo || row?.state !== 'pending';
+    $('human-review-create').disabled =
+      (!current.demo && (!current.authorized || !current.can_review)) ||
+      !current.eligible ||
+      Boolean(active);
+    $('human-review-form').hidden =
+      (!current.demo && (!current.authorized || !current.owns_review || !current.can_review)) ||
+      row?.state !== 'pending';
     $('human-review-response').hidden =
       !current.demo || !['sent', 'acknowledged'].includes(row?.state);
     text(
@@ -72,10 +89,30 @@
     $('human-review-log').hidden = !row;
   }
   function bind() {
-    $('human-review-create')?.addEventListener('click', () => send({ command: 'create' }));
+    $('human-review-login')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (current?.demo || !current?.can_unlock) return;
+      const code = $('human-review-code');
+      send({
+        command: 'login',
+        access_code: code.value,
+        operator: $('human-review-operator').value,
+      });
+      code.value = '';
+    });
+    $('human-review-lock')?.addEventListener('click', () => send({ command: 'logout' }));
+    $('human-review-create')?.addEventListener('click', () => {
+      if (current?.eligible && (current.demo || (current.authorized && current.can_review)))
+        send({ command: 'create' });
+    });
     $('human-review-form')?.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (!current?.demo || current.review?.state !== 'pending') return;
+      if (
+        !current ||
+        current.review?.state !== 'pending' ||
+        (!current.demo && (!current.authorized || !current.owns_review || !current.can_review))
+      )
+        return;
       const decision = event.submitter?.value || 'approve';
       send({
         command: 'decide',

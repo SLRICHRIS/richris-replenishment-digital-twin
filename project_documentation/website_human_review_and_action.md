@@ -1,0 +1,72 @@
+# Website human review and action
+
+The website is the operator's decision point. Sensor models shows recommendations and **Human review & action** in one flow. The Python server captures current evidence, authenticates the operator session and records the decision in the shared PostgreSQL audit. No desktop application, local HTTP service or additional workstation is required.
+
+```mermaid
+flowchart TD
+  A["Sensor evidence and recommendation"] --> B["Website operator review"]
+  B --> C{"Human decision"}
+  C -->|"No intervention, reject or defer"| D["Record decision"]
+  C -->|"Approve permitted intervention"| E{"Server evidence and delivery checks"}
+  E -->|"Unavailable"| F["Record blocked approval"]
+  E -->|"Ready"| G["EMQX request to local controller"]
+  G --> H["Matching applied acknowledgement"]
+  H --> I["Three new sensor observations"]
+  I --> J["Record observed outcome"]
+```
+
+## Operator workflow
+
+1. Select **Demo data** to rehearse with generated evidence. Capture a recommendation, choose an action, enter a reason and approve, reject or defer. Simulated acknowledgement and simulated follow-up readings are separate steps. This session never writes to physical tables or contacts a device.
+2. For physical review, select **Stored sensor data**, enter your operator alias and the existing private operator code, then select **Unlock operator review**. The code is cleared from the input after submission. It is never included in display snapshots or stored in browser storage.
+3. Capture a recommendation to review. The server assigns the review ID and captures fresh sensor context itself. Only the authenticated session that captured this review can decide it. Another viewer can monitor the public outcome but cannot adopt that review.
+4. Select **No intervention**, **Halve the current controller speed limit** or **Request controlled pause**, record a reason, and approve, reject or defer. Review expires after 30 seconds. Changed recommendations, boot/calibration changes, missing continuity or samples older than two seconds prevent delivery.
+5. Read the status and **Decision & outcome trail**. A sent request is transport acceptance. A matching applied acknowledgement is the controller's report. Three qualifying new observations establish the displayed observed effect. These are distinct stages.
+6. Select **Lock operator session** when finished. Rotating the private code invalidates existing review authorizations. The shared code protects access; the self-reported alias is an audit label, not independent identity verification. Public snapshots omit aliases and free-text reasons.
+
+## Physical readiness and private settings
+
+The supplied MH IR sketch publishes commissioning measurements and accepts local serial commands. It does not subscribe to intervention commands or publish acknowledgements. Physical delivery remains disabled. Full review evidence also requires measured calibration and continuous signed-encoder, gyro and battery inputs. Single-channel unsigned counts cannot provide those missing measurements.
+
+The website reuses the existing private configuration. Keep credentials out of Git, browser code, screenshots and downloadable public kits.
+
+| Setting | Purpose |
+| --- | --- |
+| `[amr_connection] enabled`, `writer_url`, `access_code` | Existing operator-protected connection; writer uses the direct PostgreSQL host because the review service holds a session lease |
+| `[mqtt] host`, `username`, `password` | Existing telemetry subscriber configuration; never reused to publish commands |
+| `[commissioning] measured_calibration_confirmed` | True only after physical measurement |
+| `[calibration.amr01]` | Same measured calibration as the sensor ingester |
+| `[intervention] enabled`, `controller_ready` | Both must explicitly be true after physical receiver validation; absent means disabled |
+| `[intervention] mqtt_username`, `mqtt_password` | Separate server-only command transport account, needed only for commissioned delivery |
+
+No new broker command permissions are created by the website change. The server publishes only through a commissioned transport whose exact acknowledgement subscription has been confirmed. It sends each permitted request once, without retained delivery or automatic replay. No command may start motion, increase a local limit, steer, resume or override local motor protection. A pause is a controlled local stop, not a cloud emergency stop.
+
+## Database and service ownership
+
+The existing `amr_operator_reviews` table/index stores captured evidence, decision, command, acknowledgement and lifecycle events. The dashboard reader keeps SELECT only. The restricted server writer needs SELECT, INSERT and UPDATE on this table, with no DELETE, schema CREATE or ownership. The narrowly scoped grant is maintained in [the migration SQL](../project_maintenance_scripts/website_review_writer_grant.sql). Test it on an isolated Neon branch before production approval. Runtime never creates or alters schema.
+
+One shared server resource owns review recovery and monitoring across browser sessions. A PostgreSQL process lease is distinct from the telemetry writer lease; transaction advisory locks serialize decisions. Losing that lease prevents further delivery. On restart, unfinished approvals expire or become unconfirmed and are never replayed. Demo data uses a separate session-local SQLite store.
+
+## Status and outcome interpretation
+
+| Status | Meaning |
+| --- | --- |
+| Awaiting human review | Captured recommendation, pending for at most 30 seconds |
+| Reviewed / rejected / deferred | Decision recorded without a command |
+| Approved · delivery unavailable | Approval recorded, delivery disabled; enabling later cannot replay it |
+| Awaiting controller acknowledgement | Request sent once; execution unconfirmed |
+| Checking new sensor readings | Matching controller reports applied; observed effect still pending |
+| Observed effect verified | Three distinct fresh same-boot observations meet the requested bound |
+| Review expired | Context or review expired before delivery |
+| Outcome unconfirmed | Delivery deadline, transport error, ownership loss or restart; inspect the local controller |
+
+The physical response deadline is five seconds. Demo rehearsal allows 60 seconds to inspect the stages. Pauses require wheel-speed estimates at or below 0.01 m/s and an explicit paused, stopped or standby state. Reduced-limit verification requires estimates at or below half the pre-dispatch maximum absolute wheel speed plus 0.01 m/s. Duplicate or pre-application samples do not advance verification. These observations do not establish causal diagnosis or independent ground truth.
+
+## Local receiver contract to commission
+
+- Gateway publishes non-retained JSON to `robot/amr01/commands`; receiver publishes non-retained acknowledgements to `robot/amr01/command_ack`. Each account needs only its permitted direction on those exact topics. Existing telemetry-only accounts remain unchanged.
+- Command fields: `command_id`, `robot_id`, `target_boot_id`, `source_seq`, `source_sample_time_s`, `action`, `speed_limit_percent`, `issued_at_ms`, `expires_at_ms`.
+- Before any actuation, validate identity, own boot, exact action and bounds, unique command ID, issue/expiry (2 seconds) against a synchronized clock, and the device monotonic source time. Reject retained, expired, replayed or wrong-boot requests. Persist/reconcile replay state for the boot. Never infer authorization from a command title or recommendation text.
+- Acknowledgement fields: `command_id`, `robot_id`, `boot_id`, `action`, `source_seq`, `status`, `applied_sample_time_s`. Status is `accepted`, `applied` or `rejected`. For `applied`, use the device monotonic application time within the approved source window. An accepted acknowledgement alone cannot verify an outcome.
+- Apply only the local allowed limit or controlled pause. A command cannot start motion, increase output, clear a watchdog or resume a paused robot. Local physical controls retain authority. Continue the existing measured sensor stream for outcome verification.
+- Test motor timing, reconnect/reboot, stale/retained/duplicate requests, wrong boot, loss of acknowledgement, local rejection and emergency stopping with the actual receiver before enabling the private controller readiness setting.
