@@ -1,4 +1,4 @@
-# AMR-01 Warehouse Digital Twin — S. L. Richris
+# AMR-01 Warehouse Digital Twin | S. L. Richris
 
 One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measurements. The **Python ingestion worker** computes wheel odometry, motion, power/energy/SOC, residual advisories and illustrative forecasts. The independent worker stores typed sensor samples and derived state in PostgreSQL; the Streamlit browser reads stored results. Synthetic demonstration is separate from physical records. GitHub hosts the source; it does not execute the online twin.
 
@@ -9,11 +9,23 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-The dashboard opens on **Floor**, a single-AMR warehouse simulation. Open **Sensor models** for the Python sensor twin, then choose **Demo data** or **Stored sensor data**. **Open detailed readings** shows sensor values, charts and references. **Database** shows saved records, table attributes and connection status. The deployed app uses a private read-only PostgreSQL account. Physical data collection and measured calibration require independent commissioning.
+The dashboard opens on **Floor**, a single-AMR warehouse simulation. **Connect AMR** provides the operator-protected, on-demand EMQX recorder. **Sensor models** shows six Python models with Demo data or Stored sensor data, their equations, sources and recommendations. **Detailed readings and export** opens packet values and charts. **Database** browses saved records, attributes and storage status. Display reads use a private SELECT-only account; the optional recorder uses a separate limited writer. Physical data collection and measured calibration require independent commissioning.
+
+## Reproducible demonstration
+
+Choose one of five generated trials in Sensor models: baseline, turning, sustained sensor disagreement, low battery reserve or an interrupted stream. The same Python engine calculates every result. The examples demonstrate normal estimation, inspection/recharge guidance and withholding forecasts after missing evidence. They never write to the physical database.
+
+**Export trial evidence** saves input packets, example calibration, computed outputs, recommendations and source fingerprints. Replay the file without a database:
+
+```sh
+python -m project_maintenance_scripts.replay_generated_trial amr01_disagreement_synthetic_trial.json
+```
+
+The verifier rejects altered outputs and mismatched source files. It checks software reproducibility, not physical validity or signed origin. See the [demonstration and evidence guide](project_documentation/faculty_demonstration_guide.md) for the walkthrough, expected outcomes and evidence boundaries.
 
 ## Active architecture
 
-ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python ingestion worker and AMR-01 models → PostgreSQL → read-only Streamlit view. Topic: `robot/amr01/state`. The active raw-sensor path requires an independently deployed, single-instance Python worker and managed PostgreSQL. EMQX TLS authentication and topic SUBACK are explicitly checked; PostgreSQL enforces a single-writer lease. Streamlit does not subscribe directly from browser JavaScript and does not publish motor commands. TB6612FNG control remains local to the ESP32; no separate UART AMR controller is required by the current BOM.
+ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python sensor pipeline → PostgreSQL → read-only display. Topic: `robot/amr01/state`. Use the independent worker for unattended recording or the session-bound Connect AMR recorder for attended trials. Both reuse the same sensor engine, verified TLS subscription, transaction boundaries and exclusive PostgreSQL writer lease. Browser JavaScript does not ingest raw MQTT data or publish motor commands. Motor control remains local to the AMR.
 
 - Paper hyperlinks appear beside the motion, encoder, gyro and SOC readouts in Sensor models. The workflow reference is also linked in the warehouse model explanation.
 - [Structured PostgreSQL ingest worker, database and deployment](project_documentation/postgresql_sensor_pipeline.md)
@@ -31,7 +43,7 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python ingestion worker and AMR
 
 The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Each model has one collapsed **How it works & source** section containing explanations, equations and paper links. **Detailed readings and export** opens sensor values, charts and exports. The larger stock/task and FIFO/urgency experiments remain in source.
 
-The hosted navigation contains **Floor, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shares the dashboard shell and shows saved physical records and their attributes without deployment settings. It supports seven allowlisted datasets, bounded 50-row reads, explicit empty/error states and JSON export. The six sensor models use a responsive three/two/one-column layout, with Dark/Bright appearance and local fonts.
+The hosted navigation contains **Floor, Connect AMR, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shares the dashboard shell and shows saved physical records and their attributes without deployment settings. It supports seven allowlisted datasets, bounded 50-row reads, explicit empty/error states and JSON export. The six sensor models use a responsive three/two/one-column layout, with Dark/Bright appearance and local fonts.
 
 ## Dashboard and deployment
 
@@ -39,7 +51,7 @@ The single-AMR virtual warehouse dashboard is the main workspace. Its route plan
 
 The Streamlit deployment uses repository `SLRICHRIS/richris-replenishment-digital-twin`, branch `main`, and entry point `streamlit_app.py`. Changes to main update that app. Its private PostgreSQL reader connection is configured in deployment secrets. Database connectivity is verified independently from physical telemetry and measured calibration.
 
-The full inventory API/walkthrough remains under `research_baseline/`; its original deployment instructions are local to that experiment. This branch preserves both main's UI and the research baseline commits.
+The separate inventory API/walkthrough remains under `research_baseline/`; its deployment instructions apply to that experiment.
 
 ## Software checks
 
@@ -57,4 +69,4 @@ Software tests verify equations, units, isolation, sequence/freshness handling a
 
 © 2026 S. L. Richris. See [ownership and external software licences](project_ownership_and_external_software_licenses.txt).
 
-The project configures **AMR-01 only**: one simulated robot, one loading/charging bay centred on the left apron, one sensor card, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Three demo missions remain as sequential jobs for AMR-01. Reuse the existing app deployment.
+The project configures **AMR-01 only**: one simulated robot, one loading/charging bay, six sensor-model cards, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Legacy mission examples remain in source, outside the hosted interface.

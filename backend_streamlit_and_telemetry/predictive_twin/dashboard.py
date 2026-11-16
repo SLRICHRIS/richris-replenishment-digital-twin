@@ -3,17 +3,17 @@ import json
 
 import streamlit as st
 
-from .demo import demo_fleet
+from .demo import build_demo_trial, DEMO_TRIALS
 from .models import motion_forecast, runtime_hours
 from .database import calibration_fingerprint
 from .telemetry import ROBOT_IDS
 from .workspace_payload import SOURCE_LABELS, quality_display, stored_sensor_context
 
 
-def show_robot(rid, snapshot, calibration, demo=False):
+def show_robot(rid, snapshot, calibration, demo=False, demo_detail=None):
     st.subheader(rid.upper().replace('AMR', 'AMR-', 1))
     age = snapshot["age_s"]
-    display = quality_display(snapshot, demo=demo)
+    display = quality_display(snapshot, demo=demo, demo_detail=demo_detail)
     st.caption(f"Data quality: {display['label']} · sample age: {'fixed demo trial' if demo else 'no sample' if age is None else f'{age:.1f} s'}")
     st.caption(display['detail'])
     if snapshot["stale"]:
@@ -94,13 +94,19 @@ def render_sensor_dashboard():
                     horizontal=True)
     st.session_state.warehouse_sensor_mode = mode
     if mode == "demo":
-        fleet = demo_fleet()
+        trial = st.selectbox('Generated trial', tuple(DEMO_TRIALS),
+                            format_func=lambda key: DEMO_TRIALS[key]['label'], key='warehouse_demo_trial')
+        fleet, metadata = build_demo_trial(trial)
         snapshots = fleet.snapshots(now=6)
         for col, rid in zip(st.columns(len(ROBOT_IDS)), ROBOT_IDS):
             with col:
-                show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True)
+                show_robot(rid, snapshots[rid], fleet.robots[rid].calibration, demo=True,
+                           demo_detail=metadata['description'] + ' ' + metadata['expected'])
         with st.expander("Demo residual history"):
-            st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
+            if snapshots['amr01']['continuity_lost']:
+                st.info('The stream contains an unobserved interval. The main model view breaks its residual plot at that gap; this simple history chart is withheld.')
+            else:
+                st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
     else:
         st.caption("Read physical sensor records saved in PostgreSQL by the MQTT ingestion worker.")
         db, c, notice = stored_sensor_context()

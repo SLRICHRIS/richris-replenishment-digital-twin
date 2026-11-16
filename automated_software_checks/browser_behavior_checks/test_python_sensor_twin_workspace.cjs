@@ -442,6 +442,70 @@ function verifyStartup(order) {
   startup.window.close();
 }
 for (const order of ['normal', 'early-render', 'late-readout']) verifyStartup(order);
+payload.mode = 'demo';
+payload.robots.amr01 = current;
+payload.demo_trial = {
+  id: 'baseline',
+  label: 'Baseline run',
+  source: 'synthetic',
+  packet_count: 121,
+  calibration: { capacity_ah: 2 },
+  packets: [{ seq: 0 }],
+  source_sha256: {},
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-demo-controls').hidden, false);
+assert.equal(doc.getElementById('python-demo-export').disabled, false);
+doc.getElementById('python-demo-trial').value = 'disagreement';
+doc.getElementById('python-demo-trial').dispatchEvent(new w.Event('change'));
+assert.equal(sent.at(-1).value.action, 'demo_trial');
+assert.equal(sent.at(-1).value.trial, 'disagreement');
+assert.equal(doc.getElementById('python-demo-export').disabled, true);
+deliver(parent, w.location.origin);
+assert.equal(
+  doc.getElementById('python-demo-trial').value,
+  'disagreement',
+  'old payload cannot reset a pending choice',
+);
+assert.match(doc.getElementById('python-data-detail').textContent, /Loading/);
+payload.demo_trial = {
+  ...payload.demo_trial,
+  id: 'disagreement',
+  label: 'Sustained sensor disagreement',
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-demo-controls').getAttribute('aria-busy'), 'false');
+assert.equal(doc.getElementById('python-demo-export').disabled, false);
+let evidenceJSON,
+  downloadName,
+  objectURLs = 0;
+w.Blob = class {
+  constructor(parts) {
+    evidenceJSON = parts[0];
+  }
+};
+w.URL.createObjectURL = () => {
+  objectURLs++;
+  return 'blob:test-evidence';
+};
+w.URL.revokeObjectURL = () => {};
+w.HTMLAnchorElement.prototype.click = function () {
+  downloadName = this.download;
+};
+doc.getElementById('python-demo-export').click();
+const exportedTrial = JSON.parse(evidenceJSON);
+assert.equal(exportedTrial.evidence_format, 'amr01.synthetic-trial.v1');
+assert.equal(exportedTrial.source, 'synthetic');
+assert.equal(exportedTrial.hardware_validation, false);
+assert.equal(exportedTrial.trial.id, 'disagreement');
+assert.equal(exportedTrial.outputs.amr01.soc, current.soc);
+assert.equal(downloadName, 'amr01_disagreement_synthetic_trial.json');
+payload.mode = 'live';
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('python-demo-controls').hidden, true);
+doc.getElementById('python-demo-export').dispatchEvent(new w.Event('click'));
+assert.equal(objectURLs, 1, 'physical readings cannot be exported under a generated-trial label');
+delete payload.demo_trial;
 doc.dispatchEvent(new w.CustomEvent('python-twin:connection-open'));
 assert.equal(sent.at(-1).value.action, 'connection_view');
 assert.equal(sent.at(-1).value.active, true);

@@ -190,6 +190,9 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_python_sensor_twin_workspace.cjs` | Verify trusted Python display messages, text-only rendering, freshness, preserved floor state and source-selection actions. |
 | `automated_software_checks/predictive_twin_checks/test_workspace_payload.py` | Verify public component data, bounded history, private-setting isolation and stale forecast suppression. |
 | `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the Sensor models view. |
+| `automated_software_checks/predictive_twin_checks/test_demo_trials.py` | Independently verify generated trial outcomes, analytic motion/energy expectations, evidence replay, source matching and altered-result rejection. |
+| `project_maintenance_scripts/replay_generated_trial.py` | Replay downloaded generated packets without PostgreSQL and verify source fingerprints, final state, forecasts and recommendations. |
+| `project_documentation/faculty_demonstration_guide.md` | Explain the demonstration sequence, expected trial outcomes, replay command and limits of software versus hardware evidence. |
 | `backend_streamlit_and_telemetry/predictive_twin/amr_connection.py` | Manage the optional session-bound EMQX subscriber and leased PostgreSQL writer behind operator authorization; expose sanitized pipeline readiness. |
 | `backend_streamlit_and_telemetry/predictive_twin/insights.py` | Derive operator recommendations from current, continuous sensor-model evidence and distinguish generated examples. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/amr_connection_panel.js` | Render connection stages, protected controls and Python-derived guidance without persisting credentials in the browser. |

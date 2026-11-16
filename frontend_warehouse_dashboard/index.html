@@ -1481,6 +1481,26 @@
               </span>
             </div>
             <div
+              class="twin-demo-controls"
+              id="python-demo-controls"
+              role="group"
+              aria-label="Generated trial controls"
+              hidden
+            >
+              <label for="python-demo-trial">
+                Trial
+                <select id="python-demo-trial">
+                  <option value="baseline">Baseline run</option>
+                  <option value="turning">Turning motion</option>
+                  <option value="disagreement">Sustained sensor disagreement</option>
+                  <option value="low_charge">Low battery reserve</option>
+                  <option value="interruption">Interrupted sensor stream</option>
+                </select>
+              </label>
+              <button type="button" id="python-demo-export" disabled>Export trial evidence</button>
+              <span id="python-demo-packets"></span>
+            </div>
+            <div
               class="python-data-notice"
               id="python-data-notice"
               data-tone="neutral"
@@ -1816,6 +1836,46 @@
               </div>
               <div id="amr-model-recommendations" class="amr-recommendations"></div>
             </section>
+            <details class="python-reading-guide" id="python-evidence-scope">
+              <summary>Evidence and validation</summary>
+              <p>
+                The generated trial export includes input packets, example calibration, computed
+                outputs, recommendations and SHA-256 fingerprints of the model, telemetry, trial,
+                guidance and display source files. It can be replayed independently with the same
+                Python engine.
+              </p>
+              <p>
+                <a
+                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/slide_to_code_mapping.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Model-to-slide traceability ↗
+                </a>
+                ·
+                <a
+                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/actions"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Automated verification runs ↗
+                </a>
+                ·
+                <a
+                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/faculty_demonstration_guide.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Demonstration guide ↗
+                </a>
+              </p>
+              <p>
+                Software checks and generated trials do not establish hardware accuracy. Physical
+                calibration, sensor agreement against independent measurements and a surveyed pose
+                transform require separate trial evidence. The warehouse remains a separate
+                simulation.
+              </p>
+            </details>
             <details class="python-reading-guide">
               <summary>Reading guide and sample details</summary>
               <div class="python-model-status" aria-label="AMR-01 sensor status">

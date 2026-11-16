@@ -95,6 +95,7 @@
       !action ||
       ![
         'sensor_source',
+        'demo_trial',
         'model_inspection',
         'database_inspection',
         'database_browse',
@@ -104,6 +105,11 @@
     )
       return;
     if (action.action === 'sensor_source' && !['demo', 'live'].includes(action.mode)) return;
+    if (
+      action.action === 'demo_trial' &&
+      !['baseline', 'turning', 'disagreement', 'low_charge', 'interruption'].includes(action.trial)
+    )
+      return;
     if (action.action === 'connection_view' && typeof action.active !== 'boolean') return;
     if (
       action.action === 'connection_control' &&
@@ -130,6 +136,7 @@
       value: {
         action: action.action,
         ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
+        ...(action.action === 'demo_trial' ? { trial: action.trial } : {}),
         ...(action.action === 'connection_view' ? { active: action.active } : {}),
         ...(action.action === 'connection_control'
           ? { command: action.command, access_code: action.access_code }

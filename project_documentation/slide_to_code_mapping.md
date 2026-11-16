@@ -22,9 +22,9 @@
 ## Actual data and database path
 
 1. The ESP32 publishes a typed **schema v2**, non-retained `robot/amr01/state` JSON sample with signed wheel counts, gyroscope z angular velocity, INA219 current/voltage, boot ID, sequence and device monotonic sample time.
-2. A separately deployed Python `ingest_worker` subscribes using MQTT/TLS 8883. `FleetTwin` rejects invalid, retained, repeated and reordered readings and excludes unknown long gaps from integration.
+2. The independent Python `ingest_worker`, or the optional operator-protected on-demand connector, subscribes using MQTT/TLS 8883. They use the same sensor pipeline and exclusive writer lease. `FleetTwin` rejects invalid, retained, repeated and reordered readings and excludes unknown long gaps from integration.
 3. The accepted sample feeds **the same `RobotTwin` calculations represented by final slides 5–15**; one transaction stores the raw packet and resulting derived state in PostgreSQL. Unique `(robot_id, boot_id, seq)` prevents replay duplicates even across worker restarts.
-4. Streamlit obtains the read-only persisted snapshot. It is not the telemetry ingester, database writer or motor controller. Synthetic demo readings remain separate and are **never inserted into physical telemetry tables**.
+4. The display obtains a read-only persisted snapshot. The optional Connect AMR recorder runs in a separate session-bound background resource with private writer credentials; browser JavaScript is neither the ingester nor a motor controller. Generated demonstration trials remain separate and are **never inserted into physical telemetry tables**.
 5. If the worker is down, the latest stored observation becomes **STALE**, rather than pretending to be current. Lost continuity requires physical reinitialization for trustworthy quantitative results. PostgreSQL stores raw values and derived state for traceability; it is **not** a surveyed ground-truth reference.
 
 See `project_documentation/postgresql_sensor_pipeline.md` for schema, configuration, startup, data limitations, and tests.
