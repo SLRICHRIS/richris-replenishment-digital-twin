@@ -49,7 +49,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/streamlit_dashboard_host.py` | Implement streamlit dashboard host. |
 | `backend_streamlit_and_telemetry/predictive_twin/database_inspection.py` | Provide sanitized, cached read-only archive payloads and the fallback Streamlit record/attribute browser, independently from measured calibration. |
 | `esp32_telemetry_firmware/esp32_telemetry_firmware_file_guide.md` | Explain esp32 telemetry firmware file guide. |
-| `esp32_telemetry_firmware/publish_mh_ir_commissioning/publish_mh_ir_commissioning.ino` | Preserve the supplied TB6612 pin map and local Serial control while publishing unsigned MH IR commissioning observations over MQTT/TLS. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/publish_mh_ir_commissioning.ino` | Preserve final TB6612/MH IR/IMU/INA219 wiring and local Serial commands while publishing checked multisensor commissioning telemetry over MQTT/TLS. |
 | `esp32_telemetry_firmware/publish_mh_ir_commissioning/mh_ir_controller.h` | Share tested local motor request logic, cumulative pulse debounce and truthful diagnostic JSON encoding without model equations or Arduino dependencies. |
 | `esp32_telemetry_firmware/publish_mh_ir_commissioning/example_esp32_wifi_and_mqtt_settings.h` | Public placeholder Wi-Fi/TLS settings, actual supplied pins, local timeout/interlock and unconfirmed pulses-per-revolution settings. |
 | `project_documentation/mh_ir_hardware_commissioning.md` | Explain the supplied single-channel hardware, exact wiring, commissioning packet boundary, private configuration and physical work needed for the six models. |
@@ -232,3 +232,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 
 | `automated_software_checks/predictive_twin_checks/test_website_review.py` | Authorization, session ownership, server evidence and physical simulation boundaries. |
 | `project_maintenance_scripts/website_review_writer_grant.sql` | Narrow review-audit DML grant for the existing restricted server writer. |
+
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/multisensor_observations.h` | Sensor snapshot validation, yaw/charge continuity and bounded JSON with explicit units and nulls. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/UPLOAD_STEPS.md` | Exact private-package upload steps, local motor behavior, wiring and prediction boundaries. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_multisensor_observations.cpp` | Execute final PWM settings, sensor encoding, unit conversion, nonfinite/stale rejection and integration-gap behavior. |

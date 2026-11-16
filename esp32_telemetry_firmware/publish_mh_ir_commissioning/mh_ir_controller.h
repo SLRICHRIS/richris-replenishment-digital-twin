@@ -42,8 +42,9 @@ struct DriveOutput {
 
 class LocalController {
  public:
-  explicit LocalController(uint64_t timeoutUs = 3000000, uint64_t interlockUs = 150000)
-      : timeoutUs_(timeoutUs), interlockUs_(interlockUs) {}
+  explicit LocalController(uint64_t timeoutUs = 3000000, uint64_t interlockUs = 150000,
+                           uint8_t initialDuty = 180, uint8_t speedStep = 15)
+      : duty_(initialDuty), speedStep_(speedStep), timeoutUs_(timeoutUs), interlockUs_(interlockUs) {}
 
   void expire(uint64_t now) {
     if (requested_ != Motion::stopped &&
@@ -59,8 +60,8 @@ class LocalController {
       case 'L': case 'l': next = Motion::left; break;
       case 'R': case 'r': next = Motion::right; break;
       case 'S': case 's': stop(); return true;
-      case '+': duty_ = duty_ > 240 ? 255 : uint8_t(duty_ + 15); break;
-      case '-': duty_ = duty_ < 15 ? 0 : uint8_t(duty_ - 15); break;
+      case '+': duty_ = unsigned(duty_) + speedStep_ > 255 ? 255 : uint8_t(duty_ + speedStep_); break;
+      case '-': duty_ = duty_ < speedStep_ ? 0 : uint8_t(duty_ - speedStep_); break;
       default: return false;
     }
     if (next != requested_) {
@@ -85,6 +86,7 @@ class LocalController {
  private:
   Motion requested_ = Motion::stopped;
   uint8_t duty_ = 180;
+  uint8_t speedStep_ = 15;
   uint64_t lastCommandUs_ = 0;
   uint64_t enableAfterUs_ = 0;
   uint64_t timeoutUs_;
@@ -103,7 +105,8 @@ struct Observation {
 
 inline int encodeDiagnostic(char* buffer, size_t size, const char* bootId,
                             const Observation& value, bool pprConfirmed,
-                            double leftPpr, double rightPpr) {
+                            double leftPpr, double rightPpr,
+                            bool gyroAvailable = false, bool batteryAvailable = false) {
   if (!buffer || !size || !bootId || !*bootId || std::strlen(bootId) > 32 ||
       std::strspn(bootId, "0123456789abcdefABCDEF-") != std::strlen(bootId) ||
       !std::isfinite(value.sampleTimeS) || value.sampleTimeS < 0 ||
@@ -130,13 +133,14 @@ inline int encodeDiagnostic(char* buffer, size_t size, const char* bootId,
       "\"left_pulse_hz\":%.6f,\"right_pulse_hz\":%.6f,"
       "\"rpm_calibration_confirmed\":%s,\"left_rpm\":%s,\"right_rpm\":%s,"
       "\"commanded_motion\":\"%s\",\"motor_output\":\"%s\",\"pwm_duty\":%u,"
-      "\"direction_measured\":false,\"gyro_available\":false,"
-      "\"battery_available\":false,\"predictive_models_ready\":false}",
+      "\"direction_measured\":false,\"gyro_available\":%s,"
+      "\"battery_available\":%s,\"predictive_models_ready\":false}",
       bootId, static_cast<unsigned long>(value.seq), value.sampleTimeS, value.intervalS,
       static_cast<unsigned long long>(value.leftTotal),
       static_cast<unsigned long long>(value.rightTotal), leftHz, rightHz,
       pprConfirmed ? "true" : "false", leftRpm, rightRpm,
-      motionName(value.requested), motionName(value.output), unsigned(value.duty));
+      motionName(value.requested), motionName(value.output), unsigned(value.duty),
+      gyroAvailable ? "true" : "false", batteryAvailable ? "true" : "false");
   return length >= 0 && size_t(length) < size ? length : -1;
 }
 }  // namespace amr_ir
