@@ -442,6 +442,22 @@ function verifyStartup(order) {
   startup.window.close();
 }
 for (const order of ['normal', 'early-render', 'late-readout']) verifyStartup(order);
+let evidenceJSON,
+  cleanupDownload,
+  revokedURLs = 0,
+  objectURLs = 0;
+w.Blob = class {
+  constructor(parts) {
+    evidenceJSON = parts[0];
+  }
+};
+w.URL.createObjectURL = () => 'blob:test-evidence-' + ++objectURLs;
+w.URL.revokeObjectURL = () => revokedURLs++;
+const originalSetTimeout = w.setTimeout;
+w.setTimeout = (callback, delay) => {
+  assert.equal(delay, 1000);
+  cleanupDownload = callback;
+};
 payload.mode = 'demo';
 payload.robots.amr01 = current;
 payload.demo_trial = {
@@ -454,19 +470,32 @@ payload.demo_trial = {
   source_sha256: {},
 };
 deliver(parent, w.location.origin);
+const evidenceLink = doc.getElementById('python-demo-export');
 assert.equal(doc.getElementById('python-demo-controls').hidden, false);
-assert.equal(doc.getElementById('python-demo-export').disabled, false);
+assert.equal(evidenceLink.tagName, 'A', 'evidence uses a native browser download link');
+assert.equal(evidenceLink.getAttribute('aria-disabled'), 'false');
+assert.equal(evidenceLink.getAttribute('href'), 'blob:test-evidence-1');
+deliver(parent, w.location.origin);
+assert.equal(objectURLs, 1, 'unchanged polling preserves the current download URL');
 doc.getElementById('python-demo-trial').value = 'disagreement';
 doc.getElementById('python-demo-trial').dispatchEvent(new w.Event('change'));
 assert.equal(sent.at(-1).value.action, 'demo_trial');
 assert.equal(sent.at(-1).value.trial, 'disagreement');
-assert.equal(doc.getElementById('python-demo-export').disabled, true);
+assert.equal(evidenceLink.getAttribute('aria-disabled'), 'true');
+assert.equal(
+  evidenceLink.hasAttribute('href'),
+  false,
+  'pending trial cannot download old evidence',
+);
+const disabledClick = new w.MouseEvent('click', { cancelable: true });
+assert.equal(evidenceLink.dispatchEvent(disabledClick), false);
 deliver(parent, w.location.origin);
 assert.equal(
   doc.getElementById('python-demo-trial').value,
   'disagreement',
   'old payload cannot reset a pending choice',
 );
+assert.equal(evidenceLink.hasAttribute('href'), false);
 assert.match(doc.getElementById('python-data-detail').textContent, /Loading/);
 payload.demo_trial = {
   ...payload.demo_trial,
@@ -475,55 +504,26 @@ payload.demo_trial = {
 };
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-demo-controls').getAttribute('aria-busy'), 'false');
-assert.equal(doc.getElementById('python-demo-export').disabled, false);
-let evidenceJSON,
-  downloadName,
-  downloadAnchor,
-  cleanupDownload,
-  revokedURLs = 0,
-  objectURLs = 0;
-w.Blob = class {
-  constructor(parts) {
-    evidenceJSON = parts[0];
-  }
-};
-w.URL.createObjectURL = () => {
-  objectURLs++;
-  return 'blob:test-evidence';
-};
-w.URL.revokeObjectURL = () => revokedURLs++;
-w.HTMLAnchorElement.prototype.click = function () {
-  downloadName = this.download;
-  downloadAnchor = this;
-  assert.equal(this.isConnected, true, 'download link is attached before activation');
-};
-const originalSetTimeout = w.setTimeout;
-w.setTimeout = (callback, delay) => {
-  assert.equal(delay, 1000);
-  cleanupDownload = callback;
-};
-doc.getElementById('python-demo-export').click();
-w.setTimeout = originalSetTimeout;
+assert.equal(evidenceLink.getAttribute('aria-disabled'), 'false');
+assert.equal(evidenceLink.getAttribute('href'), 'blob:test-evidence-2');
+assert.equal(evidenceLink.download, 'amr01_disagreement_synthetic_trial.json');
 const exportedTrial = JSON.parse(evidenceJSON);
 assert.equal(exportedTrial.evidence_format, 'amr01.synthetic-trial.v1');
 assert.equal(exportedTrial.source, 'synthetic');
 assert.equal(exportedTrial.hardware_validation, false);
 assert.equal(exportedTrial.trial.id, 'disagreement');
 assert.equal(exportedTrial.outputs.amr01.soc, current.soc);
-assert.equal(downloadName, 'amr01_disagreement_synthetic_trial.json');
-assert.equal(revokedURLs, 0, 'object URL remains available while the browser starts the download');
+assert.equal(revokedURLs, 0, 'previous URL remains available while an existing download starts');
 cleanupDownload();
-assert.equal(revokedURLs, 1);
-assert.equal(
-  downloadAnchor.isConnected,
-  false,
-  'temporary link is removed after the download starts',
-);
+assert.equal(revokedURLs, 1, 'superseded URL is released');
+w.setTimeout = originalSetTimeout;
 payload.mode = 'live';
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('python-demo-controls').hidden, true);
-doc.getElementById('python-demo-export').dispatchEvent(new w.Event('click'));
-assert.equal(objectURLs, 1, 'physical readings cannot be exported under a generated-trial label');
+assert.equal(evidenceLink.hasAttribute('href'), false);
+assert.equal(evidenceLink.hasAttribute('download'), false);
+assert.equal(evidenceLink.getAttribute('aria-disabled'), 'true');
+assert.equal(objectURLs, 2, 'physical readings cannot be exported under a generated-trial label');
 delete payload.demo_trial;
 doc.dispatchEvent(new w.CustomEvent('python-twin:connection-open'));
 assert.equal(sent.at(-1).value.action, 'connection_view');

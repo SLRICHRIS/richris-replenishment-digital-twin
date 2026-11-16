@@ -1,7 +1,7 @@
 /* Display Python results in Sensor models. No model equations here. */
 (() => {
   'use strict';
-  let latest, displayPayload, pendingTrial;
+  let latest, pendingTrial, trialURL, trialJSON;
   const $ = (id) => document.getElementById(id);
   const text = (id, value) => {
     const node = $(id);
@@ -31,6 +31,40 @@
       URL.revokeObjectURL(url);
     }, 1000);
   }
+  function updateTrialDownload(payload, trial) {
+    const anchor = $('python-demo-export');
+    const ready = payload.mode === 'demo' && trial && !pendingTrial;
+    anchor.setAttribute('aria-disabled', String(!ready));
+    anchor.tabIndex = ready ? 0 : -1;
+    if (!ready) {
+      anchor.removeAttribute('href');
+      anchor.removeAttribute('download');
+      return;
+    }
+    const evidence = {
+      evidence_format: 'amr01.synthetic-trial.v1',
+      source: 'synthetic',
+      hardware_validation: false,
+      trial,
+      snapshot_time_s: 6,
+      outputs: payload.robots,
+      insights: payload.insights,
+      limits: [
+        'Generated inputs, not physical measurements.',
+        'No packets are written to the physical database.',
+        'Forecasts assume unchanged inputs and use a local odometry frame.',
+      ],
+    };
+    const serialized = JSON.stringify(evidence, null, 2);
+    if (serialized !== trialJSON) {
+      const previous = trialURL;
+      trialURL = URL.createObjectURL(new Blob([serialized], { type: 'application/json' }));
+      trialJSON = serialized;
+      if (previous) setTimeout(() => URL.revokeObjectURL(previous), 1000);
+    }
+    anchor.href = trialURL;
+    anchor.download = 'amr01_' + trial.id + '_synthetic_trial.json';
+  }
   function render(payload) {
     if (!document.body || !$('python-sensor-panel')) {
       latest = payload;
@@ -38,7 +72,6 @@
     }
     document.documentElement.dataset.pythonTwin = 'true';
     document.documentElement.dataset.pythonSource = payload.mode;
-    displayPayload = payload;
     $('python-connection-details').hidden = payload.mode !== 'live';
     text('python-source-status', payload.status || 'Waiting for sensor status');
     text('python-source-label', payload.mode === 'live' ? 'Stored sensor data' : 'Demo data');
@@ -51,7 +84,7 @@
     if (payload.mode !== 'demo' || trial?.id === pendingTrial) pendingTrial = null;
     $('python-demo-controls').setAttribute('aria-busy', String(Boolean(pendingTrial)));
     $('python-sensor-panel').setAttribute('aria-busy', String(Boolean(pendingTrial)));
-    $('python-demo-export').disabled = !trial || Boolean(pendingTrial);
+    updateTrialDownload(payload, trial);
     if (trial && !pendingTrial) {
       if ($('python-demo-trial').value !== trial.id) $('python-demo-trial').value = trial.id;
       text('python-demo-packets', trial.packet_count + ' generated packets');
@@ -320,7 +353,7 @@
       pendingTrial = $('python-demo-trial').value;
       $('python-demo-controls').setAttribute('aria-busy', 'true');
       $('python-sensor-panel').setAttribute('aria-busy', 'true');
-      $('python-demo-export').disabled = true;
+      updateTrialDownload({ mode: 'demo' }, null);
       text('python-data-detail', 'Loading the selected generated trial…');
       document.dispatchEvent(
         new CustomEvent('python-twin:action', {
@@ -328,30 +361,8 @@
         }),
       );
     });
-    $('python-demo-export')?.addEventListener('click', () => {
-      const trial = displayPayload?.demo_trial;
-      if (
-        $('python-demo-export').disabled ||
-        pendingTrial ||
-        displayPayload?.mode !== 'demo' ||
-        !trial
-      )
-        return;
-      const evidence = {
-        evidence_format: 'amr01.synthetic-trial.v1',
-        source: 'synthetic',
-        hardware_validation: false,
-        trial,
-        snapshot_time_s: 6,
-        outputs: displayPayload.robots,
-        insights: displayPayload.insights,
-        limits: [
-          'Generated inputs, not physical measurements.',
-          'No packets are written to the physical database.',
-          'Forecasts assume unchanged inputs and use a local odometry frame.',
-        ],
-      };
-      downloadJSON(evidence, 'amr01_' + trial.id + '_synthetic_trial.json');
+    $('python-demo-export')?.addEventListener('click', (event) => {
+      if ($('python-demo-export').getAttribute('aria-disabled') === 'true') event.preventDefault();
     });
     for (const mode of ['demo', 'live']) {
       $('python-source-' + mode)?.addEventListener('click', () => {
