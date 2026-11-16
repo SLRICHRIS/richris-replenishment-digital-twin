@@ -2,12 +2,14 @@
 
 **Authoritative source:** `Predictive_Digital_Twin_Warehouse_AMR_LabVIEW_HITL_S_L_Richris.pptx`, 17 slides, from the 7 November 2026 reviewed package. Do not use the older 15-slide deck for slide numbers.
 
-**Status:** The encoder/gyro/energy/anomaly routines are implemented and tested using synthetic input. Forecasting is a project extension under constant-input assumptions. The independent worker and PostgreSQL schema enable durable AMR-01 sensor ingestion when externally deployed. **Physical calibration, live broker/DB commissioning, synchronization to a surveyed 3D map, and LabVIEW supervisory control are not validated or claimed.**
+**Architecture update:** The original deck names a desktop review return path. The current implementation uses website operator review instead; no desktop application is required. Slide numbers below retain the original model mapping.
+
+**Status:** The encoder/gyro/energy/anomaly routines are implemented and tested using synthetic input. Forecasting is a project extension under constant-input assumptions. The independent worker and PostgreSQL schema enable durable AMR-01 sensor ingestion when externally deployed. **Physical calibration, live broker/DB commissioning, synchronization to a surveyed 3D map, and physical intervention outcomes are not validated or claimed.**
 
 | Final slide | What it represents | Exact implementation / processing | Evidence boundary |
 | --- | --- | --- | --- |
 | 1 | Title, sources, project limitations | Documentation only | Two research papers are background, not physical validation |
-| 2 | Single AMR → EMQX MQTT/TLS → Python → Streamlit, proposed LabVIEW return path | `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino`, `predictive_twin/mqtt_service.py`, `ingest_worker.py`, `database.py`, `workspace_payload.py` | **Only one AMR (amr01)**; no live motor command return path |
+| 2 | Single AMR → EMQX MQTT/TLS → Python → Streamlit, website operator review return path | `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino`, `predictive_twin/mqtt_service.py`, `ingest_worker.py`, `database.py`, `workspace_payload.py` | **Only one AMR (amr01)**; no live motor command return path |
 | 3 | One sensor-to-model-to-insight pipeline, with two encoder uses | `telemetry.py`, `models.py` | Same encoders feed travel/pose AND residual comparison; gyro is independent consistency evidence |
 | 4 | Sensor measurements versus inferred estimates, cited papers | Documentation and on-screen paper links | INA219 does **not** measure SOC or pose |
 | **5 → 6** | Signed encoder counts → wheel travel/speed | `models.wheel_distance`, then `telemetry.RobotTwin.accept`: `v=ds/dt` | [A] p. 11 Eq. (9); p. 38 Eq. (A4). Effective counts/rev include gearing and x4 decoding |
@@ -16,7 +18,7 @@
 | **11 → 12** | INA219 voltage/current → power, signed net Wh, coulomb-counted SOC fraction | `models.battery_step` and `RobotTwin.accept` | [B] p. 7 Eqs. (5–7), p. 8 Eqs. (8–9). Discharge-positive current; eta=1; requires measured starting SOC/capacity |
 | **13 → 14** | Encoder-estimated yaw rate vs independent bias-corrected gyro yaw rate → persistent disagreement alert | `models.ResidualDetector` called by `RobotTwin.accept` | **Our project extension**, not an attributed numbered equation in [A]. Threshold/hold require trial calibration |
 | **15** | Constant-wheel-speed pose extrapolation and constant-current runtime to reserve | `models.motion_forecast`; `models.runtime_hours` | **Proposed assumptions**, not obstacle-aware forecasting, battery health, or published validation |
-| **16** | LabVIEW HITL: inspect → authorize → gateway → local motor controller → verification | `human_review.py`, `labview_gateway.py` and the Human review & action panel implement review/audit/acknowledgement policy. The native VI and physical receiver remain uncommissioned | No cloud motor control; local emergency protection must remain independent |
+| **16** | Website human review: inspect → authorize → gateway → local motor controller → verification | `human_review.py`, `human_review_workspace.py`, `intervention_service.py` and the Human review & action panel implement review/audit/acknowledgement policy. The physical receiver remains uncommissioned | Physical delivery disabled pending commissioning; local emergency protection remains independent |
 | **17** | Thank you | Presentation only | No model |
 
 ## Actual data and database path

@@ -145,6 +145,12 @@
               decision: action.decision,
               intervention: action.intervention,
               reason: action.reason,
+              access_code:
+                typeof action.access_code === 'string'
+                  ? action.access_code.slice(0, 256)
+                  : undefined,
+              operator:
+                typeof action.operator === 'string' ? action.operator.slice(0, 40) : undefined,
             }
           : {}),
         ...(action.action === 'connection_view' ? { active: action.active } : {}),

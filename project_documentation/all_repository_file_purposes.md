@@ -217,16 +217,18 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `project_documentation/emqx_cloud_amr01_integration.md` | Official EMQX Serverless broker configuration, topic ACLs, ESP32 publisher, ingestion-worker and PostgreSQL integration guide. |
 | `project_maintenance_scripts/provision_amr_sensor_database.py` | Admin-only PostgreSQL database provisioning, additive checkpoint migration and validation, separate from live MQTT worker. |
 
-## Human review and LabVIEW
+## Website human review and action
 
 | File | Purpose |
 | --- | --- |
 | `backend_streamlit_and_telemetry/predictive_twin/human_review.py` | Shared operator review policy, durable audit and acknowledgement/outcome verification. |
-| `backend_streamlit_and_telemetry/predictive_twin/human_review_workspace.py` | Session-isolated website rehearsal and read-only physical review monitor. |
-| `backend_streamlit_and_telemetry/predictive_twin/labview_gateway.py` | Authenticated loopback LabVIEW review API and opt-in MQTT intervention transport. |
-| `backend_streamlit_and_telemetry/predictive_twin/labview_review_client.py` | LabVIEW Python Node client functions for the protected review API. |
+| `backend_streamlit_and_telemetry/predictive_twin/human_review_workspace.py` | Session-isolated rehearsal and authenticated physical website decisions. |
+| `backend_streamlit_and_telemetry/predictive_twin/intervention_service.py` | Server-owned review service, PostgreSQL ownership and opt-in MQTT intervention transport. |
 | `project_maintenance_scripts/provision_operator_review_database.py` | Admin-only additive provisioning of the operator review audit table. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/human_review_panel.js` | Human review rehearsal controls and physical outcome display. |
 | `frontend_warehouse_dashboard/dashboard_stylesheets/human_review_panel_styles.css` | Responsive styling for the human review workflow and audit trail. |
-| `project_documentation/labview_human_review_and_action.md` | Operator workflow, LabVIEW wiring, command contract and physical commissioning boundaries. |
-| `automated_software_checks/predictive_twin_checks/test_human_review.py` | Policy and HTTP tests for stale evidence, duplicate approval, acknowledgements and outcome verification. |
+| `project_documentation/website_human_review_and_action.md` | Website operator workflow, private settings, command contract and physical readiness. |
+| `automated_software_checks/predictive_twin_checks/test_human_review.py` | Review policy tests for stale evidence, duplicate approval, acknowledgements and outcome verification. |
+
+| `automated_software_checks/predictive_twin_checks/test_website_review.py` | Authorization, session ownership, server evidence and physical simulation boundaries. |
+| `project_maintenance_scripts/website_review_writer_grant.sql` | Narrow review-audit DML grant for the existing restricted server writer. |

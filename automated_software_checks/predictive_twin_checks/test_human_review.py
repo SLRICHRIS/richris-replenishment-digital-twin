@@ -1,15 +1,9 @@
 from copy import deepcopy
-import json
-import threading
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError
-from http.server import ThreadingHTTPServer
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 from backend_streamlit_and_telemetry.predictive_twin.workspace_payload import workspace_payload
 from backend_streamlit_and_telemetry.predictive_twin.human_review import ReviewCoordinator, metadata, COMMAND_TOPIC
-from backend_streamlit_and_telemetry.predictive_twin.labview_gateway import handler_for
 
 ID = 'a'*32
 
@@ -125,24 +119,6 @@ def test_verification_needs_three_fresh_samples_within_limit(setup):
     assert c.get(ID)['state']=='verified'
 
 
-def test_real_http_boundary_requires_auth_and_rejects_client_supplied_evidence(setup):
-    c,p,sent,now=setup;key='k'*32
-    server=ThreadingHTTPServer(('127.0.0.1',0),handler_for(c,lambda:p,key))
-    thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-    base='http://127.0.0.1:'+str(server.server_port)
-    def request(path,body=None,authorized=True):
-        r=Request(base+path,data=None if body is None else json.dumps(body).encode(),headers={
-            'Content-Type':'application/json','Authorization':'Bearer '+(key if authorized else 'bad')})
-        with urlopen(r,timeout=2) as response:return json.load(response)
-    try:
-        with pytest.raises(HTTPError) as e:request('/context',authorized=False)
-        assert e.value.code==401
-        with pytest.raises(HTTPError):request('/reviews',{'review_id':ID,'context':p})
-        assert request('/reviews',{'review_id':ID})['state']=='pending'
-        assert request('/reviews/'+ID+'/decision',{'decision':'approve','action':'no_action','operator':'op','reason':'Monitor only'})['state']=='reviewed'
-        assert not sent
-    finally:
-        server.shutdown();server.server_close();thread.join(timeout=2)
 
 
 def test_default_physical_coordinator_rejects_generated_evidence(setup):

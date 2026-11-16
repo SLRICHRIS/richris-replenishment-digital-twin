@@ -120,3 +120,30 @@ def test_postgresql_review_serializes_competing_operators():
     assert sorted(outcomes)==['conflict','pending']
     assert len(first.history())==1
     db.engine.dispose()
+
+
+@pytest.mark.skipif(not os.getenv('TEST_POSTGRES_URL'), reason='PostgreSQL test service not configured')
+def test_website_service_owns_and_releases_review_process_lease():
+    from backend_streamlit_and_telemetry.predictive_twin.human_review import metadata
+    from backend_streamlit_and_telemetry.predictive_twin.intervention_service import WebsiteReviewService
+    from backend_streamlit_and_telemetry.predictive_twin.amr_connection import ConnectionProfile
+    db=SensorDatabase(os.environ['TEST_POSTGRES_URL'], initialize=True)
+    metadata.create_all(db.engine)
+    profile=ConnectionProfile('unused-broker','subscriber','unused',os.environ['TEST_POSTGRES_URL'],'private-ci-code'*3,example_calibrations()['amr01'])
+    first=WebsiteReviewService(profile)
+    try:
+        first._assert_owner()
+        assert first.transport is None and not first.coordinator.commands_enabled
+        with pytest.raises(RuntimeError,match='Another website review service'):
+            WebsiteReviewService(profile)
+        # A competing constructor's cleanup must not release the first owner.
+        first._assert_owner()
+    finally:
+        first.close()
+    second=WebsiteReviewService(profile)
+    try:
+        second._assert_owner()
+        with pytest.raises(RuntimeError):first.create('c'*32)
+    finally:
+        second.close()
+        db.engine.dispose()

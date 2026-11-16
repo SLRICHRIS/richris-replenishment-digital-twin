@@ -595,29 +595,87 @@ assert.equal(sent.at(-1).value.command, 'disconnect');
 doc.dispatchEvent(new w.CustomEvent('python-twin:connection-close'));
 assert.equal(sent.at(-1).value.action, 'connection_view');
 assert.equal(sent.at(-1).value.active, false);
-payload.human_review = { demo:true, eligible:true, source:'Demo rehearsal', state_label:'Ready for review', detail:'Generated evidence only', recommendations:[], review:null };
-deliver(parent,w.location.origin);
+payload.human_review = {
+  demo: true,
+  eligible: true,
+  source: 'Demo rehearsal',
+  state_label: 'Ready for review',
+  detail: 'Generated evidence only',
+  recommendations: [],
+  review: null,
+};
+deliver(parent, w.location.origin);
 doc.getElementById('human-review-create').click();
-assert.equal(sent.at(-1).value.action,'human_review');
-assert.equal(sent.at(-1).value.command,'create');
-payload.human_review.review = {review_id:'a'.repeat(32),state:'pending',evidence:{seq:10,source:'demo',recommendations:[{title:'<img src=x onerror=alert(1)>'}]},events:[{state:'pending',detail:'<script>unsafe</script>'}]};
-deliver(parent,w.location.origin);
-assert.equal(doc.getElementById('human-review-form').hidden,false);
-assert.equal(doc.getElementById('human-review').querySelector('img,script'),null);
-doc.getElementById('human-review-action').value='pause';
-doc.getElementById('human-review-reason').value='Inspect sustained disagreement';
-doc.getElementById('human-review-form').dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:doc.querySelector('#human-review-form button[value="approve"]')}));
-assert.equal(sent.at(-1).value.command,'decide');
-assert.equal(sent.at(-1).value.intervention,'pause');
-assert.equal(sent.at(-1).value.reason,'Inspect sustained disagreement');
-payload.human_review.demo=false;
-payload.human_review.source='LabVIEW supervision';
-deliver(parent,w.location.origin);
-assert.equal(doc.getElementById('human-review-demo').hidden,true);
-assert.equal(doc.getElementById('human-review-form').hidden,true);
-const reviewsBefore=sent.length;
-doc.getElementById('human-review-form').dispatchEvent(new w.SubmitEvent('submit',{cancelable:true}));
-assert.equal(sent.length,reviewsBefore,'Physical review cannot be approved by the website');
+assert.equal(sent.at(-1).value.action, 'human_review');
+assert.equal(sent.at(-1).value.command, 'create');
+payload.human_review.review = {
+  review_id: 'a'.repeat(32),
+  state: 'pending',
+  evidence: {
+    seq: 10,
+    source: 'demo',
+    recommendations: [{ title: '<img src=x onerror=alert(1)>' }],
+  },
+  events: [{ state: 'pending', detail: '<script>unsafe</script>' }],
+};
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('human-review-form').hidden, false);
+assert.equal(doc.getElementById('human-review').querySelector('img,script'), null);
+doc.getElementById('human-review-action').value = 'pause';
+doc.getElementById('human-review-reason').value = 'Inspect sustained disagreement';
+doc
+  .getElementById('human-review-form')
+  .dispatchEvent(
+    new w.SubmitEvent('submit', {
+      cancelable: true,
+      submitter: doc.querySelector('#human-review-form button[value="approve"]'),
+    }),
+  );
+assert.equal(sent.at(-1).value.command, 'decide');
+assert.equal(sent.at(-1).value.intervention, 'pause');
+assert.equal(sent.at(-1).value.reason, 'Inspect sustained disagreement');
+payload.human_review.demo = false;
+payload.human_review.source = 'Website operator review';
+payload.human_review.can_unlock = true;
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('human-review-controls').hidden, true);
+assert.equal(doc.getElementById('human-review-form').hidden, true);
+const reviewsBefore = sent.length;
+doc
+  .getElementById('human-review-form')
+  .dispatchEvent(new w.SubmitEvent('submit', { cancelable: true }));
+assert.equal(sent.length, reviewsBefore, 'Locked physical review cannot be approved');
+doc.getElementById('human-review-code').value = 'private-test-code';
+doc.getElementById('human-review-operator').value = 'operator01';
+doc
+  .getElementById('human-review-login')
+  .dispatchEvent(new w.SubmitEvent('submit', { cancelable: true }));
+assert.equal(sent.at(-1).value.command, 'login');
+assert.equal(sent.at(-1).value.access_code, 'private-test-code');
+assert.equal(sent.at(-1).value.operator, 'operator01');
+assert.equal(doc.getElementById('human-review-code').value, '');
+payload.human_review.authorized = true;
+payload.human_review.can_review = true;
+payload.human_review.owns_review = false;
+deliver(parent, w.location.origin);
+assert.equal(
+  doc.getElementById('human-review-form').hidden,
+  true,
+  'Another session owns the displayed review',
+);
+payload.human_review.owns_review = true;
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('human-review-form').hidden, false);
+doc
+  .getElementById('human-review-form')
+  .dispatchEvent(new w.SubmitEvent('submit', { cancelable: true }));
+assert.equal(sent.at(-1).value.command, 'decide');
+payload.human_review.review.state = 'sent';
+deliver(parent, w.location.origin);
+assert.equal(doc.getElementById('human-review-response').hidden, true);
+const beforeFakeAck = sent.length;
+doc.getElementById('human-review-response').click();
+assert.equal(sent.length, beforeFakeAck, 'No simulated physical device response');
 setImmediate(() => dom.window.close());
 console.log(
   'PASS: original workspace receives Python-only sensor values; source identity, XSS-safe text, freshness, no floor mutation, navigation/scroll preservation and allowlisted source/inspection actions.',

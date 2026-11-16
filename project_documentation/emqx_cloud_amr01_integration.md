@@ -36,7 +36,7 @@ Existing Streamlit warehouse interface
   Simulated warehouse floor remains separate from sensor-based local pose.
 ```
 
-LabVIEW HITL, the proposed return/command path on final slide 16, **is NOT implemented** in this MQTT pipeline. The observation-only ESP32 sketch leaves TB6612 standby LOW; no remote motor commands are issued. Do not connect an uncontrolled cloud path to physical actuation.
+The current human review path uses the [website operator panel](website_human_review_and_action.md). Physical command transport is separate from telemetry and remains disabled until local receiver commissioning. The observation-only ESP32 sketch leaves TB6612 standby LOW; no remote motor commands are issued. Do not connect an uncontrolled cloud path to physical actuation.
 
 ## 1. Prepare the EMQX deployment
 
