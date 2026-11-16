@@ -236,3 +236,6 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `esp32_telemetry_firmware/publish_mh_ir_commissioning/multisensor_observations.h` | Sensor snapshot validation, yaw/charge continuity and bounded JSON with explicit units and nulls. |
 | `esp32_telemetry_firmware/publish_mh_ir_commissioning/UPLOAD_STEPS.md` | Exact private-package upload steps, local motor behavior, wiring and prediction boundaries. |
 | `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_multisensor_observations.cpp` | Execute final PWM settings, sensor encoding, unit conversion, nonfinite/stale rejection and integration-gap behavior. |
+
+| `project_maintenance_scripts/build_arduino_cloud_import.py` | Reproduce and verify the four-file Arduino Cloud import ZIP with public placeholder settings only. |
+| `esp32_telemetry_firmware/downloads/AMR01_Arduino_Cloud_Import.zip` | Directly importable current multisensor sketch and three headers; contains no owner credentials or operator code. |

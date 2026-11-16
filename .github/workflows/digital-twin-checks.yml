@@ -22,6 +22,7 @@ jobs:
       - run: python -m unittest discover -s automated_software_checks/python_telemetry_service_checks -v
       - run: python automated_software_checks/streamlit_and_repository_integration_checks/check_streamlit_frontend_file_delivery.py
       - run: python automated_software_checks/streamlit_and_repository_integration_checks/check_repository_links_source_boundaries_and_downloads.py
+      - run: python project_maintenance_scripts/build_arduino_cloud_import.py --check
       - run: npm ci
       - run: npm run test:browser
   direct-sensor-firmware:

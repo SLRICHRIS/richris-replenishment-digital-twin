@@ -1,5 +1,7 @@
 # Upload the final multisensor Wi-Fi firmware
 
+For Arduino Cloud, download [AMR01_Arduino_Cloud_Import.zip](../downloads/AMR01_Arduino_Cloud_Import.zip) and select it directly with **Create → Import local file**. No extraction or re-zipping is required. The ZIP contains the current Cloud-compatible sketch and three required headers. Its settings header is a public placeholder: after import, replace that tab with your existing private `esp32_wifi_and_mqtt_settings.h`, then enter your Wi-Fi details. The broker settings from your private package are still valid.
+
 Use the classic ESP32 board that matches your TB6612 pin map. This firmware adds Wi-Fi and EMQX to the final supplied motor, MH wheel pulse, MPU6500/MPU6050 and INA219 sketch. Keep all files in this sketch folder together.
 
 1. On the hardware laptop, extract the private package and open `AMR01_Multisensor_WiFi/AMR01_Multisensor_WiFi.ino`. From a public checkout, open `publish_mh_ir_commissioning.ino` and create the ignored private header from the example first.
