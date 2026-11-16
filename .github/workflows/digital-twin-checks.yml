@@ -25,16 +25,22 @@ jobs:
       - run: npm ci
       - run: npm run test:browser
   direct-sensor-firmware:
+    name: ESP32 firmware (${{ matrix.esp32_core }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        esp32_core: ['2.0.17', '3.3.12']
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-arduino-cli@v2
       - name: Install ESP32 and sensor libraries
         run: |
           arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-          arduino-cli core install esp32:esp32 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@${{ matrix.esp32_core }} --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
           arduino-cli lib install PubSubClient "Adafruit MPU6050" "Adafruit INA219"
       - name: Compile observation sketch using example settings
+        if: matrix.esp32_core == '3.3.12'
         run: |
           sketch=esp32_telemetry_firmware/publish_raw_sensor_telemetry
           cp "$sketch/example_esp32_wifi_and_mqtt_settings.h" "$sketch/esp32_wifi_and_mqtt_settings.h"

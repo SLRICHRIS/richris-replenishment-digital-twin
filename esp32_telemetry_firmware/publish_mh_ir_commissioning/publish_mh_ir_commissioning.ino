@@ -10,6 +10,7 @@
 #include <Wire.h>
 #include <Adafruit_INA219.h>
 #include <esp_timer.h>
+#include <esp_arduino_version.h>
 #include <time.h>
 #include "esp32_wifi_and_mqtt_settings.h"
 #include "multisensor_observations.h"
@@ -43,13 +44,40 @@ void ARDUINO_ISR_ATTR countRightPulse() {
   portENTER_CRITICAL_ISR(&pulseMux); rightPulses.edge(now, DEBOUNCE_US); portEXIT_CRITICAL_ISR(&pulseMux);
 }
 
+// Arduino Cloud and desktop installations may use different ESP32 core APIs.
+// Core 2 uses explicit LEDC channels; core 3 assigns channels to pins.
+bool attachMotorPwm() {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  const bool left = ledcAttach(PWMA,PWM_FREQ,PWM_RESOLUTION);
+  const bool right = ledcAttach(PWMB,PWM_FREQ,PWM_RESOLUTION);
+  return left && right;
+#else
+  const double left = ledcSetup(0,PWM_FREQ,PWM_RESOLUTION);
+  const double right = ledcSetup(1,PWM_FREQ,PWM_RESOLUTION);
+  if (!(left > 0) || !(right > 0)) return false;
+  ledcAttachPin(PWMA,0);
+  ledcAttachPin(PWMB,1);
+  return true;
+#endif
+}
+bool writeMotorPwm(int pin, uint32_t duty) {
+  if ((pin != PWMA && pin != PWMB) || duty > 255) return false;
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  return ledcWrite(pin,duty);
+#else
+  // This older API has no success return. Do not report this as device execution.
+  ledcWrite(pin == PWMA ? 0 : 1,duty);
+  return true;
+#endif
+}
+
 void applyDrive(const amr_ir::DriveOutput& drive) {
   static Motion previous = Motion::stopped;
   static int previousDuty = -1;
   if (previous == drive.motion && previousDuty == drive.duty) return;
   // Disable the bridge before changing direction pins or PWM.
   digitalWrite(STBY, LOW);
-  if (pwmReady) { ledcWrite(PWMA, 0); ledcWrite(PWMB, 0); }
+  if (pwmReady) { writeMotorPwm(PWMA, 0); writeMotorPwm(PWMB, 0); }
   bool leftForward = false, rightForward = false;
   switch (drive.motion) {
     case Motion::forward: leftForward = true; rightForward = true; break;
@@ -64,8 +92,8 @@ void applyDrive(const amr_ir::DriveOutput& drive) {
   digitalWrite(BIN1, enabled && rightForward ? HIGH : LOW);
   digitalWrite(BIN2, enabled && !rightForward ? HIGH : LOW);
   if (enabled) {
-    const bool leftOk = ledcWrite(PWMA, drive.duty);
-    const bool rightOk = ledcWrite(PWMB, drive.duty);
+    const bool leftOk = writeMotorPwm(PWMA, drive.duty);
+    const bool rightOk = writeMotorPwm(PWMB, drive.duty);
     if (leftOk && rightOk) digitalWrite(STBY, HIGH);
     else { pwmReady = false; controller.stop(); }
   }
@@ -253,9 +281,7 @@ void setup() {
   pinMode(STBY,OUTPUT); digitalWrite(STBY,LOW);
   for (int pin : {AIN1,AIN2,BIN1,BIN2}) { pinMode(pin,OUTPUT); digitalWrite(pin,LOW); }
   Serial.begin(115200);
-  const bool leftAttached = ledcAttach(PWMA,PWM_FREQ,PWM_RESOLUTION);
-  const bool rightAttached = ledcAttach(PWMB,PWM_FREQ,PWM_RESOLUTION);
-  pwmReady = leftAttached && rightAttached;
+  pwmReady = attachMotorPwm();
   applyDrive({Motion::stopped,0});
   pinMode(LEFT_IR_PIN,INPUT_PULLUP); pinMode(RIGHT_IR_PIN,INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(LEFT_IR_PIN),countLeftPulse,FALLING);
