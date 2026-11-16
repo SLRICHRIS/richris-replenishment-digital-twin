@@ -51,6 +51,8 @@ The worker's in-memory history is bounded to 1,200 derived samples; admitted phy
 
 ## Direct-sensor firmware
 
+The supplied TB6612 / MH IR controller uses different pins and single-channel pulse inputs. Follow [its commissioning guide](mh_ir_hardware_commissioning.md) while that hardware is being built. Its diagnostic stream is separate from the exact schema-v2 physical model contract below. Do not copy this quadrature example's pins onto the motor controller or infer wheel direction from commands.
+
 Use `esp32_telemetry_firmware/publish_raw_sensor_telemetry/publish_raw_sensor_telemetry.ino`; copy the adjacent example settings to private `esp32_wifi_and_mqtt_settings.h`. Install Arduino ESP32, PubSubClient, Adafruit MPU6050, Adafruit INA219, Adafruit Unified Sensor and Adafruit BusIO. Use ESP32 Dev Module. Assign amr01 only and use the broker's trusted CA. Certificate verification is enabled and NTP provides time before TLS. The sketch has no separate UART controller dependency.
 
 | Connection | Example pins / acquisition |

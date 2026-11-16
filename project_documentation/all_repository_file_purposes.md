@@ -23,6 +23,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_streamlit_frame_connection_and_scrolling.cjs` | Verify or measure streamlit frame connection and scrolling. |
 | `automated_software_checks/browser_behavior_checks/test_warehouse_scene_geometry.mjs` | Verify or measure warehouse scene geometry. |
 | `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_onboard_controller_uart_contract.cpp` | Verify or measure onboard controller uart contract. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_mh_ir_controller.cpp` | Exercise the real local command timeout, direction interlock, unsigned pulse debounce/wrap and diagnostic packet encoder in native C++. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_mh_ir_commissioning.py` | Parse actual firmware JSON independently, enforce model-source isolation and compile the MH IR Arduino sketch. |
 | `automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_esp32_firmware_build.py` | Verify or measure esp32 firmware build. |
 | `automated_software_checks/python_telemetry_service_checks/__init__.py` | Mark this folder as a Python package for repository and starter-kit imports. |
 | `automated_software_checks/python_telemetry_service_checks/test_mqtt_recorder_and_labview_inventory_adapter.py` | Verify or measure mqtt recorder and labview inventory adapter. |
@@ -47,6 +49,10 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/streamlit_dashboard_host.py` | Implement streamlit dashboard host. |
 | `backend_streamlit_and_telemetry/predictive_twin/database_inspection.py` | Provide sanitized, cached read-only archive payloads and the fallback Streamlit record/attribute browser, independently from measured calibration. |
 | `esp32_telemetry_firmware/esp32_telemetry_firmware_file_guide.md` | Explain esp32 telemetry firmware file guide. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/publish_mh_ir_commissioning.ino` | Preserve the supplied TB6612 pin map and local Serial control while publishing unsigned MH IR commissioning observations over MQTT/TLS. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/mh_ir_controller.h` | Share tested local motor request logic, cumulative pulse debounce and truthful diagnostic JSON encoding without model equations or Arduino dependencies. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/example_esp32_wifi_and_mqtt_settings.h` | Public placeholder Wi-Fi/TLS settings, actual supplied pins, local timeout/interlock and unconfirmed pulses-per-revolution settings. |
+| `project_documentation/mh_ir_hardware_commissioning.md` | Explain the supplied single-channel hardware, exact wiring, commissioning packet boundary, private configuration and physical work needed for the six models. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/.gitignore` | Configuration or reference data for .gitignore. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/example_esp32_wifi_and_mqtt_settings.h` | ESP32 source or native contract check for example esp32 wifi and mqtt settings. |
 | `esp32_telemetry_firmware/publish_esp32_robot_telemetry/onboard_controller_sensor_and_override_bridge.h` | ESP32 source or native contract check for onboard controller sensor and override bridge. |

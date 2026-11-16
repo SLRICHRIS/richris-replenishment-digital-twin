@@ -39,6 +39,8 @@ jobs:
           sketch=esp32_telemetry_firmware/publish_raw_sensor_telemetry
           cp "$sketch/example_esp32_wifi_and_mqtt_settings.h" "$sketch/esp32_wifi_and_mqtt_settings.h"
           arduino-cli compile --fqbn esp32:esp32:esp32 "$sketch"
+      - name: Check and compile the supplied MH IR hardware path
+        run: python3 automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_mh_ir_commissioning.py
 
   postgres-sensor-ingestion:
     runs-on: ubuntu-latest

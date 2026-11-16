@@ -36,10 +36,12 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python sensor pipeline → Post
 - [EMQX Cloud Serverless: TLS, topic permissions and live broker connection probe](project_documentation/emqx_cloud_amr01_integration.md)
 - [Exact final **17-slide** equation/variable/paper mapping](project_documentation/slide_to_code_mapping.md)
 - [Raw packet schema, units, calibration, firmware and deployment](project_documentation/single_amr_sensor_twin_setup.md)
+- [Supplied TB6612 / MH IR hardware: local control, unsigned pulse commissioning and model limits](project_documentation/mh_ir_hardware_commissioning.md)
 - [Current capability scope and outstanding live-3D registration](project_documentation/implemented_dashboard_features_and_limits.md)
 - [Validation evidence and remaining hardware work](project_documentation/single_amr_alignment_validation.md)
 - Active implementation: `backend_streamlit_and_telemetry/predictive_twin/`
 - Active direct-sensor firmware: `esp32_telemetry_firmware/publish_raw_sensor_telemetry/`
+- Current MH IR hardware bring-up: `esp32_telemetry_firmware/publish_mh_ir_commissioning/`. This preserves the supplied motor pins and serial commands, and publishes unsigned pulse diagnostics on `/commissioning`. The six-model `/state` path requires direction-sensing wheel feedback, gyro/current/voltage sensors and measured calibration.
 
 The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Each model has one collapsed **How it works & source** section containing explanations, equations and paper links. **Detailed readings and export** opens sensor values, charts and exports. The larger stock/task and FIFO/urgency experiments remain in source.
 
@@ -47,7 +49,7 @@ The hosted navigation contains **Floor, Connect AMR, Sensor models and Database*
 
 ## Dashboard and deployment
 
-The single-AMR virtual warehouse dashboard is the main workspace. Its route planning, animation and experiments are separate from the physical AMR-01 sensor node. Sensor models receives calculated results from Python through the Streamlit component protocol; JavaScript formats readouts and sends source-selection/navigation actions back. Updates preserve the current view, scroll and virtual mission state. Local encoder pose has no surveyed map transform, so it is not placed into the 3D warehouse. Browser MQTT, UART firmware, recorder/coordinator and LabVIEW adapters are legacy reference interfaces outside the current single-AMR path. Their guides identify the applicable version. Use the direct-sensor publisher for current commissioning.
+The single-AMR virtual warehouse dashboard is the main workspace. Its route planning, animation and experiments are separate from the physical AMR-01 sensor node. Sensor models receives calculated results from Python through the Streamlit component protocol; JavaScript formats readouts and sends source-selection/navigation actions back. Updates preserve the current view, scroll and virtual mission state. Local encoder pose has no surveyed map transform, so it is not placed into the 3D warehouse. Browser MQTT, UART firmware, recorder/coordinator and LabVIEW adapters are legacy reference interfaces outside the current single-AMR path. Their guides identify the applicable version. Use the direct-sensor publisher for calibrated full-sensor trials; use the separate MH IR path for the supplied single-channel hardware's initial commissioning.
 
 The Streamlit deployment uses repository `SLRICHRIS/richris-replenishment-digital-twin`, branch `main`, and entry point `streamlit_app.py`. Changes to main update that app. Its private PostgreSQL reader connection is configured in deployment secrets. Database connectivity is verified independently from physical telemetry and measured calibration.
 
