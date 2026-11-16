@@ -52,11 +52,40 @@ def verify(args):
         print('PASS: MH pulse debounce/wrap, cumulative unsigned counts, local command timeout, '
               'direction interlock, stopped-speed behavior, native JSON/RPM and twin-source isolation.')
 
+        multisensor_executable = Path(temporary) / 'multisensor_check'
+        subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic',
+            '-I', str(SKETCH), str(Path(__file__).with_name('check_multisensor_observations.cpp')),
+            '-o', str(multisensor_executable)], check=True)
+        rows = subprocess.run([str(multisensor_executable)], check=True, capture_output=True, text=True)
+        measured, invalid, stale = [json.loads(line) for line in rows.stdout.splitlines()]
+        assert measured['gyro_available'] and measured['battery_available']
+        assert measured['imu_who_am_i'] == 0x70 and measured['accel_g'] == [.1,-.2,1]
+        assert abs(measured['gyro_z_rad_s']-3.141592654) < 1e-9
+        assert measured['battery_current_a'] == .6 and measured['battery_voltage_v'] == 7.4
+        assert measured['soc_estimate_percent'] == 90 and measured['left_rpm'] is None
+        for bad in (invalid, stale):
+            assert not bad['gyro_available'] and not bad['battery_available']
+            assert bad['gyro_z_rad_s'] is None and bad['battery_current_a'] is None
+            assert bad['soc_estimate_percent'] is None
+        for value in (measured, invalid, stale):
+            assert value['direction_measured'] is False and value['predictive_models_ready'] is False
+            assert 'encoder_left_count' not in value
+            fleet = demo_fleet()
+            assert not fleet.ingest(json.dumps(value).encode(), 'robot/amr01/state', received=6)
+        print('PASS: multisensor units/nulls/freshness, charge/yaw continuity, final PWM settings and model isolation.')
+
         if not args.native_only:
-            sketch = Path(temporary) / SKETCH.name
+            sketch = Path(temporary) / 'AMR01_Multisensor_WiFi'
             shutil.copytree(SKETCH, sketch)
-            shutil.copyfile(sketch / 'example_esp32_wifi_and_mqtt_settings.h',
-                            sketch / 'esp32_wifi_and_mqtt_settings.h')
+            (sketch / (SKETCH.name+'.ino')).rename(sketch / (sketch.name+'.ino'))
+            # Non-secret, non-placeholder values keep the network path linked.
+            # With WIFI_SSID=REPLACE the compiler may eliminate the early-return
+            # branch's Wi-Fi/TLS code, hiding the real firmware's resource use.
+            settings = (sketch / 'example_esp32_wifi_and_mqtt_settings.h').read_text()
+            settings = settings.replace('WIFI_SSID[] = "REPLACE"', 'WIFI_SSID[] = "compile-check-network"')
+            settings = settings.replace('WIFI_PASSWORD[] = "REPLACE"', 'WIFI_PASSWORD[] = "compile-check-password"')
+            settings = settings.replace('MQTT_HOST[] = "YOUR_EMQX_HOSTNAME"', 'MQTT_HOST[] = "example.invalid"')
+            (sketch / 'esp32_wifi_and_mqtt_settings.h').write_text(settings)
             command = [args.arduino_cli, 'compile', '--fqbn', args.board, str(sketch)]
             if args.config_file:
                 command += ['--config-file', args.config_file]

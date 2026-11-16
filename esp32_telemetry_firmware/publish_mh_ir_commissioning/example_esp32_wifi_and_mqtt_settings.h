@@ -26,3 +26,14 @@ static constexpr uint64_t DIRECTION_INTERLOCK_US = 150000;
 static constexpr double LEFT_PULSES_PER_REV = 1.0;
 static constexpr double RIGHT_PULSES_PER_REV = 1.0;
 static constexpr bool PULSE_CALIBRATION_CONFIRMED = false;
+
+// Final multisensor wiring: shared I2C bus, no motor pin changes.
+static constexpr int I2C_SDA_PIN = 21, I2C_SCL_PIN = 22;
+static constexpr uint8_t MPU_ADDRESS = 0x68, INA219_ADDRESS_VALUE = 0x40;
+static constexpr uint32_t TELEMETRY_INTERVAL_US = 500000;
+// Assumptions from the supplied sketch. Confirm capacity, starting charge and
+// discharge-positive current polarity before enabling an absolute SOC estimate.
+static constexpr double BATTERY_CAPACITY_MAH = 2200.0;
+static constexpr double INITIAL_SOC_PERCENT = 100.0;
+static constexpr double DISCHARGE_CURRENT_SIGN = 1.0;
+static constexpr bool BATTERY_SOC_INITIALIZATION_CONFIRMED = false;
