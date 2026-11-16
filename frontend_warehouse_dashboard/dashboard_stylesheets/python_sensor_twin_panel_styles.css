@@ -351,9 +351,24 @@ html[data-python-twin='true'] #python-sensor-panel {
   font: inherit;
   font-size: 12px;
 }
-.twin-demo-controls button {
+.twin-demo-controls a {
+  display: inline-flex;
+  align-items: center;
   min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
   font-size: 12px;
+  text-decoration: none;
+}
+.twin-demo-controls a:hover {
+  border-color: var(--blue);
+}
+.twin-demo-controls a[aria-disabled='true'] {
+  opacity: 0.55;
+  pointer-events: none;
 }
 .twin-demo-controls > span {
   margin: auto 0 9px auto;
@@ -378,7 +393,7 @@ html[data-python-twin='true'] #python-sensor-panel {
     min-height: 44px;
     font-size: 16px;
   }
-  .twin-demo-controls button {
+  .twin-demo-controls a {
     min-height: 44px;
   }
   .twin-demo-controls > span {
