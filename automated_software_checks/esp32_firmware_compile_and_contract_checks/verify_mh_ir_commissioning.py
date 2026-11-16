@@ -78,8 +78,14 @@ def verify(args):
             sketch = Path(temporary) / 'AMR01_Multisensor_WiFi'
             shutil.copytree(SKETCH, sketch)
             (sketch / (SKETCH.name+'.ino')).rename(sketch / (sketch.name+'.ino'))
-            shutil.copyfile(sketch / 'example_esp32_wifi_and_mqtt_settings.h',
-                            sketch / 'esp32_wifi_and_mqtt_settings.h')
+            # Non-secret, non-placeholder values keep the network path linked.
+            # With WIFI_SSID=REPLACE the compiler may eliminate the early-return
+            # branch's Wi-Fi/TLS code, hiding the real firmware's resource use.
+            settings = (sketch / 'example_esp32_wifi_and_mqtt_settings.h').read_text()
+            settings = settings.replace('WIFI_SSID[] = "REPLACE"', 'WIFI_SSID[] = "compile-check-network"')
+            settings = settings.replace('WIFI_PASSWORD[] = "REPLACE"', 'WIFI_PASSWORD[] = "compile-check-password"')
+            settings = settings.replace('MQTT_HOST[] = "YOUR_EMQX_HOSTNAME"', 'MQTT_HOST[] = "example.invalid"')
+            (sketch / 'esp32_wifi_and_mqtt_settings.h').write_text(settings)
             command = [args.arduino_cli, 'compile', '--fqbn', args.board, str(sketch)]
             if args.config_file:
                 command += ['--config-file', args.config_file]
