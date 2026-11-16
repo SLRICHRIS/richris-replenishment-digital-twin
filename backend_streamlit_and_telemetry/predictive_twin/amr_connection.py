@@ -210,7 +210,7 @@ def connection_payload(controller, profile, missing, authorized=False, live_payl
                     dict(label='EMQX', state='ready' if link['subscribed'] else 'waiting',
                          detail='Topic subscription verified' if link['subscribed'] else 'Subscription not verified in this session'),
                     dict(label='Sensor database', state='ready' if storage_state == 'ready' else 'blocked',
-                         detail='Connected · schema v3' if storage_state == 'ready' else 'Connection or schema needs attention'),
+                         detail='Connected · storage verified' if storage_state == 'ready' else 'Connection or database setup needs attention'),
                     dict(label='Predictive insights', state='ready' if insights['ready'] else 'waiting',
                          detail='Fresh model results available' if insights['ready'] else 'Needs calibrated, continuous readings'),
                 ])

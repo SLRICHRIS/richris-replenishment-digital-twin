@@ -309,7 +309,7 @@
     $('python-db-status').dataset.state = data.state;
     text(
       'python-db-connection-detail',
-      ready ? 'PostgreSQL · schema v3 verified · read-only access' : data.detail,
+      ready ? 'PostgreSQL · storage verified · read-only access' : data.detail,
     );
     text('python-db-title', data.title);
     text('python-db-description', data.description);

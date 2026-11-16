@@ -16,7 +16,7 @@ DESCRIPTIONS = {
     'amr_pipeline_events': 'Recorded packet rejections, gaps and restarts',
     'amr_calibrations': 'Calibration parameters linked to sensor samples',
     'amr_worker_checkpoints': 'Pointer to the last atomically committed state',
-    'amr_database_version': 'Installed schema version',
+    'amr_database_version': 'Database compatibility record',
     'amr_encoder_readings': 'Encoder columns from the canonical measurement table',
     'amr_imu_readings': 'Gyroscope columns from the canonical measurement table',
     'amr_ina219_readings': 'Voltage and current columns from the canonical measurement table',
@@ -33,8 +33,8 @@ DATASET_LABELS = {
 STATUS = {
     'not_configured': ('Database not connected', 'No database URL is configured for this app. The definitions below describe the expected schema; they do not establish that a hosted database exists.'),
     'unreachable': ('Database connection failed', 'The configured database could not be reached. Check its availability, TLS settings and the private reader credentials.'),
-    'schema_not_ready': ('Connected; schema needs attention', 'PostgreSQL responded, but the required schema v3 or read permissions could not be verified. Complete administrator provisioning and reader grants.'),
-    'ready': ('Connected; schema v3 verified', 'Physical AMR-01 records. Demo values are not stored here.'),
+    'schema_not_ready': ('Connected; database setup needs attention', 'PostgreSQL responded, but the required tables or read permissions could not be verified. Complete administrator provisioning and reader grants.'),
+    'ready': ('Connected; storage verified', 'Physical AMR-01 records. Demo values are not stored here.'),
 }
 
 

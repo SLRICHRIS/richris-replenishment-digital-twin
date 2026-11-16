@@ -44,7 +44,7 @@ Deploy from the repository root with the complete repository, including `fronten
 ## Optional hardware and development
 
 - [Single-AMR setup](single_amr_sensor_twin_setup.md): direct-sensor firmware, private secrets, broker access, raw units and calibration.
-- [Edge historian and LabVIEW inventory adapter](mqtt_sqlite_recorder_and_labview_adapter_setup.md): legacy v1 reference, outside the active raw-sensor path.
+- [Edge historian and LabVIEW inventory adapter](mqtt_sqlite_recorder_and_labview_adapter_setup.md): archived interface reference, outside the active raw-sensor path.
 - [Automated checks](../automated_software_checks/software_check_commands_and_coverage.md): JavaScript and Python verification.
 
 ## Troubleshooting

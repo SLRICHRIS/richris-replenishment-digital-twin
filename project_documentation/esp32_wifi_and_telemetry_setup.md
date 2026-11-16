@@ -1,6 +1,6 @@
 # Replenish · ESP32 live telemetry
 
-> **Legacy v1 reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
+> **Archived interface reference — outside the current direct-sensor AMR-01 path.** For the current ESP32 encoder/MPU6050/INA219 system, use [single-AMR commissioning](single_amr_sensor_twin_setup.md). These older UART, browser MQTT, LabVIEW and control interfaces are not prerequisites for the current twin.
 
 © 2026 S L RICHRIS. All rights reserved. Purely for educational purposes.
 
@@ -55,7 +55,7 @@ Give every board a different publisher password. Do not put a broker administrat
 
 ## 3. Connect the viewer
 
-1. Open **Sensor models** in the standalone v1 reference viewer. The hosted Python app uses its PostgreSQL reader instead of this browser WSS form.
+1. Open **Sensor models** in the standalone reference viewer. The hosted Python app uses its PostgreSQL reader instead of this browser WSS form.
 2. Enter the broker’s complete **WSS URL**, for example `wss://your-broker-host:your-wss-port/mqtt`. This is a placeholder, not a working broker.
 3. Enter the read-only viewer username/password and the matching topic prefix.
 4. Choose **Connect AMR-01**. “Subscribed” means the broker approved the AMR-01 subscription. It does not mean AMR-01 is online.
@@ -84,7 +84,7 @@ The displayed warehouse is an **illustrative reference**, not a surveyed map of 
 
 Use **View on floor** on a slot with a fresh pose, or choose **Live AMRs** on the Floor. Missing or stale poses are hidden. The inspector identifies stale values as last readings. Inventory, simulated missions and forecasts are not interpreted as physical measurements.
 
-## Telemetry contract · version 1
+## Reference telemetry contract
 
 Publish UTF-8 JSON, **QoS 0, retain false**, normally once per second. All shown fields are required; unmeasured sensor fields use JSON `null`.
 

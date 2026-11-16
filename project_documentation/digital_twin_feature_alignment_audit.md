@@ -13,6 +13,6 @@ This audit supersedes the earlier three-AMR/UART control architecture. The curre
 | Incorrect route totals | Single-AMR reference graph has 19 nodes and 24 bidirectional links | Dijkstra playback is an optional teaching tool |
 | Paper attribution | Hyperlinks, exact PDF pages and boundaries at model use sites | Project adaptations are not presented as verbatim paper equations |
 
-The original warehouse appearance is retained. Detailed facility scenery, reference replay and route demonstrations are presentation/simulation aids, not additional physical subsystems. The live-floor v1 selector and legacy kit links are not exposed in the Python-hosted workflow.
+The original warehouse appearance is retained. Detailed facility scenery, reference replay and route demonstrations are presentation/simulation aids, not additional physical subsystems. The reference live-floor selector and legacy kit links are not exposed in the Python-hosted workflow.
 
 See [current scope](implemented_dashboard_features_and_limits.md), [architecture](dashboard_and_telemetry_system_architecture.md), [commissioning](single_amr_sensor_twin_setup.md) and [software versus physical evidence](single_amr_alignment_validation.md). Historical results and sources remain available in Git history and explicitly marked legacy documents.

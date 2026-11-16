@@ -38,7 +38,7 @@ These pins target the classic ESP32 Dev Module used by the supplied wiring. Conf
 | Calculated RPM | Magnitude only, conditional on confirmed pulses/revolution |
 | Explicit limitations | `direction_measured`, `gyro_available`, `battery_available`, `predictive_models_ready` are false |
 
-This is a commissioning channel for viewing in MQTTX. The current Python ingestion worker subscribes to `robot/amr01/state` and requires the exact schema-v2 encoder/gyro/battery packet. It does not store this diagnostic channel. A native firmware/real-parser regression check verifies that misrouting a commissioning packet to `/state` cannot advance pose, charge or energy; the model invalidates continuity instead.
+This is a commissioning channel for viewing in MQTTX. The current Python ingestion worker subscribes to `robot/amr01/state` and requires the exact raw-sensor encoder/gyro/battery packet. It does not store this diagnostic channel. A native firmware/real-parser regression check verifies that misrouting a commissioning packet to `/state` cannot advance pose, charge or energy; the model invalidates continuity instead.
 
 Do not publish this payload to `/state`, invent missing gyro/current readings, or give pulses a sign based on the last motor command. A wheel can coast, stall, slip, be pushed or reverse independently of that command. At one pulse/revolution, the wheel has only one observation per turn; increasing the reporting frequency does not increase that spatial information.
 
@@ -55,7 +55,7 @@ Measure effective counts per wheel revolution, wheel radii, effective track, sta
 1. Install Arduino-ESP32 3.x and PubSubClient. Open `publish_mh_ir_commissioning.ino` with its adjacent header in the matching folder.
 2. Copy `example_esp32_wifi_and_mqtt_settings.h` to private `esp32_wifi_and_mqtt_settings.h`. Its filename is git-ignored. Enter Wi-Fi SSID/password, EMQX hostname, the dedicated publisher credentials and the broker's trusted CA certificate. The worker and dashboard do not need the Wi-Fi password.
 3. Keep `PULSE_CALIBRATION_CONFIRMED = false` initially. Rotate each wheel through several measured full turns and check cumulative falling-edge counts. Enter independent left/right pulses per revolution and confirm the flag only after checking them.
-4. Use MQTT/TLS 8883 and a publisher scoped to the commissioning topic. Use a separate subscriber for MQTTX commissioning. The production app subscriber remains scoped to the exact schema-v2 `/state` topic.
+4. Use MQTT/TLS 8883 and a publisher scoped to the commissioning topic. Use a separate subscriber for MQTTX commissioning. The production app subscriber remains scoped to the exact raw-sensor `/state` topic.
 5. Upload to the actual board, open Serial Monitor at 115200 baud and verify standby-low startup, Stop, timeout, speed changes while stopped, direction interlock and continued local Stop during a broker outage. Confirm pin levels and movement physically; passing software checks does not establish these hardware results.
 6. View the physical commissioning packet in MQTTX. Database/model cards can remain empty while the final sensors, direction feedback and calibration are unfinished.
 

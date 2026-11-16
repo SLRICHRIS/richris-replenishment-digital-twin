@@ -206,7 +206,7 @@ class StreamlitHostTests(unittest.TestCase):
         with patch(module + '.database_connection', return_value=(None, 'schema_not_ready')):
             app.run(timeout=30)
             self.assertFalse(app.exception)
-            self.assertTrue(any('schema needs attention' in item.value for item in app.warning))
+            self.assertTrue(any('database setup needs attention' in item.value for item in app.warning))
 
     def test_shared_archive_actions_preserve_the_workspace_and_stop_polling(self):
         from unittest.mock import patch

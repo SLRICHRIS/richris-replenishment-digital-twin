@@ -1,4 +1,4 @@
-"""Strict v2 raw sensor contract and isolated per-robot online state.
+"""Strict raw sensor contract and isolated per-robot online state.
 
 Device monotonic sample time drives equations; server monotonic time drives
 freshness. No packet can move inventory or issue motor commands.
@@ -36,7 +36,7 @@ class Packet:
             raise ValueError("Packet must be an object")
         keys = cls.__dataclass_fields__
         if set(payload) - set(keys) or set(keys) - set(payload):
-            raise ValueError("Packet fields must match schema v2 exactly")
+            raise ValueError("Packet fields must match the required sensor format exactly")
         p = cls(**payload)
         if type(p.schema_version) is not int or p.schema_version != 2 or p.robot_id not in ROBOT_IDS:
             raise ValueError("Unsupported schema or robot")

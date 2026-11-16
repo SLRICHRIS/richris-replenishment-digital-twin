@@ -4,7 +4,7 @@
 
 ```text
 Wheel encoders + MPU6050 gyro + INA219 voltage/current
-   -> ESP32 acquisition (schema v2; monotonic timestamp and boot/sequence IDs)
+   -> ESP32 acquisition (raw sensor format; monotonic timestamp and boot/sequence IDs)
    -> MQTT over TLS (EMQX topic robot/amr01/state)
    -> dedicated Python ingestion worker
    -> strict packet checks -> existing model equations (pose / SOC / residual)
@@ -14,13 +14,13 @@ Wheel encoders + MPU6050 gyro + INA219 voltage/current
 
 This is **one AMR-01**. The older warehouse scene, missions and inventory simulation are distinct from the physical telemetry and are not synchronized to surveyed warehouse coordinates. The LabVIEW return/command path on slide 16 is still a proposal, not a live motor-control feature. GitHub holds source code; it cannot run the always-on telemetry worker.
 
-## Structured physical database schema (v3; MQTT packet v2)
+## Structured physical database
 
 **One canonical, typed, append-only physical sensor fact table** stores each
 admitted 20 Hz MQTT packet once. Three sensor-specific, read-only SQL **views**
 provide clean per-sensor attributes without triplicating write traffic. This is
 an intentional data-engineering choice: at 20 Hz one continuously active AMR
-generates 1,728,000 packets per day. The existing v1 sensor table and its
+generates 1,728,000 packets per day. The existing sensor table and its
 primary-key shape are retained for non-destructive migration.
 
 | Object | Kind | Primary attributes | Purpose |
@@ -39,10 +39,10 @@ primary-key shape are retained for non-destructive migration.
 `gyro_z_rad_s` come from physical sensor readings. `soc_fraction`, battery
 Wh, bias-corrected yaw rate, position, angular residual and forecasts are
 **model outputs**. MPU6050 acceleration and other sensor readings are **not**
-advertised as stored because our schema-v2 firmware does not publish them.
+advertised as stored because our raw-sensor firmware does not publish them.
 
 **Keys and validation:** unique `(robot_id, boot_id, seq)` prevents duplicate
-packets from duplicating sensor records. The database constrains schema v2,
+packets from duplicating sensor records. The database constrains the required packet format,
 non-negative device sample time and positive battery voltage on new tables;
 the Python validator additionally enforces exact fields, finite numerical
 measurements and correct `robot/amr01/state` topic identity. Raw sample and
@@ -56,7 +56,7 @@ The dashboard uses that original receive time for freshness. A row more than
 one second in the future is marked `CLOCK_SKEW` and its live readouts are
 suppressed. Keep the worker and dashboard host clocks synchronized. Current
 state comes from the committed checkpoint; per-boot history uses sequence order.
-Historical v1/v2 timestamps retain their earlier database-processing meaning.
+Historical timestamps from before receive-time capture retain their earlier database-processing meaning.
 
 ### Query the sensor views
 
@@ -82,7 +82,7 @@ LIMIT 20;
 
 ### Real-time engineering and data-quality rules
 
-1. **Ingestion:** ESP32 publishes non-retained schema-v2 JSON through EMQX
+1. **Ingestion:** ESP32 publishes non-retained raw-sensor JSON through EMQX
    TLS 8883. Worker subscribes to one AMR-01 topic. Source firmware currently
    uses **MQTT QoS 0**; delivery is best effort and outage gaps are possible.
 2. **Validate:** Reject malformed, non-finite, wrong-robot, wrong-topic,
@@ -146,7 +146,7 @@ the plan's default suspension behavior. Database: `amr_twin`.
 Production branch: `br-small-water-azc8jgij`; isolated development branch:
 `br-floral-hat-azct1esl` (`dev-database-integration`).
 
-**Schema v3 is initialized in both branches:** six tables, three sensor views,
+**The database is initialized in both branches:** six tables, three sensor views,
 the primary/foreign/check constraints and the schema-version record were
 created after approval. The production `amr_reader` account successfully read
 the version marker and all expected datasets. Production sensor and derived
@@ -165,7 +165,7 @@ included in this repository.
 
 **Streamlit connection is live:** the production `amr_reader` TLS connection
 is saved in the app's private deployment secrets. The deployed **Sensor models
-→ Database** page successfully reports **Connected; schema v3 verified** and
+→ Database** page successfully reports **Connected; storage verified** and
 reads `amr_sensor_samples` as an empty dataset. No database credential is
 included in GitHub, browser display payloads or this deployment record.
 
@@ -224,15 +224,15 @@ Use a managed PostgreSQL service with backups, TLS, and database roles. Keep all
 
 - On restart, the worker loads the last committed pose/SOC/energy and all previously observed boot IDs using the checkpoint. It never replays history or reuses another process's monotonic clock. Duplicate sequences and retired boots remain rejected. The first new sample only establishes a count/time anchor and atomically records `worker_restart`; no downtime motion or charge is fabricated. Estimates remain partial with `continuity_lost=true`, and quantitative forecasts stay suppressed. To reset from measured initial pose/SOC or change calibration, start a separately provisioned trial database; restarting against existing evidence does not reset its totals. Preserve the prior trial.
 - The dashboard's freshness status depends on latest persisted receive time; a stale row cannot be presented as fresh.
-- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. The worker validates database schema v3, the checkpoint table and its three sensor views without DDL permissions. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
+- The database update and model computation are transactionally paired for a successfully accepted packet; database failures stop the MQTT worker's active subscription. The worker validates the database structure, the checkpoint table and its three sensor views without DDL permissions. It is **not** a hard real-time acquisition guarantee or exactly-once MQTT delivery.
 - Original raw JSON bytes are not stored; normalized typed fields are stored. For a publication-grade evidence trail, deploy a raw event recorder, verify clock offsets and retention, document device firmware revisions, and run reproducible calibration trials.
 - The synthetic demonstration is intentionally separate from physical-trial tables.
 - Avoid enabling any remote motor command path without independent local safety checks and physical testing.
 
-### Upgrade an existing v1/v2 database
+### Upgrade an existing database without a restart checkpoint
 
 1. Stop the ingestion worker and back up the trial database. Use the provisioning administrator, never the worker's restricted credentials.
-2. Run `python -m project_maintenance_scripts.provision_amr_sensor_database` with private `AMR_DATABASE_ADMIN_URL`. Provisioning adds the checkpoint table and seeds its pointer from the most recent stored v1/v2 state by receive time. Existing samples, calibrations, model states and events are retained. If historical clocks were incorrect, review which old row should represent the trial endpoint before migration; old records lack an independent commit-order pointer.
+2. Run `python -m project_maintenance_scripts.provision_amr_sensor_database` with private `AMR_DATABASE_ADMIN_URL`. Provisioning adds the checkpoint table and seeds its pointer from the most recent stored state without a restart checkpoint by receive time. Existing samples, calibrations, model states and events are retained. If historical clocks were incorrect, review which old row should represent the trial endpoint before migration; old records lack an independent commit-order pointer.
 3. Grant the worker INSERT/SELECT/UPDATE and the dashboard SELECT on the new table. For example, if the existing role names are `amr_worker` and `amr_reader`:
 
    ```sql

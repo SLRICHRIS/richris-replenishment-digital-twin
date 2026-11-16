@@ -10,7 +10,7 @@ Physical AMR-01
  MPU6050 (angular rate z, rad/s)
  INA219 (battery terminal voltage V; discharge-positive current A)
             |
-            | ESP32 firmware timestamps and publishes schema v2 JSON
+            | ESP32 firmware timestamps and publishes raw sensor JSON
             v
 EMQX Cloud Serverless / MQTT over TLS (port 8883)
  topic: robot/amr01/state     non-retained JSON packets
@@ -124,7 +124,7 @@ Start exactly **one instance** of the writer:
 python -m backend_streamlit_and_telemetry.predictive_twin.ingest_worker
 ```
 
-The worker will not start without explicit measured calibration and provisioned database schema v3. Existing v1/v2 databases need the additive checkpoint migration and new table grants described in the pipeline guide before starting this version. On restart, committed totals are preserved, downtime is not integrated, and the first new sample records a restart event. MQTT success is shown only after EMQX SUBACK, not TCP connection alone; EMQX authorization refusal and database failures terminate the worker instead of being represented as healthy telemetry. Unattended recording requires a persistent host. For attended sessions, the optional [Connect AMR panel](single_amr_sensor_twin_setup.md#connect-amr-from-the-site) reuses this subscriber and database pipeline in a session-bound background resource; it does not rely on page reruns to ingest each packet.
+The worker will not start without explicit measured calibration and provisioned database tables. Existing databases without a restart checkpoint need the additive checkpoint migration and new table grants described in the pipeline guide before starting the worker. On restart, committed totals are preserved, downtime is not integrated, and the first new sample records a restart event. MQTT success is shown only after EMQX SUBACK, not TCP connection alone; EMQX authorization refusal and database failures terminate the worker instead of being represented as healthy telemetry. Unattended recording requires a persistent host. For attended sessions, the optional [Connect AMR panel](single_amr_sensor_twin_setup.md#connect-amr-from-the-site) reuses this subscriber and database pipeline in a session-bound background resource; it does not rely on page reruns to ingest each packet.
 
 Configure `[database].url` with a SELECT-only database account in private Streamlit secrets, along with the *same calibration* and `[commissioning].measured_calibration_confirmed=true`. The UI reads persisted records and labels stale/continuity-lost data.
 

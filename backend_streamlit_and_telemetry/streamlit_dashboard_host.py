@@ -7,7 +7,6 @@ from streamlit.components.v1 import declare_component
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIRECTORY = REPOSITORY_ROOT / 'frontend_warehouse_dashboard'
-APPLICATION_VERSION = '3.2.0'
 WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND_DIRECTORY))
 
 
@@ -108,7 +107,7 @@ def render_dashboard():
     st.set_page_config(page_title='Replenish | S L RICHRIS',
         page_icon=str(FRONTEND_DIRECTORY / 'dashboard_images_and_fonts/warehouse_dashboard_application_icon.svg'),
         layout='wide', initial_sidebar_state='collapsed',
-        menu_items={'About': f'Replenish {APPLICATION_VERSION}: warehouse dashboard and single-AMR Python sensor twin. © 2026 S L RICHRIS.'})
+        menu_items={'About': 'Replenish: warehouse dashboard and single-AMR Python sensor twin. © 2026 S L RICHRIS.'})
     pending = st.session_state.pop('pending_workspace_view', None)
     if pending in ('Warehouse dashboard', 'Model inspection', 'Database'):
         st.session_state.workspace_view = pending
