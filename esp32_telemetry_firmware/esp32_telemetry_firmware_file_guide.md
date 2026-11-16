@@ -1,6 +1,14 @@
-> Historical/reference workspace. The active single-AMR Python sensor path is documented in the root README and `project_documentation/single_amr_sensor_twin_setup.md`.
-
 # ESP32 firmware
+
+| Path | Purpose |
+| --- | --- |
+| `publish_raw_sensor_telemetry/` | Full sensor observation sketch: measured signed quadrature counts, MPU6050 and INA219; schema-v2 `/state` packets for the six Python models. |
+| `publish_mh_ir_commissioning/` | Supplied TB6612 GPIO map and local Serial commands, guarded startup/timeout, unsigned MH pulse/RPM diagnostics over TLS. Separate `/commissioning` topic; not admitted into full sensor models. |
+| `publish_esp32_robot_telemetry/` | Historical UART/browser contract and override reference, outside the active six-model sensor path. |
+
+Read [current MH IR hardware commissioning](../project_documentation/mh_ir_hardware_commissioning.md) or [full sensor model commissioning](../project_documentation/single_amr_sensor_twin_setup.md) before choosing a sketch. Each sketch uses its own matching folder and private settings header. Do not run competing firmware variants on one ESP32 or mix their pin maps.
+
+## Historical UART reference
 
 | File in `publish_esp32_robot_telemetry/` | Responsibility |
 | --- | --- |
