@@ -185,6 +185,7 @@ void networkTask(void*) {
     Serial.println("Enter your Wi-Fi name/password in esp32_wifi_and_mqtt_settings.h, then upload again.");
     vTaskDelete(nullptr); return;
   }
+  Serial.println("Connecting to Wi-Fi. Keep the 2.4 GHz hotspot and its internet connection on.");
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -273,9 +274,11 @@ void setup() {
 }
 
 void loop() {
-  uint64_t now = uint64_t(esp_timer_get_time());
   amr_ir::Sensors sensors;
   portENTER_CRITICAL(&sensorMux); sensors = currentSensors; portEXIT_CRITICAL(&sensorMux);
+  // Read the clock after the snapshot so a concurrent sensor update cannot
+  // appear to come from the future and spuriously stop local driving.
+  const uint64_t now = uint64_t(esp_timer_get_time());
   const double timeS = now/1000000.0;
   const bool sensorsFresh = amr_ir::finiteImu(sensors) && amr_ir::finiteBattery(sensors) &&
       amr_ir::freshAt(timeS,sensors.imuTimeS,.1) && amr_ir::freshAt(timeS,sensors.batteryTimeS,.5);
