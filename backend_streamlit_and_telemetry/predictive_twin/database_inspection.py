@@ -14,7 +14,7 @@ DATABASE_DATASETS = {**MODEL_DATASETS, physical_samples.name: physical_samples}
 
 DESCRIPTIONS = {
     'amr_commissioning_samples': 'Stored unsigned wheel pulses, IMU and battery observations from the installed ESP32 hardware; model readiness remains false',
-    'amr_sensor_samples': 'Received encoder, gyro and battery measurements',
+    'amr_sensor_samples': 'Inputs for calibrated models; installed ESP32 observations are stored in Device telemetry',
     'amr_twin_states': 'Calculated pose, state of charge, energy and quality',
     'amr_pipeline_events': 'Recorded packet rejections, gaps and restarts',
     'amr_calibrations': 'Calibration parameters linked to sensor samples',
@@ -25,14 +25,14 @@ DESCRIPTIONS = {
     'amr_ina219_readings': 'Voltage and current columns from the canonical measurement table',
 }
 DATASET_LABELS = {
-    'amr_sensor_samples': 'All sensor measurements',
+    'amr_commissioning_samples': 'Device telemetry',
+    'amr_sensor_samples': 'Calibrated sensor samples',
     'amr_encoder_readings': 'Wheel encoders',
     'amr_imu_readings': 'Gyroscope',
     'amr_ina219_readings': 'Battery voltage and current',
     'amr_twin_states': 'Model estimates',
     'amr_pipeline_events': 'Packet quality events',
     'amr_calibrations': 'Calibration records',
-    'amr_commissioning_samples': 'Device telemetry',
 }
 STATUS = {
     'not_configured': ('Database not connected', 'No database URL is configured for this app. The definitions below describe the expected schema; they do not establish that a hosted database exists.'),
@@ -59,7 +59,7 @@ def attributes(dataset):
 
 
 @st.cache_data(ttl=5, max_entries=32, show_spinner=False)
-def database_preview(dataset='amr_sensor_samples', refresh_token=''):
+def database_preview(dataset='amr_commissioning_samples', refresh_token=''):
     """Sanitized, bounded SELECT results for the shared dashboard shell."""
     if dataset not in DATASET_LABELS:
         raise ValueError('Choose a known sensor dataset')

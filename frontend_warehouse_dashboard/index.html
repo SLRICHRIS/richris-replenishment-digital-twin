@@ -1376,8 +1376,8 @@
               <div class="twin-dataset-field">
                 <label for="python-db-dataset">Dataset</label>
                 <select id="python-db-dataset">
-                  <option value="amr_sensor_samples">All sensor measurements</option>
                   <option value="amr_commissioning_samples">Device telemetry</option>
+                  <option value="amr_sensor_samples">Calibrated sensor samples</option>
                   <option value="amr_encoder_readings">Wheel encoders</option>
                   <option value="amr_imu_readings">Gyroscope</option>
                   <option value="amr_ina219_readings">Battery voltage and current</option>
@@ -1397,8 +1397,10 @@
             </div>
             <div class="twin-records-heading">
               <div>
-                <h2 id="python-db-title">All sensor measurements</h2>
-                <p id="python-db-description">Received encoder, gyro and battery measurements</p>
+                <h2 id="python-db-title">Device telemetry</h2>
+                <p id="python-db-description">
+                  Raw ESP32 wheel pulses, IMU and battery measurements
+                </p>
               </div>
               <span id="python-db-kind">Table</span>
             </div>
