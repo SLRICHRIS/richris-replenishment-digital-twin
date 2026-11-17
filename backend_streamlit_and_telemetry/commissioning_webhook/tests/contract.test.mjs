@@ -113,3 +113,31 @@ test('storage never updates existing evidence or its receive time', async () => 
     assert(!/DO UPDATE|DELETE|TRUNCATE/.test(queries[0][0]));
   }
 });
+
+test('rejection diagnostics identify routes without exposing request or database secrets', async () => {
+  const entries = [];
+  let clock = now;
+  const handler = createHandler({ secret, persist: async () => { throw new Error('private-database-password'); }, healthcheck: async () => {}, now: () => clock, reportRejection: entry => entries.push(entry) });
+  const invalid = envelope(now); invalid.payload.direction_measured = true;
+  invalid.payload.accel_g = [12345.6789, 0, 0];
+  assert.equal((await handler(request(invalid))).status, 400);
+  assert.equal((await handler(request(invalid))).status, 400);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, 400);
+  assert.equal(entries[0].route, 'ingest');
+  assert.match(entries[0].validation_stack, /validateEnvelope/);
+  clock += 10001;
+  await handler(request(invalid));
+  assert.equal(entries.length, 2);
+  assert.equal((await handler(new Request('https://test.invalid//ingest?token=private-query', { headers: { authorization: 'Bearer ' + secret } }))).status, 404);
+  assert.equal(entries.at(-1).route, 'double_slash_ingest');
+  assert.equal((await handler(request(envelope(now)))).status, 503);
+  assert.equal(entries.at(-1).status, 503);
+  assert(!JSON.stringify(entries).match(/private-query|private-database-password|12345|isolated-test-only|Bearer/));
+});
+
+test('a failed diagnostic sink cannot change authorization or rejection behavior', async () => {
+  const handler = createHandler({ secret, persist: () => assert.fail('unexpected write'), healthcheck: async () => {}, reportRejection: () => { throw new Error('logger unavailable'); } });
+  assert.equal((await handler(request('{}', 'wrong'))).status, 401);
+  assert.equal((await handler(request('{broken'))).status, 400);
+});

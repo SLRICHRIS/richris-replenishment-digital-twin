@@ -44,6 +44,10 @@ The receiver has no browser CORS route and never exposes database credentials.
 It bounds bodies to 16 KiB, accepts the configured publisher and topic only,
 checks the boot/client binding, rejects non-finite values and inconsistent
 units, and preserves null channels. Database errors return a sanitized 503.
+Rejected requests emit sampled status/route diagnostics. Validation failures
+include only the receiver's validation stack, never request headers, sensor
+values, request URLs or database exception details. Sampling bounds logs per
+status/route on each isolate and does not throttle ingestion.
 
 | Request | Result |
 | --- | --- |
