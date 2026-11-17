@@ -198,8 +198,16 @@ payload.database = {
   description: 'Physical records',
   kind: 'Table',
   limit: 50,
-  columns: ['robot_id', 'robot_state'],
-  rows: [{ robot_id: 'amr01', robot_state: '<img src=x onerror=alert(1)>' }],
+  columns: ['robot_id', 'robot_state', 'seq', 'battery_voltage_v', 'payload'],
+  rows: [
+    {
+      robot_id: 'amr01',
+      robot_state: '<img src=x onerror=alert(1)>',
+      seq: 12,
+      battery_voltage_v: 7.58,
+      payload: { evidence: 'x'.repeat(2048) },
+    },
+  ],
   attributes: [
     { Attribute: 'robot_id', 'PostgreSQL type': 'VARCHAR(16)', Required: true, Key: 'Primary key' },
   ],
@@ -224,6 +232,18 @@ assert.equal(
   'stored strings never become markup',
 );
 assert.match(doc.querySelector('#python-db-records-table').textContent, /<img src=x/);
+assert.deepEqual(
+  [...doc.querySelectorAll('#python-db-records-table th')]
+    .slice(0, 2)
+    .map((node) => node.textContent),
+  ['Packet', 'Voltage (V)'],
+  'sensor fields precede metadata without depending on database column order',
+);
+assert.equal(
+  doc.querySelector('#python-db-records-table td:last-child span').title,
+  JSON.stringify(payload.database.rows[0].payload),
+  'compact display retains the complete raw packet as text',
+);
 const stableTable = doc.querySelector('#python-db-records-table table');
 deliver(parent, w.location.origin);
 assert.equal(

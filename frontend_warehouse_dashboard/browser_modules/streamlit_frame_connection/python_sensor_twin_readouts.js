@@ -295,13 +295,27 @@
     databaseOpen = true;
     browseDatabase(true);
   }
-  function table(target, columns, rows) {
+  const sensorColumnLabels = {
+    seq: 'Packet',
+    received_at: 'Received (UTC)',
+    battery_voltage_v: 'Voltage (V)',
+    battery_current_a: 'Current (A)',
+    battery_power_w: 'Power (W)',
+    left_pulses_total: 'Left pulses',
+    right_pulses_total: 'Right pulses',
+    left_pulse_hz: 'Left rate (Hz)',
+    right_pulse_hz: 'Right rate (Hz)',
+    gyro_z_rad_s: 'Gyro Z (rad/s)',
+    yaw_estimate_deg: 'Relative yaw (°)',
+  };
+  function table(target, columns, rows, labels = {}) {
     const grid = document.createElement('table');
     const head = grid.createTHead().insertRow();
     for (const name of columns) {
       const th = document.createElement('th');
       th.scope = 'col';
-      th.textContent = name;
+      th.textContent = labels[name] || name;
+      th.title = name;
       head.append(th);
     }
     const body = grid.createTBody();
@@ -310,12 +324,16 @@
       for (const key of columns) {
         const td = tr.insertCell();
         const value = row[key];
-        td.textContent =
+        const cell = document.createElement('span');
+        cell.className = 'twin-cell-value';
+        cell.textContent =
           value === null || value === undefined
             ? '—'
             : typeof value === 'object'
               ? JSON.stringify(value)
               : String(value);
+        cell.title = cell.textContent;
+        td.append(cell);
       }
     }
     $(target).replaceChildren(grid);
@@ -414,7 +432,16 @@
         ? rows.length + ' records shown · latest ' + data.limit + ' maximum'
         : 'Records unavailable',
     );
-    if (hasRows) table('python-db-records-table', data.columns, rows);
+    if (hasRows) {
+      const device = data.dataset === 'amr_commissioning_samples';
+      const priority = Object.keys(sensorColumnLabels).filter((name) =>
+        data.columns.includes(name),
+      );
+      const columns = device
+        ? [...priority, ...data.columns.filter((name) => !priority.includes(name))]
+        : data.columns;
+      table('python-db-records-table', columns, rows, device ? sensorColumnLabels : {});
+    }
     table(
       'python-db-attributes-table',
       ['Attribute', 'PostgreSQL type', 'Required', 'Key'],

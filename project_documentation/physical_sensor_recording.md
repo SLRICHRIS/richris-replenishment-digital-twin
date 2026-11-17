@@ -15,6 +15,9 @@ empty calibrated-model tables do not establish that no device packets exist.
 The shared dashboard archive also defaults to Device telemetry and allows that
 dataset through the read-only component bridge. Calibrated sensor samples names
 the separate model-input table explicitly; it is not an all-packet archive.
+The record grid puts packet identity and sensor values before metadata, keeps
+rows on one line, and clips long JSON cells visually. Hover text and the JSON
+export retain complete values; no fields or stored evidence are discarded.
 
 The model cards also show fresh raw yaw rate, battery voltage, current and power
 when calibrated model state is unavailable. Those input fields retain their

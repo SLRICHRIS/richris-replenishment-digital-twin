@@ -979,8 +979,8 @@ html[data-python-twin='true'] .statusbar {
   outline-offset: -3px;
 }
 .twin-table-scroll table {
-  width: 100%;
-  min-width: 600px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 11px;
   color: var(--text-secondary);
@@ -1004,9 +1004,16 @@ html[data-python-twin='true'] .statusbar {
   font-family: var(--font-numeric);
   font-size: 12px;
   line-height: 1.6;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
   vertical-align: top;
   color: var(--text);
+}
+.twin-cell-value {
+  display: block;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .twin-table-scroll tr:nth-child(even) td {
   background: var(--panel-alt);
