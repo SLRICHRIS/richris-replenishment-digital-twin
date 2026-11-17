@@ -44,6 +44,16 @@ The receiver has no browser CORS route and never exposes database credentials.
 It bounds bodies to 16 KiB, accepts the configured publisher and topic only,
 checks the boot/client binding, rejects non-finite values and inconsistent
 units, and preserves null channels. Database errors return a sanitized 503.
+All 36 core device fields are required. Additional finite JSON fields are
+retained in the semantic payload and its hash, with an
+`additional_device_fields_unmodeled` quality note. They never replace typed
+measurements, confirm calibration, enable predictions or dispatch commands.
+JSON nesting is bounded to protect validation and canonicalization.
+Rejected requests emit sampled status/route diagnostics. Validation failures
+include the receiver's validation stack and, for a payload-shape mismatch,
+expected missing field names and counts. Arbitrary field names, request headers,
+sensor values, request URLs and database exception details are never logged.
+Sampling bounds logs per status/route on each isolate and does not throttle ingestion.
 
 | Request | Result |
 | --- | --- |

@@ -30,7 +30,6 @@ const bad = {
   'wrong version': p => p.payload.schema_version = 2,
   'forged wheel direction': p => p.payload.direction_measured = true,
   'forged model readiness': p => p.payload.predictive_models_ready = true,
-  'unknown field': p => p.payload.command = 'F',
   'missing field': p => delete p.payload.battery_continuity,
   'unsafe integer count': p => p.payload.left_pulses_total = 9007199254740992,
   'negative count': p => p.payload.right_pulses_total = -1,
@@ -69,6 +68,31 @@ test('old broker time is preserved during retry rather than replaced with ingest
   const p = envelope(now - 86400000);
   p.payload = JSON.stringify(p.payload);
   assert.equal(validateEnvelope(p, now).received_at.getTime(), now - 86400000);
+});
+
+test('additional device fields are retained as evidence without changing typed readings or model readiness', () => {
+  const p = envelope(now);
+  const additions = { acquisition_note: 'physical test', device_build: 'lab', model_ready_claim: true, estimated_charge_claim: 100, command: 'F', sensor_metadata: { calibrated: false } };
+  Object.assign(p.payload, additions);
+  const r = validateEnvelope(p, now);
+  assert.equal(Object.keys(p.payload).length, 42);
+  for (const [key, value] of Object.entries(additions)) assert.deepEqual(r.payload[key], value);
+  assert(r.quality_notes.includes('additional_device_fields_unmodeled'));
+  assert.equal(r.left_pulses_total, 3);
+  assert.equal(r.predictive_models_ready, false);
+  assert.equal(r.direction_measured, false);
+  assert.equal(r.command, undefined);
+  const changed = structuredClone(p); changed.payload.device_build = 'another build';
+  assert.notEqual(validateEnvelope(changed, now).payload_sha256, r.payload_sha256);
+});
+
+test('additional evidence rejects non-finite numbers and excessive nesting', () => {
+  const p = envelope(now); p.payload.metadata = { invalid: Infinity };
+  assert.throws(() => validateEnvelope(p, now), InvalidTelemetry);
+  let nested = {};
+  for (let i = 0; i < 40; i++) nested = { nested };
+  p.payload.metadata = nested;
+  assert.throws(() => validateEnvelope(p, now), InvalidTelemetry);
 });
 
 function request(body, auth = 'Bearer ' + secret, options = {}) {
@@ -112,4 +136,47 @@ test('storage never updates existing evidence or its receive time', async () => 
     assert(queries[0][0].includes('ON CONFLICT (robot_id,boot_id,seq) DO NOTHING'));
     assert(!/DO UPDATE|DELETE|TRUNCATE/.test(queries[0][0]));
   }
+});
+
+test('rejection diagnostics identify routes without exposing request or database secrets', async () => {
+  const entries = [];
+  let clock = now;
+  const handler = createHandler({ secret, persist: async () => { throw new Error('private-database-password'); }, healthcheck: async () => {}, now: () => clock, reportRejection: entry => entries.push(entry) });
+  const invalid = envelope(now); invalid.payload.direction_measured = true;
+  invalid.payload.accel_g = [12345.6789, 0, 0];
+  assert.equal((await handler(request(invalid))).status, 400);
+  assert.equal((await handler(request(invalid))).status, 400);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, 400);
+  assert.equal(entries[0].route, 'ingest');
+  assert.match(entries[0].validation_stack, /validateEnvelope/);
+  clock += 10001;
+  await handler(request(invalid));
+  assert.equal(entries.length, 2);
+  assert.equal((await handler(new Request('https://test.invalid//ingest?token=private-query', { headers: { authorization: 'Bearer ' + secret } }))).status, 404);
+  assert.equal(entries.at(-1).route, 'double_slash_ingest');
+  assert.equal((await handler(request(envelope(now)))).status, 503);
+  assert.equal(entries.at(-1).status, 503);
+  assert(!JSON.stringify(entries).match(/private-query|private-database-password|12345|isolated-test-only|Bearer/));
+});
+
+test('a failed diagnostic sink cannot change authorization or rejection behavior', async () => {
+  const handler = createHandler({ secret, persist: () => assert.fail('unexpected write'), healthcheck: async () => {}, reportRejection: () => { throw new Error('logger unavailable'); } });
+  assert.equal((await handler(request('{}', 'wrong'))).status, 401);
+  assert.equal((await handler(request('{broken'))).status, 400);
+});
+
+test('shape diagnostics report expected missing fields and counts without arbitrary keys or values', async () => {
+  const entries = [];
+  const handler = createHandler({ secret, persist: () => assert.fail('unexpected write'), healthcheck: async () => {}, now: () => now, reportRejection: entry => entries.push(entry) });
+  const p = envelope(now);
+  delete p.payload.battery_continuity;
+  p.payload['private-arbitrary-key'] = 'private-sensor-value';
+  assert.equal((await handler(request(p))).status, 400);
+  const shape = entries[0].payload_shape;
+  assert.equal(shape.kind, 'object');
+  assert.equal(shape.actual_fields, shape.expected_fields);
+  assert.equal(shape.extra_fields, 1);
+  assert.deepEqual(shape.missing_fields, ['battery_continuity']);
+  assert(!JSON.stringify(entries).includes('private-'));
 });
