@@ -141,3 +141,18 @@ test('a failed diagnostic sink cannot change authorization or rejection behavior
   assert.equal((await handler(request('{}', 'wrong'))).status, 401);
   assert.equal((await handler(request('{broken'))).status, 400);
 });
+
+test('shape diagnostics report expected missing fields and counts without arbitrary keys or values', async () => {
+  const entries = [];
+  const handler = createHandler({ secret, persist: () => assert.fail('unexpected write'), healthcheck: async () => {}, now: () => now, reportRejection: entry => entries.push(entry) });
+  const p = envelope(now);
+  delete p.payload.battery_continuity;
+  p.payload['private-arbitrary-key'] = 'private-sensor-value';
+  assert.equal((await handler(request(p))).status, 400);
+  const shape = entries[0].payload_shape;
+  assert.equal(shape.kind, 'object');
+  assert.equal(shape.actual_fields, shape.expected_fields);
+  assert.equal(shape.extra_fields, 1);
+  assert.deepEqual(shape.missing_fields, ['battery_continuity']);
+  assert(!JSON.stringify(entries).includes('private-'));
+});

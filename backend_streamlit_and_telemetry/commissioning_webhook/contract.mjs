@@ -7,7 +7,11 @@ const PREFIX = 'amr01-ir-';
 const MOTIONS = new Set(['stopped', 'forward', 'backward', 'left', 'right']);
 const FIELDS = new Set(('schema_version message_type robot_id boot_id seq sample_time_s interval_s left_pulses_total right_pulses_total left_pulse_hz right_pulse_hz rpm_calibration_confirmed left_rpm right_rpm commanded_motion motor_output pwm_duty direction_measured gyro_available battery_available predictive_models_ready imu_who_am_i imu_sample_time_s accel_g gyro_dps gyro_z_rad_s gyro_bias_estimate_rad_s yaw_estimate_deg battery_sample_time_s battery_bus_voltage_v battery_shunt_voltage_mv battery_voltage_v battery_current_a battery_power_w battery_continuity soc_estimate_percent').split(' '));
 export class InvalidTelemetry extends Error {}
-const fail = () => { throw new InvalidTelemetry('Invalid commissioning telemetry'); };
+const fail = (shape = null) => {
+  const error = new InvalidTelemetry('Invalid commissioning telemetry');
+  if (shape) error.shape = shape;
+  throw error;
+};
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const finite = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) < 1e15;
 function number(value, min = -1e15, max = 1e15) {
@@ -40,7 +44,13 @@ export function validateEnvelope(envelope, nowMs = Date.now()) {
     if (Buffer.byteLength(p) > MAX_BODY_BYTES) fail();
     try { p = JSON.parse(p); } catch { fail(); }
   }
-  if (!object(p) || Object.keys(p).length !== FIELDS.size || Object.keys(p).some(k => !FIELDS.has(k))) fail();
+  if (!object(p) || Object.keys(p).length !== FIELDS.size || Object.keys(p).some(k => !FIELDS.has(k))) {
+    const keys = object(p) ? Object.keys(p) : [];
+    fail({ kind: p === null ? 'null' : Array.isArray(p) ? 'array' : typeof p,
+      expected_fields: FIELDS.size, actual_fields: keys.length,
+      missing_fields: [...FIELDS].filter(k => !keys.includes(k)),
+      extra_fields: keys.filter(k => !FIELDS.has(k)).length });
+  }
   if (p.schema_version !== 1 || p.message_type !== 'mh_ir_commissioning' || p.robot_id !== 'amr01' || p.boot_id !== envelope.clientid.slice(PREFIX.length)) fail();
   if (p.direction_measured !== false || p.predictive_models_ready !== false) fail();
   const r = {

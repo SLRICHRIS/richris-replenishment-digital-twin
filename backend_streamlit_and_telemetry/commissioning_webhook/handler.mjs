@@ -33,7 +33,10 @@ export function createHandler({ secret, persist, healthcheck, now = Date.now, re
     if (lastReported.has(key) && time - lastReported.get(key) < 10000) return;
     lastReported.set(key, time);
     const entry = { event: 'amr_ingest_rejected', status, route };
-    if (error instanceof InvalidTelemetry) entry.validation_stack = error.stack;
+    if (error instanceof InvalidTelemetry) {
+      entry.validation_stack = error.stack;
+      if (error.shape) entry.payload_shape = error.shape;
+    }
     try { reportRejection(entry); } catch { /* Diagnostics must not change the response. */ }
   };
   return async function fetch(request) {

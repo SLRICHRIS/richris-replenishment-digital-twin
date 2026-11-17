@@ -45,9 +45,10 @@ It bounds bodies to 16 KiB, accepts the configured publisher and topic only,
 checks the boot/client binding, rejects non-finite values and inconsistent
 units, and preserves null channels. Database errors return a sanitized 503.
 Rejected requests emit sampled status/route diagnostics. Validation failures
-include only the receiver's validation stack, never request headers, sensor
-values, request URLs or database exception details. Sampling bounds logs per
-status/route on each isolate and does not throttle ingestion.
+include the receiver's validation stack and, for a payload-shape mismatch,
+expected missing field names and counts. Arbitrary field names, request headers,
+sensor values, request URLs and database exception details are never logged.
+Sampling bounds logs per status/route on each isolate and does not throttle ingestion.
 
 | Request | Result |
 | --- | --- |
