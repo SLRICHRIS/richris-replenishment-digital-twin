@@ -13,6 +13,12 @@ model estimates, while raw observations retain their freshness and quality
 warnings. Inspect stored packets opens the Device telemetry dataset directly;
 empty calibrated-model tables do not establish that no device packets exist.
 
+The model cards also show fresh raw yaw rate, battery voltage, current and power
+when calibrated model state is unavailable. Those input fields retain their
+device-observation labels; wheel travel, pose, calibrated bias, SOC, accumulated
+energy, residuals and forecasts remain unavailable until their model requirements
+are met. Stale observations are withheld from both readout locations.
+
 ## Storage and interpretation
 
 | Field group | Stored attributes | Interpretation |

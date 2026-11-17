@@ -58,15 +58,41 @@ assert.equal(d.getElementById('physical-recommendations').querySelector('img'), 
 assert.match(d.getElementById('physical-model-limit').textContent, /direction.*calibration/);
 assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-gyro').textContent, '0.02000');
+assert.equal(d.getElementById('python-amr01-bias').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
+assert.equal(
+  d.getElementById('python-amr01-battery-input').textContent,
+  'Voltage = 0.820 V\nCurrent = -0.0003 A',
+);
+assert.equal(d.getElementById('python-amr01-power').textContent, '-0.000246 W');
+for (const field of ['soc', 'pose', 'energy', 'residual', 'runtime', 'forecast']) {
+  assert.equal(d.getElementById('python-amr01-' + field).textContent, 'Unavailable');
+}
+assert.match(d.getElementById('python-amr01-travel').textContent, /L = Unavailable/);
+assert.match(d.getElementById('python-amr01-speed').textContent, /R = Unavailable/);
+assert.match(d.getElementById('hardware-summary').textContent, /Receiving physical telemetry/);
+assert.equal(d.getElementById('python-amr01-age').textContent, '0.5 s');
+assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, false);
+assert.match(d.getElementById('python-amr01-battery-input-note').textContent, /below 1 V/);
 payload.physical_telemetry.fresh = false;
 payload.physical_telemetry.state = 'stale';
 payload.physical_telemetry.label = 'Telemetry out of date';
 render();
 assert.equal(d.getElementById('physical-voltage').textContent, 'Unavailable');
 assert.equal(d.getElementById('physical-status').textContent, 'Telemetry out of date');
+assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
+assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
+// Switching to demo cannot reuse the physical inputs, even if its fresh flag remains set.
+payload.physical_telemetry.fresh = true;
 payload.mode = 'demo';
 render();
 assert.equal(d.getElementById('physical-telemetry').hidden, true);
+assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
+assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
 console.log(
   'PASS: physical telemetry stays distinct from calibrated models, suppresses stale values and renders sensor text safely.',
 );
