@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import create_engine, select
 
 from backend_streamlit_and_telemetry.predictive_twin.physical_telemetry import metadata, samples, display_payload, read_records
+from backend_streamlit_and_telemetry.predictive_twin.commissioning_profile import profile_payload, wheel_magnitude_estimates
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -40,6 +41,10 @@ def test_live_raw_values_are_visible_without_authorizing_models_or_showing_devic
     assert result['fresh'] and result['state'] == 'receiving'
     assert result['measurements']['left_pulses_total'] == 3
     assert result['models_ready'] is False
+    assert result['commissioning']['ppr_count_test_confirmed'] is True
+    assert result['commissioning']['gyro_bias_measured'] is False
+    assert result['measurements']['rpm_calibration_confirmed'] is False
+    assert result['wheel_estimates']['left_rpm_magnitude'] == pytest.approx(row['left_pulse_hz'] * 3)
     assert any('below 1 V' in line for line in result['recommendations'])
     assert 'payload' not in result['measurements']
     assert 'payload_sha256' not in result['measurements']
@@ -55,6 +60,7 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     result = display_payload(physical_db, now=now)
     assert result['state'] == 'stale' and not result['fresh']
     assert result['measurements'] == {} and result['models_ready'] is False
+    assert result['wheel_estimates'] == {}
     assert len(result['history']) == 1
 
 
@@ -82,3 +88,29 @@ def test_physical_table_does_not_enter_signed_model_dataset_allowlist():
     assert samples.name not in DATABASE_DATASETS
     assert samples.name in DATASET_LABELS
     assert len(attributes(samples.name)) == len(samples.c)
+
+
+def test_counted_geometry_yields_unsigned_wheel_quantities_without_default_bias_promotion():
+    profile = profile_payload()
+    assert profile['wheel_radius_m'] == .03
+    assert profile['track_m'] == .1
+    assert profile['distance_per_pulse_m'] == pytest.approx(.00942477796076938)
+    assert profile['imu_axes'] == dict(x='forward', y='left', z='up')
+    assert profile['reported_gyro_bias_rad_s'] == dict(x=0, y=0, z=0)
+    assert profile['gyro_bias_measured'] is False
+    assert profile['direction_measured'] is False
+    assert profile['battery_capacity_ah'] is None and profile['initial_soc'] is None
+    assert profile['models_ready'] is False
+    # Twenty counted pulses per second is one wheel revolution per second.
+    estimates = wheel_magnitude_estimates(dict(left_pulse_hz=20, right_pulse_hz=0,
+                                             left_rpm=-999, direction_measured=True))
+    assert estimates['left_rpm_magnitude'] == 60
+    assert estimates['left_rim_speed_m_s'] == pytest.approx(.1884955592153876)
+    assert estimates['right_rpm_magnitude'] == estimates['right_rim_speed_m_s'] == 0
+    assert set(estimates) == {'left_rpm_magnitude', 'right_rpm_magnitude', 'left_rim_speed_m_s', 'right_rim_speed_m_s'}
+
+
+@pytest.mark.parametrize('invalid', [None, True, -1, float('nan'), float('inf'), '20'])
+def test_invalid_pulse_frequency_cannot_become_a_wheel_estimate(invalid):
+    estimates = wheel_magnitude_estimates(dict(left_pulse_hz=invalid))
+    assert all(value is None for value in estimates.values())

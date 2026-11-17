@@ -254,4 +254,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/commissioning_webhook/tests/contract.test.mjs` | Check admission, authentication, bounded input, retry behavior and error sanitization. |
 | `backend_streamlit_and_telemetry/commissioning_webhook/tests/fixture.mjs` | Synthetic packet fixture used only in isolated software and staging checks. |
 | `backend_streamlit_and_telemetry/predictive_twin/physical_telemetry.py` | Read stored observations without promoting them into calibrated predictions. |
+| `backend_streamlit_and_telemetry/predictive_twin/commissioning_profile.py` | Record supplied AMR-01 geometry, pending IMU/battery evidence and unsigned wheel estimates. |
 | `project_documentation/physical_sensor_recording.md` | Current ESP32-to-EMQX-to-database deployment and measurement interpretation guide. |

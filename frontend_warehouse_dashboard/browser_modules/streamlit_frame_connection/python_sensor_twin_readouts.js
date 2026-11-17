@@ -345,6 +345,8 @@
     if (panel.hidden) return;
     const data = payload.physical_telemetry || {};
     const values = data.fresh ? data.measurements || {} : {};
+    const estimates = data.fresh ? data.wheel_estimates || {} : {};
+    const profile = data.commissioning || {};
     text('physical-status', data.label || 'Waiting for stored packets');
     panel.dataset.state = data.state || 'waiting';
     text(
@@ -367,6 +369,25 @@
       number(values.right_pulses_total, 0) + ' pulses / ' + number(values.right_pulse_hz, 2, ' Hz'),
     );
     text('physical-gyro', number(values.gyro_z_rad_s, 5, ' rad/s'));
+    text(
+      'physical-wheel-rpm',
+      'L ' +
+        number(estimates.left_rpm_magnitude, 1) +
+        ' / R ' +
+        number(estimates.right_rpm_magnitude, 1),
+    );
+    text(
+      'physical-wheel-speed',
+      'L ' +
+        number(estimates.left_rim_speed_m_s, 4, ' m/s') +
+        ' / R ' +
+        number(estimates.right_rim_speed_m_s, 4, ' m/s'),
+    );
+    text(
+      'physical-wheel-profile',
+      profile.wheel_detail || 'Unsigned counts; direction is not measured.',
+    );
+    text('physical-imu-profile', profile.imu_detail || 'Measured gyro calibration is required.');
     text('physical-yaw', number(values.yaw_estimate_deg, 2, '°'));
     text('physical-voltage', number(values.battery_voltage_v, 3, ' V'));
     text('physical-current', number(values.battery_current_a, 4, ' A'));

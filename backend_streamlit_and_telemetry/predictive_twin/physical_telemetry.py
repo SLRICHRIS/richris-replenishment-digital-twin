@@ -10,6 +10,8 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, Integer, JS
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
+from .commissioning_profile import profile_payload, wheel_magnitude_estimates
+
 FRESH_SECONDS = 5.0
 metadata = MetaData()
 _key = [Column('robot_id', String(16), primary_key=True), Column('boot_id', String(64), primary_key=True), Column('seq', BigInteger, primary_key=True)]
@@ -38,7 +40,8 @@ def read_records(db, limit=50):
 def display_payload(db, now=None):
     empty = dict(state='unavailable', label='Telemetry storage unavailable', age_s=None, fresh=False,
                  measurements={}, history=[], recommendations=['Complete the protected EMQX forwarding connection to store physical readings.'],
-                 models_ready=False, model_detail='Wheel direction and measured calibration are required before pose and runtime predictions.')
+                 commissioning=profile_payload(), wheel_estimates={},
+                 models_ready=False, model_detail='Wheel geometry is recorded. Direction evidence, measured gyro bias and battery calibration are required before pose and runtime predictions.')
     if db is None or not isinstance(getattr(db, 'engine', None), Engine):
         return empty
     try:
@@ -68,12 +71,13 @@ def display_payload(db, now=None):
     else:
         if not row['gyro_available']:
             recommendations.append('IMU readings are unavailable. Check I2C wiring and sensor startup.')
+        else:
+            recommendations.append('Zero gyro bias is a default. Complete a stationary bias test before using corrected turning rates.')
         if not row['battery_available']:
             recommendations.append('Battery readings are unavailable. Check INA219 wiring and its supply.')
         elif row['battery_voltage_v'] < 1:
             recommendations.append('Battery voltage is below 1 V. Check battery power and INA219 VIN connections before interpreting battery estimates.')
-        if not row['rpm_calibration_confirmed']:
-            recommendations.append('Confirm pulses per wheel revolution before interpreting RPM.')
+        recommendations.append('Wheel estimates use the confirmed 20 counted pulses per wheel turn and reported 60 mm diameter. Wheel direction remains unmeasured.')
         if not row['battery_continuity']:
             recommendations.append('A battery measurement gap occurred. Accumulated charge needs a new measured starting point.')
         recommendations.append('Battery percentage and remaining runtime require verified capacity, starting charge and current polarity.')
@@ -85,4 +89,6 @@ def display_payload(db, now=None):
     # Stale records remain inspectable in the archive; never display them as live values.
     return {**empty, 'state': state, 'label': label, 'age_s': age, 'fresh': fresh,
             'received_at': received.isoformat(), 'boot_id': row['boot_id'], 'seq': row['seq'],
-            'measurements': row if fresh else {}, 'history': recent, 'recommendations': recommendations}
+            'measurements': row if fresh else {},
+            'wheel_estimates': wheel_magnitude_estimates(row) if fresh else {},
+            'history': recent, 'recommendations': recommendations}
