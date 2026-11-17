@@ -92,17 +92,24 @@
     }
     if (pendingTrial && payload.mode === 'demo') return;
     const robots = payload.robots || {};
+    const physical = payload.mode === 'live' ? payload.physical_telemetry : null;
     for (const rid of ['amr01']) {
       const r = robots[rid],
         key = 'python-' + rid + '-';
       const available = r && !r.stale;
       document.documentElement.dataset.readingsAvailable = String(Boolean(available));
       const d = available ? r.derived || {} : {};
-      const raw = available ? r.raw || {} : {};
+      const physicalInput = !available && physical?.fresh === true;
+      // Current raw observations do not authorize the calibrated model outputs.
+      const raw = available ? r.raw || {} : physicalInput ? physical.measurements || {} : {};
+      const age = available ? r.age_s : (physical?.age_s ?? r?.age_s);
       const demo = payload.mode === 'demo';
       const label =
         r?.quality_label || payload.notice?.label || (demo ? 'Demo data' : 'No sensor data');
-      text('hardware-summary', demo ? 'Sensor data: demo' : 'Sensor data: ' + label);
+      text(
+        'hardware-summary',
+        demo ? 'Sensor data: demo' : 'Sensor data: ' + (physical?.label || label),
+      );
       text(key + 'quality', label);
       text('python-data-title', label);
       text(
@@ -115,14 +122,14 @@
       );
       $('python-data-notice').dataset.tone =
         r?.quality_tone || payload.notice?.tone || (demo ? 'info' : 'neutral');
-      text(key + 'age', demo ? 'Fixed demo trial' : number(r?.age_s, 1, ' s'));
+      text(key + 'age', demo ? 'Fixed demo trial' : number(age, 1, ' s'));
       text(
         'python-observation-label',
         demo
           ? trial
             ? trial.label + ' · 6 seconds'
             : 'Fixed demo trial · 6 seconds'
-          : 'Sample age · ' + number(r?.age_s, 1, ' s'),
+          : 'Sample age · ' + number(age, 1, ' s'),
       );
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
       text(key + 'pose', available ? position(r.pose) : 'Unavailable');
@@ -131,13 +138,29 @@
         `L = ${number(d.ds_left_m, 4, ' m')}\nR = ${number(d.ds_right_m, 4, ' m')}`,
       );
       text(key + 'gyro', number(raw.gyro_z_rad_s, 5));
+      $(key + 'gyro-input-note').hidden = !physicalInput;
+      text(
+        key + 'gyro-input-note',
+        'Raw device observation. Calibrated bias and the corrected model rate still require measured calibration.',
+      );
       text(key + 'bias', number(r?.gyro_bias_rad_s, 5));
       text(key + 'corrected-gyro', number(d.corrected_gyro_rad_s, 5));
       text(
         key + 'battery-input',
-        `Voltage = ${number(raw.battery_voltage_v, 2, ' V')}\nCurrent = ${number(raw.battery_current_a, 3, ' A')}`,
+        `Voltage = ${number(raw.battery_voltage_v, physicalInput ? 3 : 2, ' V')}\nCurrent = ${number(raw.battery_current_a, physicalInput ? 4 : 3, ' A')}`,
       );
-      text(key + 'power', number(d.power_w, 2, ' W'));
+      text(
+        key + 'power',
+        physicalInput ? number(raw.battery_power_w, 6, ' W') : number(d.power_w, 2, ' W'),
+      );
+      $(key + 'battery-input-note').hidden = !physicalInput;
+      text(
+        key + 'battery-input-note',
+        'Raw electrical observations. SOC and accumulated energy require battery calibration.' +
+          (Number.isFinite(raw.battery_voltage_v) && raw.battery_voltage_v < 1
+            ? ' Input is below 1 V; check battery power and INA219 VIN connections.'
+            : ''),
+      );
       text(key + 'energy', available ? number(r.energy_wh, 4, ' Wh') : 'Unavailable');
       text(
         key + 'speed',
