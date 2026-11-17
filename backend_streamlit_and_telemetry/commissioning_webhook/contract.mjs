@@ -28,6 +28,14 @@ function triple(value) {
   if (!Array.isArray(value) || value.length !== 3 || !value.every(finite)) fail();
   return value;
 }
+function validateJSONEvidence(value, depth = 0) {
+  if (depth > 32) fail();
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
+  if (typeof value === 'number') { if (!Number.isFinite(value)) fail(); return; }
+  if (Array.isArray(value)) { for (const item of value) validateJSONEvidence(item, depth + 1); return; }
+  if (object(value)) { for (const item of Object.values(value)) validateJSONEvidence(item, depth + 1); return; }
+  fail();
+}
 export function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
   if (object(value)) return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
@@ -44,13 +52,17 @@ export function validateEnvelope(envelope, nowMs = Date.now()) {
     if (Buffer.byteLength(p) > MAX_BODY_BYTES) fail();
     try { p = JSON.parse(p); } catch { fail(); }
   }
-  if (!object(p) || Object.keys(p).length !== FIELDS.size || Object.keys(p).some(k => !FIELDS.has(k))) {
+  if (!object(p) || [...FIELDS].some(k => !Object.hasOwn(p, k))) {
     const keys = object(p) ? Object.keys(p) : [];
     fail({ kind: p === null ? 'null' : Array.isArray(p) ? 'array' : typeof p,
       expected_fields: FIELDS.size, actual_fields: keys.length,
       missing_fields: [...FIELDS].filter(k => !keys.includes(k)),
       extra_fields: keys.filter(k => !FIELDS.has(k)).length });
   }
+  // Acquisition metadata may be added by the device without changing the core
+  // sensor contract. Preserve it as JSON evidence; never use it as model input.
+  validateJSONEvidence(p);
+  const hasAdditionalFields = Object.keys(p).some(k => !FIELDS.has(k));
   if (p.schema_version !== 1 || p.message_type !== 'mh_ir_commissioning' || p.robot_id !== 'amr01' || p.boot_id !== envelope.clientid.slice(PREFIX.length)) fail();
   if (p.direction_measured !== false || p.predictive_models_ready !== false) fail();
   const r = {
@@ -106,6 +118,7 @@ export function validateEnvelope(envelope, nowMs = Date.now()) {
   if (!r.battery_available) r.quality_notes.push('battery_unavailable');
   if (r.battery_voltage_v !== null && r.battery_voltage_v < 1) r.quality_notes.push('battery_source_needs_check');
   if (!r.rpm_calibration_confirmed) r.quality_notes.push('rpm_calibration_unconfirmed');
+  if (hasAdditionalFields) r.quality_notes.push('additional_device_fields_unmodeled');
   r.quality_notes.push('wheel_direction_unmeasured', 'model_calibration_unverified');
   r.payload = p; // Semantic device payload, not a claim to retain original wire bytes.
   r.payload_sha256 = createHash('sha256').update(canonical(p)).digest('hex');
