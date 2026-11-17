@@ -7,6 +7,12 @@ writes `amr_commissioning_samples`. The existing Streamlit reader displays these
 stored measurements in **Sensor models → Stored sensor data → Device telemetry**.
 No worker runs on the lab laptop or in a Streamlit rerun.
 
+Both Sensor models and the separate Detailed readings view show Device telemetry
+before measured calibration is confirmed. The calibration warning applies to
+model estimates, while raw observations retain their freshness and quality
+warnings. Inspect stored packets opens the Device telemetry dataset directly;
+empty calibrated-model tables do not establish that no device packets exist.
+
 ## Storage and interpretation
 
 | Field group | Stored attributes | Interpretation |
