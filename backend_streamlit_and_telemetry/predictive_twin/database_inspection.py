@@ -6,11 +6,14 @@ import json
 import streamlit as st
 from sqlalchemy.dialects import postgresql
 
-from .database import DATABASE_DATASETS, SENSOR_VIEWS, SensorSample
+from .database import DATABASE_DATASETS as MODEL_DATASETS, SENSOR_VIEWS, SensorSample
+from .physical_telemetry import samples as physical_samples, read_records as read_physical_records
 from .workspace_payload import database_connection
 
+DATABASE_DATASETS = {**MODEL_DATASETS, physical_samples.name: physical_samples}
 
 DESCRIPTIONS = {
+    'amr_commissioning_samples': 'Stored unsigned wheel pulses, IMU and battery observations from the installed ESP32 hardware; model readiness remains false',
     'amr_sensor_samples': 'Received encoder, gyro and battery measurements',
     'amr_twin_states': 'Calculated pose, state of charge, energy and quality',
     'amr_pipeline_events': 'Recorded packet rejections, gaps and restarts',
@@ -29,6 +32,7 @@ DATASET_LABELS = {
     'amr_twin_states': 'Model estimates',
     'amr_pipeline_events': 'Packet quality events',
     'amr_calibrations': 'Calibration records',
+    'amr_commissioning_samples': 'Device telemetry',
 }
 STATUS = {
     'not_configured': ('Database not connected', 'No database URL is configured for this app. The definitions below describe the expected schema; they do not establish that a hosted database exists.'),
@@ -70,7 +74,8 @@ def database_preview(dataset='amr_sensor_samples', refresh_token=''):
                   limit=50, rows=[], rows_state='unavailable')
     if db is not None:
         try:
-            rows = db.read_records(dataset, limit=50)
+            rows = (read_physical_records(db, limit=50) if dataset == physical_samples.name
+                    else db.read_records(dataset, limit=50))
             # SQL timestamps stay explicit ISO strings; no driver or engine objects cross the bridge.
             result['rows'] = json.loads(json.dumps(rows, default=lambda value:
                 value.isoformat() if hasattr(value, 'isoformat') else str(value)))
@@ -101,7 +106,8 @@ def render_database_inspection():
             st.info('Stored records are unavailable until a database with the required schema is connected.')
         else:
             try:
-                rows = db.read_records(dataset, limit=limit)
+                rows = (read_physical_records(db, limit=limit) if dataset == physical_samples.name
+                        else db.read_records(dataset, limit=limit))
             except Exception:
                 st.error('Records could not be read. Check connection and SELECT permissions for this dataset.')
             else:

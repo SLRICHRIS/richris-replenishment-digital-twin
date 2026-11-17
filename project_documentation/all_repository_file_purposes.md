@@ -239,3 +239,19 @@ Generated catalog of the current source tree. Historical names and removed evide
 
 | `project_maintenance_scripts/build_arduino_cloud_import.py` | Reproduce and verify the four-file Arduino Cloud import ZIP with public placeholder settings only. |
 | `esp32_telemetry_firmware/downloads/AMR01_Arduino_Cloud_Import.zip` | Directly importable current multisensor sketch and three headers; contains no owner credentials or operator code. |
+| `automated_software_checks/browser_behavior_checks/test_physical_telemetry_display.cjs` | Check physical readout visibility, stale suppression and safe text rendering. |
+| `automated_software_checks/predictive_twin_checks/test_physical_telemetry.py` | Check optional storage, receive-time freshness, bounded records and model isolation. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/build.mjs` | Bundle the HTTP receiver and dependencies for Node.js 24 deployment. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/contract.mjs` | Validate the installed unsigned sensor packet, preserve units and build immutable evidence hashes. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/emqx_body_template.json.tmpl` | HTTP action template for the protected broker-to-database hop. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/emqx_rule.sql` | Select the exact installed-device topic and its broker receive timestamp. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/handler.mjs` | Authenticate and bound HTTP telemetry requests before database access. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/index.mjs` | Neon Functions entrypoint for the protected EMQX telemetry receiver. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/package-lock.json` | Reproducible dependency lock for the protected telemetry receiver. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/package.json` | Pinned build and runtime dependencies for the protected telemetry receiver. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/schema.sql` | Add the optional physical telemetry table, index and limited runtime grants. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/storage.mjs` | Insert typed evidence idempotently with the restricted writer account. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/tests/contract.test.mjs` | Check admission, authentication, bounded input, retry behavior and error sanitization. |
+| `backend_streamlit_and_telemetry/commissioning_webhook/tests/fixture.mjs` | Synthetic packet fixture used only in isolated software and staging checks. |
+| `backend_streamlit_and_telemetry/predictive_twin/physical_telemetry.py` | Read stored observations without promoting them into calibrated predictions. |
+| `project_documentation/physical_sensor_recording.md` | Current ESP32-to-EMQX-to-database deployment and measurement interpretation guide. |

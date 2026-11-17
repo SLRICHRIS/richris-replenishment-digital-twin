@@ -79,6 +79,7 @@
       $('python-source-' + mode).setAttribute('aria-pressed', String(payload.mode === mode));
     }
     if (payload.database) renderDatabase(payload.database);
+    renderPhysicalTelemetry(payload);
     const trial = payload.mode === 'demo' ? payload.demo_trial : null;
     $('python-demo-controls').hidden = !trial;
     if (payload.mode !== 'demo' || trial?.id === pendingTrial) pendingTrial = null;
@@ -296,6 +297,53 @@
     }
     $(target).replaceChildren(grid);
   }
+  function renderPhysicalTelemetry(payload) {
+    const panel = $('physical-telemetry');
+    if (!panel) return;
+    panel.hidden = payload.mode !== 'live';
+    if (panel.hidden) return;
+    const data = payload.physical_telemetry || {};
+    const values = data.fresh ? data.measurements || {} : {};
+    text('physical-status', data.label || 'Waiting for stored packets');
+    panel.dataset.state = data.state || 'waiting';
+    text(
+      'physical-received',
+      data.received_at
+        ? 'Broker received ' +
+            data.received_at +
+            ' · ' +
+            number(data.age_s, 1, ' s ago') +
+            ' · packet ' +
+            data.seq
+        : 'No stored packet is available yet.',
+    );
+    text(
+      'physical-wheel-left',
+      number(values.left_pulses_total, 0) + ' pulses / ' + number(values.left_pulse_hz, 2, ' Hz'),
+    );
+    text(
+      'physical-wheel-right',
+      number(values.right_pulses_total, 0) + ' pulses / ' + number(values.right_pulse_hz, 2, ' Hz'),
+    );
+    text('physical-gyro', number(values.gyro_z_rad_s, 5, ' rad/s'));
+    text('physical-yaw', number(values.yaw_estimate_deg, 2, '°'));
+    text('physical-voltage', number(values.battery_voltage_v, 3, ' V'));
+    text('physical-current', number(values.battery_current_a, 4, ' A'));
+    text('physical-power', number(values.battery_power_w, 3, ' W'));
+    text(
+      'physical-model-limit',
+      data.model_detail ||
+        'Measured calibration and wheel direction are required before model predictions.',
+    );
+    const list = $('physical-recommendations');
+    list.replaceChildren(
+      ...(data.recommendations || ['Check the EMQX forwarding connection.']).map((message) => {
+        const li = document.createElement('li');
+        li.textContent = message;
+        return li;
+      }),
+    );
+  }
   function renderDatabase(data) {
     // A late response must never relabel old rows as the newly selected dataset.
     if (data.dataset !== $('python-db-dataset')?.value) return;
@@ -349,6 +397,10 @@
     );
   }
   function bind() {
+    $('physical-open-archive')?.addEventListener('click', () => {
+      $('python-db-dataset').value = 'amr_commissioning_samples';
+      $('python-database-inspection').click();
+    });
     $('python-demo-trial')?.addEventListener('change', () => {
       pendingTrial = $('python-demo-trial').value;
       $('python-demo-controls').setAttribute('aria-busy', 'true');
