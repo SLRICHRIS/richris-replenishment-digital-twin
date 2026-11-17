@@ -181,7 +181,7 @@ assert.equal(
 doc.dispatchEvent(new w.CustomEvent('python-twin:database-open'));
 assert.equal(sent.at(-1).value.action, 'database_browse');
 assert.equal(sent.at(-1).value.active, true);
-assert.equal(sent.at(-1).value.dataset, 'amr_sensor_samples');
+assert.equal(sent.at(-1).value.dataset, 'amr_commissioning_samples');
 assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'true');
 const before = sent.length;
 doc.dispatchEvent(
@@ -193,8 +193,8 @@ payload.database = {
   state: 'ready',
   label: 'Connected',
   detail: 'Read only',
-  dataset: 'amr_sensor_samples',
-  title: 'All sensor measurements',
+  dataset: 'amr_commissioning_samples',
+  title: 'Device telemetry',
   description: 'Physical records',
   kind: 'Table',
   limit: 50,
@@ -251,7 +251,7 @@ assert.equal(
   'old field definitions disappear while another dataset loads',
 );
 assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'true');
-archiveChoice.value = 'amr_sensor_samples';
+archiveChoice.value = 'amr_commissioning_samples';
 archiveChoice.dispatchEvent(new w.Event('change'));
 deliver(parent, w.location.origin);
 assert(
@@ -277,7 +277,11 @@ payload.database = {
   rows: [],
 };
 deliver(parent, w.location.origin);
-assert.equal(doc.getElementById('python-db-empty-title').textContent, 'Awaiting sensor records');
+assert.equal(
+  doc.getElementById('python-db-empty-title').textContent,
+  'No records in Wheel encoders',
+);
+assert.match(doc.getElementById('python-db-empty-detail').textContent, /Choose Device telemetry/);
 assert.equal(doc.querySelector('.twin-records-browser').getAttribute('aria-busy'), 'false');
 assert.equal(doc.getElementById('python-db-export').disabled, true);
 payload.database = { ...payload.database, rows_state: 'error' };
@@ -623,14 +627,12 @@ assert.equal(doc.getElementById('human-review-form').hidden, false);
 assert.equal(doc.getElementById('human-review').querySelector('img,script'), null);
 doc.getElementById('human-review-action').value = 'pause';
 doc.getElementById('human-review-reason').value = 'Inspect sustained disagreement';
-doc
-  .getElementById('human-review-form')
-  .dispatchEvent(
-    new w.SubmitEvent('submit', {
-      cancelable: true,
-      submitter: doc.querySelector('#human-review-form button[value="approve"]'),
-    }),
-  );
+doc.getElementById('human-review-form').dispatchEvent(
+  new w.SubmitEvent('submit', {
+    cancelable: true,
+    submitter: doc.querySelector('#human-review-form button[value="approve"]'),
+  }),
+);
 assert.equal(sent.at(-1).value.command, 'decide');
 assert.equal(sent.at(-1).value.intervention, 'pause');
 assert.equal(sent.at(-1).value.reason, 'Inspect sustained disagreement');

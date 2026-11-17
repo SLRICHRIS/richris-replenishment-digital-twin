@@ -396,7 +396,7 @@
         ? 'Records could not be read'
         : !ready
           ? 'Archive unavailable'
-          : 'Awaiting sensor records',
+          : 'No records in ' + data.title,
     );
     text(
       'python-db-empty-detail',
@@ -404,7 +404,9 @@
         ? 'Refresh to try reading this dataset again.'
         : !ready
           ? 'The table definitions remain available in Table attributes.'
-          : 'Validated physical measurements will appear here. Demo values are never stored in this archive.',
+          : data.dataset === 'amr_commissioning_samples'
+            ? 'Physical ESP32 packets will appear here. Demo values are never stored in this archive.'
+            : 'This dataset belongs to the calibrated-model pipeline. Choose Device telemetry for installed ESP32 wheel, IMU and battery observations.',
     );
     text(
       'python-db-row-count',

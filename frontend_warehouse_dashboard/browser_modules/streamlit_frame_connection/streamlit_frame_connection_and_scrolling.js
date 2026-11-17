@@ -122,6 +122,7 @@
     if (
       action.action === 'database_browse' &&
       (![
+        'amr_commissioning_samples',
         'amr_sensor_samples',
         'amr_encoder_readings',
         'amr_imu_readings',

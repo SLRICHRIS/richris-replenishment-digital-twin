@@ -28,7 +28,7 @@ def render_warehouse_workspace():
     if st.session_state.get('warehouse_database_requested'):
         from .predictive_twin.database_inspection import database_preview
         payload['database'] = database_preview(
-            st.session_state.get('warehouse_database_dataset', 'amr_sensor_samples'),
+            st.session_state.get('warehouse_database_dataset', 'amr_commissioning_samples'),
             st.session_state.get('warehouse_database_refresh', ''))
     from .predictive_twin.human_review_workspace import review_workspace
     payload['human_review'] = review_workspace(payload)

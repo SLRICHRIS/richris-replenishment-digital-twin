@@ -261,7 +261,7 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertEqual(app.sidebar.radio[0].value, 'Database')
         self.assertTrue(any('Database not connected' in item.value for item in app.warning))
         self.assertEqual([tab.label for tab in app.tabs], ['Stored records', 'Table attributes'])
-        self.assertEqual(app.selectbox[0].options[0], 'All sensor measurements')
+        self.assertEqual(app.selectbox[0].options[0], 'Device telemetry')
         self.assertEqual(app.selectbox[0].value, 'amr_commissioning_samples')
         self.assertFalse(app.code)
 
@@ -279,7 +279,7 @@ class StreamlitHostTests(unittest.TestCase):
             self.assertTrue(any('Device telemetry' in item.value for item in app.info))
             self.assertFalse(app.download_button)
             app.selectbox[0].set_value('amr_sensor_samples').run(timeout=30)
-            self.assertTrue(any('All sensor measurements' in item.value for item in app.info))
+            self.assertTrue(any('Calibrated sensor samples' in item.value for item in app.info))
             self.assertTrue(any('Choose Device telemetry' in item.value for item in app.caption))
         with patch(module + '.database_connection', return_value=(None, 'schema_not_ready')):
             app.run(timeout=30)

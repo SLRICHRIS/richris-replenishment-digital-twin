@@ -12,6 +12,9 @@ before measured calibration is confirmed. The calibration warning applies to
 model estimates, while raw observations retain their freshness and quality
 warnings. Inspect stored packets opens the Device telemetry dataset directly;
 empty calibrated-model tables do not establish that no device packets exist.
+The shared dashboard archive also defaults to Device telemetry and allows that
+dataset through the read-only component bridge. Calibrated sensor samples names
+the separate model-input table explicitly; it is not an all-packet archive.
 
 The model cards also show fresh raw yaw rate, battery voltage, current and power
 when calibrated model state is unavailable. Those input fields retain their
