@@ -118,6 +118,25 @@ lost before EMQX. Preserve acquisition and clock limitations in demonstrations.
 
 ## Model boundary
 
+### Operator-supplied geometry, 18 November 2026
+
+Both wheels are treated as 60 mm in diameter (30 mm radius), with 100 mm
+wheel-centre spacing. The operator confirmed 20 ESP32-counted pulses per full
+wheel revolution. The profile is recorded in
+[`commissioning_profile.py`](../backend_streamlit_and_telemetry/predictive_twin/commissioning_profile.py).
+At these values one pulse represents 9.42478 mm of wheel-rim travel, RPM
+magnitude is pulse frequency × 3, and rim-speed magnitude is pulse frequency
+× 0.00942478 m/s. These are unsigned wheel estimates, not robot ground speed
+or signed odometry; the geometry and PPR apply to both wheels as supplied.
+
+Reported IMU axes are X forward, Y left, Z up. The supplied gx/gy/gz biases
+of zero were explicitly clarified as assumed/default, so they are recorded
+as unmeasured and are not applied to model correction or readiness. A measured
+stationary bias test, direction evidence, battery capacity/starting charge and
+current polarity remain pending. The physical readout shows wheel magnitudes
+only for fresh packets; archived device fields and their calibration claims
+are unchanged. No existing or new model state is produced by this profile.
+
 Receiving physical data establishes connectivity and storage, not calibrated
 accuracy. The MH inputs remain unsigned. Measured counts per revolution,
 wheel radii, track, current polarity, usable capacity, starting charge and

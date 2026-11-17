@@ -89,9 +89,11 @@ def physical_view(db):
     """Raw observations remain visible before model calibration is confirmed."""
     data = display_payload(db)
     values = data['measurements'] if data['fresh'] else {}
+    estimates = data.get('wheel_estimates', {}) if data['fresh'] else {}
+    profile = data.get('commissioning', {})
 
-    def number(name, digits=3, suffix=''):
-        value = values.get(name)
+    def number(name, digits=3, suffix='', source=None):
+        value = (values if source is None else source).get(name)
         return 'Unavailable' if value is None else f'{value:.{digits}f}{suffix}'
 
     st.subheader('Device telemetry')
@@ -105,12 +107,15 @@ def physical_view(db):
         st.markdown('**Wheel pulses**')
         st.metric('Left · total / rate', number('left_pulses_total', 0, ' pulses') + ' / ' + number('left_pulse_hz', 2, ' Hz'))
         st.metric('Right · total / rate', number('right_pulses_total', 0, ' pulses') + ' / ' + number('right_pulse_hz', 2, ' Hz'))
-        st.caption('Unsigned counts; direction is not measured.')
+        st.metric('RPM · magnitude', 'L ' + number('left_rpm_magnitude', 1, source=estimates) + ' / R ' + number('right_rpm_magnitude', 1, source=estimates))
+        st.metric('Rim speed · magnitude (m/s)', 'L ' + number('left_rim_speed_m_s', 4, source=estimates) + ' / R ' + number('right_rim_speed_m_s', 4, source=estimates))
+        st.caption(profile.get('wheel_detail', 'Unsigned counts; direction is not measured.'))
     with imu:
         st.markdown('**IMU**')
         st.metric('Gyro Z', number('gyro_z_rad_s', 5, ' rad/s'))
         st.metric('Relative yaw estimate', number('yaw_estimate_deg', 2, '°'))
         st.caption('Yaw is a local gyro estimate, not an absolute heading.')
+        st.caption(profile.get('imu_detail', 'Measured gyro calibration is required.'))
     with battery:
         st.markdown('**Battery measurements**')
         st.metric('Input voltage', number('battery_voltage_v', 3, ' V'))

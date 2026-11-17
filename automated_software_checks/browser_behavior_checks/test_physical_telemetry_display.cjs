@@ -41,6 +41,16 @@ const payload = {
       battery_power_w: -0.000246,
       device_soc_estimate_percent: 100,
     },
+    wheel_estimates: {
+      left_rpm_magnitude: 0,
+      right_rpm_magnitude: 6,
+      left_rim_speed_m_s: 0,
+      right_rim_speed_m_s: 0.01884955592153876,
+    },
+    commissioning: {
+      wheel_detail: '60 mm wheels · 100 mm spacing · 20 counted pulses per turn.',
+      imu_detail: 'X forward, Y left, Z up. Zero bias is a default.',
+    },
     recommendations: ['Battery wiring needs checking.', '<img src=x onerror=alert(1)>'],
     model_detail:
       'Wheel direction and measured calibration are required before pose and runtime predictions.',
@@ -54,6 +64,9 @@ render();
 assert.equal(d.getElementById('physical-telemetry').hidden, false);
 assert.equal(d.getElementById('physical-voltage').textContent, '0.820 V');
 assert.equal(d.getElementById('physical-wheel-left').textContent, '0 pulses / 0.00 Hz');
+assert.equal(d.getElementById('physical-wheel-rpm').textContent, 'L 0.0 / R 6.0');
+assert.equal(d.getElementById('physical-wheel-speed').textContent, 'L 0.0000 m/s / R 0.0188 m/s');
+assert.match(d.getElementById('physical-imu-profile').textContent, /Zero bias is a default/);
 assert.equal(d.getElementById('physical-recommendations').querySelector('img'), null);
 assert.match(d.getElementById('physical-model-limit').textContent, /direction.*calibration/);
 assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
@@ -81,6 +94,7 @@ payload.physical_telemetry.label = 'Telemetry out of date';
 render();
 assert.equal(d.getElementById('physical-voltage').textContent, 'Unavailable');
 assert.equal(d.getElementById('physical-status').textContent, 'Telemetry out of date');
+assert.equal(d.getElementById('physical-wheel-rpm').textContent, 'L Unavailable / R Unavailable');
 assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
