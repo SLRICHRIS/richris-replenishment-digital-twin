@@ -1,5 +1,10 @@
 # AMR-01 PostgreSQL telemetry pipeline
 
+For the currently installed TB6612/MH-IR/IMU/INA219 hardware, use the
+[physical sensor recording flow](physical_sensor_recording.md). It stores the
+commissioning topic through protected EMQX HTTP forwarding and keeps its
+unsigned observations outside the signed-model state tables described below.
+
 ## End-to-end architecture
 
 ```text

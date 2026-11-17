@@ -162,7 +162,9 @@ def check():
         for p in FRONTEND.rglob("*")
         if p.is_file() and p.suffix in {".py", ".ino", ".h"}
     ]
-    assert not list((ROOT / "backend_streamlit_and_telemetry").rglob("*.js"))
+    # Installed server dependencies are not browser bundles or repository source.
+    assert not [p for p in (ROOT / "backend_streamlit_and_telemetry").rglob("*.js")
+                if "node_modules" not in p.parts]
     assert not (ROOT / "digital_twin_application").exists()
     assert not (ROOT / "automated_tests").exists()
     for expected in [

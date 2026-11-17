@@ -12,8 +12,10 @@ WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND
 
 @st.fragment(run_every='1s')
 def render_warehouse_workspace():
-    from .predictive_twin.workspace_payload import workspace_payload
-    mode = st.session_state.get('warehouse_sensor_mode', 'demo')
+    from .predictive_twin.workspace_payload import workspace_payload, database_url
+    mode = st.session_state.get('warehouse_sensor_mode')
+    if mode is None:
+        mode = 'live' if database_url() else 'demo'
     payload = workspace_payload(mode, st.session_state.get('warehouse_demo_trial', 'baseline'))
     if st.session_state.get('warehouse_connection_requested'):
         from .predictive_twin.amr_connection import connection_payload, connection_profile, session_connector

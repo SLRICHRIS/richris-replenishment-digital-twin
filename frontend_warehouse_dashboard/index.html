@@ -1377,6 +1377,7 @@
                 <label for="python-db-dataset">Dataset</label>
                 <select id="python-db-dataset">
                   <option value="amr_sensor_samples">All sensor measurements</option>
+                  <option value="amr_commissioning_samples">Device telemetry</option>
                   <option value="amr_encoder_readings">Wheel encoders</option>
                   <option value="amr_imu_readings">Gyroscope</option>
                   <option value="amr_ina219_readings">Battery voltage and current</option>
@@ -1504,6 +1505,62 @@
               </a>
               <span id="python-demo-packets"></span>
             </div>
+            <section
+              id="physical-telemetry"
+              class="physical-telemetry panel"
+              aria-labelledby="physical-title"
+              hidden
+            >
+              <header class="physical-heading">
+                <div>
+                  <span class="twin-card-kicker">AMR-01 · ESP32 → EMQX → DATABASE</span>
+                  <h2 id="physical-title">Device telemetry</h2>
+                </div>
+                <span id="physical-status" role="status">Waiting for stored packets</span>
+              </header>
+              <p id="physical-received" class="physical-received">No packet received yet</p>
+              <div class="physical-sensors">
+                <article>
+                  <h3>Wheel pulses</h3>
+                  <dl>
+                    <dt>Left · total / rate</dt>
+                    <dd id="physical-wheel-left">—</dd>
+                    <dt>Right · total / rate</dt>
+                    <dd id="physical-wheel-right">—</dd>
+                  </dl>
+                  <p>Unsigned counts; direction is not measured.</p>
+                </article>
+                <article>
+                  <h3>IMU</h3>
+                  <dl>
+                    <dt>Gyro Z</dt>
+                    <dd id="physical-gyro">—</dd>
+                    <dt>Relative yaw estimate</dt>
+                    <dd id="physical-yaw">—</dd>
+                  </dl>
+                  <p>Yaw is a local gyro estimate, not an absolute heading.</p>
+                </article>
+                <article>
+                  <h3>Battery measurements</h3>
+                  <dl>
+                    <dt>Input voltage</dt>
+                    <dd id="physical-voltage">—</dd>
+                    <dt>Current · discharge positive</dt>
+                    <dd id="physical-current">—</dd>
+                    <dt>Power · voltage × current</dt>
+                    <dd id="physical-power">—</dd>
+                  </dl>
+                </article>
+              </div>
+              <div class="physical-guidance">
+                <h3>What needs attention</h3>
+                <ul id="physical-recommendations"></ul>
+                <p id="physical-model-limit"></p>
+              </div>
+              <button id="physical-open-archive" type="button" class="quiet">
+                Inspect stored packets
+              </button>
+            </section>
             <div
               class="python-data-notice"
               id="python-data-notice"

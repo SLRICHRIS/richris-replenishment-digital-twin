@@ -17,6 +17,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: python -m pip install -r requirements-dev.txt
+      - run: npm ci --prefix backend_streamlit_and_telemetry/commissioning_webhook
+      - run: npm test --prefix backend_streamlit_and_telemetry/commissioning_webhook
+      - run: npm run build --prefix backend_streamlit_and_telemetry/commissioning_webhook
       - run: python -m pytest automated_software_checks/predictive_twin_checks automated_software_checks/streamlit_and_repository_integration_checks -q
       - run: PYTHONPATH=research_baseline python -m pytest research_baseline/tests -q
       - run: python -m unittest discover -s automated_software_checks/python_telemetry_service_checks -v

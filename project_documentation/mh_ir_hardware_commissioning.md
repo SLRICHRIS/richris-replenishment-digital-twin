@@ -39,7 +39,7 @@ These pins target the classic ESP32 Dev Module used by the supplied wiring. Conf
 | Calculated RPM | Magnitude only, conditional on confirmed pulses/revolution |
 | Explicit limitations | `direction_measured` and `predictive_models_ready` remain false; gyro/battery availability follows checked readings and freshness |
 
-This is a commissioning channel for viewing in MQTTX. The current Python ingestion worker subscribes to `robot/amr01/state` and requires the exact raw-sensor encoder/gyro/battery packet. It does not store this diagnostic channel. A native firmware/real-parser regression check verifies that misrouting a commissioning packet to `/state` cannot advance pose, charge or energy; the model invalidates continuity instead.
+The [physical recording path](physical_sensor_recording.md) stores this channel through protected EMQX HTTP forwarding in `amr_commissioning_samples` and displays the actual sensor observations on the website. Its schema and forwarding action must be provisioned before records arrive. The signed-model Python worker still subscribes to `robot/amr01/state`; it does not reinterpret unsigned commissioning packets. A native firmware/real-parser regression check verifies that misrouting such a packet to `/state` cannot advance pose, charge or energy.
 
 Do not publish this payload to `/state`, invent missing gyro/current readings, or give pulses a sign based on the last motor command. A wheel can coast, stall, slip, be pushed or reverse independently of that command. At one pulse/revolution, the wheel has only one observation per turn; increasing the reporting frequency does not increase that spatial information.
 

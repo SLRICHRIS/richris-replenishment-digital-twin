@@ -14,6 +14,14 @@ SOURCE_LABELS = {'demo': 'Demo data', 'live': 'Stored sensor data'}
 
 def with_insights(payload):
     payload['insights'] = predictive_insights(payload)
+    if payload.get('mode') == 'live':
+        from .physical_telemetry import display_payload
+        try:
+            url = database_url()
+            db = database_reader(url) if url else None
+        except Exception:
+            db = None
+        payload['physical_telemetry'] = display_payload(db)
     return payload
 
 
