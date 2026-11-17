@@ -8,6 +8,7 @@ from .models import motion_forecast, runtime_hours
 from .database import calibration_fingerprint
 from .telemetry import ROBOT_IDS
 from .workspace_payload import SOURCE_LABELS, quality_display, stored_sensor_context
+from .physical_telemetry import display_payload, samples as physical_samples
 
 
 def show_robot(rid, snapshot, calibration, demo=False, demo_detail=None):
@@ -83,6 +84,48 @@ def live_view(db, calibration):
     show_robot("amr01", snapshot, calibration)
 
 
+@st.fragment(run_every="1s")
+def physical_view(db):
+    """Raw observations remain visible before model calibration is confirmed."""
+    data = display_payload(db)
+    values = data['measurements'] if data['fresh'] else {}
+
+    def number(name, digits=3, suffix=''):
+        value = values.get(name)
+        return 'Unavailable' if value is None else f'{value:.{digits}f}{suffix}'
+
+    st.subheader('Device telemetry')
+    (st.success if data['fresh'] else st.info)(data['label'])
+    if data.get('received_at'):
+        st.caption(f"Broker received {data['received_at']} · packet {data['seq']} · sample age {data['age_s']:.1f} s")
+    else:
+        st.caption('No stored packet is available yet.')
+    wheels, imu, battery = st.columns(3)
+    with wheels:
+        st.markdown('**Wheel pulses**')
+        st.metric('Left · total / rate', number('left_pulses_total', 0, ' pulses') + ' / ' + number('left_pulse_hz', 2, ' Hz'))
+        st.metric('Right · total / rate', number('right_pulses_total', 0, ' pulses') + ' / ' + number('right_pulse_hz', 2, ' Hz'))
+        st.caption('Unsigned counts; direction is not measured.')
+    with imu:
+        st.markdown('**IMU**')
+        st.metric('Gyro Z', number('gyro_z_rad_s', 5, ' rad/s'))
+        st.metric('Relative yaw estimate', number('yaw_estimate_deg', 2, '°'))
+        st.caption('Yaw is a local gyro estimate, not an absolute heading.')
+    with battery:
+        st.markdown('**Battery measurements**')
+        st.metric('Input voltage', number('battery_voltage_v', 3, ' V'))
+        st.metric('Current · discharge positive', number('battery_current_a', 4, ' A'))
+        st.metric('Power · voltage × current', number('battery_power_w', 3, ' W'))
+    st.markdown('**What needs attention**')
+    for recommendation in data['recommendations']:
+        st.write(recommendation)
+    st.caption(data['model_detail'])
+    if st.button('Inspect stored packets'):
+        st.session_state.warehouse_database_dataset = physical_samples.name
+        st.session_state.pending_workspace_view = 'Database'
+        st.rerun()
+
+
 def render_sensor_dashboard():
     if st.button('Back to dashboard'):
         st.session_state.pending_workspace_view = 'Warehouse dashboard'
@@ -108,8 +151,9 @@ def render_sensor_dashboard():
             else:
                 st.line_chart(snapshots["amr01"]["history"], x="sample_time_s", y="residual_rad_s", x_label="Sample time (s)", y_label="Residual (rad/s)")
     else:
-        st.caption("Read physical sensor records saved in PostgreSQL by the MQTT ingestion worker.")
+        st.caption("Read physical sensor records saved through ESP32 → EMQX → PostgreSQL.")
         db, c, notice = stored_sensor_context()
+        physical_view(db)
         if notice:
             st.warning(notice['label'] + '. ' + notice['detail'])
         else:

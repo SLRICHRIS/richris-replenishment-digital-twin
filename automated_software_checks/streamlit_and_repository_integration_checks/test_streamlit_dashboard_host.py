@@ -196,6 +196,50 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertTrue(any('Measured calibration required' in item.value for item in app.warning))
         self.assertFalse(any('not configured or reachable' in item.value for item in app.warning))
 
+    def test_uncalibrated_physical_readings_stale_suppression_and_archive_navigation(self):
+        from unittest.mock import patch, Mock
+        from backend_streamlit_and_telemetry.predictive_twin.database import SensorDatabase
+        from backend_streamlit_and_telemetry.predictive_twin import dashboard, database_inspection
+        module = 'backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+        db = Mock(spec=SensorDatabase)
+        data = dict(fresh=True, label='Receiving physical telemetry',
+                    received_at='2026-11-17T16:01:46+00:00', seq=2660, age_s=.5,
+                    measurements=dict(left_pulses_total=0, right_pulses_total=3,
+                                      left_pulse_hz=0, right_pulse_hz=2,
+                                      gyro_z_rad_s=.02, yaw_estimate_deg=2,
+                                      battery_voltage_v=.82, battery_current_a=-.0003,
+                                      battery_power_w=-.000246, device_soc_estimate_percent=100),
+                    recommendations=['Battery voltage is below 1 V. Check battery power.'],
+                    model_detail='Wheel direction and measured calibration are required before pose and runtime predictions.')
+        app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+        app.secrets['database'] = {'url': 'postgresql://private:secret@host/db'}
+        app.session_state.warehouse_sensor_mode = 'live'
+        with patch(module + '.database_reader', return_value=db), \
+                patch.object(dashboard, 'display_payload', return_value=data), \
+                patch.object(database_inspection, 'database_connection', return_value=(db, 'ready')), \
+                patch.object(database_inspection, 'read_physical_records', return_value=[dict(robot_id='amr01', seq=2660, battery_voltage_v=.82)]):
+            app.run(timeout=30)
+            app.sidebar.radio[0].set_value('Model inspection').run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(any(item.value == 'Receiving physical telemetry' for item in app.success))
+            self.assertTrue(any('Measured calibration required' in item.value for item in app.warning))
+            values = {item.label: item.value for item in app.metric}
+            self.assertEqual(values['Input voltage'], '0.820 V')
+            self.assertEqual(values['Left · total / rate'], '0 pulses / 0.00 Hz')
+            self.assertEqual(values['Gyro Z'], '0.02000 rad/s')
+            self.assertFalse(any('SOC' in label or 'runtime' in label.lower() for label in values))
+            self.assertFalse(db.read_snapshot.called)
+            data.update(fresh=False, label='Telemetry out of date')
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(all('Unavailable' in item.value for item in app.metric))
+            next(button for button in app.button if button.label == 'Inspect stored packets').click().run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertEqual(app.sidebar.radio[0].value, 'Database')
+            self.assertEqual(app.selectbox[0].value, 'amr_commissioning_samples')
+            self.assertEqual(app.dataframe[0].value.iloc[0]['seq'], 2660)
+            self.assertFalse(any('No stored records' in item.value for item in app.info))
+
     def test_component_can_open_model_inspection_without_mutating_an_existing_widget(self):
         from unittest.mock import patch
         from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
@@ -218,6 +262,7 @@ class StreamlitHostTests(unittest.TestCase):
         self.assertTrue(any('Database not connected' in item.value for item in app.warning))
         self.assertEqual([tab.label for tab in app.tabs], ['Stored records', 'Table attributes'])
         self.assertEqual(app.selectbox[0].options[0], 'All sensor measurements')
+        self.assertEqual(app.selectbox[0].value, 'amr_commissioning_samples')
         self.assertFalse(app.code)
 
     def test_database_empty_and_read_failure_are_distinct(self):
@@ -225,12 +270,17 @@ class StreamlitHostTests(unittest.TestCase):
         from types import SimpleNamespace
         db = SimpleNamespace(read_records=lambda *args, **kwargs: [])
         module = 'backend_streamlit_and_telemetry.predictive_twin.database_inspection'
-        with patch(module + '.database_connection', return_value=(db, 'ready')):
+        with patch(module + '.database_connection', return_value=(db, 'ready')), \
+                patch(module + '.read_physical_records', return_value=[]):
             app = AppTest.from_file(str(ROOT / 'streamlit_app.py')).run(timeout=30)
             app.sidebar.radio[0].set_value('Database').run(timeout=30)
             self.assertFalse(app.exception)
             self.assertTrue(any('no stored records' in item.value.lower() for item in app.info))
+            self.assertTrue(any('Device telemetry' in item.value for item in app.info))
             self.assertFalse(app.download_button)
+            app.selectbox[0].set_value('amr_sensor_samples').run(timeout=30)
+            self.assertTrue(any('All sensor measurements' in item.value for item in app.info))
+            self.assertTrue(any('Choose Device telemetry' in item.value for item in app.caption))
         with patch(module + '.database_connection', return_value=(None, 'schema_not_ready')):
             app.run(timeout=30)
             self.assertFalse(app.exception)

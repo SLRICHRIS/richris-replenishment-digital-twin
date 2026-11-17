@@ -96,7 +96,10 @@ def render_database_inspection():
     label, detail = STATUS[state]
     (st.success if state == 'ready' else st.warning)(label + '. ' + detail)
 
-    dataset = st.selectbox('Sensor records', list(DATASET_LABELS), format_func=DATASET_LABELS.get)
+    if 'warehouse_database_dataset' not in st.session_state:
+        st.session_state.warehouse_database_dataset = physical_samples.name
+    dataset = st.selectbox('Sensor records', list(DATASET_LABELS), format_func=DATASET_LABELS.get,
+                           key='warehouse_database_dataset')
     st.write(DESCRIPTIONS[dataset])
     records_tab, attributes_tab = st.tabs(['Stored records', 'Table attributes'])
     with records_tab:
@@ -112,7 +115,9 @@ def render_database_inspection():
                 st.error('Records could not be read. Check connection and SELECT permissions for this dataset.')
             else:
                 if not rows:
-                    st.info('No stored records yet. Physical sensor packets will appear here.')
+                    st.info(f'No stored records in {DATASET_LABELS[dataset]} yet.')
+                    if dataset != physical_samples.name:
+                        st.caption('Choose Device telemetry for the installed ESP32 wheel pulses, IMU and battery observations. Calibrated model datasets remain separate.')
                 else:
                     # JSON objects stay exact in the export; render consistently in the grid.
                     display = [{key: json.dumps(value, sort_keys=True) if isinstance(value, (dict, list)) else value
@@ -129,7 +134,8 @@ def render_database_inspection():
         st.caption(f'{dataset} · ' + ('sensor view' if dataset in SENSOR_VIEWS else 'table'))
         st.dataframe(attributes(dataset), hide_index=True, width='stretch')
         with st.expander('Storage schema and field guide'):
-            st.write('Packet key: robot_id + boot_id + seq. sample_time_s is seconds since device boot; received_at is server UTC. SOC is stored from 0 to 1.')
+            st.write('Packet key: robot_id + boot_id + seq. sample_time_s is seconds since device boot; received_at is broker UTC for Device telemetry and worker UTC for calibrated samples.')
+            st.caption('Device telemetry stores raw sensor observations. device_soc_estimate_percent is an unverified device claim; calibrated model SOC uses a fraction from 0 to 1.')
             st.caption('Schema definitions come from the application models. Sensor views inherit source column constraints and have no independent primary key.')
             st.dataframe([{'Dataset': name, 'Kind': 'View' if name in SENSOR_VIEWS else 'Table',
                            'Purpose': DESCRIPTIONS[name]} for name in DATABASE_DATASETS],
