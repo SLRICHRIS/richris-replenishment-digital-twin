@@ -27,6 +27,8 @@ const now = Date.now(),
     missing: [],
     scene: {
       valid: true,
+      floor_width_mm: 425,
+      floor_length_mm: 630,
       seq: 10,
       captured_at_ms: now,
       pose: { x: 300, y: 300, heading: 0 },
@@ -43,7 +45,7 @@ const now = Date.now(),
         clearance_radius_mm: 100,
         points: [
           [300, 300],
-          [600, 300],
+          [210, 450],
         ],
       },
       reason: 'Review required',
@@ -71,6 +73,9 @@ assert.equal(actions.at(-1).command, 'stop');
 panel.render({ ...p, scene: { ...p.scene, captured_at_ms: now - 10000 } });
 assert.equal(el('approve').disabled, true);
 assert.equal(el('capture').disabled, true);
+assert.equal(el('map-content').childElementCount, 0);
+panel.render({ ...p, scene: { ...p.scene, floor_width_mm: 841, floor_length_mm: 1189 } });
+assert.equal(el('approve').disabled, true);
 assert.equal(el('map-content').childElementCount, 0);
 panel.render({ ...p, physical_mode: false });
 assert.equal(el('approve').disabled, true);

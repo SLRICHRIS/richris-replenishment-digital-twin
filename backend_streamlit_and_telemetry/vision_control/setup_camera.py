@@ -49,7 +49,7 @@ def main():
                     rms,matrix,dist,_,_=cv2.calibrateCamera(objects,images,resolution,None,None)
                     if rms>1: print('Reprojection error exceeds 1 px; capture better varied views'); continue
                     dest.write_text(json.dumps(dict(camera_matrix=matrix.tolist(),distortion_coefficients=dist.flatten().tolist(),resolution=list(resolution),calibration_rms_px=rms,calibration_views=len(images)),indent=2))
-                    print('Intrinsics saved; validate ruler distances across the A0 floor before marking verified'); return
+                    print('Intrinsics saved; validate ruler distances across the measured floor before marking verified'); return
             elif k==ord('c'):
                 _,ids,_=detector.detectMarkers(frame); visible=set(ids.flatten()) if ids is not None else set()
                 if 0 in visible or not {1,2,3,4}<=visible: print('Remove robot and expose all four floor references'); continue

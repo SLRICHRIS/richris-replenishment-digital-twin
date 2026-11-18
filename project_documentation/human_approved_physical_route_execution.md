@@ -36,7 +36,9 @@ its pulse settings; use 20 only after checking actual counted falling edges.
 
 ## 1. Prepare the measured camera scene
 
-Use a fixed overhead USB camera and a flat **841 × 1189 mm portrait** floor.
+Use a fixed overhead USB camera and a flat **425 × 630 mm portrait** floor.
+The reported camera height is **920 mm (92 cm)**, interpreted from the user's H measurement. Confirm the distance from the camera lens to the paper. The template records this report while leaving every calibration check false.
+
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX
 throughout the journey. A cloud website cannot directly open a USB camera plugged
 into another computer. Close the website's local USB preview before starting the
@@ -59,9 +61,9 @@ are:
 | ID | X | Y |
 | --- | ---: | ---: |
 | 1 | 40 | 40 |
-| 2 | 801 | 40 |
-| 3 | 801 | 1149 |
-| 4 | 40 | 1149 |
+| 2 | 385 | 40 |
+| 3 | 385 | 590 |
+| 4 | 40 | 590 |
 
 Each printed marker's top points toward +Y. Robot marker ID 0 must be fixed flat,
 fully visible on top of the robot. Measure its height above the floor, black edge,
@@ -99,7 +101,7 @@ serial commands. The private config refuses missing measurements and false check
 Its speed cap must cover the maximum speed at the selected PWM cap on both wheels.
 The route reserves the body diagonal, clearance, uncertainty, tracking allowance,
 measured stopping distance and the worst 3.8-second presence/grant/drive reaction
-envelope (2.5 s website presence grace + 0.8 s approval grant + 0.5 s motor lease). A0 may be too small
+envelope (2.5 s website presence grace + 0.8 s approval grant + 0.5 s motor lease). The measured paper may be too small
 for some full-body measurements; then the planner correctly reports no valid route.
 
 ## 2. Provision separate, least-privilege MQTT identities
@@ -228,3 +230,23 @@ polarity, speed, slip, obstacle visibility, USB latency and stopping distance mu
 still be measured on the user's robot. Begin with a short attended low-speed
 route in a clear floor area and physically validate each stop condition before
 normal use.
+
+
+## Measured-floor revision: 18 November 2026
+
+The reported paper is 63 cm long and 42.5 cm wide, replacing the earlier A0 assumption.
+The active coordinate frame is X 0..425 mm and Y 0..630 mm. The reported camera
+height is 92 cm; its lens-to-paper interpretation still needs confirmation.
+`example_camera_config.json` now records `floor_width_mm=425`,
+`floor_length_mm=630` and `camera_height_mm=920`, with all commissioning checks false.
+Do not mark those checks true merely because the dimensions are entered.
+
+Scene contract version 2 explicitly binds the measured floor dimensions. Version 1
+and A0-sized signed scenes are rejected. Download the current camera-controller
+code before commissioning, update the private floor configuration, place floor
+markers at the revised coordinates above and capture a new empty-floor image.
+Revalidate the camera geometry. Intrinsics may be reused only when they remain
+valid for the same lens, focus and resolution. Old browser A0 maps and proposals
+are not restored; the measured-floor browser setup uses a new storage version.
+The route planner preserves all footprint and stopping margins on the smaller
+paper and reports no route if those margins do not fit.

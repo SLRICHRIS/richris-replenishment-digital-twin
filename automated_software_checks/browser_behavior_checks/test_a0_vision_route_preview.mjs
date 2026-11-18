@@ -10,9 +10,9 @@ import {
   planRoute,
 } from '../../frontend_warehouse_dashboard/browser_modules/vision_routing/a0_route_preview.js';
 
-const settings = { robotLengthMm: 180, robotWidthMm: 140, clearanceMm: 20 };
+const settings = { robotLengthMm: 80, robotWidthMm: 60, clearanceMm: 20 };
 const radius = clearanceRadius(settings);
-assert.deepEqual(ARENA, { widthMm: 841, heightMm: 1189, gridMm: 10 });
+assert.deepEqual(ARENA, { widthMm: 425, heightMm: 630, gridMm: 10 });
 assert.equal(normalizeSettings().robotWidthMm, null, 'Never infer full width from wheel spacing');
 assert.throws(() => normalizeSettings(null));
 assert.throws(
@@ -24,28 +24,29 @@ assert.throws(() => normalizeSettings({ clearanceMm: -1 }));
 assert.throws(() => normalizeSettings({ robotLengthMm: 2001 }));
 assert.throws(() => normalizeSettings({ markerId: 50 }));
 assert.throws(() => normalizeObstacles(Array(26).fill({ x: 10, y: 10, width: 10, height: 10 })));
-assert.throws(() => normalizeObstacles([{ x: 830, y: 0, width: 20, height: 20 }]));
+assert.throws(() => normalizeObstacles([{ x: 420, y: 0, width: 20, height: 20 }]));
 assert.throws(() => normalizePoint({ x: Infinity, y: 10 }));
-assert.deepEqual(normalizePoint({ x: 841, y: 1189 }), { x: 840, y: 1180 });
+assert.deepEqual(normalizePoint({ x: 425, y: 630 }), { x: 420, y: 630 });
 assert.equal(normalizeSettings({ executionEnabled: true }).executionEnabled, undefined);
-assert(Math.abs(radius - (Math.hypot(90, 70) + 20)) < 1e-9);
+assert.throws(() => normalizePoint({ x: 841, y: 1189 }), /inside the measured floor/);
+assert(Math.abs(radius - (Math.hypot(40, 30) + 20)) < 1e-9);
 
-const start = { x: 200, y: 200 },
-  goal = { x: 600, y: 200 };
+const start = { x: 100, y: 100 },
+  goal = { x: 320, y: 100 };
 const direct = planRoute({ settings, start, goal });
-assert.equal(direct.lengthMm, 400);
+assert.equal(direct.lengthMm, 220);
 assert.equal(direct.executionEnabled, false);
 assert.equal(direct.source, 'manual-rehearsal');
 assert.equal(planRoute({ settings, start, goal: start }).lengthMm, 0);
-assert.throws(() => planRoute({ settings, start: { x: 100, y: 200 }, goal }), /start is too close/);
+assert.throws(() => planRoute({ settings, start: { x: 50, y: 100 }, goal }), /start is too close/);
 assert.throws(
-  () => planRoute({ settings, start, goal: { x: 700, y: 1100 } }),
+  () => planRoute({ settings, start, goal: { x: 400, y: 600 } }),
   /destination is too close/,
 );
 assert.throws(() => planRoute({ settings, start, goal: null }), /Set the robot start/);
 
-const end = { x: 600, y: 900 },
-  obstacles = [{ x: 350, y: 400, width: 120, height: 200 }];
+const end = { x: 320, y: 520 },
+  obstacles = [{ x: 180, y: 280, width: 40, height: 40 }];
 const detour = planRoute({ settings, start, goal: end, obstacles });
 assert(detour.points.length > 2);
 assert(detour.lengthMm > Math.hypot(end.x - start.x, end.y - start.y));
@@ -58,13 +59,12 @@ const blocked = planRoute({
   settings,
   start,
   goal: end,
-  obstacles: [{ x: 0, y: 500, width: 841, height: 10 }],
+  obstacles: [{ x: 0, y: 400, width: 425, height: 10 }],
 });
 assert.deepEqual(blocked.points, []);
 assert.equal(blocked.lengthMm, null);
 assert.throws(
-  () =>
-    planRoute({ settings, start, goal, obstacles: [{ x: 590, y: 190, width: 20, height: 20 }] }),
+  () => planRoute({ settings, start, goal, obstacles: [{ x: 310, y: 90, width: 20, height: 20 }] }),
   /destination is too close/,
 );
 // Even a thin obstacle between grid nodes blocks an edge; touching corners is blocked.
@@ -89,5 +89,5 @@ assert.equal(
 assert.equal(segmentAllowed(start, goal, [], -1), false);
 assert.equal(segmentAllowed({ x: 0, y: 200 }, goal, [], radius), false);
 console.log(
-  'PASS: A0 footprint clearance, continuous edge collisions, blocked scenes and command-free grid planning.',
+  'PASS: measured-floor footprint clearance, continuous edge collisions, blocked scenes and command-free grid planning.',
 );

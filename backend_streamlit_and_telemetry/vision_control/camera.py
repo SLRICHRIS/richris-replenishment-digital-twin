@@ -1,6 +1,6 @@
 """Measured overhead ArUco pose and conservative empty-floor foreground obstacles.
 
-Controlled A0 laboratory floor only. Occlusion, lighting, calibration and stopping
+Controlled 425 x 630 mm laboratory floor only. Occlusion, lighting, calibration and stopping
 clearance must be commissioned in person; this is not a safety-rated sensor.
 """
 import math
@@ -15,7 +15,7 @@ from .contracts import geometry,digest,WIDTH,HEIGHT,angle
 CHECKS=('intrinsics_verified','floor_reference_positions_verified','empty_floor_verified',
         'marker_mount_verified','wheel_polarities_verified','pwm_speed_measured',
         'stopping_distance_measured','motor_voltage_current_verified','obstacle_detection_validated')
-REFS={1:(40,40),2:(801,40),3:(801,1149),4:(40,1149)}
+REFS={1:(40,40),2:(WIDTH-40,40),3:(WIDTH-40,HEIGHT-40),4:(40,HEIGHT-40)}
 
 
 def square(edge):
@@ -27,6 +27,8 @@ def load_config(path):
     p=json.loads(Path(path).read_text())
     if any(p.get('checks',{}).get(k) is not True for k in CHECKS):
         raise ValueError('Complete and verify every physical commissioning check in the private config')
+    if p.get('floor_width_mm') != WIDTH or p.get('floor_length_mm') != HEIGHT:
+        raise ValueError('Measure and configure the current 425 x 630 mm floor; previous A0 calibration is invalid')
     p['geometry']=geometry(p.get('geometry'))
     for name,lo,hi in (('camera_height_mm',200,3000),('marker_edge_mm',15,120),
                         ('marker_height_mm',1,300),('max_obstacle_height_mm',1,400)):
@@ -106,7 +108,7 @@ class Camera:
         offset=self.p['marker_center_to_robot_center_mm']; center+=xaxis*offset[0]+yaxis*offset[1]
         heading=angle(math.atan2(yaxis[1],yaxis[0])+self.p['marker_forward_offset_rad'])
         x,y=float(center[0]),float(center[1])
-        if not 0<=x<=WIDTH or not 0<=y<=HEIGHT: raise ValueError('Robot is outside the A0 floor')
+        if not 0<=x<=WIDTH or not 0<=y<=HEIGHT: raise ValueError('Robot is outside the measured floor')
         warped=cv2.warpPerspective(image,self.H,(WIDTH,HEIGHT))
         delta=cv2.absdiff(warped,self.base).max(axis=2); mask=(delta>40).astype(np.uint8)*255
         # Mask the projected full 3D body, not merely the small marker.

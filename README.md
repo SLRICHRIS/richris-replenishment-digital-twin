@@ -79,3 +79,6 @@ The project configures **AMR-01 only**: one simulated robot, one loading/chargin
 
 
 Human-approved physical camera routes now have a guarded execution implementation. See the [physical execution setup](project_documentation/human_approved_physical_route_execution.md). Camera/motor commissioning, private topic permissions and ESP32 upload are required before movement is enabled.
+
+
+Vision floor measurements reported on 18 November 2026: paper **425 × 630 mm**, camera height **92 cm** (lens-to-paper interpretation unverified). These replace the earlier A0 assumption. Entering dimensions does not complete camera or motor commissioning.
