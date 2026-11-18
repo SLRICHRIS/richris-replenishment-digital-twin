@@ -1,0 +1,41 @@
+{
+  "checks": {
+    "intrinsics_verified": false,
+    "floor_reference_positions_verified": false,
+    "empty_floor_verified": false,
+    "marker_mount_verified": false,
+    "wheel_polarities_verified": false,
+    "pwm_speed_measured": false,
+    "stopping_distance_measured": false,
+    "motor_voltage_current_verified": false,
+    "obstacle_detection_validated": false
+  },
+  "camera_matrix": null,
+  "distortion_coefficients": null,
+  "resolution": [1280, 720],
+  "camera_height_mm": null,
+  "marker_edge_mm": null,
+  "marker_height_mm": null,
+  "marker_center_to_robot_center_mm": null,
+  "marker_forward_offset_rad": null,
+  "max_obstacle_height_mm": null,
+  "geometry": {
+    "robot_length_mm": null,
+    "robot_width_mm": null,
+    "robot_height_mm": null,
+    "wheel_track_mm": 100,
+    "clearance_mm": 20,
+    "uncertainty_mm": 10,
+    "stopping_distance_mm": null,
+    "tracking_tolerance_mm": 15,
+    "max_speed_mm_s": 20,
+    "max_angular_rad_s": 0.3,
+    "max_pwm": 60,
+    "left_pwm_per_mm_s": null,
+    "right_pwm_per_mm_s": null,
+    "minimum_drive_pwm": null,
+    "left_polarity": null,
+    "right_polarity": null,
+    "min_pack_voltage_v": 6.6
+  }
+}

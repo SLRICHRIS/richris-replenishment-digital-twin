@@ -13,3 +13,6 @@ Run `python -m streamlit run streamlit_app.py` from the root.
 | [mqtt_recorder_network_dependencies.txt](mqtt_recording_and_inventory_bridge/mqtt_recorder_network_dependencies.txt) | Optional paho-mqtt networking dependency |
 
 Simulation/prediction remains in browser modules. The control process runs on the separate Coordinator platform and imports no prediction module. [Recorder setup](../project_documentation/mqtt_sqlite_recorder_and_labview_adapter_setup.md) and [override commissioning](../project_documentation/operator_override_channel_and_hardware_commissioning.md) provide the runtime commands. Package `__init__.py` files support root/extracted-kit imports.
+
+
+`vision_control/` contains measured camera tracking, local route following, authenticated wire contracts, server approval/audit and the Windows USB-camera runner. `predictive_twin/vision_execution_workspace.py` owns the private operator session; browser geometry never becomes a physical command.

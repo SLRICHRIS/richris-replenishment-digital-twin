@@ -40,3 +40,8 @@ python automated_software_checks/esp32_firmware_compile_and_contract_checks/veri
 The script creates a temporary placeholder configuration and compiles UART-disabled/enabled variants for `esp32:esp32:esp32`; it never flashes a board or commits that header. Use `--board`, `--arduino-cli` and `--config-file` for your installation. Supply `--json-include /path/to/ArduinoJson/src` to compile/run the native production UART header contract, covering measurement, frame/type/age, execution ACK, replay and guarded-resume behavior.
 
 [Current results](../project_documentation/software_verification_results/current_software_check_results.md) records software scope. Physical trial evidence is collected using [the commissioning guide](../project_documentation/operator_override_channel_and_hardware_commissioning.md).
+
+
+## Physical route execution
+
+Run `python -m pytest automated_software_checks/predictive_twin_checks/test_vision_execution.py -q` for offline approved-route simulation and failure cases. Install the optional vision requirements, then run `python -m pytest automated_software_checks/predictive_twin_checks/test_vision_camera.py -q` for synthetic projection/obstacle checks. `npm run test:browser` includes physical route controls. The firmware verifier runs the native guard and compiles disabled and enabled receiver modes. These checks do not commission physical hardware.

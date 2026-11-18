@@ -55,6 +55,10 @@
     <link rel="stylesheet" href="./dashboard_stylesheets/vision_routing_styles.css" />
     <script
       type="module"
+      src="./browser_modules/vision_routing/physical_route_execution.js"
+    ></script>
+    <script
+      type="module"
       src="./browser_modules/vision_routing/overhead_camera_workspace.js"
     ></script>
     <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
@@ -1369,6 +1373,7 @@
           tabindex="0"
           hidden
         >
+          <div id="physical-route-execution"></div>
           <div id="vision-workspace">
             <div class="vision-banner">
               <div>

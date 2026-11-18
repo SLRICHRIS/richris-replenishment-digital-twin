@@ -1361,7 +1361,7 @@ const pages = {
     title: 'Overhead vision routing',
     context: 'Camera setup & route review',
     summary:
-      'Prepare the A0 floor, preview routes and record human decisions before camera commissioning.',
+      'Review camera-based physical routes, approve guarded execution, or use the manual rehearsal below.',
   },
   connection: {
     title: 'Connect AMR',
@@ -1959,11 +1959,11 @@ function updateSourceUI() {
     $('page-mode').textContent = 'Operator-controlled sensor link';
   }
   if (activePage === 'vision') {
-    $('source-badge').textContent = 'Manual rehearsal';
-    $('page-mode').textContent = 'Setup · advisory only';
+    $('source-badge').textContent = 'Human review';
+    $('page-mode').textContent = 'Physical execution & rehearsal';
     $('page-mode').dataset.kind = 'advisory';
-    $('rail-mode').textContent = 'Advisory only';
-    $('rail-detail').textContent = 'Camera calibration pending · no execution';
+    $('rail-mode').textContent = 'Guarded route control';
+    $('rail-detail').textContent = 'Verify physical setup before approving movement';
   }
   document
     .querySelectorAll('[data-floor-source]')

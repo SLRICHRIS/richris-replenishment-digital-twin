@@ -74,6 +74,11 @@ def verify(args):
             assert not fleet.ingest(json.dumps(value).encode(), 'robot/amr01/state', received=6)
         print('PASS: multisensor units/nulls/freshness, charge/yaw continuity, final PWM settings and model isolation.')
 
+        guard = Path(temporary) / 'vision_guard_check'
+        subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-I',str(SKETCH),str(Path(__file__).with_name('check_vision_drive_guard.cpp')),'-o',str(guard)],check=True)
+        subprocess.run([str(guard)],check=True)
+        print('PASS: physical route arm/lease/epoch/replay/stop/interlock/PWM guard.')
+
         if not args.native_only:
             sketch = Path(temporary) / 'AMR01_Multisensor_WiFi'
             shutil.copytree(SKETCH, sketch)
@@ -90,7 +95,11 @@ def verify(args):
             if args.config_file:
                 command += ['--config-file', args.config_file]
             subprocess.run(command, check=True)
-            print('PASS: actual Arduino build of MH IR local control and commissioning publisher.')
+            settings=settings.replace('#define AMR_VISION_DRIVE_ENABLED 0','#define AMR_VISION_DRIVE_ENABLED 1').replace('#define AMR_VISION_DRIVE_KEY ""','#define AMR_VISION_DRIVE_KEY "'+'a'*64+'"')
+            settings=settings.replace('#define AMR_VISION_MQTT_USERNAME ""','#define AMR_VISION_MQTT_USERNAME "ci-only"').replace('#define AMR_VISION_MQTT_PASSWORD ""','#define AMR_VISION_MQTT_PASSWORD "ci-only"')
+            (sketch / 'esp32_wifi_and_mqtt_settings.h').write_text(settings)
+            subprocess.run(command,check=True)
+            print('PASS: actual Arduino builds with optional vision receiver disabled AND enabled.')
 
 
 if __name__ == '__main__':

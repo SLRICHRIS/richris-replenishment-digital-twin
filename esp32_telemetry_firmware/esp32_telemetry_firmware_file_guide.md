@@ -18,3 +18,6 @@ Read [current MH IR hardware commissioning](../project_documentation/mh_ir_hardw
 | `example_esp32_wifi_and_mqtt_settings.h` | Public placeholder settings; UART remains disabled until actual pins are specified |
 
 Arduino requires matching folder/sketch names. Copy the example to the private configured header and install Arduino-ESP32 3.3.12, PubSubClient 2.8 and ArduinoJson 7.4.2. Keep credentials out of Git. [Connection setup](../project_documentation/esp32_wifi_and_telemetry_setup.md) and [controller commissioning](../project_documentation/operator_override_channel_and_hardware_commissioning.md) define how to connect.
+
+
+`publish_mh_ir_commissioning/vision_drive_guard.h` adds optional protected route reception with boot/connection identities, monotonic command sequence, short leases, bounded PWM and reversal interlock. Default settings disable it. The independent control MQTT client preserves existing publisher credentials and telemetry schema.

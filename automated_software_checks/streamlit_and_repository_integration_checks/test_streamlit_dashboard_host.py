@@ -367,3 +367,18 @@ class StreamlitHostTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 database_preview('pg_authid', 'not-allowed')
         database_preview.clear()
+
+
+class VisionPhysicalWorkspaceTests(unittest.TestCase):
+    def test_missing_commissioning_never_starts_physical_transport_or_exports_secrets(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry.predictive_twin import vision_execution_workspace as v
+        with patch.object(v.st, 'secrets', {}), patch.object(v, 'service') as transport:
+            result=v.workspace('live')
+            self.assertFalse(result['can_unlock'])
+            self.assertFalse(result['authorized'])
+            self.assertFalse(result['ready'])
+            self.assertTrue(result['missing'])
+            transport.assert_not_called()
+            self.assertNotIn('control_key',result)
+            self.assertNotIn('audit_url',result)

@@ -44,3 +44,10 @@ Use Arduino Cloud Editor as the programming interface; the running telemetry pat
 6. After upload, use Serial Monitor at 115200 to verify IMU/INA219 startup and EMQX connection. Wi-Fi telemetry can continue with independent power after USB is removed. Current movement commands remain USB Serial commands; website motor control and commissioning-topic ingestion are still separate unfinished work.
 
 Source references: [Cloud Editor setup](https://docs.arduino.cc/arduino-cloud/guides/editor/), [GitHub sign-in](https://support.arduino.cc/hc/en-us/articles/360016724040-Create-an-Arduino-account), and [ESP32 PWM API changes](https://docs.espressif.com/projects/arduino-esp32/en/latest/migration_guides/2.x_to_3.0.html).
+
+
+## Optional human-approved vision driving
+
+Remote motor control is disabled in the public template. The sketch now includes
+`vision_drive_guard.h` and an independent protected MQTT receiver. Keep existing
+telemetry settings unchanged. Follow the [physical route execution guide](../../project_documentation/human_approved_physical_route_execution.md) before enabling it.

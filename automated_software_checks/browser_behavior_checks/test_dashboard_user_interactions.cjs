@@ -451,8 +451,8 @@ assert.equal(
   'vision',
   'camera setup remains available in the sensor workspace',
 );
-assert.equal(get('source-badge').textContent, 'Manual rehearsal');
-assert.equal(get('page-mode').textContent, 'Setup · advisory only');
+assert.equal(get('source-badge').textContent, 'Human review');
+assert.equal(get('page-mode').textContent, 'Physical execution & rehearsal');
 get('tab-vision').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(
   doc.body.dataset.view,
