@@ -23,9 +23,9 @@
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
   "geometry": {
-    "robot_length_mm": null,
-    "robot_width_mm": null,
-    "robot_height_mm": null,
+    "robot_length_mm": 180,
+    "robot_width_mm": 150,
+    "robot_height_mm": 150,
     "wheel_track_mm": 100,
     "clearance_mm": 20,
     "uncertainty_mm": 10,
@@ -43,5 +43,5 @@
   },
   "floor_width_mm": 425,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Paper width 42.5 cm, length 63 cm; H 92 cm interpreted as camera height. Confirm lens-to-paper height. Calibration checks remain unverified."
+  "reported_measurements_note": "Operator-reported on 19 November 2026: full robot length 18 cm, width 15 cm, height 15 cm; paper width 42.5 cm and length 63 cm; overhead USB camera height 92 cm. Marker height, edge and centre offset remain unknown. Calibration checks remain unverified."
 }

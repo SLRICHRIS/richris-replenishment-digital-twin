@@ -31,7 +31,10 @@ w.localStorage.setItem(
 );
 const workspace = createVisionWorkspace(w);
 assert.equal(createVisionWorkspace(w), null, 'No duplicate event handlers');
-assert.equal(el('robot-length').value, '');
+assert.equal(el('robot-length').value, '180');
+assert.equal(el('robot-width').value, '150');
+assert.equal(el('robot-height').value, '150');
+assert.equal(el('marker-height').value, '');
 assert.equal(el('camera-height').value, '92');
 assert.equal(el('approve').disabled, true);
 el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 425, height: 630 });
@@ -39,6 +42,7 @@ el('map').dispatchEvent(
   new w.MouseEvent('pointerdown', { button: 0, clientX: 400, clientY: 30, bubbles: true }),
 );
 assert.deepEqual(workspace.snapshot().start, { x: 400, y: 600 });
+input('robot-length', '');
 el('plan').click();
 assert.match(el('feedback').textContent, /full robot length and width/);
 input('robot-length', '80');
@@ -179,6 +183,20 @@ assert.equal(restored.snapshot().decision, null);
 assert.equal(restored.snapshot().plan, null);
 assert.equal(restored.snapshot().settings.robotLengthMm, 80);
 restored.destroy();
+// Previously blank dimensions receive the new report; explicit browser edits survive.
+saved.settings.robotLengthMm = null;
+saved.settings.robotWidthMm = 75;
+saved.settings.robotHeightMm = null;
+saved.settings.markerHeightMm = null;
+w.localStorage.setItem('amr01.visionSetup.v2', JSON.stringify(saved));
+const updated = createVisionWorkspace(w);
+assert.equal(updated.snapshot().settings.robotLengthMm, 180);
+assert.equal(updated.snapshot().settings.robotWidthMm, 75);
+assert.equal(updated.snapshot().settings.robotHeightMm, 150);
+assert.equal(updated.snapshot().settings.markerHeightMm, null);
+assert.equal(updated.snapshot().executionEnabled, false);
+assert.equal(updated.snapshot().decision, null);
+updated.destroy();
 w.close();
 console.log(
   'PASS: manual review invalidation, safe text rendering, local setup/export, camera denial and permission-race cleanup.',

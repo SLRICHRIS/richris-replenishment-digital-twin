@@ -60,6 +60,10 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     path=Path(__file__).resolve().parents[2]/'backend_streamlit_and_telemetry/vision_control/example_camera_config.json'
     p=json.loads(path.read_text())
     assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(425,630,920)
+    assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(180,150,150)
+    assert p['marker_height_mm'] is None
+    assert p['marker_edge_mm'] is None
+    assert p['marker_center_to_robot_center_mm'] is None
     assert not any(p['checks'].values())
     p['checks']={c:True for c in CHECKS};p['floor_width_mm']=841
     old=tmp_path/'old.json';old.write_text(json.dumps(p))
