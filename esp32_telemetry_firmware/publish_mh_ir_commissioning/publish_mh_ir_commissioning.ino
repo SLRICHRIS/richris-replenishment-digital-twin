@@ -431,7 +431,7 @@ void loop() {
     portENTER_CRITICAL(&pulseMux); sample.leftTotal = leftPulses.total; sample.rightTotal = rightPulses.total; portEXIT_CRITICAL(&pulseMux);
     sample.leftDelta = sample.leftTotal-previousLeft; sample.rightDelta = sample.rightTotal-previousRight;
     sample.sampleTimeS = now/1000000.0; sample.intervalS = (now-previousTime)/1000000.0;
-    sample.requested = controller.requested(); sample.output = drive.motion; sample.duty = drive.duty; sample.seq = sequence++;
+    sample.requested = remoteActive ? drive.motion : controller.requested(); sample.output = drive.motion; sample.duty = drive.duty; sample.seq = sequence++;
     previousTime = now; previousLeft = sample.leftTotal; previousRight = sample.rightTotal;
     portENTER_CRITICAL(&observationMux); latestObservation = sample; latestSensors = sensors; observationReady = true; portEXIT_CRITICAL(&observationMux);
     Serial.printf("Unsigned pulse totals L=%llu R=%llu\n",static_cast<unsigned long long>(sample.leftTotal),static_cast<unsigned long long>(sample.rightTotal));
