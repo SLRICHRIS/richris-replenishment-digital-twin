@@ -339,8 +339,14 @@
     $(target).replaceChildren(grid);
   }
   function physicalReading(id, value, digits, suffix = '') {
-    text(id, number(value, digits, suffix));
-    $(id)?.classList.toggle('is-unavailable', typeof value !== 'number' || !Number.isFinite(value));
+    const node = $(id);
+    if (!node) return;
+    const unavailable = typeof value !== 'number' || !Number.isFinite(value);
+    text(id, unavailable ? '—' : number(value, digits, suffix));
+    node.classList.toggle('is-unavailable', unavailable);
+    if (unavailable) node.setAttribute('aria-label', 'Unavailable');
+    else node.removeAttribute('aria-label');
+    node.title = unavailable ? 'No current sample' : '';
   }
   function physicalAge(value) {
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return 'Unavailable';
@@ -390,6 +396,16 @@
         : 'Unavailable',
     );
     $('physical-freshness-note').hidden = data.fresh === true;
+    text(
+      'physical-freshness-title',
+      data.state === 'unavailable'
+        ? 'Storage connection unavailable'
+        : data.state === 'clock_skew'
+          ? 'Broker time needs checking'
+          : data.received_at
+            ? 'Waiting for a fresh packet'
+            : 'Waiting for sensor data',
+    );
     text(
       'physical-freshness-detail',
       data.state === 'unavailable'
