@@ -338,6 +338,33 @@
     }
     $(target).replaceChildren(grid);
   }
+  function physicalReading(id, value, digits, suffix = '') {
+    text(id, number(value, digits, suffix));
+    $(id)?.classList.toggle('is-unavailable', typeof value !== 'number' || !Number.isFinite(value));
+  }
+  function physicalAge(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return 'Unavailable';
+    if (value < 60) return value.toFixed(1) + ' s';
+    const seconds = Math.floor(value);
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+    if (seconds < 86400)
+      return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+    return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`;
+  }
+  function physicalTime(value) {
+    if (typeof value !== 'string' || !Number.isFinite(Date.parse(value)))
+      return 'Timestamp unavailable';
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).format(new Date(value));
+  }
   function renderPhysicalTelemetry(payload) {
     const panel = $('physical-telemetry');
     if (!panel) return;
@@ -351,55 +378,61 @@
     panel.dataset.state = data.state || 'waiting';
     text(
       'physical-received',
-      data.received_at
-        ? 'Broker received ' +
-            data.received_at +
-            ' · ' +
-            number(data.age_s, 1, ' s ago') +
-            ' · packet ' +
-            data.seq
-        : 'No stored packet is available yet.',
+      data.received_at ? physicalTime(data.received_at) : 'No packet received yet',
     );
+    $('physical-received').title = data.received_at || '';
+    text('physical-age', physicalAge(data.age_s));
     text(
-      'physical-wheel-left',
-      number(values.left_pulses_total, 0) + ' pulses / ' + number(values.left_pulse_hz, 2, ' Hz'),
+      'physical-sequence',
+      (typeof data.seq === 'number' && Number.isInteger(data.seq) && data.seq >= 0) ||
+        (typeof data.seq === 'string' && /^\d+$/.test(data.seq))
+        ? '#' + data.seq
+        : 'Unavailable',
     );
+    $('physical-freshness-note').hidden = data.fresh === true;
     text(
-      'physical-wheel-right',
-      number(values.right_pulses_total, 0) + ' pulses / ' + number(values.right_pulse_hz, 2, ' Hz'),
+      'physical-freshness-detail',
+      data.state === 'unavailable'
+        ? 'Sensor storage could not be read. Check the storage connection before waiting for new packets.'
+        : data.state === 'clock_skew'
+          ? 'The broker timestamp needs checking. Current readings are withheld.'
+          : data.received_at
+            ? 'Current readings are hidden until a fresh packet arrives. Inspect the archive for the last stored values.'
+            : 'Waiting for the first stored packet. Readings will appear after the physical feed arrives.',
     );
-    text('physical-gyro', number(values.gyro_z_rad_s, 5, ' rad/s'));
-    text(
-      'physical-wheel-rpm',
-      'L ' +
-        number(estimates.left_rpm_magnitude, 1) +
-        ' / R ' +
-        number(estimates.right_rpm_magnitude, 1),
-    );
-    text(
-      'physical-wheel-speed',
-      'L ' +
-        number(estimates.left_rim_speed_m_s, 4, ' m/s') +
-        ' / R ' +
-        number(estimates.right_rim_speed_m_s, 4, ' m/s'),
-    );
+    for (const side of ['left', 'right']) {
+      physicalReading(`physical-${side}-total`, values[`${side}_pulses_total`], 0);
+      physicalReading(`physical-${side}-rate`, values[`${side}_pulse_hz`], 2);
+      physicalReading(`physical-${side}-rpm`, estimates[`${side}_rpm_magnitude`], 1);
+      physicalReading(`physical-${side}-speed`, estimates[`${side}_rim_speed_m_s`], 4);
+    }
+    physicalReading('physical-gyro', values.gyro_z_rad_s, 5, ' rad/s');
     text(
       'physical-wheel-profile',
       profile.wheel_detail || 'Unsigned counts; direction is not measured.',
     );
     text('physical-imu-profile', profile.imu_detail || 'Measured gyro calibration is required.');
-    text('physical-yaw', number(values.yaw_estimate_deg, 2, '°'));
-    text('physical-voltage', number(values.battery_voltage_v, 3, ' V'));
-    text('physical-current', number(values.battery_current_a, 4, ' A'));
-    text('physical-power', number(values.battery_power_w, 3, ' W'));
+    physicalReading('physical-yaw', values.yaw_estimate_deg, 2, '°');
+    physicalReading('physical-voltage', values.battery_voltage_v, 3, ' V');
+    physicalReading('physical-current', values.battery_current_a, 4, ' A');
+    physicalReading('physical-power', values.battery_power_w, 3, ' W');
+    text(
+      'physical-model-state',
+      data.models_ready === true ? 'Models ready' : 'Models awaiting calibration',
+    );
     text(
       'physical-model-limit',
       data.model_detail ||
         'Measured calibration and wheel direction are required before model predictions.',
     );
     const list = $('physical-recommendations');
+    const recommendations = data.recommendations || ['Check the EMQX forwarding connection.'];
+    text(
+      'physical-check-count',
+      recommendations.length + (recommendations.length === 1 ? ' check' : ' checks'),
+    );
     list.replaceChildren(
-      ...(data.recommendations || ['Check the EMQX forwarding connection.']).map((message) => {
+      ...recommendations.map((message) => {
         const li = document.createElement('li');
         li.textContent = message;
         return li;
