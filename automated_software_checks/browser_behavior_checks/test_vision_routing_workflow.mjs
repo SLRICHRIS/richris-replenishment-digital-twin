@@ -22,9 +22,9 @@ assert.equal(el('pr-map-card').hidden, true, 'Setup does not show an empty execu
 assert.equal(d.querySelectorAll('#vision-settings-form').length, 1);
 assert.ok(el('pr-step-panel-1').contains(el('vision-settings-form')));
 assert.equal(el('vision-camera-height').value, '92');
-assert.equal(el('vision-robot-length').value, '');
-assert.equal(el('vision-robot-width').value, '');
-assert.equal(el('vision-robot-height').value, '');
+assert.equal(el('vision-robot-length').value, '180');
+assert.equal(el('vision-robot-width').value, '150');
+assert.equal(el('vision-robot-height').value, '150');
 assert.equal(el('vision-marker-height').value, '');
 el('pr-to-connect').click();
 assert.equal(page.physical.getStage(), 2);

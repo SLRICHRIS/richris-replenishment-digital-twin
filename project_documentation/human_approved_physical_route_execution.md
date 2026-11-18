@@ -49,7 +49,14 @@ its pulse settings; use 20 only after checking actual counted falling edges.
 ## 1. Prepare the measured camera scene
 
 Use a fixed overhead USB camera and a flat **425 × 630 mm portrait** floor.
-The reported camera height is **920 mm (92 cm)**, interpreted from the user's H measurement. Confirm the distance from the camera lens to the paper. The template records this report while leaving every calibration check false.
+The reported overhead USB camera height is **920 mm (92 cm)**.
+On 19 November 2026 the operator supplied the full robot dimensions:
+**180 mm length × 150 mm width × 150 mm height**, including its platform and
+protrusions. These values prefill the shared planning form and the example
+camera configuration. Saved browser edits are preserved; previously blank
+dimensions receive these reported values. Marker height, black edge and centre
+offset remain unknown; the full robot height is not substituted for marker height.
+Every physical calibration check remains false until independently commissioned.
 
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX
 throughout the journey. A cloud website cannot directly open a USB camera plugged
@@ -254,7 +261,7 @@ normal use.
 
 The reported paper is 63 cm long and 42.5 cm wide, replacing the earlier A0 assumption.
 The active coordinate frame is X 0..425 mm and Y 0..630 mm. The reported camera
-height is 92 cm; its lens-to-paper interpretation still needs confirmation.
+height is 92 cm.
 `example_camera_config.json` now records `floor_width_mm=425`,
 `floor_length_mm=630` and `camera_height_mm=920`, with all commissioning checks false.
 Do not mark those checks true merely because the dimensions are entered.

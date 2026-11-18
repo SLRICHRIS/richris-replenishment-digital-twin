@@ -16,6 +16,13 @@ export function createVisionWorkspace(scope) {
   root.dataset.initialized = 'true';
   const el = (id) => d.getElementById(`vision-${id}`);
   const storageKey = 'amr01.visionSetup.v2';
+  // Operator-reported dimensions are planning defaults, never execution authorization.
+  const reportedMeasurements = {
+    robotLengthMm: 180,
+    robotWidthMm: 150,
+    robotHeightMm: 150,
+    cameraHeightCm: 92,
+  };
   const settingsFields = {
     robotLengthMm: 'robot-length',
     robotWidthMm: 'robot-width',
@@ -27,7 +34,7 @@ export function createVisionWorkspace(scope) {
     markerId: 'marker-id',
   };
   const state = {
-    settings: normalizeSettings({ cameraHeightCm: 92 }),
+    settings: normalizeSettings(reportedMeasurements),
     start: null,
     goal: null,
     obstacles: [],
@@ -61,8 +68,11 @@ export function createVisionWorkspace(scope) {
       raw.arena?.widthMm === ARENA.widthMm &&
       raw.arena?.heightMm === ARENA.heightMm
     ) {
+      const savedSettings = normalizeSettings(raw.settings);
+      for (const [key, value] of Object.entries(reportedMeasurements))
+        if (savedSettings[key] === null) savedSettings[key] = value;
       const saved = {
-        settings: normalizeSettings(raw.settings),
+        settings: savedSettings,
         start: normalizePoint(raw.start),
         goal: normalizePoint(raw.goal),
         obstacles: normalizeObstacles(raw.obstacles),
