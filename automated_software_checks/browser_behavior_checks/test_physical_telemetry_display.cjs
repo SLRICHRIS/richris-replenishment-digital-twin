@@ -63,9 +63,21 @@ function render() {
 render();
 assert.equal(d.getElementById('physical-telemetry').hidden, false);
 assert.equal(d.getElementById('physical-voltage').textContent, '0.820 V');
-assert.equal(d.getElementById('physical-wheel-left').textContent, '0 pulses / 0.00 Hz');
-assert.equal(d.getElementById('physical-wheel-rpm').textContent, 'L 0.0 / R 6.0');
-assert.equal(d.getElementById('physical-wheel-speed').textContent, 'L 0.0000 m/s / R 0.0188 m/s');
+assert.equal(d.getElementById('physical-left-total').textContent, '0');
+assert.equal(d.getElementById('physical-left-rate').textContent, '0.00');
+assert.equal(d.getElementById('physical-right-total').textContent, '4');
+assert.equal(d.getElementById('physical-right-rate').textContent, '2.00');
+assert.equal(d.getElementById('physical-left-rpm').textContent, '0.0');
+assert.equal(d.getElementById('physical-right-rpm').textContent, '6.0');
+assert.equal(d.getElementById('physical-left-speed').textContent, '0.0000');
+assert.equal(d.getElementById('physical-right-speed').textContent, '0.0188');
+assert.equal(d.getElementById('physical-left-total').classList.contains('is-unavailable'), false);
+assert.equal(d.getElementById('physical-freshness-note').hidden, true);
+assert.equal(d.getElementById('physical-age').textContent, '0.5 s');
+assert.equal(d.getElementById('physical-sequence').textContent, '#1');
+assert.match(d.getElementById('physical-received').textContent, /17 Nov 2026.*15:30:00/);
+assert.equal(d.getElementById('physical-received').title, payload.physical_telemetry.received_at);
+assert.equal(d.getElementById('physical-model-state').textContent, 'Models awaiting calibration');
 assert.match(d.getElementById('physical-imu-profile').textContent, /Zero bias is a default/);
 assert.equal(d.getElementById('physical-recommendations').querySelector('img'), null);
 assert.match(d.getElementById('physical-model-limit').textContent, /direction.*calibration/);
@@ -91,14 +103,55 @@ assert.match(d.getElementById('python-amr01-battery-input-note').textContent, /b
 payload.physical_telemetry.fresh = false;
 payload.physical_telemetry.state = 'stale';
 payload.physical_telemetry.label = 'Telemetry out of date';
+payload.physical_telemetry.age_s = 997.8;
+d.querySelector('.physical-guidance').open = true;
 render();
 assert.equal(d.getElementById('physical-voltage').textContent, 'Unavailable');
 assert.equal(d.getElementById('physical-status').textContent, 'Telemetry out of date');
-assert.equal(d.getElementById('physical-wheel-rpm').textContent, 'L Unavailable / R Unavailable');
+for (const side of ['left', 'right'])
+  for (const field of ['total', 'rate', 'rpm', 'speed']) {
+    const value = d.getElementById(`physical-${side}-${field}`);
+    assert.equal(value.textContent, 'Unavailable');
+    assert.equal(value.classList.contains('is-unavailable'), true);
+  }
+assert.equal(d.getElementById('physical-freshness-note').hidden, false);
+assert.equal(d.getElementById('physical-age').textContent, '16m 37s');
+assert.equal(d.querySelector('.physical-guidance').open, true, 'Refresh preserves expanded notes');
 assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
+// Missing/invalid metadata must never look like a new packet or a zero-age observation.
+payload.physical_telemetry.received_at = 'not-a-timestamp';
+payload.physical_telemetry.age_s = null;
+payload.physical_telemetry.seq = 0;
+render();
+assert.equal(d.getElementById('physical-received').textContent, 'Timestamp unavailable');
+assert.equal(d.getElementById('physical-age').textContent, 'Unavailable');
+assert.equal(d.getElementById('physical-sequence').textContent, '#0');
+payload.physical_telemetry.received_at = null;
+payload.physical_telemetry.seq = null;
+render();
+assert.equal(d.getElementById('physical-received').textContent, 'No packet received yet');
+assert.equal(d.getElementById('physical-sequence').textContent, 'Unavailable');
+assert.match(d.getElementById('physical-freshness-detail').textContent, /first stored packet/);
+payload.physical_telemetry.state = 'unavailable';
+render();
+assert.match(
+  d.getElementById('physical-freshness-detail').textContent,
+  /storage could not be read/,
+);
+payload.physical_telemetry.state = 'clock_skew';
+render();
+assert.match(d.getElementById('physical-freshness-detail').textContent, /timestamp needs checking/);
+let archiveOpened = false;
+d.getElementById('python-database-inspection').addEventListener('click', () => {
+  archiveOpened = true;
+});
+d.getElementById('python-db-dataset').value = 'amr_sensor_samples';
+d.getElementById('physical-open-archive').click();
+assert.equal(archiveOpened, true);
+assert.equal(d.getElementById('python-db-dataset').value, 'amr_commissioning_samples');
 // Switching to demo cannot reuse the physical inputs, even if its fresh flag remains set.
 payload.physical_telemetry.fresh = true;
 payload.mode = 'demo';
