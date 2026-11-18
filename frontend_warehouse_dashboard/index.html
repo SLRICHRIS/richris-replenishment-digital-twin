@@ -2605,104 +2605,196 @@
               aria-labelledby="human-review-title"
               hidden
             >
-              <div class="amr-section-heading">
-                <h2 id="human-review-title">Human review &amp; action</h2>
-                <span id="human-review-source">Website operator review</span>
-              </div>
-              <p id="human-review-detail"></p>
-              <ol class="human-review-flow" aria-label="Human intervention flow">
-                <li>Recommendation</li>
-                <li>Human review</li>
-                <li>Gateway checks</li>
-                <li>Controller acknowledgement</li>
-                <li>Sensor verification</li>
-              </ol>
-              <div class="human-review-status" role="status" aria-live="polite">
+              <header class="human-review-heading">
                 <div>
-                  <strong id="human-review-state">Waiting for sensor evidence</strong>
-                  <p id="human-review-evidence"></p>
+                  <span class="human-review-eyebrow">SENSOR RECOMMENDATIONS</span>
+                  <h2 id="human-review-title">Review &amp; decide</h2>
+                  <p id="human-review-detail">
+                    Read the recommendation, choose a response, then check the result.
+                  </p>
                 </div>
-                <p id="human-review-recommendations"></p>
-              </div>
-              <div id="human-review-auth" hidden>
-                <form id="human-review-login" class="human-review-form">
-                  <label>
-                    Operator alias
-                    <input
-                      id="human-review-operator"
-                      maxlength="40"
-                      required
-                      pattern="[A-Za-z0-9_-]{1,40}"
-                      autocomplete="off"
-                      placeholder="Your operator alias"
-                    />
-                  </label>
-                  <label>
-                    Private operator code
-                    <input
-                      id="human-review-code"
-                      type="password"
-                      maxlength="256"
-                      required
-                      autocomplete="off"
-                    />
-                  </label>
-                  <div class="human-review-actions">
-                    <button type="submit">Unlock operator review</button>
+                <span id="human-review-source" class="human-review-source">Physical AMR</span>
+              </header>
+              <ol class="human-review-flow" aria-label="Your review progress">
+                <li id="human-review-step-1" aria-current="step">
+                  <span>1</span>
+                  <div>
+                    Get ready
+                    <small>Connection and calibration</small>
                   </div>
-                </form>
-              </div>
-              <div id="human-review-controls" hidden>
-                <button type="button" id="human-review-create" class="primary">
-                  Review recommendation
-                </button>
-                <form id="human-review-form" class="human-review-form" hidden>
-                  <label>
-                    Operator action
-                    <select id="human-review-action">
-                      <option value="no_action">No intervention</option>
-                      <option value="reduce_speed">Halve the current controller speed limit</option>
-                      <option value="pause">Request controlled pause</option>
-                    </select>
-                  </label>
-                  <label>
-                    Decision reason
-                    <textarea
-                      id="human-review-reason"
-                      rows="2"
-                      maxlength="240"
-                      required
-                      placeholder="Record why you chose this action"
-                    ></textarea>
-                  </label>
-                  <div class="human-review-actions">
-                    <button type="submit" class="primary" value="approve">Approve decision</button>
-                    <button type="submit" value="reject">Reject intervention</button>
-                    <button type="submit" value="defer">Decide later</button>
+                </li>
+                <li id="human-review-step-2">
+                  <span>2</span>
+                  <div>
+                    Make a decision
+                    <small>You choose the response</small>
                   </div>
-                </form>
-                <button type="button" id="human-review-response" hidden>
-                  Simulate controller response &amp; new readings
-                </button>
-                <p id="human-review-demo-note" class="human-review-note">
-                  Rehearsal only. Approval, acknowledgement and generated follow-up readings are
-                  separate steps. No device is contacted.
+                </li>
+                <li id="human-review-step-3">
+                  <span>3</span>
+                  <div>
+                    Check the result
+                    <small>AMR reply and fresh readings</small>
+                  </div>
+                </li>
+              </ol>
+              <div
+                id="human-review-summary"
+                class="human-review-status"
+                role="status"
+                aria-live="polite"
+              >
+                <span class="human-review-status-dot" aria-hidden="true"></span>
+                <div>
+                  <strong id="human-review-state">Checking review readiness</strong>
+                  <p id="human-review-summary-detail">Waiting for the current sensor status.</p>
+                </div>
+              </div>
+              <div class="human-review-workspace">
+                <div class="human-review-column">
+                  <article id="human-review-recommendation-card" class="human-review-card" hidden>
+                    <span class="human-review-eyebrow">WHAT THE SENSORS SUGGEST</span>
+                    <h3>Recommendation to review</h3>
+                    <div id="human-review-recommendations"></div>
+                    <p id="human-review-captured-note" class="human-review-note"></p>
+                  </article>
+                  <article id="human-review-preparation" class="human-review-card">
+                    <span class="human-review-eyebrow">BEFORE YOUR FIRST REVIEW</span>
+                    <h3>Complete these steps</h3>
+                    <ul id="human-review-checklist" class="human-review-checklist"></ul>
+                    <details id="human-review-calibration-help">
+                      <summary>What does sensor calibration include?</summary>
+                      <ul>
+                        <li>
+                          Measured wheel dimensions, pulse counts and verified wheel direction.
+                        </li>
+                        <li>IMU alignment and gyro bias measured while stationary.</li>
+                        <li>
+                          Measured battery capacity, initial charge, current zero and polarity.
+                        </li>
+                      </ul>
+                      <p>
+                        These measurements must be confirmed in the private AMR configuration before
+                        physical model recommendations become available.
+                      </p>
+                      <a
+                        href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/mh_ir_hardware_commissioning.md"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open the calibration guide ↗
+                      </a>
+                    </details>
+                  </article>
+                  <article id="human-review-result" class="human-review-card" hidden>
+                    <span class="human-review-eyebrow">OBSERVED RESULT</span>
+                    <h3 id="human-review-result-title">Check the AMR response</h3>
+                    <dl id="human-review-result-checks" class="human-review-result-checks"></dl>
+                    <p id="human-review-result-note" class="human-review-note"></p>
+                  </article>
+                </div>
+                <article class="human-review-card human-review-decision">
+                  <span class="human-review-eyebrow">YOUR NEXT ACTION</span>
+                  <h3 id="human-review-action-title">Prepare the physical AMR</h3>
+                  <p id="human-review-next-action" class="human-review-description"></p>
+                  <div id="human-review-auth" hidden>
+                    <form id="human-review-login" class="human-review-form human-review-login">
+                      <label>
+                        Operator alias
+                        <input
+                          id="human-review-operator"
+                          maxlength="40"
+                          required
+                          pattern="[A-Za-z0-9_-]{1,40}"
+                          autocomplete="off"
+                          placeholder="Your operator alias"
+                        />
+                      </label>
+                      <label>
+                        Private operator code
+                        <input
+                          id="human-review-code"
+                          type="password"
+                          maxlength="256"
+                          required
+                          autocomplete="off"
+                        />
+                      </label>
+                      <div class="human-review-actions">
+                        <button type="submit" class="primary">Enable operator review</button>
+                      </div>
+                    </form>
+                  </div>
+                  <div id="human-review-controls" hidden>
+                    <button type="button" id="human-review-create" class="primary">
+                      Review this recommendation
+                    </button>
+                    <form id="human-review-form" class="human-review-form" hidden>
+                      <p id="human-review-review-clock" class="human-review-clock"></p>
+                      <label>
+                        Your response
+                        <select id="human-review-action">
+                          <option value="no_action">Keep operation unchanged</option>
+                          <option value="reduce_speed">Reduce the speed limit by 50%</option>
+                          <option value="pause">Request a controlled pause</option>
+                        </select>
+                      </label>
+                      <p id="human-review-action-help" class="human-review-action-help"></p>
+                      <label>
+                        Why are you choosing this response?
+                        <textarea
+                          id="human-review-reason"
+                          rows="3"
+                          maxlength="240"
+                          required
+                          placeholder="Write a short reason for the decision"
+                        ></textarea>
+                      </label>
+                      <div class="human-review-actions">
+                        <button type="submit" class="primary" value="approve">Save review</button>
+                        <button type="submit" value="reject">Reject</button>
+                        <button type="submit" value="defer">Decide later</button>
+                      </div>
+                    </form>
+                    <button type="button" id="human-review-response" class="primary" hidden>
+                      Simulate AMR reply
+                    </button>
+                    <p id="human-review-demo-note" class="human-review-note">
+                      Practice uses generated readings. Your decisions and simulated responses stay
+                      separate from the physical AMR.
+                    </p>
+                  </div>
+                  <div id="human-review-shortcuts" class="human-review-shortcuts">
+                    <button id="human-review-connection" type="button">Check AMR connection</button>
+                    <button id="human-review-practice" type="button">Try a practice review</button>
+                    <button id="human-review-live" type="button" hidden>
+                      Return to physical readings
+                    </button>
+                  </div>
+                  <div id="human-review-physical" hidden>
+                    <p id="human-review-delivery-note" class="human-review-note"></p>
+                    <button type="button" id="human-review-lock" hidden>
+                      End operator session
+                    </button>
+                  </div>
+                  <p id="human-review-feedback" role="status" hidden></p>
+                </article>
+              </div>
+              <details id="human-review-technical" class="human-review-technical">
+                <summary>Technical checks &amp; decision history</summary>
+                <p id="human-review-evidence"></p>
+                <p id="human-review-availability"></p>
+                <p id="human-review-server-detail"></p>
+                <p>
+                  A request is verified only after a matching applied controller acknowledgement and
+                  three new qualifying sensor observations. Local emergency protection remains on
+                  the AMR.
                 </p>
-              </div>
-              <div id="human-review-physical" hidden>
-                <p id="human-review-availability" class="human-review-note"></p>
-                <button type="button" id="human-review-lock" hidden>Lock operator session</button>
-              </div>
-              <p id="human-review-feedback" role="status" hidden></p>
-              <details id="human-review-log" hidden>
-                <summary>Decision &amp; outcome trail</summary>
-                <ol id="human-review-events" class="human-review-events"></ol>
+                <section id="human-review-log" hidden>
+                  <h4>Decision history</h4>
+                  <ol id="human-review-events" class="human-review-events"></ol>
+                </section>
               </details>
-              <p class="human-review-note">
-                A sent request is not an executed action. Verification needs a matching controller
-                acknowledgement and three fresh sensor observations. Emergency protection remains
-                local to the AMR.
-              </p>
             </section>
             <details class="python-reading-guide" id="python-evidence-scope">
               <summary>Evidence and validation</summary>

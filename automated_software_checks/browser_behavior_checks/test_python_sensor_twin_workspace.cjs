@@ -687,6 +687,12 @@ assert.equal(
 );
 payload.human_review.owns_review = true;
 deliver(parent, w.location.origin);
+assert.equal(
+  doc.getElementById('human-review-reason').value,
+  '',
+  'Source changes clear the previous decision draft',
+);
+doc.getElementById('human-review-reason').value = 'Review the physical evidence';
 assert.equal(doc.getElementById('human-review-form').hidden, false);
 doc
   .getElementById('human-review-form')
