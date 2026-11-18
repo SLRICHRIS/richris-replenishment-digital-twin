@@ -286,3 +286,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 
 | `automated_software_checks/browser_behavior_checks/test_vision_routing_workflow.mjs` | Verify guided stages, mode isolation, physical presence release, camera cleanup, accessible navigation and shared setup lifecycle. |
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/vision_routing_workspace.js` | Coordinate the Physical AMR and Practice modes with one shared measurement form and explicit camera/presence lifecycle. |
+
+| `automated_software_checks/browser_behavior_checks/test_human_review_usability.cjs` | Check actionable readiness, source isolation, operator ownership, preserved decision inputs, expiry and separate request/reply/sensor outcomes. |

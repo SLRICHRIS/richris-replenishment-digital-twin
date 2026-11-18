@@ -1,6 +1,6 @@
 # Website human review and action
 
-The website is the operator's decision point. Sensor models shows recommendations and **Human review & action** in one flow. The Python server captures current evidence, authenticates the operator session and records the decision in the shared PostgreSQL audit. No desktop application, local HTTP service or additional workstation is required.
+The website is the operator's decision point. Sensor models shows recommendations and **Review & decide** in one flow. The Python server captures current evidence, authenticates the operator session and records the decision in the shared PostgreSQL audit. No desktop application, local HTTP service or additional workstation is required.
 
 ```mermaid
 flowchart TD
@@ -14,6 +14,14 @@ flowchart TD
   H --> I["Three new sensor observations"]
   I --> J["Record observed outcome"]
 ```
+
+## Panel layout
+
+The default view uses three plain stages: **Get ready → Make a decision → Check the result**. Missing calibration has a short preparation checklist, expandable measurement guidance and a direct commissioning-guide link. **Check AMR connection** opens the existing connection screen. **Try a practice review** explicitly selects demo data; it never unlocks physical control.
+
+The recommendation card freezes the captured guidance for a pending review. The decision card explains each response, requires a reason and preserves your draft during updates. **Keep operation unchanged** records a review without a motor request. When command delivery is unavailable, approval is labelled **Record approval only** and cannot queue a later command. An expired review must be captured again. Source changes clear the decision draft and reset its response to no change.
+
+Results show **Request**, **AMR response** and the count of qualifying **Sensor check** readings separately. Demo response buttons say exactly which stage they simulate. Authentication, service availability, ownership, fresh evidence and server-side verification remain mandatory. Technical categories and the decision history are available in a collapsed disclosure.
 
 ## Operator workflow
 
