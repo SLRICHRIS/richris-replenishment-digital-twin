@@ -1292,8 +1292,8 @@
               </span>
             </div>
             <p>
-              Power the ESP32 and let it join its configured Wi-Fi. Connect here to receive its
-              sensor data through EMQX.
+              This optional recorder starts a recording session through EMQX. Existing HTTP
+              forwarding to the database runs independently.
             </p>
             <form id="amr-link-form" class="amr-link-form">
               <label id="amr-code-field" for="amr-access-code">
@@ -1305,7 +1305,7 @@
                   autocomplete="off"
                   spellcheck="false"
                   placeholder="Private operator code"
-                  disabled
+                  aria-describedby="amr-link-detail"
                 />
               </label>
               <button class="primary" type="submit" id="amr-link-connect" disabled>
@@ -1318,8 +1318,8 @@
             </p>
             <p id="amr-link-feedback" role="alert" hidden></p>
             <div class="amr-link-footnote">
-              This on-demand recorder runs with this app session. Use the independent worker for
-              unattended recording. Disconnect preserves committed records.
+              For physical human approvals, use Review &amp; decide in Sensor models or the Connect
+              step in Vision routing. Disconnecting this recorder preserves committed records.
             </div>
           </div>
           <ol class="amr-pipeline" id="amr-pipeline" aria-label="Sensor data pipeline"></ol>
