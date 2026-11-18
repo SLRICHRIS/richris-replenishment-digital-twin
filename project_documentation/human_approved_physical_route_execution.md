@@ -87,7 +87,7 @@ Validate ruler distances throughout the floor, marker occlusion, camera movement
 lighting changes and obstacle detection. All four reference markers are required
 in every executing frame. The tracker intersects marker rays with the measured
 horizontal marker plane; it does not infer reliable marker height from a tiny
-square. Background differences detect foreground obstacles, with a conservative
+square. The capture thread continuously drains the USB driver and discards old frames so inference cannot build a camera backlog. Validate actual exposure-to-command latency on the real camera. Background differences detect foreground obstacles, with a conservative
 height/parallax envelope. It is a controlled laboratory detector, not a certified
 collision safety system. Occluded or visually indistinguishable obstacles remain
 a physical validation limit. Maintain operator supervision and access to power.
@@ -189,10 +189,10 @@ A service restart marks unfinished requests uncertain and never replays movement
 Set private environment variables in your local session using your normal private
 secret-entry method: `AMR_MQTT_HOST`, `AMR_MQTT_USERNAME`, `AMR_MQTT_PASSWORD`,
 `AMR_CONTROL_KEY`, `AMR_DRIVE_KEY`. Use the camera identity from the permissions table.
-No password or key is required in chat. Then run:
+No password or key is required in chat. Alternatively, `--interactive` prompts locally with hidden password/key entry. Then run:
 
 ```powershell
-python -m backend_streamlit_and_telemetry.vision_control.desktop_agent --config camera_private_config.json --background empty_floor.png --camera 0
+python -m backend_streamlit_and_telemetry.vision_control.desktop_agent --config camera_private_config.json --background empty_floor.png --camera 0 --interactive
 ```
 
 Restart the ESP32 when restarting a camera-controller session so the receiver

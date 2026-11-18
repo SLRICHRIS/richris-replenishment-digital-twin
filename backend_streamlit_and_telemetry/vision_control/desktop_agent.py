@@ -6,6 +6,7 @@ import threading
 import time
 import uuid
 import ssl
+import getpass
 from pathlib import Path
 from .contracts import (canonical,seal,scene,SCENE_TOPIC,STATUS_TOPIC,REQUEST_TOPIC,DRIVE_TOPIC,HARDWARE_TOPIC)
 from .protocol import drive,hardware
@@ -19,10 +20,14 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config',required=True); parser.add_argument('--background',required=True)
     parser.add_argument('--camera',type=int,default=0)
+    parser.add_argument('--interactive',action='store_true',help='Prompt locally for missing private connection values')
     args=parser.parse_args()
     p=load_config(args.config); tracker=Camera(p,args.background)
     secrets={n:os.environ.get('AMR_'+n,'') for n in ('MQTT_HOST','MQTT_USERNAME','MQTT_PASSWORD','CONTROL_KEY','DRIVE_KEY')}
-    if not all(secrets.values()): raise SystemExit('Configure the private AMR MQTT and signing environment variables')
+    if args.interactive:
+        for n in secrets:
+            if not secrets[n]: secrets[n]=(input('Existing EMQX '+n.lower()+': ') if n in ('MQTT_HOST','MQTT_USERNAME') else getpass.getpass('Private '+n.lower()+' (hidden): ')).strip()
+    if not all(secrets.values()): raise SystemExit('Configure private AMR environment variables or use --interactive locally')
     from .contracts import key
     key(secrets['CONTROL_KEY']); key(secrets['DRIVE_KEY'])
     lock=threading.RLock(); hw=None; linked=False; boot=uuid.uuid4().hex
@@ -62,14 +67,26 @@ def main():
     client.connect(secrets['MQTT_HOST'],8883,10); client.loop_start()
     cap=cv2.VideoCapture(args.camera,cv2.CAP_DSHOW if os.name=='nt' else cv2.CAP_ANY)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,p['resolution'][0]); cap.set(cv2.CAP_PROP_FRAME_HEIGHT,p['resolution'][1]); cap.set(cv2.CAP_PROP_BUFFERSIZE,1)
-    seq=0
+    # Drain the USB driver continuously; inference must not accumulate old frames.
+    capture_lock=threading.Lock(); capture_stop=threading.Event(); latest=[None]
+    def capture():
+        frame_seq=0
+        while not capture_stop.is_set():
+            ok,image=cap.read(); stamp=now(); frame_seq+=1
+            with capture_lock: latest[0]=(frame_seq,stamp,image if ok else None)
+            if not ok: capture_stop.wait(.02)
+    capture_thread=threading.Thread(target=capture,daemon=True,name='amr01-usb-latest-frame'); capture_thread.start()
+    seq=0; used_frame=-1
     try:
         while True:
-            started=now(); ok,frame=cap.read(); valid=False; pose=None; rects=[]; reason='Camera frame unavailable'
+            started=now(); valid=False; pose=None; rects=[]; reason='Camera frame unavailable'
+            with capture_lock: captured=latest[0]
+            frame_seq,captured_at,frame=captured if captured else (-1,started,None)
             try:
-                if not ok: raise ValueError(reason)
-                pose,rects=tracker.observe(frame,started)
-                if now()-started>250: raise ValueError('Camera processing exceeded the latency envelope')
+                if frame is None or frame_seq==used_frame or started-captured_at>150: raise ValueError(reason)
+                used_frame=frame_seq
+                pose,rects=tracker.observe(frame,captured_at)
+                if now()-started>250 or now()-captured_at>400: raise ValueError('Camera processing exceeded the latency envelope')
                 valid=True; reason='Measured camera tracking active'
             except ValueError as e: reason=str(e)
             with lock:
@@ -78,7 +95,7 @@ def main():
                 value['age_ms']=min(600000,max(0,stamp-value.get('issued_at_ms',0)))
                 if not linked: value['ready']=False
                 s=scene(dict(version=1,robot_id='amr01',agent_boot_id=boot,config_id=tracker.config_id,seq=seq,
-                    captured_at_ms=started,valid=valid,reason=reason,pose=pose,obstacles=rects,geometry=p['geometry'],hardware=value))
+                    captured_at_ms=captured_at,valid=valid,reason=reason,pose=pose,obstacles=rects,geometry=p['geometry'],hardware=value))
                 try: agent.tick(s,stamp)
                 except Exception:
                     agent.state='blocked'; agent.reason='Execution transport failed; approve a new route'; agent.lease_until=0
@@ -92,7 +109,8 @@ def main():
         with lock:
             try: agent.halt('Camera controller closed',now())
             except Exception: pass
-        cap.release(); client.disconnect(); client.loop_stop()
+        capture_stop.set(); cap.release(); capture_thread.join(timeout=1)
+        client.disconnect(); client.loop_stop()
 
 
 if __name__=='__main__': main()
