@@ -256,3 +256,10 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/predictive_twin/physical_telemetry.py` | Read stored observations without promoting them into calibrated predictions. |
 | `backend_streamlit_and_telemetry/predictive_twin/commissioning_profile.py` | Record supplied AMR-01 geometry, pending IMU/battery evidence and unsigned wheel estimates. |
 | `project_documentation/physical_sensor_recording.md` | Current ESP32-to-EMQX-to-database deployment and measurement interpretation guide. |
+
+| `automated_software_checks/browser_behavior_checks/test_a0_vision_route_preview.mjs` | Check conservative A0 footprint planning, continuous obstacle collision and blocked scenes without physical execution. |
+| `automated_software_checks/browser_behavior_checks/test_overhead_camera_workspace.mjs` | Check local setup/rehearsal invalidation, camera permission cleanup and command-free review/export. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/a0_route_preview.js` | Pure A0 grid planner with conservative full-body clearance and continuous segment collision checks. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/overhead_camera_workspace.js` | Local camera setup/preview, manual obstacle map, route rehearsal and browser-only human review with no command bridge. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/vision_routing_styles.css` | Responsive A0 camera setup, manual map and route review styling. |
+| `project_documentation/overhead_camera_route_provision.md` | Explain camera provision, manual planning limits and measurements/integration needed before physical routing. |

@@ -6,7 +6,7 @@ Streamlit serves this directory as one local component. The browser runs the sim
 
 | File | Responsibility |
 | --- | --- |
-| [index.html](index.html) | Seven-view dashboard document and shared controls |
+| [index.html](index.html) | Dashboard document, physical sensor views, overhead-camera setup and shared controls |
 | [browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js](browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js) | State, navigation, movement, approvals and operator actions |
 | [browser_modules/dashboard_navigation_and_appearance/dashboard_animation_and_element_updates.js](browser_modules/dashboard_navigation_and_appearance/dashboard_animation_and_element_updates.js) | Motion preferences, DOM updates and lifecycle effects |
 | [browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js](browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js) | Early saved-theme selection before the dashboard renders |
@@ -30,6 +30,8 @@ Streamlit serves this directory as one local component. The browser runs the sim
 
 ## Supporting folders
 
+The camera provision uses [overhead_camera_workspace.js](browser_modules/vision_routing/overhead_camera_workspace.js) for local setup, preview and rehearsal review; [a0_route_preview.js](browser_modules/vision_routing/a0_route_preview.js) provides the pure footprint-aware grid planner. [vision_routing_styles.css](dashboard_stylesheets/vision_routing_styles.css) styles the responsive A0 workspace. See the [camera provision guide](../project_documentation/overhead_camera_route_provision.md) for the commissioning boundary.
+
 | Location | Responsibility |
 | --- | --- |
 | [dashboard_stylesheets/streamlit_dashboard_scroll_container.css](dashboard_stylesheets/streamlit_dashboard_scroll_container.css) | Embedded workspace scrolling while header/navigation remain visible |
@@ -40,6 +42,6 @@ Streamlit serves this directory as one local component. The browser runs the sim
 | `external_browser_libraries/mqtt_telemetry_messaging/` | Bundled MQTT browser library and upstream license |
 | [downloadable_hardware_kits_and_guides/](downloadable_hardware_kits_and_guides/download_kits_and_generated_guides.md) | Generated starter kits and document reading copies |
 
-Module imports are relative to each source file. Worker URLs are relative to `index.html`; their targets live in `browser_modules/background_calculation_workers/` and are checked by integration verification. Browser state remains session-local. Export Activity CSV or Twin lab JSON evidence before reloading.
+Module imports are relative to each source file. Worker URLs are relative to `index.html`; their targets live in `browser_modules/background_calculation_workers/` and are checked by integration verification. Vision setup and the drawn map can be saved in local browser storage; camera pixels and review approvals are not persisted. Other browser simulation state remains session-local. Export Activity CSV, Twin lab JSON or the camera setup/rehearsal before reloading.
 
 Read the [runtime architecture](../project_documentation/dashboard_and_telemetry_system_architecture.md) and [project flow](../project_documentation/repository_structure_and_project_flow.md) for the connections between these files.

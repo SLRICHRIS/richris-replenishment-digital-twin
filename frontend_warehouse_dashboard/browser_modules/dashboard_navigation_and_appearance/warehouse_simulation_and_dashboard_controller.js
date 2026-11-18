@@ -1357,6 +1357,12 @@ function render() {
   motion.sync();
 }
 const pages = {
+  vision: {
+    title: 'Overhead vision routing',
+    context: 'Camera setup & route review',
+    summary:
+      'Prepare the A0 floor, preview routes and record human decisions before camera commissioning.',
+  },
   connection: {
     title: 'Connect AMR',
     context: 'Physical sensor connection',

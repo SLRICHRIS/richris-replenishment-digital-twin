@@ -448,6 +448,12 @@ for (const retired of ['routes', 'engineering', 'telemetry', 'missions', 'activi
 get('tab-hardware').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(
   doc.body.dataset.view,
+  'vision',
+  'camera setup remains available in the sensor workspace',
+);
+get('tab-vision').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
+assert.equal(
+  doc.body.dataset.view,
   'database',
   'keyboard navigation includes the shared database view',
 );
