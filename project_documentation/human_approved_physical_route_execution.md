@@ -162,9 +162,15 @@ stop when software cannot be relied on.
 ## 4. Configure website review and audit
 
 Apply [route_audit.sql](../backend_streamlit_and_telemetry/vision_control/route_audit.sql)
-with the Neon owner. Create a dedicated direct PostgreSQL role and grant SELECT,
-INSERT and UPDATE on `public.amr_route_reviews` only. Do not put the owner URL or
-public reader URL into this control profile. Runtime never creates tables. Put the
+with the Neon owner as one atomic statement. It creates the audit table, removes
+inherited sensor-reader/worker grants from that table and provisions
+`amr_route_coordinator` with SELECT, INSERT and UPDATE only. A newly created role
+has **NOLOGIN**, so provisioning creates no usable login or password and does not
+enable movement. The owner activates a private login when ready for commissioning
+and stores its direct PostgreSQL URL privately in Streamlit. The runtime rejects
+owner or broad audit credentials (including DELETE/TRUNCATE privileges).
+Do not put the owner URL or public sensor-reader URL into this control profile.
+Other sensor-table permissions are unchanged. Runtime never creates tables. Put the
 private configuration into Streamlit secrets:
 
 ```toml
