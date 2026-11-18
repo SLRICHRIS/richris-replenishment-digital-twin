@@ -90,22 +90,30 @@ def test_physical_table_does_not_enter_signed_model_dataset_allowlist():
     assert len(attributes(samples.name)) == len(samples.c)
 
 
-def test_counted_geometry_yields_unsigned_wheel_quantities_without_default_bias_promotion():
+def test_corrected_geometry_yields_unsigned_quantities_without_promoting_incomplete_reports():
     profile = profile_payload()
-    assert profile['wheel_radius_m'] == .03
+    assert profile['wheel_radius_m'] == .0325
     assert profile['track_m'] == .1
-    assert profile['distance_per_pulse_m'] == pytest.approx(.00942477796076938)
+    assert profile['distance_per_pulse_m'] == pytest.approx(.01021017612416683)
     assert profile['imu_axes'] == dict(x='forward', y='left', z='up')
-    assert profile['reported_gyro_bias_rad_s'] == dict(x=0, y=0, z=0)
+    assert profile['reported_gyro_bias']['raw_report'] == 'Stationary gyro bias-0.02'
+    assert profile['reported_gyro_bias']['unit'] is None
+    assert profile['reported_gyro_bias']['axis'] is None
+    assert profile['reported_gyro_bias']['sign'] is None
+    assert profile['reported_gyro_bias_rad_s'] == dict(x=None, y=None, z=None)
     assert profile['gyro_bias_measured'] is False
     assert profile['direction_measured'] is False
     assert profile['battery_capacity_ah'] is None and profile['initial_soc'] is None
+    assert profile['reported_battery']['capacity_ah'] == 2.2
+    assert profile['reported_battery']['initial_soc'] == 1.0
+    assert profile['reported_battery']['discharge_positive'] is True
+    assert profile['reported_battery']['usable_capacity_verified'] is False
     assert profile['models_ready'] is False
     # Twenty counted pulses per second is one wheel revolution per second.
     estimates = wheel_magnitude_estimates(dict(left_pulse_hz=20, right_pulse_hz=0,
                                              left_rpm=-999, direction_measured=True))
     assert estimates['left_rpm_magnitude'] == 60
-    assert estimates['left_rim_speed_m_s'] == pytest.approx(.1884955592153876)
+    assert estimates['left_rim_speed_m_s'] == pytest.approx(.20420352248333656)
     assert estimates['right_rpm_magnitude'] == estimates['right_rim_speed_m_s'] == 0
     assert set(estimates) == {'left_rpm_magnitude', 'right_rpm_magnitude', 'left_rim_speed_m_s', 'right_rim_speed_m_s'}
 

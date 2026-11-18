@@ -428,6 +428,10 @@
       profile.wheel_detail || 'Unsigned counts; direction is not measured.',
     );
     text('physical-imu-profile', profile.imu_detail || 'Measured gyro calibration is required.');
+    text(
+      'physical-battery-profile',
+      profile.battery_detail || 'Measured battery calibration is required.',
+    );
     physicalReading('physical-yaw', values.yaw_estimate_deg, 2, '°');
     physicalReading('physical-voltage', values.battery_voltage_v, 3, ' V');
     physicalReading('physical-current', values.battery_current_a, 4, ' A');

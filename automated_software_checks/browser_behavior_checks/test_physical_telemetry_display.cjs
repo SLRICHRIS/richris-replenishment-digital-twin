@@ -45,11 +45,12 @@ const payload = {
       left_rpm_magnitude: 0,
       right_rpm_magnitude: 6,
       left_rim_speed_m_s: 0,
-      right_rim_speed_m_s: 0.01884955592153876,
+      right_rim_speed_m_s: 0.02042035224833366,
     },
     commissioning: {
-      wheel_detail: '60 mm wheels · 100 mm spacing · 20 counted pulses per turn.',
-      imu_detail: 'X forward, Y left, Z up. Zero bias is a default.',
+      wheel_detail: '65 mm wheels · 100 mm spacing · 20 counted pulses per turn.',
+      imu_detail: 'X forward, Y left, Z up. Reported bias 0.02 needs its sign, axis and unit.',
+      battery_detail: 'Reported pack: 2,200 mAh; starting charge 100%. Capacity is unverified.',
     },
     recommendations: ['Battery wiring needs checking.', '<img src=x onerror=alert(1)>'],
     model_detail:
@@ -72,7 +73,7 @@ assert.equal(d.getElementById('physical-right-rate').textContent, '2.00');
 assert.equal(d.getElementById('physical-left-rpm').textContent, '0.0');
 assert.equal(d.getElementById('physical-right-rpm').textContent, '6.0');
 assert.equal(d.getElementById('physical-left-speed').textContent, '0.0000');
-assert.equal(d.getElementById('physical-right-speed').textContent, '0.0188');
+assert.equal(d.getElementById('physical-right-speed').textContent, '0.0204');
 assert.equal(d.getElementById('physical-left-total').classList.contains('is-unavailable'), false);
 assert.equal(d.getElementById('physical-freshness-note').hidden, true);
 assert.equal(d.getElementById('physical-age').textContent, '0.5 s');
@@ -80,7 +81,8 @@ assert.equal(d.getElementById('physical-sequence').textContent, '#1');
 assert.match(d.getElementById('physical-received').textContent, /17 Nov 2026.*15:30:00/);
 assert.equal(d.getElementById('physical-received').title, payload.physical_telemetry.received_at);
 assert.equal(d.getElementById('physical-model-state').textContent, 'Models awaiting calibration');
-assert.match(d.getElementById('physical-imu-profile').textContent, /Zero bias is a default/);
+assert.match(d.getElementById('physical-imu-profile').textContent, /sign, axis and unit/);
+assert.match(d.getElementById('physical-battery-profile').textContent, /2,200 mAh.*unverified/);
 assert.equal(d.getElementById('physical-recommendations').querySelector('img'), null);
 assert.match(d.getElementById('physical-model-limit').textContent, /direction.*calibration/);
 assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');

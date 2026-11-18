@@ -118,22 +118,31 @@ lost before EMQX. Preserve acquisition and clock limitations in demonstrations.
 
 ## Model boundary
 
-### Operator-supplied geometry, 18 November 2026
+### Operator-supplied setup, updated 19 November 2026
 
-Both wheels are treated as 60 mm in diameter (30 mm radius), with 100 mm
+The corrected diameter supersedes the earlier 60 mm report. Both wheels are
+treated as 65 mm in diameter (32.5 mm radius), with 100 mm
 wheel-centre spacing. The operator confirmed 20 ESP32-counted pulses per full
 wheel revolution. The profile is recorded in
 [`commissioning_profile.py`](../backend_streamlit_and_telemetry/predictive_twin/commissioning_profile.py).
-At these values one pulse represents 9.42478 mm of wheel-rim travel, RPM
+At these values one pulse represents 10.21018 mm of wheel-rim travel, RPM
 magnitude is pulse frequency × 3, and rim-speed magnitude is pulse frequency
-× 0.00942478 m/s. These are unsigned wheel estimates, not robot ground speed
+× 0.01021018 m/s. Circumference is 204.20352 mm and pulses per metre are
+97.94150. These are unsigned wheel estimates, not robot ground speed
 or signed odometry; the geometry and PPR apply to both wheels as supplied.
 
-Reported IMU axes are X forward, Y left, Z up. The supplied gx/gy/gz biases
-of zero were explicitly clarified as assumed/default, so they are recorded
-as unmeasured and are not applied to model correction or readiness. A measured
-stationary bias test, direction evidence, battery capacity/starting charge and
-current polarity remain pending. The physical readout shows wheel magnitudes
+Reported IMU axes are X forward, Y left, Z up. The new report is literally
+`Stationary gyro bias-0.02`; confirm the sign, axis and unit before converting
+or applying it. No axis is assigned a default zero bias.
+
+The reported pack capacity is 2,200 mAh (2.2 Ah), starting charge is 100%,
+discharge current is positive, and the INA219 comparison reportedly showed no
+significant error. These operator reports are stored separately from verified
+model parameters: usable capacity, the initial-charge reference, current-zero
+and comparison measurements remain unverified. INA219 covers only the motor
+branch, excluding the ESP32/buck branch, so these readings do not establish
+whole-pack charge consumption. Direction feedback and healthy residual
+threshold/hold validation also remain pending. The physical readout shows wheel magnitudes
 only for fresh packets; archived device fields and their calibration claims
 are unchanged. No existing or new model state is produced by this profile.
 
