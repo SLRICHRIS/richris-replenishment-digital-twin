@@ -25,3 +25,10 @@ The preview does not model dynamic obstacles, wheel slip, turn duration, acceler
 5. Bind any future physical approval to a fresh immutable scene, calibration version, robot footprint and route. Revalidate immediately before dispatch and implement a tested local stop/watchdog and controller contract. The current provision does not implement waypoint execution or extend existing operator-command permissions.
 
 Until those steps are implemented and validated, the page says **Setup · advisory only**, automatic detection **Not connected**, perspective/lens calibration **Pending**, and physical execution **Disabled**. Local preview is not automatic detection. Rehearsal approval is not physical authorization.
+
+
+## Physical execution extension
+
+The manual drawing and approval on this original panel remain rehearsal only.
+The separate Physical AMR execution panel now has a protected website → local
+camera controller → ESP32 motor path. See the [physical route execution guide](human_approved_physical_route_execution.md) for measured configuration, firmware upload, exact topic permissions and commissioning.

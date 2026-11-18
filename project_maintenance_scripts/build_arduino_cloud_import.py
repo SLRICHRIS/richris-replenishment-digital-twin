@@ -1,4 +1,4 @@
-"""Build or verify the four-file ZIP imported directly by Arduino Cloud Editor.
+"""Build or verify the five-file ZIP imported directly by Arduino Cloud Editor.
 
 The archive deliberately uses public placeholder settings. Runtime credentials,
 operator access codes and database receipts must never enter this download.
@@ -16,6 +16,7 @@ SOURCES = (
     ("publish_mh_ir_commissioning.ino", "AMR01_Multisensor_WiFi.ino"),
     ("mh_ir_controller.h", "mh_ir_controller.h"),
     ("multisensor_observations.h", "multisensor_observations.h"),
+    ("vision_drive_guard.h", "vision_drive_guard.h"),
     ("example_esp32_wifi_and_mqtt_settings.h", "esp32_wifi_and_mqtt_settings.h"),
 )
 
@@ -58,4 +59,4 @@ if __name__ == "__main__":
         DESTINATION.parent.mkdir(parents=True, exist_ok=True)
         DESTINATION.write_bytes(data)
     verify(data)
-    print("PASS: Arduino Cloud import ZIP has the current sketch and three headers; settings are placeholders.")
+    print("PASS: Arduino Cloud import ZIP has the current sketch and four headers; settings are placeholders.")

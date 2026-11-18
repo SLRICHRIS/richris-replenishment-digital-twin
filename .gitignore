@@ -29,3 +29,8 @@ migration_work/
 **/robot_connection_settings.h
 **/esp32_wifi_and_mqtt_settings.h
 **/config.json
+
+# Private camera commissioning inputs and empty-floor captures
+**/camera_private_config.json
+**/empty_floor.png
+**/camera_intrinsics.json

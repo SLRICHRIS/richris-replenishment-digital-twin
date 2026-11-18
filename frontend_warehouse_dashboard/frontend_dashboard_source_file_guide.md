@@ -45,3 +45,6 @@ The camera provision uses [overhead_camera_workspace.js](browser_modules/vision_
 Module imports are relative to each source file. Worker URLs are relative to `index.html`; their targets live in `browser_modules/background_calculation_workers/` and are checked by integration verification. Vision setup and the drawn map can be saved in local browser storage; camera pixels and review approvals are not persisted. Other browser simulation state remains session-local. Export Activity CSV, Twin lab JSON or the camera setup/rehearsal before reloading.
 
 Read the [runtime architecture](../project_documentation/dashboard_and_telemetry_system_architecture.md) and [project flow](../project_documentation/repository_structure_and_project_flow.md) for the connections between these files.
+
+
+`browser_modules/vision_routing/physical_route_execution.js` renders the separate server-owned physical route panel. It sends only session actions, goal coordinates and decisions. The existing manual camera/map workspace remains rehearsal only.

@@ -102,6 +102,7 @@
         'connection_view',
         'connection_control',
         'human_review',
+        'vision_execution',
       ].includes(action.action)
     )
       return;
@@ -152,6 +153,20 @@
                   : undefined,
               operator:
                 typeof action.operator === 'string' ? action.operator.slice(0, 40) : undefined,
+            }
+          : {}),
+        ...(action.action === 'vision_execution'
+          ? {
+              command: action.command,
+              active: action.active,
+              review_id: action.review_id,
+              decision: action.decision,
+              reason: typeof action.reason === 'string' ? action.reason.slice(0, 240) : '',
+              access_code:
+                typeof action.access_code === 'string' ? action.access_code.slice(0, 256) : '',
+              operator: typeof action.operator === 'string' ? action.operator.slice(0, 40) : '',
+              goal_x: Number.isFinite(action.goal_x) ? action.goal_x : null,
+              goal_y: Number.isFinite(action.goal_y) ? action.goal_y : null,
             }
           : {}),
         ...(action.action === 'connection_view' ? { active: action.active } : {}),

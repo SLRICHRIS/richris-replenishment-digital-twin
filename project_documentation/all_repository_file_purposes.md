@@ -263,3 +263,23 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/overhead_camera_workspace.js` | Local camera setup/preview, manual obstacle map, route rehearsal and browser-only human review with no command bridge. |
 | `frontend_warehouse_dashboard/dashboard_stylesheets/vision_routing_styles.css` | Responsive A0 camera setup, manual map and route review styling. |
 | `project_documentation/overhead_camera_route_provision.md` | Explain camera provision, manual planning limits and measurements/integration needed before physical routing. |
+| `automated_software_checks/browser_behavior_checks/test_physical_route_execution.mjs` | Verify physical approval, fresh evidence and stop interactions. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_vision_drive_guard.cpp` | Exercise firmware arm, expiry, replay, motor cap and reversal guards. |
+| `automated_software_checks/predictive_twin_checks/test_vision_camera.py` | Implement and verify the protected physical route workflow. |
+| `automated_software_checks/predictive_twin_checks/test_vision_execution.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/predictive_twin/vision_execution_workspace.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/__init__.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/agent.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/camera.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/contracts.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/coordinator.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/desktop_agent.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/example_camera_config.json` | Provide uncommissioned camera and measured motor configuration placeholders. |
+| `backend_streamlit_and_telemetry/vision_control/protocol.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/requirements-vision.txt` | Pin optional USB-camera controller dependencies. |
+| `backend_streamlit_and_telemetry/vision_control/route_audit.sql` | Provision the separate durable route decision audit. |
+| `backend_streamlit_and_telemetry/vision_control/service.py` | Implement and verify the protected physical route workflow. |
+| `backend_streamlit_and_telemetry/vision_control/setup_camera.py` | Implement and verify the protected physical route workflow. |
+| `esp32_telemetry_firmware/publish_mh_ir_commissioning/vision_drive_guard.h` | Enforce the ESP32 route lease, boot epoch and bounded wheel outputs. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/physical_route_execution.js` | Render authenticated physical route review and bounded server actions. |
+| `project_documentation/human_approved_physical_route_execution.md` | Explain physical route setup, approval, firmware and commissioning boundaries. |

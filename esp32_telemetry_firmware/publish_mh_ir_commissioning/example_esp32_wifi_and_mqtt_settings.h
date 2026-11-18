@@ -37,3 +37,12 @@ static constexpr double BATTERY_CAPACITY_MAH = 2200.0;
 static constexpr double INITIAL_SOC_PERCENT = 100.0;
 static constexpr double DISCHARGE_CURRENT_SIGN = 1.0;
 static constexpr bool BATTERY_SOC_INITIALIZATION_CONFIRMED = false;
+
+// Enable ONLY after the attended camera/motor commissioning in the route guide.
+// Generate a NEW private 64-character lowercase hex key; never reuse HTTP auth.
+#define AMR_VISION_DRIVE_ENABLED 0
+#define AMR_VISION_DRIVE_KEY ""
+#define AMR_VISION_MQTT_USERNAME ""
+#define AMR_VISION_MQTT_PASSWORD ""
+#define AMR_VISION_MAX_PWM 60
+#define AMR_VISION_MIN_PACK_V 6.6

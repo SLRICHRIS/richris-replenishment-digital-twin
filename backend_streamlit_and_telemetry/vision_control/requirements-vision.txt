@@ -1,0 +1,3 @@
+# Install only on the USB-camera laptop. Cloud UI does not need OpenCV.
+opencv-contrib-python==4.13.0.92
+paho-mqtt==2.1.0

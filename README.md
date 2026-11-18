@@ -76,3 +76,6 @@ Software tests verify equations, units, isolation, sequence/freshness handling a
 © 2026 S. L. Richris. See [ownership and external software licences](project_ownership_and_external_software_licenses.txt).
 
 The project configures **AMR-01 only**: one simulated robot, one loading/charging bay, six sensor-model cards, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Legacy mission examples remain in source, outside the hosted interface.
+
+
+Human-approved physical camera routes now have a guarded execution implementation. See the [physical execution setup](project_documentation/human_approved_physical_route_execution.md). Camera/motor commissioning, private topic permissions and ESP32 upload are required before movement is enabled.
