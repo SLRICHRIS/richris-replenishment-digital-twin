@@ -48,3 +48,5 @@ Read the [runtime architecture](../project_documentation/dashboard_and_telemetry
 
 
 `browser_modules/vision_routing/physical_route_execution.js` renders the separate server-owned physical route panel. It sends only session actions, goal coordinates and decisions. The existing manual camera/map workspace remains rehearsal only.
+
+The Vision routing entry point is `browser_modules/vision_routing/vision_routing_workspace.js`. It coordinates separate Physical AMR and Practice modes, one shared browser draft setup form, and camera/presence cleanup when modes change. `physical_route_execution.js` renders the five physical stages without accepting browser-authored routes.

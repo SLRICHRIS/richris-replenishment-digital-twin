@@ -452,7 +452,7 @@ assert.equal(
   'camera setup remains available in the sensor workspace',
 );
 assert.equal(get('source-badge').textContent, 'Human review');
-assert.equal(get('page-mode').textContent, 'Physical execution & rehearsal');
+assert.equal(get('page-mode').textContent, 'Guided physical workflow');
 get('tab-vision').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(
   doc.body.dataset.view,
