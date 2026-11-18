@@ -19,6 +19,8 @@ export function createVisionWorkspace(scope) {
   const settingsFields = {
     robotLengthMm: 'robot-length',
     robotWidthMm: 'robot-width',
+    robotHeightMm: 'robot-height',
+    markerHeightMm: 'marker-height',
     cameraHeightCm: 'camera-height',
     clearanceMm: 'clearance',
     markerSizeMm: 'marker-size',
@@ -187,6 +189,7 @@ export function createVisionWorkspace(scope) {
           : 'Set a start, destination and drawn obstacles, then calculate a preview.'),
     );
     render();
+    d.dispatchEvent(new scope.CustomEvent('vision:measurements'));
   }
   function writeFields() {
     for (const [key, id] of Object.entries(settingsFields))
@@ -550,6 +553,10 @@ export function createVisionWorkspace(scope) {
       stopCamera('Preview stopped when you left Vision routing.');
   });
   observer.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
+  on(d, 'vision-routing:mode', (event) => {
+    if (event.detail?.mode !== 'practice' && (stream || el('camera-start').disabled))
+      stopCamera('Preview stopped when you left Practice.');
+  });
   on(scope, 'pagehide', () => {
     stopCamera();
     clearStill();
@@ -569,7 +576,7 @@ export function createVisionWorkspace(scope) {
   };
 }
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && !document.getElementById('vision-routing-shell')) {
   if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', () => createVisionWorkspace(window), {
       once: true,

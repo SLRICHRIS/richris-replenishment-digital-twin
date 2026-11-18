@@ -8,6 +8,8 @@ export function normalizeSettings(input = {}) {
   for (const [key, max] of [
     ['robotLengthMm', 2000],
     ['robotWidthMm', 2000],
+    ['robotHeightMm', 2000],
+    ['markerHeightMm', 2000],
     ['cameraHeightCm', 1000],
     ['markerSizeMm', 500],
   ]) {

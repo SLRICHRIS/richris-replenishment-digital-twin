@@ -283,3 +283,6 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `esp32_telemetry_firmware/publish_mh_ir_commissioning/vision_drive_guard.h` | Enforce the ESP32 route lease, boot epoch and bounded wheel outputs. |
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/physical_route_execution.js` | Render authenticated physical route review and bounded server actions. |
 | `project_documentation/human_approved_physical_route_execution.md` | Explain physical route setup, approval, firmware and commissioning boundaries. |
+
+| `automated_software_checks/browser_behavior_checks/test_vision_routing_workflow.mjs` | Verify guided stages, mode isolation, physical presence release, camera cleanup, accessible navigation and shared setup lifecycle. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/vision_routing_workspace.js` | Coordinate the Physical AMR and Practice modes with one shared measurement form and explicit camera/presence lifecycle. |

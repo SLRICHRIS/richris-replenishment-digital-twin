@@ -1361,7 +1361,7 @@ const pages = {
     title: 'Overhead vision routing',
     context: 'Camera setup & route review',
     summary:
-      'Review camera-based physical routes, approve guarded execution, or use the manual rehearsal below.',
+      'Prepare the workspace, connect live feedback, then plan, approve and verify one physical journey.',
   },
   connection: {
     title: 'Connect AMR',
@@ -1960,7 +1960,7 @@ function updateSourceUI() {
   }
   if (activePage === 'vision') {
     $('source-badge').textContent = 'Human review';
-    $('page-mode').textContent = 'Physical execution & rehearsal';
+    $('page-mode').textContent = 'Guided physical workflow';
     $('page-mode').dataset.kind = 'advisory';
     $('rail-mode').textContent = 'Guarded route control';
     $('rail-detail').textContent = 'Verify physical setup before approving movement';

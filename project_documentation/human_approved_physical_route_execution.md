@@ -12,6 +12,18 @@ claim that uploaded firmware, camera calibration, broker access or a physical
 journey has already been commissioned. No production movement or invented telemetry
 is sent by the software tests.
 
+## Website workflow
+
+Open **Vision routing → Physical AMR**. Follow the numbered stages:
+
+1. **Setup:** record full body length, width and height, marker height/edge and camera measurements. These browser values are planning drafts. The camera controller must load separately verified physical calibration.
+2. **Connect:** check the physical source, operator session, fresh calibrated camera scene and ESP32 receiver heartbeat. Expand connection details for missing configuration. Approval records use the private backend connection; there is no separate log login. The operator code still protects physical control.
+3. **Plan:** choose a destination on the trusted live map or enter X/Y coordinates. The camera supplies the start. Calculate a server-owned route without moving the robot.
+4. **Approve:** inspect the path, distance, protected radius, destination and expiry. Enter a decision reason, then approve and run, reject or hold. A changed destination needs a new proposal.
+5. **Run:** observe controller state, camera freshness, reported motor output and arrival verification. Stop remains available during an active journey. No acknowledgement alone is labelled arrival.
+
+**Practice** has a separate drawn map and local rehearsal decisions. Switching to it releases the physical presence grant. Returning to Physical AMR stops any browser USB preview so the laptop controller can own the camera. Practice measurements never replace the controller's trusted geometry. Leaving the page also ends presence authorization.
+
 ## Hardware retained
 
 | Function | Connection |
