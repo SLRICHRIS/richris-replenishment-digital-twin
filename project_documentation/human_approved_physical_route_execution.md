@@ -56,8 +56,9 @@ protrusions. These values prefill the shared planning form and the example
 camera configuration. Saved browser edits are preserved; previously blank
 dimensions receive these reported values. The operator separately confirmed the
 printed marker surface at **150 mm above the floor**, and this value also prefills
-the form and example configuration. The marker's black edge and centre offset
-remain unknown.
+the form and example configuration. The provided robot marker is ID 0 with a
+**40 × 40 mm black square**, now recorded as a 40 mm edge in both setups.
+The marker centre offset remains unknown.
 Every physical calibration check remains false until independently commissioned.
 
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX
@@ -74,8 +75,8 @@ python -m pip install -r backend_streamlit_and_telemetry/vision_control/requirem
 python -m backend_streamlit_and_telemetry.vision_control.setup_camera markers --robot-edge-mm 40 --output runtime/aruco-markers.html
 ```
 
-`40` above is only a printing choice, not an assumed measured marker size. Print at
-100% actual size; measure the black square. Floor markers are DICT_4X4_50 IDs 1–4,
+The supplied AMR-01 robot marker uses a 40 mm black edge. Print at 100% actual
+size and verify print scale during camera commissioning. Floor markers are DICT_4X4_50 IDs 1–4,
 30 mm black edge. Their **centres**, in millimetres from the floor's bottom-left,
 are:
 
