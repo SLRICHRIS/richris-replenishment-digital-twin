@@ -63,6 +63,8 @@ function render() {
 render();
 assert.equal(d.getElementById('physical-telemetry').hidden, false);
 assert.equal(d.getElementById('physical-voltage').textContent, '0.820 V');
+assert.equal(d.getElementById('physical-current').textContent, '-0.0003 A');
+assert.equal(d.getElementById('physical-left-total').getAttribute('aria-label'), null);
 assert.equal(d.getElementById('physical-left-total').textContent, '0');
 assert.equal(d.getElementById('physical-left-rate').textContent, '0.00');
 assert.equal(d.getElementById('physical-right-total').textContent, '4');
@@ -106,12 +108,14 @@ payload.physical_telemetry.label = 'Telemetry out of date';
 payload.physical_telemetry.age_s = 997.8;
 d.querySelector('.physical-guidance').open = true;
 render();
-assert.equal(d.getElementById('physical-voltage').textContent, 'Unavailable');
+assert.equal(d.getElementById('physical-voltage').textContent, '—');
+assert.equal(d.getElementById('physical-voltage').getAttribute('aria-label'), 'Unavailable');
 assert.equal(d.getElementById('physical-status').textContent, 'Telemetry out of date');
 for (const side of ['left', 'right'])
   for (const field of ['total', 'rate', 'rpm', 'speed']) {
     const value = d.getElementById(`physical-${side}-${field}`);
-    assert.equal(value.textContent, 'Unavailable');
+    assert.equal(value.textContent, '—');
+    assert.equal(value.getAttribute('aria-label'), 'Unavailable');
     assert.equal(value.classList.contains('is-unavailable'), true);
   }
 assert.equal(d.getElementById('physical-freshness-note').hidden, false);

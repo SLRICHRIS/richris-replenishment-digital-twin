@@ -1985,7 +1985,10 @@
               </div>
               <div id="physical-freshness-note" class="physical-freshness-note">
                 <svg class="icon" aria-hidden="true"><use href="#i-clock" /></svg>
-                <p id="physical-freshness-detail">Waiting for the first stored packet.</p>
+                <div>
+                  <strong id="physical-freshness-title">Waiting for sensor data</strong>
+                  <p id="physical-freshness-detail">Waiting for the first stored packet.</p>
+                </div>
               </div>
               <div class="physical-sensors">
                 <article class="physical-wheel-module" aria-labelledby="physical-wheel-title">
@@ -1997,64 +2000,80 @@
                       <h3 id="physical-wheel-title">Wheel pulses</h3>
                       <p>Unsigned encoder observations</p>
                     </div>
+                    <span class="physical-module-tag">ENCODERS</span>
                   </header>
-                  <table class="physical-wheel-table">
-                    <caption class="sr-only">Left and right wheel measurements</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Measurement</th>
-                        <th scope="col">Left</th>
-                        <th scope="col">Right</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th scope="row">
-                          Pulse total
-                          <small>counts</small>
-                        </th>
-                        <td id="physical-left-total" class="physical-value">Unavailable</td>
-                        <td id="physical-right-total" class="physical-value">Unavailable</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">
-                          Pulse rate
-                          <small>Hz</small>
-                        </th>
-                        <td id="physical-left-rate" class="physical-value">Unavailable</td>
-                        <td id="physical-right-rate" class="physical-value">Unavailable</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">
-                          RPM magnitude
-                          <small>rpm</small>
-                        </th>
-                        <td id="physical-left-rpm" class="physical-value">Unavailable</td>
-                        <td id="physical-right-rpm" class="physical-value">Unavailable</td>
-                      </tr>
-                      <tr>
-                        <th scope="row">
-                          Rim-speed magnitude
-                          <small>m/s</small>
-                        </th>
-                        <td id="physical-left-speed" class="physical-value">Unavailable</td>
-                        <td id="physical-right-speed" class="physical-value">Unavailable</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="physical-wheel-channels">
+                    <section class="physical-wheel-channel" aria-label="Left wheel readings">
+                      <div class="physical-wheel-channel-label">
+                        <span>Left wheel</span>
+                        <span class="physical-channel-letter" aria-hidden="true">L</span>
+                      </div>
+                      <div class="physical-rate-reading">
+                        <span id="physical-left-rate" class="physical-value">—</span>
+                        <span class="physical-rate-unit">Hz</span>
+                      </div>
+                      <span class="physical-rate-caption">Pulse frequency</span>
+                      <dl>
+                        <div>
+                          <dt>Total pulses</dt>
+                          <dd id="physical-left-total" class="physical-value">—</dd>
+                        </div>
+                        <div>
+                          <dt>RPM magnitude</dt>
+                          <dd id="physical-left-rpm" class="physical-value">—</dd>
+                        </div>
+                        <div>
+                          <dt>
+                            Rim speed
+                            <small>m/s</small>
+                          </dt>
+                          <dd id="physical-left-speed" class="physical-value">—</dd>
+                        </div>
+                      </dl>
+                    </section>
+                    <section class="physical-wheel-channel" aria-label="Right wheel readings">
+                      <div class="physical-wheel-channel-label">
+                        <span>Right wheel</span>
+                        <span class="physical-channel-letter" aria-hidden="true">R</span>
+                      </div>
+                      <div class="physical-rate-reading">
+                        <span id="physical-right-rate" class="physical-value">—</span>
+                        <span class="physical-rate-unit">Hz</span>
+                      </div>
+                      <span class="physical-rate-caption">Pulse frequency</span>
+                      <dl>
+                        <div>
+                          <dt>Total pulses</dt>
+                          <dd id="physical-right-total" class="physical-value">—</dd>
+                        </div>
+                        <div>
+                          <dt>RPM magnitude</dt>
+                          <dd id="physical-right-rpm" class="physical-value">—</dd>
+                        </div>
+                        <div>
+                          <dt>
+                            Rim speed
+                            <small>m/s</small>
+                          </dt>
+                          <dd id="physical-right-speed" class="physical-value">—</dd>
+                        </div>
+                      </dl>
+                    </section>
+                  </div>
                   <p class="physical-module-footnote">
                     Direction and ground motion are not measured.
                   </p>
                 </article>
-                <article aria-labelledby="physical-imu-title">
+                <article class="physical-imu-module" aria-labelledby="physical-imu-title">
                   <header class="physical-sensor-heading">
                     <span class="physical-sensor-icon">
                       <svg class="icon" aria-hidden="true"><use href="#i-orbit" /></svg>
                     </span>
                     <div>
                       <h3 id="physical-imu-title">Inertial measurement</h3>
-                      <p>IMU · local rotation estimate</p>
+                      <p>Raw rotation and local yaw</p>
                     </div>
+                    <span class="physical-module-tag">IMU</span>
                   </header>
                   <dl class="physical-inertial-values">
                     <div>
@@ -2062,19 +2081,19 @@
                         Gyro Z
                         <span>raw rate</span>
                       </dt>
-                      <dd id="physical-gyro" class="physical-value">Unavailable</dd>
+                      <dd id="physical-gyro" class="physical-value">—</dd>
                     </div>
                     <div>
                       <dt>
                         Relative yaw
                         <span>local estimate</span>
                       </dt>
-                      <dd id="physical-yaw" class="physical-value">Unavailable</dd>
+                      <dd id="physical-yaw" class="physical-value">—</dd>
                     </div>
                   </dl>
                   <p class="physical-module-footnote">Relative yaw is not an absolute heading.</p>
                 </article>
-                <article aria-labelledby="physical-battery-title">
+                <article class="physical-battery-module" aria-labelledby="physical-battery-title">
                   <header class="physical-sensor-heading">
                     <span class="physical-sensor-icon">
                       <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -2084,27 +2103,28 @@
                     </span>
                     <div>
                       <h3 id="physical-battery-title">Battery measurements</h3>
-                      <p>INA219 · electrical input</p>
+                      <p>Electrical input at the sensor</p>
                     </div>
+                    <span class="physical-module-tag">INA219</span>
                   </header>
                   <dl class="physical-battery-values">
-                    <div class="physical-voltage-reading">
+                    <div>
                       <dt>Input voltage</dt>
-                      <dd id="physical-voltage" class="physical-value">Unavailable</dd>
+                      <dd id="physical-voltage" class="physical-value">—</dd>
                     </div>
                     <div>
                       <dt>
                         Current
                         <span>discharge positive</span>
                       </dt>
-                      <dd id="physical-current" class="physical-value">Unavailable</dd>
+                      <dd id="physical-current" class="physical-value">—</dd>
                     </div>
                     <div>
                       <dt>
                         Power
                         <span>voltage × current</span>
                       </dt>
-                      <dd id="physical-power" class="physical-value">Unavailable</dd>
+                      <dd id="physical-power" class="physical-value">—</dd>
                     </div>
                   </dl>
                   <p class="physical-module-footnote">
