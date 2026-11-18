@@ -1,0 +1,340 @@
+#vision-workspace {
+  color: var(--text);
+}
+.vision-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.vision-banner h2 {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  margin: 7px 0;
+}
+.vision-banner p {
+  margin: 0;
+  max-width: 640px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.vision-chip {
+  display: inline-block;
+  border: 1px solid var(--line-strong);
+  color: var(--text-secondary);
+  padding: 7px 10px;
+  font-size: 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.vision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+.vision-main,
+.vision-side {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.vision-card {
+  padding: 22px;
+  min-width: 0;
+}
+.vision-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.vision-card-heading h3 {
+  margin: 5px 0 0;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.vision-card > p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.vision-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.vision-fields label,
+.vision-note,
+.vision-file {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.vision-fields input,
+.vision-note input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel-alt);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.vision-fields input:focus-visible,
+.vision-note input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.vision-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.vision-card button {
+  font-size: 11px;
+  min-height: 36px;
+  padding: 8px 11px;
+  border-radius: 7px;
+}
+.vision-tools button[aria-pressed='true'] {
+  background: var(--selected-bg);
+  color: var(--selected-text);
+  border-color: var(--selected-border);
+}
+.vision-small {
+  font-size: 11px !important;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.vision-map-wrap {
+  display: flex;
+  justify-content: center;
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
+  padding: 18px;
+  border-radius: 10px;
+  margin: 16px 0;
+}
+#vision-map {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  display: block;
+  border: 1px solid var(--line-strong);
+  cursor: crosshair;
+  touch-action: none;
+}
+.vision-floor {
+  fill: var(--panel);
+}
+.vision-grid {
+  color: var(--line);
+  opacity: 0.55;
+}
+.vision-obstacle {
+  fill: #d67c6b55;
+  stroke: #ed927e;
+  stroke-width: 3;
+}
+.vision-buffer {
+  fill: #d67c6b0c;
+  stroke: #ed927e88;
+  stroke-width: 2;
+  stroke-dasharray: 10 8;
+}
+.vision-path {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.vision-start {
+  fill: #52c69e;
+  stroke: var(--panel);
+  stroke-width: 3;
+}
+.vision-goal {
+  fill: #76adff;
+  stroke: var(--panel);
+  stroke-width: 3;
+}
+.vision-footprint {
+  fill: #52c69e10;
+  stroke: #52c69e88;
+  stroke-width: 2;
+  stroke-dasharray: 10 8;
+}
+.vision-drag {
+  fill: #d67c6b22;
+  stroke: #ed927e;
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+}
+.vision-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.vision-legend span:nth-child(1) {
+  color: #52c69e;
+}
+.vision-legend span:nth-child(2) {
+  color: #76adff;
+}
+.vision-legend span:nth-child(3) {
+  color: #ed927e;
+}
+.vision-feedback {
+  min-height: 36px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--blue);
+  background: var(--panel-alt);
+  border-radius: 5px;
+}
+.vision-route-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.vision-route-metrics div {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.vision-route-metrics span {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+.vision-route-metrics strong {
+  font-family: var(--font-numeric);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.vision-note {
+  margin-top: 16px;
+}
+.vision-execution {
+  border: 1px solid var(--line-strong);
+  padding: 12px;
+  border-radius: 8px;
+}
+.vision-readiness {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.vision-readiness dt {
+  color: var(--text-secondary);
+}
+.vision-readiness dd {
+  margin: 0;
+  color: var(--text);
+}
+.vision-camera-view {
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel-alt);
+}
+.vision-camera-view p {
+  padding: 20px;
+  text-align: center;
+  max-width: 250px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.vision-camera-view video,
+.vision-camera-view img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+.vision-camera-view [hidden] {
+  display: none;
+}
+.vision-file {
+  margin-top: 14px;
+}
+.vision-file input {
+  max-width: 100%;
+  font-size: 11px;
+}
+.vision-card details {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+.vision-card summary {
+  color: var(--text);
+  cursor: pointer;
+}
+.vision-card li {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .vision-layout {
+    grid-template-columns: 1fr;
+  }
+  .vision-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .vision-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px;
+  }
+  .vision-card {
+    padding: 16px;
+  }
+  .vision-side {
+    grid-template-columns: 1fr;
+  }
+  .vision-route-metrics {
+    grid-template-columns: 1fr;
+  }
+  .vision-card-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .vision-map-wrap {
+    padding: 10px;
+  }
+}

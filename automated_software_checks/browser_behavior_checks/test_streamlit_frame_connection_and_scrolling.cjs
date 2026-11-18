@@ -112,6 +112,7 @@ async function check() {
   for (const view of [
     'routes',
     'hardware',
+    'vision',
     'missions',
     'telemetry',
     'engineering',
@@ -154,7 +155,7 @@ async function check() {
   );
   standalone.window.close();
   console.log(
-    'PASS: Streamlit handshake and trusted messages, viewport sizing/cleanup, real DOM scroll-container styles, keyboard access, seven-view scroll reset, focus preservation, stable in-view scrolling and standalone isolation.',
+    'PASS: Streamlit handshake and trusted messages, viewport sizing/cleanup, real DOM scroll-container styles, keyboard access, workspace scroll reset, focus preservation, stable in-view scrolling and standalone isolation.',
   );
 }
 check().catch((error) => {

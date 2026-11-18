@@ -52,6 +52,11 @@
     <link rel="stylesheet" href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/human_review_panel_styles.css" />
+    <link rel="stylesheet" href="./dashboard_stylesheets/vision_routing_styles.css" />
+    <script
+      type="module"
+      src="./browser_modules/vision_routing/overhead_camera_workspace.js"
+    ></script>
     <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
     <script
       defer
@@ -290,6 +295,17 @@
           <svg class="icon" aria-hidden="true"><use href="#i-mission" /></svg>
           <span>Missions</span>
           <span class="nav-count" id="nav-task-count">03</span>
+        </button>
+        <button
+          id="tab-vision"
+          role="tab"
+          aria-controls="vision"
+          aria-selected="false"
+          tabindex="-1"
+          data-page="vision"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-map" /></svg>
+          <span>Vision routing</span>
         </button>
         <button
           id="tab-telemetry"
@@ -1344,6 +1360,411 @@
               commands to the AMR.
             </p>
           </section>
+        </section>
+        <section
+          id="vision"
+          data-screen
+          role="tabpanel"
+          aria-labelledby="tab-vision"
+          tabindex="0"
+          hidden
+        >
+          <div id="vision-workspace">
+            <div class="vision-banner">
+              <div>
+                <span class="twin-card-kicker">USB CAMERA · A0 PORTRAIT · HUMAN REVIEW</span>
+                <h2>Prepare the view. Review the route.</h2>
+                <p>
+                  Set up your measured floor and rehearse route decisions while camera calibration
+                  is pending.
+                </p>
+              </div>
+              <span class="vision-chip">Setup · advisory only</span>
+            </div>
+            <div class="vision-layout">
+              <div class="vision-main">
+                <section class="panel vision-card" aria-labelledby="vision-map-title">
+                  <div class="vision-card-heading">
+                    <div>
+                      <span class="twin-card-kicker">MANUAL MAP REHEARSAL</span>
+                      <h3 id="vision-map-title">A0 working floor</h3>
+                    </div>
+                    <span class="vision-chip">841 × 1189 mm</span>
+                  </div>
+                  <p id="vision-map-instructions">
+                    Place a start and destination, then drag rectangles over obstacles. This map is
+                    drawn by you; it is not a camera detection.
+                  </p>
+                  <div class="vision-tools" role="group" aria-label="Map drawing tools">
+                    <button id="vision-tool-start" type="button" aria-pressed="true">
+                      Set start
+                    </button>
+                    <button id="vision-tool-goal" type="button" aria-pressed="false">
+                      Set destination
+                    </button>
+                    <button id="vision-tool-obstacle" type="button" aria-pressed="false">
+                      Draw obstacle
+                    </button>
+                    <button id="vision-clear-obstacles" type="button">Clear obstacles</button>
+                  </div>
+                  <div class="vision-map-wrap">
+                    <svg
+                      id="vision-map"
+                      viewBox="0 0 841 1189"
+                      role="img"
+                      aria-label="Interactive A0 manual route map"
+                      aria-describedby="vision-map-instructions"
+                    >
+                      <defs>
+                        <pattern
+                          id="vision-grid-pattern"
+                          width="50"
+                          height="50"
+                          patternUnits="userSpaceOnUse"
+                        >
+                          <path d="M50 0H0V50" fill="none" stroke="currentColor" stroke-width="1" />
+                        </pattern>
+                      </defs>
+                      <rect width="841" height="1189" class="vision-floor" />
+                      <rect
+                        width="841"
+                        height="1189"
+                        fill="url(#vision-grid-pattern)"
+                        class="vision-grid"
+                      />
+                      <g transform="translate(0 1189) scale(1 -1)">
+                        <g id="vision-buffers"></g>
+                        <g id="vision-obstacles"></g>
+                        <g id="vision-path"></g>
+                        <g id="vision-points"></g>
+                        <g id="vision-drag"></g>
+                      </g>
+                    </svg>
+                  </div>
+                  <div class="vision-legend">
+                    <span>● Start</span>
+                    <span>● Destination</span>
+                    <span>■ Drawn obstacle</span>
+                    <span>Dashed area: reserved clearance</span>
+                  </div>
+                  <p class="vision-small">
+                    Origin: bottom-left · X to the right · Y upward · positions snap to a 10 mm
+                    grid. Coordinate fields below provide a keyboard alternative to drawing.
+                  </p>
+                  <div class="vision-fields vision-coordinates">
+                    <label>
+                      Start X (mm)
+                      <input
+                        id="vision-start-x"
+                        type="number"
+                        min="0"
+                        max="841"
+                        step="10"
+                        placeholder="Set on map"
+                      />
+                    </label>
+                    <label>
+                      Start Y (mm)
+                      <input
+                        id="vision-start-y"
+                        type="number"
+                        min="0"
+                        max="1189"
+                        step="10"
+                        placeholder="Set on map"
+                      />
+                    </label>
+                    <label>
+                      Destination X (mm)
+                      <input
+                        id="vision-goal-x"
+                        type="number"
+                        min="0"
+                        max="841"
+                        step="10"
+                        placeholder="Set on map"
+                      />
+                    </label>
+                    <label>
+                      Destination Y (mm)
+                      <input
+                        id="vision-goal-y"
+                        type="number"
+                        min="0"
+                        max="1189"
+                        step="10"
+                        placeholder="Set on map"
+                      />
+                    </label>
+                  </div>
+                  <details>
+                    <summary>Enter an obstacle by coordinates</summary>
+                    <div class="vision-fields">
+                      <label>
+                        Obstacle X (mm)
+                        <input id="vision-obstacle-x" type="number" min="0" max="841" step="1" />
+                      </label>
+                      <label>
+                        Obstacle Y (mm)
+                        <input id="vision-obstacle-y" type="number" min="0" max="1189" step="1" />
+                      </label>
+                      <label>
+                        Obstacle width (mm)
+                        <input
+                          id="vision-obstacle-width"
+                          type="number"
+                          min="1"
+                          max="841"
+                          step="1"
+                        />
+                      </label>
+                      <label>
+                        Obstacle height (mm)
+                        <input
+                          id="vision-obstacle-height"
+                          type="number"
+                          min="1"
+                          max="1189"
+                          step="1"
+                        />
+                      </label>
+                    </div>
+                    <p class="vision-small">X/Y mark the bottom-left corner of the rectangle.</p>
+                    <div class="vision-tools">
+                      <button id="vision-add-obstacle" type="button">Add rectangle</button>
+                      <button id="vision-undo-obstacle" type="button">Remove last obstacle</button>
+                    </div>
+                  </details>
+                  <button class="primary" id="vision-plan" type="button">
+                    Calculate route preview
+                  </button>
+                  <p id="vision-feedback" class="vision-feedback" role="status" aria-live="polite">
+                    Enter the full robot dimensions before planning.
+                  </p>
+                </section>
+                <section class="panel vision-card" aria-labelledby="vision-review-title">
+                  <div class="vision-card-heading">
+                    <div>
+                      <span class="twin-card-kicker">HUMAN IN THE LOOP</span>
+                      <h3 id="vision-review-title">Route review</h3>
+                    </div>
+                    <span id="vision-review-state" class="vision-chip">No proposal</span>
+                  </div>
+                  <div class="vision-route-metrics">
+                    <div>
+                      <span>Route length</span>
+                      <strong id="vision-route-length">Unavailable</strong>
+                    </div>
+                    <div>
+                      <span>Clearance envelope</span>
+                      <strong id="vision-route-clearance">Footprint required</strong>
+                    </div>
+                    <div>
+                      <span>Evidence</span>
+                      <strong>Manual rehearsal</strong>
+                    </div>
+                  </div>
+                  <p id="vision-review-detail">
+                    Calculate a preview to compare the route with your drawn scene. Camera
+                    validation and robot execution are not enabled.
+                  </p>
+                  <label class="vision-note">
+                    Review note (optional)
+                    <input
+                      id="vision-review-note"
+                      type="text"
+                      maxlength="240"
+                      placeholder="Reason for your decision"
+                    />
+                  </label>
+                  <div class="vision-tools">
+                    <button id="vision-approve" class="primary" type="button" disabled>
+                      Approve rehearsal
+                    </button>
+                    <button id="vision-reject" type="button" disabled>Reject</button>
+                    <button id="vision-hold" type="button" disabled>Hold</button>
+                  </div>
+                  <p class="vision-execution">
+                    Robot execution disabled. An approved rehearsal sends no command. Any map or
+                    dimension change requires a new proposal and review.
+                  </p>
+                  <details>
+                    <summary>Rehearsal decision trail</summary>
+                    <ol id="vision-review-trail">
+                      <li>No decisions recorded in this tab.</li>
+                    </ol>
+                  </details>
+                </section>
+              </div>
+              <aside class="vision-side">
+                <section class="panel vision-card" aria-labelledby="vision-setup-title">
+                  <div class="vision-card-heading">
+                    <div>
+                      <span class="twin-card-kicker">COMPLETE WHEN MEASURED</span>
+                      <h3 id="vision-setup-title">Camera &amp; robot setup</h3>
+                    </div>
+                  </div>
+                  <p>
+                    Your floor is A0 portrait. Leave unknown measurements blank; the 100 mm wheel
+                    spacing is not the robot's full width.
+                  </p>
+                  <form id="vision-settings-form">
+                    <div class="vision-fields">
+                      <label>
+                        Full robot length (mm)
+                        <input
+                          id="vision-robot-length"
+                          type="number"
+                          min="1"
+                          max="2000"
+                          step="1"
+                          placeholder="Measure tomorrow"
+                        />
+                      </label>
+                      <label>
+                        Full robot width (mm)
+                        <input
+                          id="vision-robot-width"
+                          type="number"
+                          min="1"
+                          max="2000"
+                          step="1"
+                          placeholder="Include wheels"
+                        />
+                      </label>
+                      <label>
+                        Camera height (cm)
+                        <input
+                          id="vision-camera-height"
+                          type="number"
+                          min="1"
+                          max="1000"
+                          step="1"
+                          placeholder="Above the floor"
+                        />
+                      </label>
+                      <label>
+                        Planning clearance (mm)
+                        <input
+                          id="vision-clearance"
+                          type="number"
+                          min="0"
+                          max="200"
+                          step="1"
+                          value="20"
+                        />
+                      </label>
+                      <label>
+                        Printed marker edge (mm)
+                        <input
+                          id="vision-marker-size"
+                          type="number"
+                          min="1"
+                          max="500"
+                          step="1"
+                          placeholder="When printed"
+                        />
+                      </label>
+                      <label>
+                        Planned marker ID
+                        <input
+                          id="vision-marker-id"
+                          type="number"
+                          min="0"
+                          max="49"
+                          step="1"
+                          value="0"
+                        />
+                      </label>
+                    </div>
+                    <p class="vision-small">
+                      The 20 mm clearance is a starting planning assumption. The planner reserves
+                      half the robot's diagonal plus this margin for every heading. Planned marker
+                      family: ArUco 4×4/50.
+                    </p>
+                    <div class="vision-tools">
+                      <button id="vision-save" type="submit">Save setup</button>
+                      <button id="vision-export" type="button">Export setup &amp; rehearsal</button>
+                    </div>
+                    <p id="vision-save-status" class="vision-small">
+                      Settings stay in this browser. Images are not included in the export.
+                    </p>
+                  </form>
+                  <dl class="vision-readiness">
+                    <dt>Floor dimensions</dt>
+                    <dd>Provided · 841 × 1189 mm</dd>
+                    <dt>Robot footprint</dt>
+                    <dd id="vision-footprint-status">Measurements required</dd>
+                    <dt>Camera height</dt>
+                    <dd id="vision-height-status">Measurement required</dd>
+                    <dt>Floor perspective / lens calibration</dt>
+                    <dd>Pending camera calibration</dd>
+                    <dt>Automatic robot / obstacle detection</dt>
+                    <dd>Not connected</dd>
+                    <dt>Physical route execution</dt>
+                    <dd>Disabled</dd>
+                  </dl>
+                </section>
+                <section class="panel vision-card" aria-labelledby="vision-camera-title">
+                  <div class="vision-card-heading">
+                    <div>
+                      <span class="twin-card-kicker">LOCAL USB CAMERA</span>
+                      <h3 id="vision-camera-title">View the floor</h3>
+                    </div>
+                    <span id="vision-camera-status" class="vision-chip">Not connected</span>
+                  </div>
+                  <div class="vision-camera-view">
+                    <video id="vision-video" autoplay muted playsinline hidden></video>
+                    <img
+                      id="vision-still"
+                      alt="Selected local camera frame for setup preview"
+                      hidden
+                    />
+                    <p id="vision-camera-empty">
+                      Place the camera above the sheet with all four floor corners visible.
+                    </p>
+                  </div>
+                  <div class="vision-tools">
+                    <button id="vision-camera-start" type="button">Start USB preview</button>
+                    <button id="vision-camera-stop" type="button" disabled>Stop preview</button>
+                  </div>
+                  <label class="vision-file">
+                    Or preview a still frame
+                    <input
+                      id="vision-frame-file"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                    />
+                  </label>
+                  <p id="vision-camera-detail" class="vision-small">
+                    Preview stays in your browser. It does not detect obstacles, calibrate the
+                    camera or update the route map. Browser camera permission may be required.
+                  </p>
+                  <details>
+                    <summary>Camera commissioning steps</summary>
+                    <ol>
+                      <li>
+                        Keep the A0 sheet flat and fix the camera so the whole floor remains
+                        visible.
+                      </li>
+                      <li>
+                        Measure the robot footprint, camera height and printed robot-marker size.
+                      </li>
+                      <li>Calibrate lens distortion and the measured floor/marker geometry.</li>
+                      <li>
+                        Connect timestamped robot pose and obstacle observations from the vision
+                        processor.
+                      </li>
+                      <li>
+                        Validate clearance and stale-scene handling before enabling physical route
+                        approval or execution.
+                      </li>
+                    </ol>
+                  </details>
+                </section>
+              </aside>
+            </div>
+          </div>
         </section>
         <section
           id="database"

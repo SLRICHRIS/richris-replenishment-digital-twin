@@ -1357,6 +1357,12 @@ function render() {
   motion.sync();
 }
 const pages = {
+  vision: {
+    title: 'Overhead vision routing',
+    context: 'Camera setup & route review',
+    summary:
+      'Prepare the A0 floor, preview routes and record human decisions before camera commissioning.',
+  },
   connection: {
     title: 'Connect AMR',
     context: 'Physical sensor connection',
@@ -1951,6 +1957,13 @@ function updateSourceUI() {
   if (activePage === 'connection') {
     $('source-badge').textContent = 'Physical connection';
     $('page-mode').textContent = 'Operator-controlled sensor link';
+  }
+  if (activePage === 'vision') {
+    $('source-badge').textContent = 'Manual rehearsal';
+    $('page-mode').textContent = 'Setup · advisory only';
+    $('page-mode').dataset.kind = 'advisory';
+    $('rail-mode').textContent = 'Advisory only';
+    $('rail-detail').textContent = 'Camera calibration pending · no execution';
   }
   document
     .querySelectorAll('[data-floor-source]')
