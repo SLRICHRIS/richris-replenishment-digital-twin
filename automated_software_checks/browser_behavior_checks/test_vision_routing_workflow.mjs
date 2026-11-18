@@ -25,7 +25,7 @@ assert.equal(el('vision-camera-height').value, '92');
 assert.equal(el('vision-robot-length').value, '180');
 assert.equal(el('vision-robot-width').value, '150');
 assert.equal(el('vision-robot-height').value, '150');
-assert.equal(el('vision-marker-height').value, '');
+assert.equal(el('vision-marker-height').value, '150');
 el('pr-to-connect').click();
 assert.equal(page.physical.getStage(), 2);
 assert.equal(el('pr-login').hidden, true);

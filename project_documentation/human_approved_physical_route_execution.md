@@ -54,8 +54,10 @@ On 19 November 2026 the operator supplied the full robot dimensions:
 **180 mm length × 150 mm width × 150 mm height**, including its platform and
 protrusions. These values prefill the shared planning form and the example
 camera configuration. Saved browser edits are preserved; previously blank
-dimensions receive these reported values. Marker height, black edge and centre
-offset remain unknown; the full robot height is not substituted for marker height.
+dimensions receive these reported values. The operator separately confirmed the
+printed marker surface at **150 mm above the floor**, and this value also prefills
+the form and example configuration. The marker's black edge and centre offset
+remain unknown.
 Every physical calibration check remains false until independently commissioned.
 
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX
