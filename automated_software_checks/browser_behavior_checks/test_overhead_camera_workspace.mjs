@@ -82,6 +82,12 @@ input('clearance', '20');
 el('settings-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 const saved = JSON.parse(w.localStorage.getItem('amr01.visionSetup.v2'));
 assert.equal(saved.settings.cameraHeightCm, 92);
+assert.deepEqual(saved.reportedMarkerOffset, {
+  reference: 'wheel-axle-midpoint',
+  forwardMm: 100,
+  leftMm: 0,
+  source: 'operator-reported',
+});
 assert.deepEqual(saved.arena, { widthMm: 425, heightMm: 630, gridMm: 10 });
 assert.equal(saved.version, 2);
 assert.equal(saved.plan, undefined);
@@ -170,6 +176,7 @@ assert.equal(result.executionEnabled, false);
 assert.equal(result.source, 'manual-rehearsal');
 assert.equal(result.automaticDetection, 'not-connected');
 assert.equal(result.cameraCalibration, 'pending');
+assert.deepEqual(result.reportedMarkerOffset, saved.reportedMarkerOffset);
 assert.equal(result.images, undefined);
 assert.equal(commands, 0);
 workspace.destroy();

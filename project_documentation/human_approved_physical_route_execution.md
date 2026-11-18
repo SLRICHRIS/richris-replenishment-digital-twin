@@ -58,7 +58,16 @@ dimensions receive these reported values. The operator separately confirmed the
 printed marker surface at **150 mm above the floor**, and this value also prefills
 the form and example configuration. The provided robot marker is ID 0 with a
 **40 × 40 mm black square**, now recorded as a 40 mm edge in both setups.
-The marker centre offset remains unknown.
+The operator confirmed **A = 10 cm (100 mm) forward** from the drive-wheel axle
+midpoint and **B = 0 mm sideways**. This robot-to-marker position is recorded in
+the setup summary, planning export and `reported_marker_offset_robot_frame_mm`.
+The camera's `marker_center_to_robot_center_mm` is the reverse displacement in
+the printed marker's coordinate frame, so it remains unset until forward
+alignment is verified. If printed marker +Y is verified to point robot-forward,
+the reverse displacement is `[0, -100]` mm with zero angular offset. Do not infer
+that alignment from the mounting distances alone. During mounting verification,
+also check the full body envelope about the chosen axle reference; body dimensions
+alone do not establish that the axle lies at the geometric body centre.
 Every physical calibration check remains false until independently commissioned.
 
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX

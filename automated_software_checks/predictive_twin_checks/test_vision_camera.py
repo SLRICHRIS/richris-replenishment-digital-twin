@@ -63,7 +63,9 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(180,150,150)
     assert p['marker_height_mm']==150
     assert p['marker_edge_mm']==40
+    assert p['reported_marker_offset_robot_frame_mm']==dict(reference='wheel_axle_midpoint',forward=100,left=0,source='operator_reported')
     assert p['marker_center_to_robot_center_mm'] is None
+    assert p['marker_forward_offset_rad'] is None
     assert not any(p['checks'].values())
     p['checks']={c:True for c in CHECKS};p['floor_width_mm']=841
     old=tmp_path/'old.json';old.write_text(json.dumps(p))
