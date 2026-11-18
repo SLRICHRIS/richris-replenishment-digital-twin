@@ -3,14 +3,16 @@
 2026-11-19: the operator corrected wheel diameter from 60 to 65 mm; track
 and confirmed ESP32-counted PPR remain 100 mm and 20. Battery details and
 a stationary gyro bias were supplied as reports, not a complete model
-calibration. The gyro report's sign, axis and unit remain unspecified.
+calibration. The operator subsequently confirmed stationary Z bias as
++0.02 degrees/second. X/Y biases remain unspecified.
 """
-from math import isfinite, pi
+from math import isfinite, pi, radians
 
 WHEEL_DIAMETER_M = 0.065
 WHEEL_TRACK_M = 0.100
 PULSES_PER_WHEEL_REVOLUTION = 20
-PROFILE_ID = 'amr01-reported-setup-20261119'
+GYRO_Z_BIAS_DEG_S = 0.02
+PROFILE_ID = 'amr01-reported-z-bias-20261119'
 
 
 def profile_payload():
@@ -22,10 +24,11 @@ def profile_payload():
         ppr_evidence='Operator confirmed ESP32-counted pulses per wheel revolution',
         distance_per_pulse_m=pi * WHEEL_DIAMETER_M / PULSES_PER_WHEEL_REVOLUTION,
         imu_axes=dict(x='forward', y='left', z='up'),
-        reported_gyro_bias=dict(raw_report='Stationary gyro bias-0.02',
-                                magnitude=0.02, sign=None, axis=None, unit=None),
-        reported_gyro_bias_rad_s=dict(x=None, y=None, z=None),
-        gyro_bias_measured=False, direction_measured=False,
+        reported_gyro_bias=dict(raw_report='Z = +0.02 degree/sec',
+                                magnitude=GYRO_Z_BIAS_DEG_S, sign=1, axis='z', unit='deg/s'),
+        reported_gyro_bias_rad_s=dict(x=None, y=None, z=radians(GYRO_Z_BIAS_DEG_S)),
+        gyro_bias_measured=True, gyro_bias_source='operator_reported_stationary',
+        direction_measured=False,
         battery_capacity_ah=None, initial_soc=None, models_ready=False,
         reported_battery=dict(capacity_ah=2.2, initial_soc=1.0,
                               discharge_positive=True,
@@ -34,7 +37,7 @@ def profile_payload():
                               initial_soc_reference_verified=False,
                               measurement_scope='motor_branch_only'),
         wheel_detail='65 mm wheels · 100 mm wheel-centre spacing · 20 counted pulses per wheel turn. RPM and rim-speed magnitudes use operator-supplied geometry; direction and ground motion are not measured.',
-        imu_detail='Reported axes: X forward, Y left, Z up. Stationary gyro bias was reported as 0.02; confirm its sign, axis and unit before applying correction.',
+        imu_detail='Reported axes: X forward, Y left, Z up. Operator-reported stationary Z bias: +0.02°/s (+0.000349066 rad/s). X/Y biases were not supplied; full model calibration remains incomplete.',
         battery_detail='Reported pack: 2,200 mAh; starting charge 100%; discharge current positive. INA219 comparison reported no significant error. Usable capacity and the starting-charge reference remain unverified; INA219 measures the motor branch only.',
     )
 

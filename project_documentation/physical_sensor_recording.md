@@ -131,9 +131,15 @@ magnitude is pulse frequency × 3, and rim-speed magnitude is pulse frequency
 97.94150. These are unsigned wheel estimates, not robot ground speed
 or signed odometry; the geometry and PPR apply to both wheels as supplied.
 
-Reported IMU axes are X forward, Y left, Z up. The new report is literally
-`Stationary gyro bias-0.02`; confirm the sign, axis and unit before converting
-or applying it. No axis is assigned a default zero bias.
+Reported IMU axes are X forward, Y left, Z up. The operator clarified the
+stationary Z-axis bias as **+0.02 degrees/second**, equivalent to
+**+0.00034906585039886593 rad/s**. This operator-reported stationary measurement
+is recorded with its axis, unit and source. X/Y biases remain unknown.
+The website displays this fixed calibration separately from current raw gyro
+observations, including when telemetry is stale. It does not enable corrected
+model output, signed odometry or physical actions while the remaining model
+calibration is incomplete. The full model's correction is raw Z rate minus
+the stationary Z bias, with both expressed in rad/s.
 
 The reported pack capacity is 2,200 mAh (2.2 Ah), starting charge is 100%,
 discharge current is positive, and the INA219 comparison reportedly showed no
