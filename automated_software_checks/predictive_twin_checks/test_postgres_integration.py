@@ -147,3 +147,56 @@ def test_website_service_owns_and_releases_review_process_lease():
     finally:
         second.close()
         db.engine.dispose()
+
+
+@pytest.mark.skipif(not os.getenv('TEST_POSTGRES_URL'), reason='PostgreSQL test service not configured')
+def test_route_audit_does_not_inherit_sensor_read_access():
+    """Dedicated CI database: exercise exact SQL, privileges and runtime role gate."""
+    from pathlib import Path
+    from unittest.mock import patch
+    from sqlalchemy import create_engine, text
+    from backend_streamlit_and_telemetry.vision_control.service import Service
+    from sqlalchemy.engine import make_url
+    engine=create_engine(os.environ['TEST_POSTGRES_URL'])
+    migration=(Path(__file__).resolve().parents[2]/'backend_streamlit_and_telemetry/vision_control/route_audit.sql').read_text()
+    try:
+        with engine.begin() as c:
+            for role in ('amr_reader','amr_worker'):
+                if not c.exec_driver_sql("SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='"+role+"')").scalar_one():
+                    c.exec_driver_sql('CREATE ROLE '+role+' NOLOGIN')
+            # Reproduce this account's real defaults: newly created tables would
+            # otherwise expose free-text operator reasons to both sensor roles.
+            c.exec_driver_sql('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO amr_reader,amr_worker')
+            c.exec_driver_sql(migration)
+            c.exec_driver_sql(migration)  # Re-running preserves the restriction.
+            for role in ('amr_reader','amr_worker'):
+                assert not c.execute(text("SELECT has_table_privilege(:role,'public.amr_route_reviews','SELECT')"),dict(role=role)).scalar_one()
+            can_login=c.exec_driver_sql("SELECT rolcanlogin FROM pg_roles WHERE rolname='amr_route_coordinator'").scalar_one()
+            assert can_login is False
+            for privilege in ('SELECT','INSERT','UPDATE'):
+                assert c.execute(text("SELECT has_table_privilege('amr_route_coordinator','public.amr_route_reviews',:p)"),dict(p=privilege)).scalar_one()
+            for privilege in ('DELETE','TRUNCATE','REFERENCES','TRIGGER'):
+                assert not c.execute(text("SELECT has_table_privilege('amr_route_coordinator','public.amr_route_reviews',:p)"),dict(p=privilege)).scalar_one()
+        # Reject the broad CI administrator before any broker client is created.
+        with patch('paho.mqtt.client.Client') as client:
+            with pytest.raises(ValueError,match='restricted route audit role'):
+                Service(dict(audit_url=os.environ['TEST_POSTGRES_URL']))
+            client.assert_not_called()
+        # Activate only inside this disposable CI database, using a test-only
+        # password. Production provisioning never creates or activates a login.
+        with engine.begin() as c:
+            c.exec_driver_sql("ALTER ROLE amr_route_coordinator LOGIN PASSWORD 'route-ci-only'")
+        url=make_url(os.environ['TEST_POSTGRES_URL']).set(username='amr_route_coordinator',password='route-ci-only').render_as_string(hide_password=False)
+        profile=dict(audit_url=url,mqtt_username='ci-only',mqtt_password='ci-only',mqtt_host='example.invalid',control_key='a'*64)
+        with patch('paho.mqtt.client.Client') as client:
+            service=Service(profile)
+            try:
+                service.assert_owner()
+                client.return_value.connect_async.assert_called_once()
+                assert not service.coordinator.connected
+            finally:
+                service.close()
+    finally:
+        with engine.begin() as c:
+            c.exec_driver_sql('ALTER ROLE amr_route_coordinator NOLOGIN PASSWORD NULL')
+        engine.dispose()

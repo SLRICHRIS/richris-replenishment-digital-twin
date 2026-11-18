@@ -17,6 +17,13 @@ class Service:
         if not u.drivername.startswith('postgresql') or '-pooler' in (u.host or ''): raise ValueError('Use a direct PostgreSQL audit connection')
         self.engine=create_engine(u,pool_pre_ping=True,connect_args={'connect_timeout':5})
         self.lease=self.engine.connect()
+        try:
+            restricted=self.lease.execute(text("SELECT has_table_privilege(current_user,'public.amr_route_reviews','SELECT') AND has_table_privilege(current_user,'public.amr_route_reviews','INSERT') AND has_table_privilege(current_user,'public.amr_route_reviews','UPDATE') AND NOT has_table_privilege(current_user,'public.amr_route_reviews','DELETE') AND NOT has_table_privilege(current_user,'public.amr_route_reviews','TRUNCATE') AND NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname=current_user AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR rolinherit))")).scalar_one()
+            self.lease.commit()
+            if not restricted:
+                raise ValueError('Use the restricted route audit role; owner and general sensor credentials cannot control routes')
+        except Exception:
+            self.lease.close(); self.engine.dispose(); raise
         if not self.lease.execute(text('SELECT pg_try_advisory_lock(707010318)')).scalar_one():
             self.lease.close(); self.engine.dispose(); raise ValueError('Another route coordinator owns this robot')
         self.pid=self.lease.execute(text('SELECT pg_backend_pid()')).scalar_one(); self.lease.commit()
