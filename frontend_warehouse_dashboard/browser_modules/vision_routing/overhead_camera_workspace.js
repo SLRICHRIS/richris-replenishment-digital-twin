@@ -25,6 +25,12 @@ export function createVisionWorkspace(scope) {
     markerSizeMm: 40,
     cameraHeightCm: 92,
   };
+  const reportedMarkerOffset = {
+    reference: 'wheel-axle-midpoint',
+    forwardMm: 100,
+    leftMm: 0,
+    source: 'operator-reported',
+  };
   const settingsFields = {
     robotLengthMm: 'robot-length',
     robotWidthMm: 'robot-width',
@@ -413,6 +419,7 @@ export function createVisionWorkspace(scope) {
     version: 2,
     arena: ARENA,
     settings: state.settings,
+    reportedMarkerOffset,
     start: state.start,
     goal: state.goal,
     obstacles: state.obstacles,
