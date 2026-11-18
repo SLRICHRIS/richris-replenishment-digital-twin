@@ -1958,6 +1958,13 @@ function updateSourceUI() {
     $('source-badge').textContent = 'Physical connection';
     $('page-mode').textContent = 'Operator-controlled sensor link';
   }
+  if (activePage === 'vision') {
+    $('source-badge').textContent = 'Manual rehearsal';
+    $('page-mode').textContent = 'Setup · advisory only';
+    $('page-mode').dataset.kind = 'advisory';
+    $('rail-mode').textContent = 'Advisory only';
+    $('rail-detail').textContent = 'Camera calibration pending · no execution';
+  }
   document
     .querySelectorAll('[data-floor-source]')
     .forEach((b) =>
