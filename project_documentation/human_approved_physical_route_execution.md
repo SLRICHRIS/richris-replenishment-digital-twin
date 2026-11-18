@@ -42,8 +42,8 @@ ratings, driver thermal limits and INA219 shunt calibration before commissioning
 The INA219 measures the motor branch; it does not measure the ESP32/buck branch.
 Single-channel wheel counts remain unsigned. Camera pose controls this route;
 commanded direction is never relabelled measured encoder direction.
-Wheel diameter 60 mm, track 100 mm and operator-reported 20 pulses/turn remain the
-reported geometry. The public firmware template still requires confirmation of
+Wheel diameter was corrected to 65 mm on 19 November 2026; track 100 mm and
+operator-reported 20 pulses/turn remain unchanged. The public firmware template still requires confirmation of
 its pulse settings; use 20 only after checking actual counted falling edges.
 
 ## 1. Prepare the measured camera scene

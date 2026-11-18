@@ -72,15 +72,15 @@ def display_payload(db, now=None):
         if not row['gyro_available']:
             recommendations.append('IMU readings are unavailable. Check I2C wiring and sensor startup.')
         else:
-            recommendations.append('Zero gyro bias is a default. Complete a stationary bias test before using corrected turning rates.')
+            recommendations.append('Confirm the sign, axis and unit of the reported 0.02 stationary gyro bias before using corrected turning rates.')
         if not row['battery_available']:
             recommendations.append('Battery readings are unavailable. Check INA219 wiring and its supply.')
         elif row['battery_voltage_v'] < 1:
             recommendations.append('Battery voltage is below 1 V. Check battery power and INA219 VIN connections before interpreting battery estimates.')
-        recommendations.append('Wheel estimates use the confirmed 20 counted pulses per wheel turn and reported 60 mm diameter. Wheel direction remains unmeasured.')
+        recommendations.append('Wheel estimates use the confirmed 20 counted pulses per wheel turn and reported 65 mm diameter. Wheel direction remains unmeasured.')
         if not row['battery_continuity']:
             recommendations.append('A battery measurement gap occurred. Accumulated charge needs a new measured starting point.')
-        recommendations.append('Battery percentage and remaining runtime require verified capacity, starting charge and current polarity.')
+        recommendations.append('A 2,200 mAh pack, 100% starting charge and discharge-positive current are reported. Battery percentage and runtime still need verified usable capacity, starting-charge reference and current calibration; INA219 measures only the motor branch.')
     for key, value in row.items():
         if isinstance(value, datetime): row[key] = value.isoformat()
     recent = []
