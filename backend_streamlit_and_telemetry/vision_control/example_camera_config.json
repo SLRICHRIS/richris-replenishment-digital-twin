@@ -18,7 +18,7 @@
   ],
   "camera_height_mm": 920,
   "marker_edge_mm": null,
-  "marker_height_mm": null,
+  "marker_height_mm": 150,
   "marker_center_to_robot_center_mm": null,
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
@@ -43,5 +43,5 @@
   },
   "floor_width_mm": 425,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Operator-reported on 19 November 2026: full robot length 18 cm, width 15 cm, height 15 cm; paper width 42.5 cm and length 63 cm; overhead USB camera height 92 cm. Marker height, edge and centre offset remain unknown. Calibration checks remain unverified."
+  "reported_measurements_note": "Operator-reported on 19 November 2026: full robot length 18 cm, width 15 cm, height 15 cm; marker surface separately confirmed 15 cm above the floor; paper width 42.5 cm and length 63 cm; overhead USB camera height 92 cm. Marker edge and centre offset remain unknown. Calibration checks remain unverified."
 }

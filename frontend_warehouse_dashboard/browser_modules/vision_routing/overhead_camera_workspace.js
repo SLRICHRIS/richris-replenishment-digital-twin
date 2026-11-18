@@ -21,6 +21,7 @@ export function createVisionWorkspace(scope) {
     robotLengthMm: 180,
     robotWidthMm: 150,
     robotHeightMm: 150,
+    markerHeightMm: 150,
     cameraHeightCm: 92,
   };
   const settingsFields = {
