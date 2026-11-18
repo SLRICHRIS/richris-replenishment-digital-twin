@@ -1,6 +1,6 @@
 # Overhead USB camera provision
 
-Open **Vision routing** in the published Streamlit dashboard. The known arena is A0 portrait: **841 × 1189 mm**, origin at the bottom-left, X right and Y up. Full robot body length/width, camera mounting height and printed robot-marker edge are intentionally blank until measured. The existing 100 mm wheel spacing is not substituted for body width.
+Open **Vision routing** in the published Streamlit dashboard. The reported arena is a **425 × 630 mm** portrait paper, origin at the bottom-left, X right and Y up. Reported camera height is **92 cm**, interpreted as lens-to-paper distance pending confirmation. Full robot body length/width and printed robot-marker edge remain blank until measured. The existing 100 mm wheel spacing is not substituted for body width.
 
 ## Available now
 
@@ -18,7 +18,7 @@ The preview does not model dynamic obstacles, wheel slip, turn duration, acceler
 
 ## Morning commissioning inputs and remaining work
 
-1. Measure the full robot envelope, including wheels and protrusions, and the camera height above the floor. Provide a frame with the whole flat A0 sheet visible. Measure the printed marker edge; planned family is ArUco 4×4/50, default ID 0.
+1. Measure the full robot envelope, including wheels and protrusions, and the camera height above the floor. Provide a frame with the whole flat measured paper visible. Measure the printed marker edge; planned family is ArUco 4×4/50, default ID 0.
 2. Calibrate lens distortion and the floor perspective using measured correspondences. Robot markers above floor level need their own height/pose treatment; a floor homography alone is not a general 3D localization model.
 3. Connect a Windows-local USB vision processor to extract robot pose and obstacle observations. Define timestamp, frame identity, coordinate convention, uncertainty, detection validity and stale/occluded-scene behavior before accepting these as evidence.
 4. Add a separate authenticated and validated observation-ingest path and read-only stored scene view. The current commissioning receiver accepts ESP32 sensor packets; this page does not send invented camera packets into it.
@@ -32,3 +32,5 @@ Until those steps are implemented and validated, the page says **Setup · adviso
 The manual drawing and approval on this original panel remain rehearsal only.
 The separate Physical AMR execution panel now has a protected website → local
 camera controller → ESP32 motor path. See the [physical route execution guide](human_approved_physical_route_execution.md) for measured configuration, firmware upload, exact topic permissions and commissioning.
+
+The 18 November paper measurements supersede the original A0 assumption. Saved A0 maps are not restored into the new coordinate system. Camera calibration and physical commissioning remain pending.

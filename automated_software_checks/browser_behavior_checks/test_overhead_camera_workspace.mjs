@@ -20,19 +20,33 @@ d.addEventListener('python-twin:action', () => commands++);
 w.fetch = () => {
   throw Error('This workspace must not send requests');
 };
+w.localStorage.setItem(
+  'amr01.visionSetup.v1',
+  JSON.stringify({
+    version: 1,
+    arena: { widthMm: 841, heightMm: 1189 },
+    settings: { robotLengthMm: 999 },
+    decision: { action: 'approve' },
+  }),
+);
 const workspace = createVisionWorkspace(w);
 assert.equal(createVisionWorkspace(w), null, 'No duplicate event handlers');
 assert.equal(el('robot-length').value, '');
-assert.equal(el('camera-height').value, '');
+assert.equal(el('camera-height').value, '92');
 assert.equal(el('approve').disabled, true);
+el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 425, height: 630 });
+el('map').dispatchEvent(
+  new w.MouseEvent('pointerdown', { button: 0, clientX: 400, clientY: 30, bubbles: true }),
+);
+assert.deepEqual(workspace.snapshot().start, { x: 400, y: 600 });
 el('plan').click();
 assert.match(el('feedback').textContent, /full robot length and width/);
-input('robot-length', '180');
-input('robot-width', '140');
-input('start-x', '200');
-input('start-y', '200');
-input('goal-x', '600');
-input('goal-y', '900');
+input('robot-length', '80');
+input('robot-width', '60');
+input('start-x', '100');
+input('start-y', '100');
+input('goal-x', '320');
+input('goal-y', '520');
 el('plan').click();
 assert.equal(el('approve').disabled, false);
 assert.equal(el('review-state').textContent, 'Awaiting review');
@@ -42,12 +56,12 @@ assert.match(el('review-state').textContent, /Approved/);
 assert.equal(el('review-trail').querySelector('img'), null);
 assert.equal(workspace.snapshot().decision.executionEnabled, false);
 assert.equal(commands, 0);
-input('goal-x', '590');
+input('goal-x', '310');
 assert.equal(workspace.snapshot().decision, null);
 assert.equal(workspace.snapshot().plan, null);
 assert.equal(el('approve').disabled, true);
 assert.match(el('review-trail').textContent, /Previous decision invalidated/);
-for (const [key, value] of Object.entries({ x: 350, y: 400, width: 120, height: 200 }))
+for (const [key, value] of Object.entries({ x: 180, y: 280, width: 40, height: 40 }))
   input(`obstacle-${key}`, String(value));
 el('add-obstacle').click();
 assert.equal(workspace.snapshot().obstacles.length, 1);
@@ -61,8 +75,10 @@ el('plan').click();
 assert.match(el('feedback').textContent, /between 0 and 200/);
 input('clearance', '20');
 el('settings-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
-const saved = JSON.parse(w.localStorage.getItem('amr01.visionSetup.v1'));
-assert.equal(saved.settings.cameraHeightCm, null);
+const saved = JSON.parse(w.localStorage.getItem('amr01.visionSetup.v2'));
+assert.equal(saved.settings.cameraHeightCm, 92);
+assert.deepEqual(saved.arena, { widthMm: 425, heightMm: 630, gridMm: 10 });
+assert.equal(saved.version, 2);
 assert.equal(saved.plan, undefined);
 assert.equal(saved.decision, undefined);
 assert.equal(saved.images, undefined);
@@ -156,12 +172,12 @@ workspace.destroy();
 saved.executionEnabled = true;
 saved.decision = { action: 'approve' };
 saved.plan = { points: [1] };
-w.localStorage.setItem('amr01.visionSetup.v1', JSON.stringify(saved));
+w.localStorage.setItem('amr01.visionSetup.v2', JSON.stringify(saved));
 const restored = createVisionWorkspace(w);
 assert.equal(restored.snapshot().executionEnabled, false);
 assert.equal(restored.snapshot().decision, null);
 assert.equal(restored.snapshot().plan, null);
-assert.equal(restored.snapshot().settings.robotLengthMm, 180);
+assert.equal(restored.snapshot().settings.robotLengthMm, 80);
 restored.destroy();
 w.close();
 console.log(

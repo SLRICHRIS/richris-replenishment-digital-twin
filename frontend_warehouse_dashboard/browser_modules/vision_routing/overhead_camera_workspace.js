@@ -15,7 +15,7 @@ export function createVisionWorkspace(scope) {
   if (!root || root.dataset.initialized === 'true') return null;
   root.dataset.initialized = 'true';
   const el = (id) => d.getElementById(`vision-${id}`);
-  const storageKey = 'amr01.visionSetup.v1';
+  const storageKey = 'amr01.visionSetup.v2';
   const settingsFields = {
     robotLengthMm: 'robot-length',
     robotWidthMm: 'robot-width',
@@ -25,7 +25,7 @@ export function createVisionWorkspace(scope) {
     markerId: 'marker-id',
   };
   const state = {
-    settings: normalizeSettings(),
+    settings: normalizeSettings({ cameraHeightCm: 92 }),
     start: null,
     goal: null,
     obstacles: [],
@@ -54,7 +54,11 @@ export function createVisionWorkspace(scope) {
   const now = () => new Date().toISOString();
   try {
     const raw = JSON.parse(scope.localStorage.getItem(storageKey) || 'null');
-    if (raw?.version === 1) {
+    if (
+      raw?.version === 2 &&
+      raw.arena?.widthMm === ARENA.widthMm &&
+      raw.arena?.heightMm === ARENA.heightMm
+    ) {
       const saved = {
         settings: normalizeSettings(raw.settings),
         start: normalizePoint(raw.start),
@@ -249,8 +253,17 @@ export function createVisionWorkspace(scope) {
     const box = el('map').getBoundingClientRect();
     if (!box.width || !box.height) return null;
     return {
-      x: Math.max(0, Math.min(841, ((event.clientX - box.left) / box.width) * 841)),
-      y: Math.max(0, Math.min(1189, 1189 - ((event.clientY - box.top) / box.height) * 1189)),
+      x: Math.max(
+        0,
+        Math.min(ARENA.widthMm, ((event.clientX - box.left) / box.width) * ARENA.widthMm),
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          ARENA.heightMm,
+          ARENA.heightMm - ((event.clientY - box.top) / box.height) * ARENA.heightMm,
+        ),
+      ),
     };
   }
   on(el('map'), 'pointerdown', (event) => {
@@ -382,7 +395,7 @@ export function createVisionWorkspace(scope) {
       render();
     });
   const setup = () => ({
-    version: 1,
+    version: 2,
     arena: ARENA,
     settings: state.settings,
     start: state.start,
@@ -427,7 +440,7 @@ export function createVisionWorkspace(scope) {
     const url = scope.URL.createObjectURL(file),
       a = d.createElement('a');
     a.href = url;
-    a.download = 'AMR01_A0_Camera_Setup_and_Rehearsal.json';
+    a.download = 'AMR01_425x630_Camera_Setup_and_Rehearsal.json';
     d.body.append(a);
     a.click();
     a.remove();

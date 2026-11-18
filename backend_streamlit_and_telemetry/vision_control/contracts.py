@@ -10,7 +10,8 @@ import json
 import math
 import re
 
-WIDTH, HEIGHT, GRID = 841, 1189, 10
+WIDTH, HEIGHT, GRID = 425, 630, 10
+SCENE_VERSION = 2
 SCENE_FRESH_MS, DRIVE_LEASE_MS, APPROVAL_LEASE_MS = 500, 500, 800
 OPERATOR_PRESENCE_MS = 2500
 MAX_PWM, MAX_ROUTE_MS = 80, 60000
@@ -102,7 +103,7 @@ def radius(config):
 
 def obstacles(raw):
     if not isinstance(raw, list) or len(raw) > 64:
-        raise ValueError('The camera scene is too complex for this A0 controller')
+        raise ValueError('The camera scene is too complex for this measured-floor controller')
     result=[]
     for r in raw:
         if not isinstance(r, dict):
@@ -116,8 +117,10 @@ def obstacles(raw):
 
 
 def scene(raw):
-    if not isinstance(raw, dict) or raw.get('version') != 1 or raw.get('robot_id') != 'amr01':
+    if not isinstance(raw, dict) or raw.get('version') != SCENE_VERSION or raw.get('robot_id') != 'amr01':
         raise ValueError('Unsupported camera scene')
+    if raw.get('floor_width_mm') != WIDTH or raw.get('floor_length_mm') != HEIGHT:
+        raise ValueError('Camera scene does not match the reported 425 x 630 mm floor')
     for n,size in (('agent_boot_id',32),('config_id',64)):
         identifier(raw.get(n),size)
     if type(raw.get('seq')) is not int or raw['seq'] < 0 or type(raw.get('captured_at_ms')) is not int:
@@ -145,13 +148,13 @@ def scene(raw):
     for n in ('left_duty','right_duty'):
         if type(hardware.get(n)) is not int or abs(hardware[n]) > MAX_PWM:
             raise ValueError('Invalid hardware motor output')
-    return dict(version=1,robot_id='amr01',agent_boot_id=raw['agent_boot_id'],config_id=raw['config_id'],
+    return dict(version=SCENE_VERSION,floor_width_mm=WIDTH,floor_length_mm=HEIGHT,robot_id='amr01',agent_boot_id=raw['agent_boot_id'],config_id=raw['config_id'],
                 seq=raw['seq'],captured_at_ms=raw['captured_at_ms'],valid=raw['valid'],reason=raw.get('reason',''),
                 geometry=g,pose=p,obstacles=rects,hardware=dict(hardware))
 
 
 def map_digest(s):
-    return digest(dict(config=s['config_id'],geometry=s['geometry'],obstacles=s['obstacles'],
+    return digest(dict(floor=[s['floor_width_mm'],s['floor_length_mm']],config=s['config_id'],geometry=s['geometry'],obstacles=s['obstacles'],
                        agent=s['agent_boot_id'],boot=s['hardware']['boot_id'],epoch=s['hardware']['epoch_id']))
 
 
@@ -200,7 +203,7 @@ def plan(s, goal):
             points.reverse()
             if math.dist(actual,start)>.001: points.insert(0,actual)
             if len(points)>300:
-                raise ValueError('Route exceeds the bounded A0 job size')
+                raise ValueError('Route exceeds the bounded floor job size')
             return dict(points=[list(p) for p in points],goal=list(goal),length_mm=cost+math.dist(actual,start),
                         clearance_radius_mm=r,goal_tolerance_mm=15,grid_mm=GRID)
         visited.add(p)

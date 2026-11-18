@@ -12,8 +12,11 @@
   },
   "camera_matrix": null,
   "distortion_coefficients": null,
-  "resolution": [1280, 720],
-  "camera_height_mm": null,
+  "resolution": [
+    1280,
+    720
+  ],
+  "camera_height_mm": 920,
   "marker_edge_mm": null,
   "marker_height_mm": null,
   "marker_center_to_robot_center_mm": null,
@@ -37,5 +40,8 @@
     "left_polarity": null,
     "right_polarity": null,
     "min_pack_voltage_v": 6.6
-  }
+  },
+  "floor_width_mm": 425,
+  "floor_length_mm": 630,
+  "reported_measurements_note": "Paper width 42.5 cm, length 63 cm; H 92 cm interpreted as camera height. Confirm lens-to-paper height. Calibration checks remain unverified."
 }

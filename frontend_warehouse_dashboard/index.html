@@ -1377,7 +1377,7 @@
           <div id="vision-workspace">
             <div class="vision-banner">
               <div>
-                <span class="twin-card-kicker">USB CAMERA · A0 PORTRAIT · HUMAN REVIEW</span>
+                <span class="twin-card-kicker">USB CAMERA · MEASURED PAPER · HUMAN REVIEW</span>
                 <h2>Prepare the view. Review the route.</h2>
                 <p>
                   Set up your measured floor and rehearse route decisions while camera calibration
@@ -1392,9 +1392,9 @@
                   <div class="vision-card-heading">
                     <div>
                       <span class="twin-card-kicker">MANUAL MAP REHEARSAL</span>
-                      <h3 id="vision-map-title">A0 working floor</h3>
+                      <h3 id="vision-map-title">Measured working floor</h3>
                     </div>
-                    <span class="vision-chip">841 × 1189 mm</span>
+                    <span class="vision-chip">425 × 630 mm</span>
                   </div>
                   <p id="vision-map-instructions">
                     Place a start and destination, then drag rectangles over obstacles. This map is
@@ -1415,9 +1415,9 @@
                   <div class="vision-map-wrap">
                     <svg
                       id="vision-map"
-                      viewBox="0 0 841 1189"
+                      viewBox="0 0 425 630"
                       role="img"
-                      aria-label="Interactive A0 manual route map"
+                      aria-label="Interactive measured-paper manual route map"
                       aria-describedby="vision-map-instructions"
                     >
                       <defs>
@@ -1430,14 +1430,14 @@
                           <path d="M50 0H0V50" fill="none" stroke="currentColor" stroke-width="1" />
                         </pattern>
                       </defs>
-                      <rect width="841" height="1189" class="vision-floor" />
+                      <rect width="425" height="630" class="vision-floor" />
                       <rect
-                        width="841"
-                        height="1189"
+                        width="425"
+                        height="630"
                         fill="url(#vision-grid-pattern)"
                         class="vision-grid"
                       />
-                      <g transform="translate(0 1189) scale(1 -1)">
+                      <g transform="translate(0 630) scale(1 -1)">
                         <g id="vision-buffers"></g>
                         <g id="vision-obstacles"></g>
                         <g id="vision-path"></g>
@@ -1463,7 +1463,7 @@
                         id="vision-start-x"
                         type="number"
                         min="0"
-                        max="841"
+                        max="425"
                         step="10"
                         placeholder="Set on map"
                       />
@@ -1474,7 +1474,7 @@
                         id="vision-start-y"
                         type="number"
                         min="0"
-                        max="1189"
+                        max="630"
                         step="10"
                         placeholder="Set on map"
                       />
@@ -1485,7 +1485,7 @@
                         id="vision-goal-x"
                         type="number"
                         min="0"
-                        max="841"
+                        max="425"
                         step="10"
                         placeholder="Set on map"
                       />
@@ -1496,7 +1496,7 @@
                         id="vision-goal-y"
                         type="number"
                         min="0"
-                        max="1189"
+                        max="630"
                         step="10"
                         placeholder="Set on map"
                       />
@@ -1507,11 +1507,11 @@
                     <div class="vision-fields">
                       <label>
                         Obstacle X (mm)
-                        <input id="vision-obstacle-x" type="number" min="0" max="841" step="1" />
+                        <input id="vision-obstacle-x" type="number" min="0" max="425" step="1" />
                       </label>
                       <label>
                         Obstacle Y (mm)
-                        <input id="vision-obstacle-y" type="number" min="0" max="1189" step="1" />
+                        <input id="vision-obstacle-y" type="number" min="0" max="630" step="1" />
                       </label>
                       <label>
                         Obstacle width (mm)
@@ -1519,7 +1519,7 @@
                           id="vision-obstacle-width"
                           type="number"
                           min="1"
-                          max="841"
+                          max="425"
                           step="1"
                         />
                       </label>
@@ -1529,7 +1529,7 @@
                           id="vision-obstacle-height"
                           type="number"
                           min="1"
-                          max="1189"
+                          max="630"
                           step="1"
                         />
                       </label>
@@ -1610,8 +1610,8 @@
                     </div>
                   </div>
                   <p>
-                    Your floor is A0 portrait. Leave unknown measurements blank; the 100 mm wheel
-                    spacing is not the robot's full width.
+                    Your paper is 42.5 × 63 cm. Reported camera height: 92 cm; verify from lens to
+                    paper. The 100 mm wheel spacing is not the robot's full width.
                   </p>
                   <form id="vision-settings-form">
                     <div class="vision-fields">
@@ -1697,7 +1697,7 @@
                   </form>
                   <dl class="vision-readiness">
                     <dt>Floor dimensions</dt>
-                    <dd>Provided · 841 × 1189 mm</dd>
+                    <dd>Provided · 425 × 630 mm</dd>
                     <dt>Robot footprint</dt>
                     <dd id="vision-footprint-status">Measurements required</dd>
                     <dt>Camera height</dt>
@@ -1749,7 +1749,7 @@
                     <summary>Camera commissioning steps</summary>
                     <ol>
                       <li>
-                        Keep the A0 sheet flat and fix the camera so the whole floor remains
+                        Keep the measured paper flat and fix the camera so the whole floor remains
                         visible.
                       </li>
                       <li>

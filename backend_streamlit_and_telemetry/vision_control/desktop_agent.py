@@ -8,7 +8,7 @@ import uuid
 import ssl
 import getpass
 from pathlib import Path
-from .contracts import (canonical,seal,scene,SCENE_TOPIC,STATUS_TOPIC,REQUEST_TOPIC,DRIVE_TOPIC,HARDWARE_TOPIC)
+from .contracts import (canonical,seal,scene,SCENE_VERSION,WIDTH,HEIGHT,SCENE_TOPIC,STATUS_TOPIC,REQUEST_TOPIC,DRIVE_TOPIC,HARDWARE_TOPIC)
 from .protocol import drive,hardware
 from .agent import Agent
 
@@ -94,7 +94,7 @@ def main():
                 value=dict(hw) if hw else dict(boot_id='0'*32,epoch_id='0'*32,ready=False,age_ms=600000,battery_voltage_v=0,left_duty=0,right_duty=0)
                 value['age_ms']=min(600000,max(0,stamp-value.get('issued_at_ms',0)))
                 if not linked: value['ready']=False
-                s=scene(dict(version=1,robot_id='amr01',agent_boot_id=boot,config_id=tracker.config_id,seq=seq,
+                s=scene(dict(version=SCENE_VERSION,floor_width_mm=WIDTH,floor_length_mm=HEIGHT,robot_id='amr01',agent_boot_id=boot,config_id=tracker.config_id,seq=seq,
                     captured_at_ms=captured_at,valid=valid,reason=reason,pose=pose,obstacles=rects,geometry=p['geometry'],hardware=value))
                 try: agent.tick(s,stamp)
                 except Exception:

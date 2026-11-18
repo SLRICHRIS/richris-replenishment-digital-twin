@@ -1,5 +1,5 @@
-/* Manual A0 planning rehearsal. No camera inference or robot commands. */
-export const ARENA = Object.freeze({ widthMm: 841, heightMm: 1189, gridMm: 10 });
+/* Manual measured-floor planning rehearsal. No camera inference or robot commands. */
+export const ARENA = Object.freeze({ widthMm: 425, heightMm: 630, gridMm: 10 });
 const finite = (n) => typeof n === 'number' && Number.isFinite(n);
 export function normalizeSettings(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -35,10 +35,16 @@ export function normalizePoint(input) {
     input.y < 0 ||
     input.y > ARENA.heightMm
   )
-    throw Error('Keep start and destination inside the A0 floor.');
+    throw Error('Keep start and destination inside the measured floor.');
   return {
-    x: Math.min(840, Math.round(input.x / 10) * 10),
-    y: Math.min(1180, Math.round(input.y / 10) * 10),
+    x: Math.min(
+      Math.floor(ARENA.widthMm / ARENA.gridMm) * ARENA.gridMm,
+      Math.round(input.x / ARENA.gridMm) * ARENA.gridMm,
+    ),
+    y: Math.min(
+      Math.floor(ARENA.heightMm / ARENA.gridMm) * ARENA.gridMm,
+      Math.round(input.y / ARENA.gridMm) * ARENA.gridMm,
+    ),
   };
 }
 export function normalizeObstacles(input = []) {
@@ -54,7 +60,7 @@ export function normalizeObstacles(input = []) {
       r.x + r.width > ARENA.widthMm ||
       r.y + r.height > ARENA.heightMm
     )
-      throw Error('Obstacle rectangles must stay inside the A0 floor.');
+      throw Error('Obstacle rectangles must stay inside the measured floor.');
     return { x: r.x, y: r.y, width: r.width, height: r.height };
   });
 }

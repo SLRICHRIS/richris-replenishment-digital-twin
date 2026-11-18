@@ -5,11 +5,11 @@ export function createPhysicalRoutePanel(scope) {
   if (!root) return null;
   root.innerHTML = `<section class="panel physical-route-panel" aria-labelledby="physical-route-title">
     <header><div><span class="eyebrow">AMR-01 · HUMAN IN THE LOOP</span><h2 id="physical-route-title">Review. Approve. Move.</h2><p>The approved route runs through the USB-camera controller and the ESP32 motor receiver.</p></div><span id="pr-state" class="vision-chip">Setup required</span></header>
-    <div class="physical-route-body"><div class="physical-route-floor"><svg id="pr-map" viewBox="0 0 841 1189" role="img" aria-label="Trusted live camera map and server-approved route"><rect x="0" y="0" width="841" height="1189" class="vision-floor"/><g id="pr-map-content" transform="translate(0 1189) scale(1 -1)"></g></svg><p id="pr-scene">Waiting for authenticated camera and ESP32 feedback</p></div>
+    <div class="physical-route-body"><div class="physical-route-floor"><svg id="pr-map" viewBox="0 0 425 630" role="img" aria-label="Trusted live camera map and server-approved route"><rect x="0" y="0" width="425" height="630" class="vision-floor"/><g id="pr-map-content" transform="translate(0 630) scale(1 -1)"></g></svg><p id="pr-scene">Waiting for authenticated camera and ESP32 feedback</p></div>
     <div class="physical-route-controls"><div class="physical-route-steps"><span>1 Camera evidence</span><span>2 Human approval</span><span>3 Verified arrival</span></div>
     <form id="pr-login"><label>Operator alias<input id="pr-operator" maxlength="40" autocomplete="username" placeholder="Your operator alias" required></label><label>Private operator code<input id="pr-code" type="password" maxlength="256" autocomplete="current-password" required></label><button type="submit" id="pr-unlock">Unlock physical control</button></form>
     <div id="pr-session" hidden><p>Operator session unlocked</p><button id="pr-lock" type="button">Lock & stop</button></div>
-    <div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="841" step="10" value="420"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="1189" step="10" value="900"></label></div>
+    <div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="425" step="10" value="210"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="630" step="10" value="450"></label></div>
     <button id="pr-capture" type="button" disabled>Capture physical route</button><p id="pr-route">The server plans from measured robot pose and obstacles.</p>
     <label>Decision reason<textarea id="pr-reason" maxlength="240" rows="2" placeholder="Why is this route suitable?" disabled></textarea></label>
     <div class="vision-tools"><button id="pr-approve" type="button" class="primary" disabled>Approve & run</button><button id="pr-reject" type="button" disabled>Reject</button><button id="pr-hold" type="button" disabled>Hold</button></div>
@@ -67,7 +67,11 @@ export function createPhysicalRoutePanel(scope) {
       auth = !!p.authorized,
       live = !!p.physical_mode;
     const fresh =
-      s?.valid && Date.now() - s.captured_at_ms < 1500 && Date.now() >= s.captured_at_ms - 100;
+      s?.valid &&
+      s.floor_width_mm === 425 &&
+      s.floor_length_mm === 630 &&
+      Date.now() - s.captured_at_ms < 1500 &&
+      Date.now() >= s.captured_at_ms - 100;
     const running = ['sent', 'arming', 'running', 'stopping'].includes(r?.state),
       pending = r?.state === 'pending' && Date.now() < r.expires_at_ms;
     el('login').hidden = auth;
