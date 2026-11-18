@@ -41,7 +41,7 @@ def display_payload(db, now=None):
     empty = dict(state='unavailable', label='Telemetry storage unavailable', age_s=None, fresh=False,
                  measurements={}, history=[], recommendations=['Complete the protected EMQX forwarding connection to store physical readings.'],
                  commissioning=profile_payload(), wheel_estimates={},
-                 models_ready=False, model_detail='Wheel geometry is recorded. Direction evidence, measured gyro bias and battery calibration are required before pose and runtime predictions.')
+                 models_ready=False, model_detail='Wheel geometry and reported stationary Z bias are recorded. Direction evidence, battery calibration and motion validation are required before pose and runtime predictions.')
     if db is None or not isinstance(getattr(db, 'engine', None), Engine):
         return empty
     try:
@@ -72,7 +72,7 @@ def display_payload(db, now=None):
         if not row['gyro_available']:
             recommendations.append('IMU readings are unavailable. Check I2C wiring and sensor startup.')
         else:
-            recommendations.append('Confirm the sign, axis and unit of the reported 0.02 stationary gyro bias before using corrected turning rates.')
+            recommendations.append('Stationary Z bias is recorded as +0.02°/s (+0.000349066 rad/s). Complete the remaining model calibration and motion validation before using corrected model rates.')
         if not row['battery_available']:
             recommendations.append('Battery readings are unavailable. Check INA219 wiring and its supply.')
         elif row['battery_voltage_v'] < 1:

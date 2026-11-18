@@ -42,7 +42,7 @@ def test_live_raw_values_are_visible_without_authorizing_models_or_showing_devic
     assert result['measurements']['left_pulses_total'] == 3
     assert result['models_ready'] is False
     assert result['commissioning']['ppr_count_test_confirmed'] is True
-    assert result['commissioning']['gyro_bias_measured'] is False
+    assert result['commissioning']['gyro_bias_measured'] is True
     assert result['measurements']['rpm_calibration_confirmed'] is False
     assert result['wheel_estimates']['left_rpm_magnitude'] == pytest.approx(row['left_pulse_hz'] * 3)
     assert any('below 1 V' in line for line in result['recommendations'])
@@ -96,12 +96,15 @@ def test_corrected_geometry_yields_unsigned_quantities_without_promoting_incompl
     assert profile['track_m'] == .1
     assert profile['distance_per_pulse_m'] == pytest.approx(.01021017612416683)
     assert profile['imu_axes'] == dict(x='forward', y='left', z='up')
-    assert profile['reported_gyro_bias']['raw_report'] == 'Stationary gyro bias-0.02'
-    assert profile['reported_gyro_bias']['unit'] is None
-    assert profile['reported_gyro_bias']['axis'] is None
-    assert profile['reported_gyro_bias']['sign'] is None
-    assert profile['reported_gyro_bias_rad_s'] == dict(x=None, y=None, z=None)
-    assert profile['gyro_bias_measured'] is False
+    assert profile['reported_gyro_bias']['raw_report'] == 'Z = +0.02 degree/sec'
+    assert profile['reported_gyro_bias']['unit'] == 'deg/s'
+    assert profile['reported_gyro_bias']['axis'] == 'z'
+    assert profile['reported_gyro_bias']['sign'] == 1
+    assert profile['reported_gyro_bias_rad_s']['x'] is None
+    assert profile['reported_gyro_bias_rad_s']['y'] is None
+    assert profile['reported_gyro_bias_rad_s']['z'] == pytest.approx(.00034906585039886593)
+    assert profile['gyro_bias_measured'] is True
+    assert profile['gyro_bias_source'] == 'operator_reported_stationary'
     assert profile['direction_measured'] is False
     assert profile['battery_capacity_ah'] is None and profile['initial_soc'] is None
     assert profile['reported_battery']['capacity_ah'] == 2.2

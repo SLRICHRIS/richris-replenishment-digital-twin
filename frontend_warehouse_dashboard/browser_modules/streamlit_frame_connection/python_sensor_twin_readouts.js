@@ -102,6 +102,10 @@
       const physicalInput = !available && physical?.fresh === true;
       // Current raw observations do not authorize the calibrated model outputs.
       const raw = available ? r.raw || {} : physicalInput ? physical.measurements || {} : {};
+      const recordedBias =
+        physical?.commissioning?.gyro_bias_measured === true
+          ? physical.commissioning.reported_gyro_bias_rad_s?.z
+          : undefined;
       const age = available ? r.age_s : (physical?.age_s ?? r?.age_s);
       const demo = payload.mode === 'demo';
       const label =
@@ -141,9 +145,14 @@
       $(key + 'gyro-input-note').hidden = !physicalInput;
       text(
         key + 'gyro-input-note',
-        'Raw device observation. Calibrated bias and the corrected model rate still require measured calibration.',
+        Number.isFinite(recordedBias)
+          ? 'Raw device observation. The reported stationary Z bias is recorded; corrected model output awaits the remaining calibration.'
+          : 'Raw device observation. Calibrated bias and the corrected model rate still require measured calibration.',
       );
-      text(key + 'bias', number(r?.gyro_bias_rad_s, 5));
+      text(
+        key + 'bias',
+        number(r?.gyro_bias_rad_s ?? recordedBias, r?.gyro_bias_rad_s == null ? 8 : 5),
+      );
       text(key + 'corrected-gyro', number(d.corrected_gyro_rad_s, 5));
       text(
         key + 'battery-input',

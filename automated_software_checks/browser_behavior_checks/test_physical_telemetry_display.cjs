@@ -49,7 +49,9 @@ const payload = {
     },
     commissioning: {
       wheel_detail: '65 mm wheels · 100 mm spacing · 20 counted pulses per turn.',
-      imu_detail: 'X forward, Y left, Z up. Reported bias 0.02 needs its sign, axis and unit.',
+      imu_detail: 'X forward, Y left, Z up. Stationary Z bias: +0.02°/s.',
+      gyro_bias_measured: true,
+      reported_gyro_bias_rad_s: { x: null, y: null, z: 0.00034906585039886593 },
       battery_detail: 'Reported pack: 2,200 mAh; starting charge 100%. Capacity is unverified.',
     },
     recommendations: ['Battery wiring needs checking.', '<img src=x onerror=alert(1)>'],
@@ -81,14 +83,14 @@ assert.equal(d.getElementById('physical-sequence').textContent, '#1');
 assert.match(d.getElementById('physical-received').textContent, /17 Nov 2026.*15:30:00/);
 assert.equal(d.getElementById('physical-received').title, payload.physical_telemetry.received_at);
 assert.equal(d.getElementById('physical-model-state').textContent, 'Models awaiting calibration');
-assert.match(d.getElementById('physical-imu-profile').textContent, /sign, axis and unit/);
+assert.match(d.getElementById('physical-imu-profile').textContent, /Z bias: \+0.02°\/s/);
 assert.match(d.getElementById('physical-battery-profile').textContent, /2,200 mAh.*unverified/);
 assert.equal(d.getElementById('physical-recommendations').querySelector('img'), null);
 assert.match(d.getElementById('physical-model-limit').textContent, /direction.*calibration/);
 assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-gyro').textContent, '0.02000');
-assert.equal(d.getElementById('python-amr01-bias').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-bias').textContent, '0.00034907');
 assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
 assert.equal(
   d.getElementById('python-amr01-battery-input').textContent,
@@ -124,6 +126,8 @@ assert.equal(d.getElementById('physical-freshness-note').hidden, false);
 assert.equal(d.getElementById('physical-age').textContent, '16m 37s');
 assert.equal(d.querySelector('.physical-guidance').open, true, 'Refresh preserves expanded notes');
 assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-bias').textContent, '0.00034907');
+assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
@@ -164,6 +168,7 @@ payload.mode = 'demo';
 render();
 assert.equal(d.getElementById('physical-telemetry').hidden, true);
 assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-bias').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
 console.log(
