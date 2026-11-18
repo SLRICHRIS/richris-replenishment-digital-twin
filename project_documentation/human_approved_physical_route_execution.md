@@ -98,7 +98,8 @@ of copying another robot's calibration. Start with wheels raised and attended lo
 serial commands. The private config refuses missing measurements and false checks.
 Its speed cap must cover the maximum speed at the selected PWM cap on both wheels.
 The route reserves the body diagonal, clearance, uncertainty, tracking allowance,
-measured stopping distance and communication reaction distance. A0 may be too small
+measured stopping distance and the worst 3.8-second presence/grant/drive reaction
+envelope (2.5 s website presence grace + 0.8 s approval grant + 0.5 s motor lease). A0 may be too small
 for some full-body measurements; then the planner correctly reports no valid route.
 
 ## 2. Provision separate, least-privilege MQTT identities

@@ -5,7 +5,7 @@ import threading
 import uuid
 from sqlalchemy import MetaData, Table, Column, String, Text, BigInteger, select, update
 from .contracts import (scene, unseal, seal, canonical, fresh, ready, map_digest,
-                        plan, digest, angle, APPROVAL_LEASE_MS)
+                        plan, digest, angle, APPROVAL_LEASE_MS, OPERATOR_PRESENCE_MS)
 
 metadata=MetaData()
 reviews=Table('amr_route_reviews',metadata,
@@ -129,7 +129,7 @@ class Coordinator:
         with self.lock:
             r=self.row; now=self.clock()
             if not r or r['state'] not in ACTIVE: return
-            if now-self.presence.get(r['owner_id'],-10000)>2500 or now-self.dispatched_at>60000 or not self.connected or not ready(self.current,now) or map_digest(self.current)!=r['map_id']:
+            if now-self.presence.get(r['owner_id'],-10000)>OPERATOR_PRESENCE_MS or now-self.dispatched_at>60000 or not self.connected or not ready(self.current,now) or map_digest(self.current)!=r['map_id']:
                 self.cancel(r['owner_id']); return
             self.publish(self.packet('lease'))
 

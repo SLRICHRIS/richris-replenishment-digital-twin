@@ -12,6 +12,7 @@ import re
 
 WIDTH, HEIGHT, GRID = 841, 1189, 10
 SCENE_FRESH_MS, DRIVE_LEASE_MS, APPROVAL_LEASE_MS = 500, 500, 800
+OPERATOR_PRESENCE_MS = 2500
 MAX_PWM, MAX_ROUTE_MS = 80, 60000
 PREFIX = 'robot/amr01/vision/'
 SCENE_TOPIC, REQUEST_TOPIC, STATUS_TOPIC = (PREFIX + k for k in ('scene', 'request', 'status'))
@@ -96,7 +97,7 @@ def radius(config):
     # Reserve the measured stop distance AND worst communication/lease reaction.
     return (math.hypot(g['robot_length_mm'], g['robot_width_mm'])/2 + g['clearance_mm']
             + g['uncertainty_mm'] + g['stopping_distance_mm'] + g['tracking_tolerance_mm']
-            + g['max_speed_mm_s']*(APPROVAL_LEASE_MS+DRIVE_LEASE_MS)/1000)
+            + g['max_speed_mm_s']*(OPERATOR_PRESENCE_MS+APPROVAL_LEASE_MS+DRIVE_LEASE_MS)/1000)
 
 
 def obstacles(raw):
