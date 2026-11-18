@@ -70,7 +70,14 @@
       !link.configured ? 'Setup required' : labels[link.state] || 'Status unavailable',
     );
     $('amr-link-state').dataset.state = link.subscribed ? 'ready' : 'waiting';
-    text('amr-link-detail', link.detail || 'Waiting for connection status.');
+    text(
+      'amr-link-detail',
+      !link.configured
+        ? (link.missing || []).some((item) => /calibration/i.test(item))
+          ? 'Confirm measured AMR-01 calibration before this recorder can connect. You can enter your operator code now.'
+          : 'Complete the connection setup below before this recorder can connect. You can enter your operator code now.'
+        : link.detail || 'Waiting for connection status.',
+    );
     text('amr-link-feedback', link.feedback || '');
     $('amr-link-feedback').hidden = !link.feedback;
     $('amr-link-form').setAttribute('aria-busy', 'false');
@@ -82,7 +89,8 @@
           ? 'Connected to EMQX'
           : 'Connect AMR';
     $('amr-link-disconnect').disabled = !authorized || !busy || link.state === 'disconnecting';
-    $('amr-access-code').disabled = !link.configured || busy;
+    // Code entry does not authorize a connection; the protected submit path still checks readiness.
+    $('amr-access-code').disabled = busy;
     $('amr-code-field').hidden = authorized;
     list('amr-setup-missing', link.missing || [], 'li', (node, value) => {
       node.textContent = value;
