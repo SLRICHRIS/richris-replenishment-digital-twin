@@ -11,6 +11,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from .commissioning_profile import profile_payload, wheel_magnitude_estimates
+from .observed_energy import observed_energy
 
 FRESH_SECONDS = 5.0
 metadata = MetaData()
@@ -40,7 +41,7 @@ def read_records(db, limit=50):
 def display_payload(db, now=None):
     empty = dict(state='unavailable', label='Telemetry storage unavailable', age_s=None, fresh=False,
                  measurements={}, history=[], recommendations=['Complete the protected EMQX forwarding connection to store physical readings.'],
-                 commissioning=profile_payload(), wheel_estimates={},
+                 commissioning=profile_payload(), wheel_estimates={}, energy_observation={},
                  models_ready=False, model_detail='Wheel geometry and reported stationary Z bias are recorded. Direction evidence, battery calibration and motion validation are required before pose and runtime predictions.')
     if db is None or not isinstance(getattr(db, 'engine', None), Engine):
         return empty
@@ -52,6 +53,10 @@ def display_payload(db, now=None):
                 return {**empty, 'state': 'waiting', 'label': 'Waiting for the first stored packet'}
             row = dict(row)
             history = connection.execute(select(*(samples.c[name] for name in ('boot_id', 'seq', 'sample_time_s', 'received_at', 'battery_voltage_v', 'battery_current_a', 'left_pulse_hz', 'right_pulse_hz'))).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(60)).mappings().all()
+            try:
+                energy = observed_energy(connection, samples, row)
+            except (SQLAlchemyError, AttributeError, TypeError, ValueError):
+                energy = dict(state='unavailable', net_wh=None)
     except (SQLAlchemyError, AttributeError, TypeError):
         return empty
     received = row['received_at']
@@ -91,4 +96,5 @@ def display_payload(db, now=None):
             'received_at': received.isoformat(), 'boot_id': row['boot_id'], 'seq': row['seq'],
             'measurements': row if fresh else {},
             'wheel_estimates': wheel_magnitude_estimates(row) if fresh else {},
+            'energy_observation': {**energy, 'received_at':received.isoformat(), 'fresh':fresh},
             'history': recent, 'recommendations': recommendations}
