@@ -80,6 +80,35 @@ async function check() {
   flush();
   assert.equal(messages.at(-1).message.height, 360);
 
+  // Reproduce the two mode messages whose last component value wins in Streamlit.
+  doc.body.dataset.view = 'vision';
+  doc.getElementById('vision-routing-shell').dataset.mode = 'manual';
+  for (const detail of [
+    { action: 'manual_control', command: 'view', active: true },
+    { action: 'vision_execution', command: 'view', active: false },
+  ])
+    doc.dispatchEvent(new w.CustomEvent('python-twin:action', { detail }));
+  const controlMessages = messages
+    .filter((x) => x.message.type === 'streamlit:setComponentValue')
+    .slice(-2);
+  assert.equal(controlMessages.length, 2);
+  assert.ok(
+    controlMessages.every((x) => x.message.value.control_mode === 'manual'),
+    'Either coalesced message must preserve the selected manual mode',
+  );
+  doc.getElementById('vision-routing-shell').dataset.mode = 'practice';
+  doc.dispatchEvent(
+    new w.CustomEvent('python-twin:action', {
+      detail: { action: 'manual_control', command: 'view', active: false },
+    }),
+  );
+  assert.equal(
+    messages.at(-1).message.value.control_mode,
+    null,
+    'Practice clears both physical views',
+  );
+  doc.body.dataset.view = 'environment';
+
   const main = doc.getElementById('main-content');
   assert.equal(doc.documentElement.dataset.host, 'streamlit');
   assert.equal(
@@ -140,6 +169,21 @@ async function check() {
   doc.body.dataset.view = 'activity';
   await Promise.resolve();
   assert.equal(main.scrollTop, 640, 'unloaded workspace must release its observer');
+  doc.body.dataset.view = 'vision';
+  doc.getElementById('vision-routing-shell').dataset.mode = 'manual';
+  for (const action of ['manual_control', 'vision_execution'])
+    doc.dispatchEvent(
+      new w.CustomEvent('python-twin:action', {
+        detail: { action, command: 'view', active: false },
+      }),
+    );
+  assert.ok(
+    messages
+      .filter((x) => x.message.type === 'streamlit:setComponentValue')
+      .slice(-2)
+      .every((x) => x.message.value.control_mode === null),
+    'The second pagehide event cannot restore a leaving control page',
+  );
   dom.window.close();
 
   const standalone = new JSDOM(html, { url: 'https://example.test/', runScripts: 'outside-only' });

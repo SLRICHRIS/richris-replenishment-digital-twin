@@ -41,3 +41,16 @@ The new sketch retains the supplied pin mapping, continuous local Serial mode, s
 Server checks bind each review to an operator session, current ESP32 boot/connection epoch, fresh ready zero-output feedback and a ten-second review expiry. ARM acknowledgement precedes a single DRIVE packet. HMAC signatures, increasing command numbers, connection epochs and MCU monotonic expiry reject stale/replayed commands. Manual and camera coordinators share one PostgreSQL advisory lock and cannot own the robot simultaneously. Recovery marks interrupted approvals uncertain and never replays them.
 
 Offline Python, DOM and native C++ checks exercise these boundaries. CI compiles the modified single-file sketch on ESP32 Arduino 2.0.17 and 3.3.12. Physical movement still requires the private setup and the updated firmware upload on the user's laptop.
+
+## When the battery is charged but Prepare stays disabled
+
+Open **Connection details** in Manual control. The page reports the website's broker login/subscription state, received/accepted/ignored packet counts, last accepted feedback age and the last authenticated receiver clock difference. These are diagnostic values only; they cannot enable movement.
+
+- **Website login rejected**: check the new website MQTT user's credentials.
+- **Feedback subscription rejected**: check its Subscribe Allow rule on `robot/amr01/vision/hardware`, above its Deny fallback.
+- **MQTT connected, no receiver packets**: check the ESP32 receiver's separate MQTT connection and its Publish Allow rule for that feedback topic. Ordinary commissioning telemetry alone does not establish this channel.
+- **Authentication failed**: check that the private control key matches between ESP32 and website.
+- **Clock/freshness rejection**: check ESP32 Internet time synchronisation and network delay. Packet age must remain inside the existing freshness window; the diagnostics do not relax it.
+- **Old connection/sequence ignored**: the replay protection rejected that packet. End and re-enable the operator session to collect fresh state before a new review.
+
+A valid packet is still required to report ready zero outputs before Prepare is enabled. The 6.6 V remote cutoff, short command expiry, approval checks and replay protection continue to apply.

@@ -67,6 +67,10 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
+    if result['action'] in ('manual_control', 'vision_execution') and 'control_mode' in result:
+        from .predictive_twin.control_presence import synchronize_control_view
+        if not synchronize_control_view(st.session_state, result['control_mode']):
+            return
     if result['action'] == 'manual_control':
         from .predictive_twin.manual_control_workspace import handle
         handle(result, mode)

@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import select, update
 from .coordinator import reviews
 from .contracts import canonical, fresh
-from .protocol import hardware, drive
+from .protocol import hardware, drive, verified
 
 ACTIVE = {'manual_arming', 'manual_sent', 'manual_acknowledged', 'manual_stopping'}
 DIRECTIONS = {'F': (1, 1), 'B': (-1, -1), 'L': (-1, 1), 'R': (1, -1)}
@@ -23,6 +23,9 @@ class ManualCoordinator:
         self.presence = {}
         self.last_touch = clock()
         self.zeroes = []
+        self.last_packet_at = self.last_accepted_at = self.clock_age_ms = None
+        self.packet_count = self.accepted_count = self.rejected_count = 0
+        self.last_issue = ''
         with engine.begin() as db:
             db.execute(update(reviews).where(reviews.c.state.in_(ACTIVE)).values(state='manual_uncertain'))
 
@@ -99,17 +102,42 @@ class ManualCoordinator:
 
     def observe(self, raw, retained=False):
         with self.lock:
+            self.last_packet_at = self.clock()
+            self.packet_count += 1
             if retained:
+                self.last_issue = 'retained_packet'
+                self.rejected_count += 1
                 return
-            h = hardware(raw, self.secret, self.clock(), max_pwm=160)
+            try:
+                h = hardware(raw, self.secret, self.clock(), max_pwm=160)
+            except (ValueError, TypeError, UnicodeError):
+                self.rejected_count += 1
+                self.last_issue = 'invalid_packet'
+                try:
+                    fields = verified(raw, self.secret, 12)
+                    if fields[0] == 'H1':
+                        self.clock_age_ms = self.clock() - int(fields[11])
+                        if self.clock_age_ms < -100:
+                            self.last_issue = 'clock_ahead'
+                        elif self.clock_age_ms > 500:
+                            self.last_issue = 'packet_too_old'
+                except (ValueError, TypeError, UnicodeError):
+                    self.last_issue = 'authentication_failed'
+                    self.clock_age_ms = None
+                raise
+            self.clock_age_ms = self.clock() - h['issued_at_ms']
             identity = (h['boot_id'], h['epoch_id'])
             if identity in self.retired:
+                self.last_issue = 'old_connection'
+                self.rejected_count += 1
                 return
             old = self.current
             if old:
                 previous = (old['boot_id'], old['epoch_id'])
                 if identity == previous:
                     if h['seq'] <= old['seq'] or h['issued_at_ms'] < old['issued_at_ms']:
+                        self.last_issue = 'old_sequence'
+                        self.rejected_count += 1
                         return
                 else:
                     self.retired.add(previous)
@@ -118,6 +146,9 @@ class ManualCoordinator:
                         self.row.update(state='manual_uncertain', reason='ESP32 reconnected; no movement will be replayed')
                         self.save()
             self.current = h
+            self.last_accepted_at = self.clock()
+            self.accepted_count += 1
+            self.last_issue = ''
             self.history = [p for p in self.history if self.clock() - p['issued_at_ms'] <= 500] + [h]
             r = self.row
             if not r or r['state'] not in ACTIVE or identity != (r['boot_id'], r['epoch_id']) or h['route_id'] != r['review_id']:
@@ -173,6 +204,11 @@ class ManualCoordinator:
     def public(self, owner):
         with self.lock:
             h = self.current
-            return dict(ready=self.stationary(), hardware=copy.deepcopy(h) if h and fresh(h['issued_at_ms'], self.clock()) else None,
+            now = self.clock()
+            diagnostics = dict(packet_count=self.packet_count, accepted_count=self.accepted_count,
+                rejected_count=self.rejected_count, last_issue=self.last_issue, clock_age_ms=self.clock_age_ms,
+                last_packet_age_ms=None if self.last_packet_at is None else max(0, now-self.last_packet_at),
+                last_accepted_age_ms=None if self.last_accepted_at is None else max(0, now-self.last_accepted_at))
+            return dict(diagnostics=diagnostics, ready=self.stationary(), hardware=copy.deepcopy(h) if h and fresh(h['issued_at_ms'], self.clock()) else None,
                         review=copy.deepcopy(self.row) if self.row and self.row['owner_id'] == owner else None,
                         busy=bool(self.row and self.row['state'] in ACTIVE and self.row['owner_id'] != owner))
