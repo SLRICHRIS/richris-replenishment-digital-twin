@@ -2,11 +2,66 @@
 import math
 
 
+def observation_insights(physical):
+    """Read-only guidance from current commissioning evidence, not full models."""
+    result=dict(source='Live physical observations',scope='physical_observation',
+                ready=False,metrics=[],recommendations=[])
+    def recommend(code,title,detail,tone='info'):
+        result['recommendations'].append(dict(code=code,title=title,detail=detail,tone=tone))
+    def number(value):return type(value) in (int,float) and math.isfinite(value)
+    age=physical.get('age_s')
+    if physical.get('fresh') is not True or not number(age) or not -1<=age<=5:
+        recommend('feed_unavailable','Restore the live ESP32 feed',
+                  'Power the ESP32 and check Wi-Fi and sensor forwarding. Current recommendations wait for a fresh stored packet.','warning')
+        return result
+    raw=physical.get('measurements') or {}
+    if not raw or raw.get('robot_id')!='amr01':
+        recommend('waiting_sample','Wait for a complete ESP32 sample',
+                  'The current packet must identify AMR-01 before its observations can be reviewed.','warning')
+        return result
+    result['ready']=True
+    voltage=raw.get('battery_voltage_v')
+    if raw.get('battery_available') is not True or not number(voltage) or voltage<1:
+        recommend('battery_input','Check the battery input connection',
+                  'A usable INA219 battery sample is missing or below 1 V. Check battery power and INA219 VIN wiring before interpreting charge.','warning')
+    else:
+        result['metrics'].append(dict(label='Measured battery input',value=f'{voltage:.3f} V',
+            detail='The current remote-drive cutoff is 6.6 V; voltage alone does not establish charge percentage.'))
+        if voltage<6.6:
+            recommend('battery_low','Charge the battery before driving',
+                      f'The measured input is {voltage:.3f} V, below the 6.6 V remote-drive cutoff. Stop the vehicle before checking or charging its battery.','warning')
+    if raw.get('gyro_available') is not True or not number((physical.get('gyro_estimates') or {}).get('corrected_gyro_rad_s')):
+        recommend('imu_input','Check the IMU connection',
+                  'A current corrected Z gyro reading is missing. Check sensor startup and I2C wiring. Wheel observations remain separate.','warning')
+    motion=physical.get('motion_observation') or {}
+    if motion.get('state')=='reanchoring':
+        recommend('motion_gap','Watch the new local motion origin',
+                  'A missing or ambiguous wheel interval reset local odometry. Compare the estimate with the vehicle during the next attended drive interval.')
+    residual=motion.get('residual_rad_s')
+    if number(residual):
+        result['metrics'].append(dict(label='Observed turning-rate difference',value=f'{residual:.5f} rad/s',
+            detail='Corrected gyro minus command-inferred wheel turning rate. This observation does not apply an unvalidated fault threshold.'))
+    charge=(physical.get('energy_observation') or {}).get('soc_scenario') or {}
+    percent=charge.get('percent')
+    if number(percent):
+        result['metrics'].append(dict(label='Reported-start charge scenario',value=f'{percent:.2f}%',
+            detail='Uses the reported 2.2 Ah pack and assumed 100% start; recorded motor-branch current only. Actual remaining charge is unknown.'))
+        if charge.get('outside_physical_range'):
+            recommend('charge_range','Inspect the charge scenario inputs',
+                      'The recorded-current scenario is outside 0–100%. Treat it as an inconsistent assumption, not an actual battery percentage.','warning')
+    if not result['recommendations']:
+        recommend('monitor','Continue attended monitoring',
+                  'The current battery and IMU samples are available. Observe the AMR alongside its wheel and gyro readings; use Drive control for any movement.')
+    return result
+
+
 def predictive_insights(payload):
     demo = payload.get('mode') == 'demo'
     robot = payload.get('robots', {}).get('amr01')
     source = 'Demo example' if demo else 'Physical sensor data'
     result = dict(source=source, ready=False, metrics=[], recommendations=[])
+    if not demo and payload.get('physical_telemetry') is not None and (not robot or robot.get('stale') or robot.get('continuity_lost') or robot.get('quality')!='OK'):
+        return observation_insights(payload['physical_telemetry'])
 
     def recommend(title, detail, tone='info'):
         result['recommendations'].append(dict(title=title, detail=detail, tone=tone))

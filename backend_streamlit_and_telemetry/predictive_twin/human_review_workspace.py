@@ -71,13 +71,15 @@ def review_workspace(payload):
                 feedback = 'The rehearsal session reset. Capture a new recommendation to continue.'
     else:
         from .amr_connection import connection_profile
-        from .intervention_service import transport_profile
+        from .intervention_service import transport_profile, observation_profile
         from .workspace_payload import database_url
         profile, missing = connection_profile(st.secrets)
+        if profile is None:
+            profile,missing=observation_profile(st.secrets)
         authorized = is_authorized(profile)
         if profile:
             try:
-                service = website_service(profile, transport_profile(st.secrets, profile.host))
+                service = website_service(profile, None if profile.calibration is None else transport_profile(st.secrets, profile.host))
                 rid = st.session_state.get('warehouse_physical_review') if authorized else None
                 if rid:
                     row = service.get(rid)
@@ -103,7 +105,7 @@ def review_workspace(payload):
 def handle_website_action(result):
     """Ignore browser evidence/identity. Recapture physical context on the server."""
     from .amr_connection import connection_profile, authorize
-    from .intervention_service import transport_profile
+    from .intervention_service import transport_profile, observation_profile
     command = result.get('command')
     # There is deliberately no physical simulation/ACK endpoint.
     if command not in {'login','logout','create','decide'}:
@@ -116,7 +118,9 @@ def handle_website_action(result):
         return
     profile, missing = connection_profile(st.secrets)
     if profile is None:
-        st.session_state.warehouse_review_feedback = 'Complete measured calibration and the private connection setup before physical review.'
+        profile,missing=observation_profile(st.secrets)
+    if profile is None:
+        st.session_state.warehouse_review_feedback = 'Complete the private review writer and operator access setup.'
         return
     if command == 'login':
         now = time.monotonic()
@@ -136,7 +140,7 @@ def handle_website_action(result):
         st.session_state.warehouse_review_feedback = 'Unlock the operator session before recording a physical decision.'
         return
     try:
-        service = website_service(profile, transport_profile(st.secrets, profile.host))
+        service = website_service(profile, None if profile.calibration is None else transport_profile(st.secrets, profile.host))
         if command == 'create':
             row = service.create(uuid.uuid4().hex)
             st.session_state.warehouse_physical_review = row['review_id']

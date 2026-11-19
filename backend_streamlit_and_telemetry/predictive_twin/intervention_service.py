@@ -15,6 +15,27 @@ from .human_review import ReviewCoordinator, COMMAND_TOPIC, ACK_TOPIC, TERMINAL
 
 
 @dataclass(frozen=True, repr=False)
+class ObservationReviewProfile:
+    writer_url: str = field(repr=False)
+    access_code: str = field(repr=False)
+    host: str = ''
+    calibration: object = None
+
+
+def observation_profile(secrets):
+    """Audit-only setup reuses existing private access, without model calibration."""
+    try:
+        settings=secrets['amr_connection']
+        url,code=settings['writer_url'],settings['access_code']
+        if settings['enabled'] is not True:raise ValueError()
+        if not isinstance(url,str) or not url.strip():raise ValueError()
+        if not isinstance(code,str) or not 16<=len(code)<=256:raise ValueError()
+        return ObservationReviewProfile(url.strip(),code),[]
+    except (KeyError,FileNotFoundError,ValueError,TypeError):
+        return None,['Private review writer and operator access setup']
+
+
+@dataclass(frozen=True, repr=False)
 class TransportProfile:
     host: str
     username: str
@@ -84,6 +105,10 @@ class MQTTTransport:
 
 def context_provider(store, calibration):
     def read():
+        if calibration is None:
+            from .physical_telemetry import display_payload
+            physical = display_payload(store)
+            return dict(mode='live',observed_at=time.time(),robots={},physical_telemetry=physical)
         snapshot = store.read_snapshot(expected_fingerprint=calibration_fingerprint(calibration), include_history=False)
         snapshot['calibration_fingerprint'] = calibration_fingerprint(calibration)
         return dict(mode='live', observed_at=time.time(), robots={'amr01':snapshot})
@@ -92,6 +117,8 @@ def context_provider(store, calibration):
 
 class WebsiteReviewService:
     def __init__(self, profile, transport=None):
+        if profile.calibration is None and transport is not None:
+            raise ValueError('Observation reviews cannot enable motor delivery')
         url = make_url(profile.writer_url)
         if not url.drivername.startswith('postgresql') or '-pooler' in (url.host or ''):
             raise ValueError('Website review requires the direct PostgreSQL writer connection')

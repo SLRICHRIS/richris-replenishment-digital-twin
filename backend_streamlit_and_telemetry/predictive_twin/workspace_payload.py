@@ -13,7 +13,6 @@ SOURCE_LABELS = {'demo': 'Demo data', 'live': 'Stored sensor data'}
 
 
 def with_insights(payload):
-    payload['insights'] = predictive_insights(payload)
     if payload.get('mode') == 'live':
         from .physical_telemetry import display_payload
         try:
@@ -22,6 +21,12 @@ def with_insights(payload):
         except Exception:
             db = None
         payload['physical_telemetry'] = display_payload(db)
+        if (payload.get('notice',{}).get('label')=='Measured calibration required'
+                and payload['physical_telemetry'].get('fresh') is True):
+            payload['notice']=dict(label='Live physical observations',tone='info',
+                detail='Current sensor observations and estimates use the saved measurements. Charge and motion scenarios retain their displayed assumptions.')
+            payload['status']=payload['notice']['detail']
+    payload['insights'] = predictive_insights(payload)
     return payload
 
 

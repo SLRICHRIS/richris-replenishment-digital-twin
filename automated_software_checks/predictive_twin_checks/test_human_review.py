@@ -150,3 +150,67 @@ def test_physical_freshness_includes_elapsed_time_after_context_read(setup):
     now[0]+=3
     with pytest.raises(ValueError,match='Fresh'):physical.create(p,ID)
     assert not physical.history()
+
+
+@pytest.fixture
+def observation(setup):
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    old,_,sent,now=setup
+    c=ReviewCoordinator(old.engine,publisher=lambda *args:sent.append(args),commands_enabled=True,clock=lambda:now[0])
+    return c,observation_data(),sent,now
+
+
+def test_observation_choice_records_follow_up_without_any_command_or_ack(observation):
+    c,p,sent,now=observation;c.create(p,ID)
+    # The decision captures the newest sequence, rather than counting already-seen evidence.
+    raw=p['physical_telemetry']['measurements'];raw['seq']+=1;raw['sample_time_s']+=.1
+    row=approve(c,p,'inspect');assert row['state']=='observing'
+    c.observe(p);assert c.get(ID)['verified_samples']==0
+    for i in range(3):
+        raw['seq']+=2;raw['sample_time_s']+=.2
+        raw['battery_voltage_v']+=.001
+        c.observe(p);c.observe(p)
+        assert c.get(ID)['verified_samples']==i+1
+    row=c.get(ID)
+    assert row['state']=='observed' and not row['command'] and not row['ack'] and not sent
+    assert row['events'][-1]['observation']['measurements']['battery_voltage_v']>7.2
+    assert 'not independently confirmed' in row['events'][-1]['detail']
+
+
+@pytest.mark.parametrize('action',['pause','reduce_speed'])
+def test_observation_scope_cannot_dispatch_even_with_enabled_publisher(observation,action):
+    c,p,sent,now=observation;c.create(p,ID)
+    with pytest.raises(ValueError,match='Drive control'):approve(c,p,action)
+    assert c.get(ID)['state']=='pending' and not sent
+
+
+def test_observation_categories_not_voltage_jitter_determine_evidence_change(observation):
+    c,p,sent,now=observation
+    p['physical_telemetry']['measurements']['battery_voltage_v']=6.2;c.create(p,ID)
+    p['physical_telemetry']['measurements']['battery_voltage_v']=6.21
+    assert approve(c,p,'recharge')['state']=='observing'
+    c.recover();assert c.get(ID)['state']=='expired'
+    c.create(p,'b'*32);p['physical_telemetry']['measurements']['battery_voltage_v']=7.2
+    assert approve(c,p,'recharge',rid='b'*32)['state']=='expired' and not sent
+
+
+def test_observation_follow_up_stale_boot_and_settings_boundaries(observation):
+    c,p,sent,now=observation;c.create(p,ID);approve(c,p,'no_action')
+    raw=p['physical_telemetry']['measurements'];raw['seq']+=1;raw['sample_time_s']+=.1
+    c.observe(p);assert c.get(ID)['verified_samples']==1
+    now[0]+=6;c.observe(p)
+    assert c.get(ID)['verified_samples']==0
+    with pytest.raises(ValueError,match='Fresh'):c._evidence(p)
+    p['observed_at']=now[0];raw['boot_id']='new-boot';c.observe(p)
+    assert c.get(ID)['state']=='uncertain'
+    c.create(p,'b'*32);approve(c,p,'no_action',rid='b'*32)
+    p['physical_telemetry']['commissioning']['profile_id']='changed';c.observe(p)
+    assert c.get('b'*32)['state']=='uncertain' and not sent
+
+
+def test_observation_deadline_does_not_replay_old_decision(observation):
+    c,p,sent,now=observation;c.create(p,ID);approve(c,p,'no_action')
+    now[0]+=31
+    assert c.get(ID)['state']=='expired'
+    p['observed_at']=now[0];p['physical_telemetry']['measurements']['seq']+=50
+    c.observe(p);assert c.get(ID)['state']=='expired' and not sent

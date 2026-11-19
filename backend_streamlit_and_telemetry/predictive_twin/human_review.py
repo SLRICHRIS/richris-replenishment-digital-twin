@@ -26,15 +26,17 @@ reviews = Table('amr_operator_reviews', metadata,
     Column('verified_samples', Integer, nullable=False, default=0),
     Column('last_verified_seq', BigInteger, nullable=False, default=-1))
 Index('ix_amr_reviews_state_created', reviews.c.state, reviews.c.created_at)
-TERMINAL = {'reviewed', 'rejected', 'deferred', 'expired', 'blocked', 'verified', 'uncertain'}
-ACTIONS = {'no_action', 'reduce_speed', 'pause'}
+TERMINAL = {'reviewed', 'rejected', 'deferred', 'expired', 'blocked', 'verified', 'uncertain', 'observed'}
+ACTIONS = {'no_action', 'reduce_speed', 'pause', 'inspect', 'recharge'}
+OBSERVATION_ACTIONS = {'no_action', 'inspect', 'recharge'}
 COMMAND_TOPIC = 'robot/amr01/commands'
 ACK_TOPIC = 'robot/amr01/command_ack'
 LABELS = {'pending':'Awaiting human review', 'dispatching':'Sending approved request',
           'sent':'Awaiting controller acknowledgement', 'acknowledged':'Checking new sensor readings',
           'reviewed':'Reviewed · no command issued', 'rejected':'Intervention rejected',
           'deferred':'Review deferred', 'expired':'Review expired', 'blocked':'Approved · delivery unavailable',
-          'verified':'Observed effect verified', 'uncertain':'Outcome unconfirmed'}
+          'verified':'Observed effect verified', 'uncertain':'Outcome unconfirmed',
+          'observing':'Decision saved · collecting new readings', 'observed':'Follow-up readings recorded'}
 
 
 def valid_id(value):
@@ -42,9 +44,29 @@ def valid_id(value):
 
 
 def evidence(payload):
-    """Only validated server-side model context can authorize a review."""
+    """Observation reviews record evidence; only model reviews can intervene."""
     r = payload.get('robots', {}).get('amr01') or {}
     guidance = predictive_insights(payload)
+    if guidance.get('scope') == 'physical_observation':
+        physical = payload['physical_telemetry']
+        raw = physical.get('measurements') or {}
+        age = physical.get('age_s')
+        if (not guidance['ready'] or type(age) not in (int, float)
+                or not math.isfinite(age) or not -1 <= age <= 5):
+            raise ValueError('Fresh physical sensor readings are required')
+        if (raw.get('robot_id') != 'amr01' or not isinstance(raw.get('boot_id'), str)
+                or not raw['boot_id'] or type(raw.get('seq')) is not int or raw['seq'] < 0
+                or type(raw.get('sample_time_s')) not in (int, float)
+                or not math.isfinite(raw['sample_time_s']) or raw['sample_time_s'] < 0):
+            raise ValueError('Sensor identity, sequence and sample time are required')
+        profile = physical.get('commissioning') or {}
+        # Include the settings as well as their identifier: a change cannot reuse an approval.
+        return dict(source='live', scope='physical_observation', boot_id=raw['boot_id'],
+            seq=raw['seq'], sample_time_s=raw['sample_time_s'],
+            calibration=deepcopy(profile), recommendations=guidance['recommendations'],
+            raw=deepcopy(raw), measurements=dict(
+                battery_voltage_v=raw.get('battery_voltage_v') if raw.get('battery_available') is True else None,
+                corrected_gyro_rad_s=(physical.get('gyro_estimates') or {}).get('corrected_gyro_rad_s')))
     age = r.get('age_s', 0 if payload.get('mode') == 'demo' else None)
     if (not guidance['ready'] or isinstance(age, bool) or not isinstance(age, (int, float))
             or not math.isfinite(age) or not 0 <= age <= 2):
@@ -83,7 +105,8 @@ class ReviewCoordinator:
             if type(stamp) not in (int, float) or not math.isfinite(stamp) or self.clock() < stamp:
                 raise ValueError('Current server observation time is required')
             payload = deepcopy(payload)
-            robot = payload.get('robots', {}).get('amr01') or {}
+            robot = (payload.get('physical_telemetry') if predictive_insights(payload).get('scope') == 'physical_observation'
+                     else payload.get('robots', {}).get('amr01')) or {}
             age = robot.get('age_s')
             if type(age) not in (int, float):
                 raise ValueError('Current sample age is required')
@@ -101,10 +124,12 @@ class ReviewCoordinator:
             raise ValueError('Unknown review')
         return dict(row)
 
-    def _save(self, c, row, state, detail, **changes):
+    def _save(self, c, row, state, detail, *, observation=None, **changes):
         row = deepcopy(row)
         row.update(changes, state=state)
         row['events'].append(dict(at=self.clock(), state=state, detail=detail))
+        if observation is not None:
+            row['events'][-1]['observation'] = observation
         c.execute(update(reviews).where(reviews.c.review_id == row['review_id']).values(
             **{k:v for k,v in row.items() if k != 'review_id'}))
         return row
@@ -155,14 +180,27 @@ class ReviewCoordinator:
                 return row
             if row['state'] != 'pending':
                 raise ValueError('Review is no longer pending')
+            observational = row['evidence'].get('scope') == 'physical_observation'
+            if action not in (OBSERVATION_ACTIONS if observational else {'no_action','pause','reduce_speed'}):
+                raise ValueError('Choose a permitted response for this review; use Drive control for movement')
             if decision != 'approve':
                 return self._save(c, row, 'rejected' if decision == 'reject' else 'deferred',
                                   'Human decision recorded; no command issued.', decision=choice)
             current = self._evidence(payload)
+            signature = lambda items: [(item.get('code'),item.get('tone')) for item in items]
+            changed = (signature(current['recommendations']) != signature(row['evidence']['recommendations'])
+                       if observational else current['recommendations'] != row['evidence']['recommendations'])
             if (current['source'] != row['evidence']['source'] or current['boot_id'] != row['evidence']['boot_id']
+                    or current.get('scope') != row['evidence'].get('scope')
                     or current['seq'] < row['evidence']['seq'] or current['calibration'] != row['evidence']['calibration']
-                    or current['recommendations'] != row['evidence']['recommendations']):
+                    or changed):
                 return self._save(c, row, 'expired', 'Evidence changed; request a new human review.')
+            if observational:
+                return self._save(c, row, 'observing',
+                    'Human choice recorded. No motor command issued; collecting new sensor readings.',
+                    decision=choice, expires_at=self.clock()+30,
+                    evidence={**row['evidence'], 'follow_after_seq':current['seq'],
+                              'follow_after_time_s':current['sample_time_s']})
             if action == 'no_action':
                 return self._save(c, row, 'reviewed', 'Human chose no intervention. No command issued.', decision=choice)
             if not self.commands_enabled or self.publisher is None:
@@ -225,6 +263,31 @@ class ReviewCoordinator:
             rows = c.execute(select(reviews).where(~reviews.c.state.in_(TERMINAL))).mappings().all()
             for raw in rows:
                 row = self._expire(c, dict(raw))
+                if row['state'] == 'observing':
+                    if current is None:
+                        if row['verified_samples']:
+                            self._save(c, row, 'observing', 'Live feed unavailable; follow-up count reset.', verified_samples=0)
+                        continue
+                    captured = row['evidence']
+                    if (current.get('scope') != 'physical_observation'
+                            or current['boot_id'] != captured['boot_id']
+                            or current['calibration'] != captured['calibration']):
+                        self._save(c, row, 'uncertain', 'Device boot or saved settings changed before follow-up finished.')
+                        continue
+                    last_time = next((event['observation']['sample_time_s'] for event in reversed(row['events'])
+                                      if 'observation' in event), captured['follow_after_time_s'])
+                    if (current['seq'] <= max(captured['follow_after_seq'], row['last_verified_seq'])
+                            or current['sample_time_s'] <= last_time):
+                        continue
+                    count = row['verified_samples']+1
+                    self._save(c, row, 'observed' if count >= 3 else 'observing',
+                        'Three fresh readings recorded. Inspection, charging and physical action are not independently confirmed.' if count >= 3
+                        else 'Recorded a new sensor reading after the decision.',
+                        observation=dict(seq=current['seq'],sample_time_s=current['sample_time_s'],
+                                         measurements=current['measurements'],
+                                         recommendations=current['recommendations']),
+                        verified_samples=count,last_verified_seq=current['seq'])
+                    continue
                 if row['state'] != 'acknowledged':
                     continue
                 if current is None:
@@ -269,15 +332,18 @@ class ReviewCoordinator:
 
 def panel(payload, row=None, feedback=''):
     demo = payload.get('mode') == 'demo'
+    observational = predictive_insights(payload).get('scope') == 'physical_observation'
     try:
         proof = evidence(payload)
         eligible = True
     except ValueError:
         proof, eligible = None, False
     return dict(source='Demo rehearsal' if demo else 'Website operator review', demo=demo,
-        eligible=eligible, feedback=feedback, review=row,
+        eligible=eligible, observation_only=observational, feedback=feedback, review=row,
         state_label=LABELS.get(row['state'], row['state']) if row else 'Ready for review' if eligible else 'Waiting for valid sensor evidence',
         detail=('Rehearse the operator decision and response checks. Generated evidence never contacts a device.' if demo else
+                'Record a response to the live observations, then follow three new sensor readings. Use Drive control for movement; this review issues no motor command.' if observational else
                 'Review the recommendation here. The server records your decision and checks fresh evidence before any enabled intervention.'),
         recommendations=proof['recommendations'] if proof else [],
-        steps=['Recommendation', 'Human review', 'Gateway checks', 'Controller acknowledgement', 'Sensor verification'])
+        steps=(['Live recommendation', 'Human choice', 'Decision recorded', 'Fresh sensor follow-up'] if observational else
+               ['Recommendation', 'Human review', 'Gateway checks', 'Controller acknowledgement', 'Sensor verification']))

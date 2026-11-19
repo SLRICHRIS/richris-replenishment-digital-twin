@@ -60,6 +60,21 @@ def test_configured_database_without_calibration_is_not_labelled_disconnected():
     assert 'secret' not in str(payload)
 
 
+def test_fresh_commissioning_packet_enables_observation_guidance_independently():
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    from backend_streamlit_and_telemetry.predictive_twin.database import SensorDatabase
+    from unittest.mock import Mock
+    module='backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    physical=observation_data()['physical_telemetry']
+    with patch(module+'.st.secrets',{'database':{'url':'postgresql://private:secret@host/db'}}), \
+         patch(module+'.database_reader',return_value=Mock(spec=SensorDatabase)), \
+         patch('backend_streamlit_and_telemetry.predictive_twin.physical_telemetry.display_payload',return_value=physical):
+        payload=workspace_payload('live')
+    assert payload['robots']=={} and payload['insights']['ready']
+    assert payload['insights']['scope']=='physical_observation'
+    assert payload['notice']['label']=='Live physical observations'
+
+
 @pytest.mark.parametrize('error,label', [
     (RuntimeError('private:secret@host'), 'Database connection failed'),
     (DatabaseSchemaError('private:secret@host'), 'Database schema needs attention'),
