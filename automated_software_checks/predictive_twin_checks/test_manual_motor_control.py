@@ -102,10 +102,11 @@ def test_working_sketch_public_template_and_shared_output_writer():
     from pathlib import Path
     root=Path(__file__).resolve().parents[2]
     s=(root/'esp32_telemetry_firmware/AMR01_Manual_WiFi/AMR01_Manual_WiFi.ino').read_text()
-    assert 'LOCAL_COMMAND_TIMEOUT_US = 0' in s
+    assert 'LOCAL_COMMAND_TIMEOUT_US = 700000' in s
     assert 'signedTotal = signedTotal + directionSign;' in s
     assert 'else applyDrive(drive)' in s and 'applyWheelDrive(l,r)' in s
-    assert 'visionReady=pwmReady && startupReady && sensorsFresh' in s
+    assert 'visionReady=pwmReady && amr_ir::finiteBattery(sensors)' in s
+    assert 'visionReady=pwmReady && startupReady' not in s
     assert 'visionGuard.tick(now,visionReady&&visionLinked)' in s
     assert 'leftPulses.directionSign=(left>0)-(left<0)' in s
     assert 'static Motion previous' not in s

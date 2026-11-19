@@ -96,6 +96,24 @@ async function check() {
     controlMessages.every((x) => x.message.value.control_mode === 'manual'),
     'Either coalesced message must preserve the selected manual mode',
   );
+  const heldInput = {
+    action: 'manual_control',
+    command: 'hold',
+    hold_id: 'a'.repeat(32),
+    input_seq: 7,
+    issued_at_ms: 123456,
+    direction: 'L',
+    pwm: 255,
+  };
+  doc.dispatchEvent(new w.CustomEvent('python-twin:action', { detail: heldInput }));
+  const forwarded = messages.at(-1).message.value;
+  for (const name of ['command', 'hold_id', 'input_seq', 'issued_at_ms', 'direction', 'pwm'])
+    assert.equal(
+      forwarded[name],
+      heldInput[name],
+      'Held control field survives the Streamlit bridge: ' + name,
+    );
+  assert.equal(forwarded.control_mode, 'manual');
   doc.getElementById('vision-routing-shell').dataset.mode = 'practice';
   doc.dispatchEvent(
     new w.CustomEvent('python-twin:action', {

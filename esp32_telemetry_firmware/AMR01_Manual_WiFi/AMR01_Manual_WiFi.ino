@@ -4,7 +4,7 @@
  * and Adafruit INA219 1.2.3 with its dependencies.
  * Select the correct ESP32 board and USB port. Serial Monitor: 115200 baud.
  * Private Wi-Fi and broker settings are in the companion header.
- * Keep the robot stationary during startup. Local motion continues until S is received.
+ * Wi-Fi drive is human-held. Serial commands expire after 700 ms; S always stops.
  * Publishes commissioning measurements; production prediction ingestion is pending.\n * Encoder signed counts infer direction from commanded motor direction; single-channel sensors do not measure direction.
  */
 
@@ -69,14 +69,14 @@ static constexpr uint32_t PWM_FREQ = 1000;
 static constexpr uint8_t PWM_RESOLUTION = 8;
 // 0 disables the local command timeout: motion continues until S is received.
 // Use only with the robot supervised and an accessible emergency stop.
-static constexpr uint64_t LOCAL_COMMAND_TIMEOUT_US = 0;
+static constexpr uint64_t LOCAL_COMMAND_TIMEOUT_US = 700000;
 static constexpr uint64_t DIRECTION_INTERLOCK_US = 150000;
 
 // Count actual FALLING edges over several wheel revolutions before confirming.
-// These 1.0 values reproduce the supplied code's assumption, not a measurement.
-static constexpr double LEFT_PULSES_PER_REV = 1.0;
-static constexpr double RIGHT_PULSES_PER_REV = 1.0;
-static constexpr bool PULSE_CALIBRATION_CONFIRMED = false;
+// Operator-confirmed ESP32 count: 20 pulses per wheel revolution.
+static constexpr double LEFT_PULSES_PER_REV = 20.0;
+static constexpr double RIGHT_PULSES_PER_REV = 20.0;
+static constexpr bool PULSE_CALIBRATION_CONFIRMED = true;
 
 // Final multisensor wiring: shared I2C bus, no motor pin changes.
 static constexpr int I2C_SDA_PIN = 21, I2C_SCL_PIN = 22;
@@ -106,7 +106,7 @@ inline bool number(const char* s,uint64_t& v) {
   for(;*s;++s) { if(*s<'0'||*s>'9'||v>(UINT64_MAX-9)/10) return false; v=v*10+uint64_t(*s-'0'); }
   return true;
 }
-inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>160) return false; v=neg?-int(n):int(n); return true; }
+inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>255) return false; v=neg?-int(n):int(n); return true; }
 // Pass only the authenticated portion, after constant-time HMAC validation.
 inline bool parse(char* body,Command& c) {
   char* f[10]; int n=0; f[n++]=body;
@@ -160,10 +160,10 @@ class Guard {
 #define AMR_VISION_DRIVE_KEY ""
 #define AMR_VISION_MQTT_USERNAME ""
 #define AMR_VISION_MQTT_PASSWORD ""
-#define AMR_VISION_MAX_PWM 160
+#define AMR_VISION_MAX_PWM 255
 #define AMR_VISION_MIN_PACK_V 6.6
 #endif
-static_assert(AMR_VISION_MAX_PWM > 0 && AMR_VISION_MAX_PWM <= 160,"Vision PWM cap must be 1..160");
+static_assert(AMR_VISION_MAX_PWM > 0 && AMR_VISION_MAX_PWM <= 255,"Manual PWM cap must be 1..255");
 static_assert(AMR_VISION_MIN_PACK_V >= 6.0 && AMR_VISION_MIN_PACK_V <= 7.4,"Verify 2S motor-branch cutoff");
 portMUX_TYPE visionMux = portMUX_INITIALIZER_UNLOCKED;
 amr_vision::Guard visionGuard;
@@ -584,7 +584,7 @@ void hardwareHeartbeat() {
   amr_ir::Sensors sensors;
   portENTER_CRITICAL(&sensorMux); sensors=currentSensors; portEXIT_CRITICAL(&sensorMux);
   char body[400],packet[470],mac[65];
-  snprintf(body,sizeof body,"H1|%s|%s|%lu|%s|%lu|%s|%d|%d|%d|%d|%llu",g.boot,g.epoch,static_cast<unsigned long>(sequence++),*g.route?g.route:"00000000000000000000000000000000",static_cast<unsigned long>(g.seq),g.state,l,r,sensors.batteryValid?int(sensors.packV*1000):0,ready?1:0,static_cast<unsigned long long>(utcMillis()));
+  snprintf(body,sizeof body,"H2|%s|%s|%lu|%s|%lu|%s|%d|%d|%d|%d|%llu|%d",g.boot,g.epoch,static_cast<unsigned long>(sequence++),*g.route?g.route:"00000000000000000000000000000000",static_cast<unsigned long>(g.seq),g.state,l,r,sensors.batteryValid?int(sensors.packV*1000):0,ready?1:0,static_cast<unsigned long long>(utcMillis()),AMR_VISION_MAX_PWM);
   if(signature(body,mac)) { snprintf(packet,sizeof packet,"%s|%s",body,mac); visionMqtt.publish(HARDWARE_TOPIC,packet,false); }
 }
 
@@ -804,7 +804,7 @@ void setup() {
   initializeSensors();
   snprintf(bootId,sizeof bootId,"%08lx%08lx",static_cast<unsigned long>(esp_random()),static_cast<unsigned long>(esp_random()));
   Serial.println("AMR-01 multisensor Wi-Fi telemetry: F B L R S + - Z, Serial 115200");
-  Serial.println("Continuous local drive enabled: F/B/L/R continue until S. + / - change PWM by 20 (start 160, range 0-255). Authenticated Wi-Fi control uses one short expiring command per approval.");
+  Serial.println("Hold-to-drive Wi-Fi receiver enabled. Release or Stop ends the hold; each signed command expires locally. Serial F/B/L/R expire after 700 ms; S always stops. PWM range 0-255.");
   Serial.println("Encoder signed direction is inferred from motor commands; RPM needs confirmed PPR.");
   if (!pwmReady) Serial.println("PWM setup failed: motors remain disabled");
   if (xTaskCreatePinnedToCore(sensorTask,"amr01-sensors",6144,nullptr,2,nullptr,0) != pdPASS) {
@@ -832,7 +832,9 @@ void loop() {
   controller.expire(now);
   bool remoteActive;
   portENTER_CRITICAL(&visionMux);
-  visionReady=pwmReady && startupReady && sensorsFresh && sensors.packV>=AMR_VISION_MIN_PACK_V && visionConfigured() && (controller.requested()==Motion::stopped || visionGuard.active);
+  // Human-held manual driving needs driver/power readiness, not IMU calibration.
+  // The camera-route sketch retains its own IMU and route guards.
+  visionReady=pwmReady && amr_ir::finiteBattery(sensors) && amr_ir::freshAt(timeS,sensors.batteryTimeS,.5) && sensors.packV>=AMR_VISION_MIN_PACK_V && visionConfigured() && (controller.requested()==Motion::stopped || visionGuard.active);
   visionGuard.tick(now,visionReady&&visionLinked); remoteActive=visionGuard.active;
   portEXIT_CRITICAL(&visionMux);
   if(remoteActive) controller.stop();

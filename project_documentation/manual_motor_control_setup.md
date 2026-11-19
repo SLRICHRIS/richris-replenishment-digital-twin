@@ -1,62 +1,87 @@
-# Control the working AMR-01 through the digital twin
+# Drive AMR-01 from the digital twin
 
-The supplied ESP32 sketch publishes sensor readings but only reads movement commands from USB Serial. The new **Vision routing → Manual control** tab adds human-approved, one-shot Wi-Fi motor control. It does not require camera calibration. Camera-guided autonomous routes retain their separate requirements.
+Open **Vision routing → Drive control**, connect once with your existing alias
+and access code, then hold a direction button to drive. Release to stop. Arrow
+keys and W A S D work when focus is inside the drive pad; typing in a form or
+using navigation keys elsewhere never starts driving. Stop, Escape, leaving
+the page, lost feedback and lost held input end the hold. A new press is needed
+after cancellation. There are no per-move review forms or approval reasons.
 
-Each approval requests one burst at PWM 20–160 (out of 255), lasting at most 250 ms after its server issue time. Network delay and reversal interlocks can shorten it. This is a motor-output request, not a guaranteed travel distance. There is no automatic repeat or queued retry.
+The speed slider sets PWM motor power, not distance or calibrated speed. The
+updated manual receiver supports 0–255. Forward/backward drive both wheels;
+Left drives the right wheel forward and Right drives the left wheel forward,
+matching the supplied sketch's one-wheel turns. The ESP32 retains its reversal
+interlock and local command expiry. Keep the vehicle in view.
 
-## Connect once
+## Update the receiver once
 
-1. Open the private `AMR01_Digital_Twin_Control.zip` supplied with this change. It contains an updated copy of the user's exact working sketch, the existing private Wi-Fi and telemetry settings, two **new** MQTT identities, and the matching server signing key. Keep this package private.
-2. In the existing EMQX deployment, create the two users and exact-topic ACLs listed in `EMQX_new_manual_users.txt`. Keep the existing telemetry publisher unchanged. The website may publish only `robot/amr01/vision/drive` and subscribe to `robot/amr01/vision/hardware`. The receiver has the opposite permissions. Deny other topics for these identities and do not retain commands.
-3. In the existing Neon PostgreSQL database, run `backend_streamlit_and_telemetry/vision_control/route_audit.sql` as the database owner if this table/role has not yet been created. Activate the restricted `amr_route_coordinator` login with a new private password. Use its **direct**, TLS-enabled connection URL with `postgresql+psycopg://`, not the pooler URL or database-owner URL. The restricted role may select/insert/update `amr_route_reviews`; it must not inherit other roles. Do not change the sensor tables or their credentials.
-4. In Streamlit app settings → Secrets, append `Streamlit_manual_secrets.toml`. Replace only its audit URL placeholder with that restricted direct URL. Keep the existing `[amr_connection]` section and operator access code. Do not duplicate an existing TOML section. The signing key is private and must match the firmware header.
-5. Open `AMR01_Manual_WiFi/AMR01_Manual_WiFi.ino` with its settings header beside it. Install the same ESP32 core, PubSubClient and Adafruit INA219 libraries used by the working code. Upload this updated sketch once. The firmware supports ESP32 Arduino cores 2 and 3. Keep the AMR stationary at startup while its existing gyro bias routine finishes.
-6. Keep the ESP32 connected to its configured Wi-Fi with Internet access to TLS MQTT port 8883 and network time. Use a charged 2S pack: remote control requires at least 6.6 V at the INA219 and fresh sensor readings. The example screenshot around 6.5 V would leave remote control unavailable. Local Serial behavior is preserved from the supplied sketch.
+Use the supplied private `AMR01_Hold_Drive.ino` in Arduino IDE, allow creation
+of its matching folder, select the ESP32 board/USB port and upload. It contains
+the existing private Wi-Fi, telemetry and receiver settings. Keep it private.
+The public source uses `esp32_wifi_and_mqtt_settings.h` beside the sketch, with
+placeholders in `example_esp32_wifi_and_mqtt_settings.h`.
 
-## Move from the site
+The existing EMQX users, exact-topic ACLs, signing key, Streamlit secrets and
+restricted Neon audit login remain unchanged. The website publishes only
+`robot/amr01/vision/drive` and subscribes to
+`robot/amr01/vision/hardware`; the receiver has the opposite permissions.
+Commands are not retained. Telemetry continues independently on the existing
+commissioning topic. There is no new database migration or privilege grant.
 
-1. Open the [digital twin](https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/) and select **Vision routing → Manual control**.
-2. Select **Use physical AMR source** if shown. Enter an operator alias and the access code you already have, then choose **Enable manual control**. Keep this page open.
-3. Wait for **ESP32 ready · zero outputs reported**. If switching from camera routing, the previous controller releases its database lease after about five seconds without page presence.
-4. Observe the AMR and clear space around it. Select Forward, Backward, Turn left or Turn right, and PWM (default 160, matching the supplied working sketch). Choose **Prepare move for review**.
-5. Read the proposal, enter an approval reason and choose **Approve & move once** within ten seconds. One approval sends one burst. Prepare a fresh review for each further move.
-6. Wait for the controller's zero-output status and observe the physical AMR. **Stop** sends a stop request for the current burst; local Serial **S** also overrides remote control. MCU expiry remains active even if the website disconnects. This short-burst panel is not a physical emergency-stop circuit.
+The receiver advertises its PWM capability in a signed H2 heartbeat. Existing
+H1 receivers remain limited to PWM 160 and retain their older IMU/startup
+readiness requirements until updated. The new manual receiver needs working
+PWM, fresh INA219 battery feedback at or above the existing 6.6 V remote
+cutoff, MQTT/time connectivity and no competing local Serial drive. IMU
+calibration, camera calibration, SOC and forecasts do not gate human-held
+manual driving. Camera-guided routes retain their separate guards.
 
-## What the feedback means
+The saved encoder calibration is 20 counted pulses per wheel revolution.
+Serial F/B/L/R commands in the updated sketch expire after 700 ms and must
+be refreshed to continue. Serial S always overrides remote drive.
 
-| Feedback | Evidence |
-| --- | --- |
-| Approval saved | PostgreSQL committed the human decision before dispatch |
-| Burst sent | Server handed one authenticated, expiring packet to MQTT |
-| Applied motor outputs | A fresh signed ESP32 heartbeat reports the requested GPIO/PWM state |
-| Zero motor outputs | Three fresh signed heartbeats report zero outputs for that command |
-| Outcome uncertain | Expected feedback was absent; no repeat is queued |
+## Use the controls
 
-GPIO/PWM feedback cannot prove wheel rotation, stopping distance or arrival. Camera routes use the calibrated overhead-camera controller for pose and continuous planning. Neon is the hosted PostgreSQL database; it records approvals and outcomes, while expiring MQTT packets carry motor commands.
+1. Keep the ESP32 online and open **Vision routing → Drive control**.
+2. Select the physical source if prompted, then connect with your existing
+   operator alias and access code. Authentication is once per operator session.
+3. Wait for fresh signed controller feedback and zero outputs. Choose motor
+   power, then press and hold Forward, Backward, Left or Right. A slider value
+   of zero stops and does not automatically resume when increased.
+4. Release, press Stop, or press Escape to end the hold. Observe the AMR:
+   reported GPIO/PWM output does not prove travel, stopping distance or arrival.
 
-## Implementation and checks
+The visible metrics show controller voltage/output and the existing sensor
+feed's current and encoder totals. Connection details distinguish the command
+receiver from ordinary commissioning telemetry. A connected sensor feed alone
+does not establish the separate authenticated motor receiver connection.
 
-The new sketch retains the supplied pin mapping, continuous local Serial mode, sensor code, inferred signed encoder diagnostic counts and existing commissioning telemetry. One shared output writer handles local drive, remote drive and zero output, avoiding a stale local-stop cache. Single-channel encoder sign remains inferred from requested motor direction, not measured quadrature direction.
+## Lease and ownership behavior
 
-Server checks bind each review to an operator session, current ESP32 boot/connection epoch, fresh ready zero-output feedback and a ten-second review expiry. ARM acknowledgement precedes a single DRIVE packet. HMAC signatures, increasing command numbers, connection epochs and MCU monotonic expiry reject stale/replayed commands. Manual and camera coordinators share one PostgreSQL advisory lock and cannot own the robot simultaneously. Recovery marks interrupted approvals uncertain and never replays them.
+The browser sends held intent every 200 ms with a unique hold ID, increasing
+input number and a timestamp aligned to the server clock. Old inputs cannot
+renew a hold. The server records the explicit held intent before sending a
+zero-output ARM. During that human hold, bounded zero-output keepalives can
+maintain arming while its acknowledgement is in flight. Nonzero drive starts
+only after the ESP32 reports the matching armed route with zero output.
 
-Offline Python, DOM and native C++ checks exercise these boundaries. CI compiles the modified single-file sketch on ESP32 Arduino 2.0.17 and 3.3.12. Physical movement still requires the private setup and the updated firmware upload on the user's laptop.
+Held input has a 700 ms source-time lease. Each signed ESP32 packet has at most
+500 ms validity and cannot extend past that held-input deadline. A server
+page-presence touch does not renew human input. Fresh hardware feedback is
+required throughout. Release uses a command sequence newer than every drive;
+delayed old inputs, controller reconnects and coordinator restarts cannot
+recreate an ended hold. There is no automatic re-arm after expiry or loss.
+Clock tolerance remains bounded by the existing protocol checks.
 
-## When the battery is charged but Prepare stays disabled
+Manual and camera coordinators share the existing PostgreSQL advisory lock.
+The restricted audit role can select/insert/update route-review records and
+cannot delete, truncate or inherit broad privileges. The database records
+start, setting changes, release and outcomes; MQTT carries the expiring motor
+packets. The shared output writer retains inferred encoder signs from applied
+motor direction, not measured quadrature direction.
 
-Open **Connection details** in Manual control. The page reports the website's broker login/subscription state, received/accepted/ignored packet counts, last accepted feedback age and the last authenticated receiver clock difference. These are diagnostic values only; they cannot enable movement.
-
-- **Website login rejected**: check the new website MQTT user's credentials.
-- **Feedback subscription rejected**: check its Subscribe Allow rule on `robot/amr01/vision/hardware`, above its Deny fallback.
-- **MQTT connected, no receiver packets**: check the ESP32 receiver's separate MQTT connection and its Publish Allow rule for that feedback topic. Ordinary commissioning telemetry alone does not establish this channel.
-- **Authentication failed**: check that the private control key matches between ESP32 and website.
-- **Clock/freshness rejection**: check ESP32 Internet time synchronisation and network delay. Packet age must remain inside the existing freshness window; the diagnostics do not relax it.
-- **Old connection/sequence ignored**: the replay protection rejected that packet. End and re-enable the operator session to collect fresh state before a new review.
-
-A valid packet is still required to report ready zero outputs before Prepare is enabled. The 6.6 V remote cutoff, short command expiry, approval checks and replay protection continue to apply.
-
-When MQTT is subscribed and packets are accepted, Connection details also shows the ESP32's signed ready flag, controller state, left/right applied output, battery voltage and consecutive ready zero-output sample count/span. A false ready flag is a local firmware interlock, not an MQTT login failure. If local USB Serial control was used, send **S** once to release it. The current H1 firmware reports one combined ready flag, so the website cannot distinguish a startup/PWM failure from stale IMU/INA219 readings using that flag alone.
-
-Zero-output evidence is measured on the ESP32 sample timeline. Every contributing packet must pass authentication, freshness and replay checks when received; the newest must still be within the unchanged 500 ms window at preparation and approval. At least two consecutive ready zero-output samples must span 150 ms, with a sample history bounded to 500 ms. Nonzero output, a false ready flag, low battery, an ESP32 connection change or a sample gap over 500 ms resets that evidence. This prevents ordinary network delay from erasing an otherwise valid preceding sample. No diagnostic value overrides a failed interlock.
-
-If Connection details reports **Waiting for the active manual page** while the operator session is enabled, the server has not yet received an active-page acknowledgement. A validated operator Connect now explicitly selects Manual control, and a visible Manual page reasserts a lost initial view update at a bounded rate. Hidden, practice and departing pages do not renew that state. Page-state messages include the complete selected mode; the sibling page handler does not overwrite it. Versioned control scripts ensure a refresh loads this event-handling update. Motor readiness, fresh signed feedback and explicit per-burst approval remain required.
+Offline Python, browser and native C++ checks exercise lease/replay behavior,
+keyboard scope, pointer release, hidden-page cancellation, full PWM range,
+receiver compatibility and reversal/expiry behavior. CI compiles the paired
+sketch on ESP32 Arduino cores 2.0.17 and 3.3.12. Physical movement is not
+automatically tested or requested by deployment.
