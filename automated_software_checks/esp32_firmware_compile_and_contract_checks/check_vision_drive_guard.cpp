@@ -23,6 +23,14 @@ int main() {
  g.tick(900000,false);assert(!g.active&&g.left==0);
  g.connection("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
  c=command(route,"arm",0,0,10,2000);assert(!g.accept(c,2000,1000000,true,60));
+ // A manual burst must expire after 250 ms without another network callback.
+ Guard manual;manual.connection("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+ c=command(route,"arm",0,0,1,5000);assert(manual.accept(c,5000,0,true,60));
+ c=command(route,"drive",40,40,2,5100);c.expires=5350;
+ assert(manual.accept(c,5100,100000,true,60));manual.tick(100000,true);assert(manual.left==40);
+ manual.tick(349999,true);assert(manual.active&&manual.left==40);
+ manual.tick(350000,true);assert(!manual.active&&manual.left==0&&manual.right==0);
+ assert(!manual.accept(c,5350,350000,true,60));
  char body[]="V1|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|cccccccccccccccccccccccccccccccc|17|drive|-20|30|1000|1500";
  Command parsed;assert(parse(body,parsed)&&parsed.left==-20&&parsed.seq==17);
  char bad[]="V1|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|cccccccccccccccccccccccccccccccc|17|drive|-|30|1000|1500";

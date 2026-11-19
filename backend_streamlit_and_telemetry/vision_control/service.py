@@ -81,7 +81,7 @@ class Service:
         try:
             while not self.stop.wait(.15):
                 self.coordinator.tick()
-                last=max(self.coordinator.presence.values(),default=self.created_at_ms)
+                last=max(self.coordinator.presence.copy().values(),default=self.created_at_ms)
                 if int(time.time()*1000)-last>5000: break
         except Exception: pass
         finally: self.close()
