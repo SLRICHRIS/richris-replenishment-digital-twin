@@ -24,6 +24,27 @@ recoveries show calculation progress until the latest record is included.
 
 ## Recording path
 
+The Battery state card offers a separate reported-start charge scenario. It
+integrates discharge-positive motor-branch current with the trapezoidal rule
+in Ah, then applies the reported 2.2 Ah capacity and assumes 100% at the first
+valid stored battery sample in that boot. This is not verified actual SOC.
+Gaps, unavailable battery readings and sub-1 V samples are omitted and noted;
+the starting assumption is not silently renewed at a gap. Repeated acquisition
+timestamps add no charge, refreshes cannot double-count, and reboot recovery
+replays the same records. Values outside 0–100% remain visible with an explicit
+inconsistency note. Stale telemetry withholds the current charge display.
+
+If device-reported relative yaw is absent, the physical IMU card can use the
+read-only recorded Z gyro integration. Two corrected rates are integrated by
+the trapezoidal rule on IMU acquisition timestamps, using the saved stationary
+Z bias, and the angle is displayed in degrees. This is a gyro-only relative
+angle that can drift, not an absolute heading or wheel-odometry pose. Gyro
+availability, sample freshness and sequence continuity are checked independently
+of wheel direction; missing or invalid IMU intervals establish a new local
+origin. A new ESP32 boot starts a new origin. Cached IMU timestamps do not add
+angle, and stale broker feedback withholds the live value. Neither scenario
+changes calibrated model readiness, actual battery runtime, or motor permissions.
+
 Position & heading and Motion agreement can use a separate read-only recorded
 estimate. The installed ESP32 reports per-interval signed pulse estimates and
 signed cumulative counts whose direction follows its motor-command estimate.

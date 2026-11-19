@@ -138,7 +138,25 @@
             : 'Fixed demo trial · 6 seconds'
           : 'Sample age · ' + number(age, 1, ' s'),
       );
-      text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
+      const charge = physicalInput ? physical.energy_observation?.soc_scenario || {} : {};
+      text(key + 'soc', available ? number(r.soc * 100, 1, '%') : number(charge.percent, 2, '%'));
+      text(
+        key + 'soc-label',
+        !available && physical ? 'Charge · reported-start scenario' : 'Estimated charge (SOC)',
+      );
+      $(key + 'soc-note').hidden = available || !physical;
+      text(
+        key + 'soc-note',
+        !physicalInput
+          ? 'Waiting for fresh ESP32 battery readings.'
+          : Number.isFinite(charge.percent)
+            ? `Charge scenario: assumed ${number(charge.assumed_start_soc * 100, 0, '%')} at recorded sample #${charge.origin_seq ?? '?'}, reported ${number(charge.capacity_ah, 1, ' Ah')} capacity. Only recorded motor-branch current is counted; actual remaining charge and other loads are unknown.${charge.skipped_intervals ? ' Missing or invalid intervals are omitted.' : ''}${charge.outside_physical_range ? ' The raw scenario is outside 0–100%; the starting assumption or current input is inconsistent.' : ''}`
+            : charge.state === 'loading'
+              ? 'Rebuilding the charge scenario from stored current readings.'
+              : charge.state === 'battery_unavailable'
+                ? 'Waiting for a valid battery sample; input below 1 V cannot support the charge scenario.'
+                : 'Waiting for two valid battery samples to calculate the reported-start charge scenario.',
+      );
       text(
         key + 'pose',
         available ? position(r.pose) : observingMotion ? position(motion.pose) : 'Unavailable',
@@ -200,7 +218,7 @@
       $(key + 'battery-input-note').hidden = !physicalInput;
       text(
         key + 'battery-input-note',
-        'Raw electrical observations. SOC requires a starting-charge reference and usable capacity.' +
+        'Raw electrical observations. The charge scenario uses reported starting charge and nominal capacity.' +
           (Number.isFinite(raw.battery_voltage_v) && raw.battery_voltage_v < 1
             ? ' Input is below 1 V; check battery power and INA219 VIN connections.'
             : ''),
@@ -554,7 +572,19 @@
       'physical-battery-profile',
       profile.battery_detail || 'Measured battery calibration is required.',
     );
-    physicalReading('physical-yaw', values.yaw_estimate_deg, 2, '°');
+    const yaw = data.fresh ? data.motion_observation?.gyro_yaw || {} : {};
+    const deviceYaw = Number.isFinite(values.yaw_estimate_deg);
+    physicalReading('physical-yaw', deviceYaw ? values.yaw_estimate_deg : yaw.degrees, 2, '°');
+    text(
+      'physical-yaw-note',
+      deviceYaw
+        ? 'Device-reported relative yaw; this is not an absolute heading.'
+        : Number.isFinite(yaw.degrees)
+          ? `Integrated bias-corrected Z gyro from recorded sample #${yaw.origin_seq ?? '?'}. Relative angle can drift; it is not an absolute heading.${yaw.resets ? ' A new origin was set after missing or invalid IMU data.' : ''}`
+          : yaw.state === 'loading'
+            ? 'Rebuilding relative yaw from recorded gyro samples.'
+            : 'Waiting for a valid, fresh gyro sample. Relative yaw is not an absolute heading.',
+    );
     physicalReading('physical-voltage', values.battery_voltage_v, 3, ' V');
     physicalReading('physical-current', values.battery_current_a, 4, ' A');
     physicalReading('physical-power', values.battery_power_w, 3, ' W');

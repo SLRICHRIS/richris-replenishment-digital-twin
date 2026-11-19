@@ -65,7 +65,7 @@
     <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=conditional-forecast-20261119"
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=charge-yaw-20261120"
     ></script>
     <script
       defer
@@ -2483,7 +2483,9 @@
                       <dd id="physical-yaw" class="physical-value">—</dd>
                     </div>
                   </dl>
-                  <p class="physical-module-footnote">Relative yaw is not an absolute heading.</p>
+                  <p id="physical-yaw-note" class="physical-module-footnote">
+                    Relative yaw is not an absolute heading.
+                  </p>
                 </article>
                 <article class="physical-battery-module" aria-labelledby="physical-battery-title">
                   <header class="physical-sensor-heading">
@@ -2707,7 +2709,7 @@
                   </div>
                 </header>
                 <dl>
-                  <dt>Estimated charge (SOC)</dt>
+                  <dt id="python-amr01-soc-label">Estimated charge (SOC)</dt>
                   <dd id="python-amr01-soc">—</dd>
                   <dt>Measured battery input</dt>
                   <dd id="python-amr01-battery-input">—</dd>
@@ -2716,6 +2718,7 @@
                   <dt>Net energy used (Wh)</dt>
                   <dd id="python-amr01-energy">—</dd>
                 </dl>
+                <p class="python-card-meaning" id="python-amr01-soc-note" hidden></p>
                 <p class="python-card-meaning" id="python-amr01-battery-input-note" hidden></p>
                 <p class="python-card-meaning" id="python-amr01-energy-note" hidden></p>
                 <details class="slide-equation">
@@ -2734,6 +2737,13 @@
                     energy used (Wh); Δt: interval (s); C: usable capacity (Ah); SOC: charge
                     fraction; prime: next sample; 3600: seconds/hour. Initial SOC/capacity must be
                     measured; efficiency is 1.
+                  </p>
+                  <p>
+                    The physical-feed charge scenario uses the reported 2.2 Ah capacity and assumes
+                    100% at the first stored battery sample of the boot. It integrates recorded
+                    motor-branch current by the trapezoidal rule; gaps and other loads are omitted.
+                    This does not establish actual battery charge. Values outside 0–100% expose an
+                    inconsistent starting assumption or current input and are not silently clipped.
                   </p>
                   <p class="slide-model-source">
                     <a

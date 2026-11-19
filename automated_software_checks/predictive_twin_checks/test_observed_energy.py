@@ -16,9 +16,16 @@ def test_constant_power_and_signed_reverse_current_have_correct_wh_units():
     result=accumulator.public(3600)
     assert result['net_wh']==pytest.approx(12.0)
     assert result['covered_s']==3600 and result['intervals']==3600
+    assert result['net_ah']==pytest.approx(1)
+    assert result['soc_scenario']['percent']==pytest.approx((1-1/2.2)*100)
+    assert result['soc_scenario']['actual_soc_verified'] is False
+    assert result['soc_scenario']['origin_seq']==0
     reverse=EnergyAccumulator('a'*16)
     reverse.extend([row(seq,seq,current=-.5) for seq in range(3601)])
     assert reverse.public(3600)['net_wh']==pytest.approx(-6.0)
+    assert reverse.public(3600)['net_ah']==pytest.approx(-.5)
+    assert reverse.public(3600)['soc_scenario']['outside_physical_range'] is True
+    assert reverse.public(3600)['soc_scenario']['percent'] > 100
 
 
 def test_trapezoidal_acquisition_time_and_repeated_refresh_never_double_count():
@@ -31,6 +38,8 @@ def test_trapezoidal_acquisition_time_and_repeated_refresh_never_double_count():
     assert result['net_wh']==pytest.approx(20/3600)
     assert result['intervals']==1 and result['samples']==2
     assert accumulator.public(7)['net_wh'] is None
+    assert accumulator.public(7)['soc_scenario']['percent'] is None
+    assert result['net_ah']==pytest.approx(2/3600)
 
 
 def test_gaps_invalid_readings_and_reboots_are_not_integrated_across():
@@ -46,6 +55,10 @@ def test_gaps_invalid_readings_and_reboots_are_not_integrated_across():
     restarted.extend([row(0,0,boot='b'*16)])
     assert restarted.public(0)['state']=='anchoring'
     assert restarted.public(0)['net_wh'] is None
+    assert restarted.public(0)['soc_scenario']['percent'] is None
+    assert result['net_ah']==pytest.approx(4/3600)
+    assert result['soc_scenario']['origin_seq']==0
+    assert result['soc_scenario']['skipped_intervals']==3
 
 
 def test_duplicate_sensor_time_adds_no_energy_and_backwards_time_breaks_interval():
@@ -68,3 +81,16 @@ def test_invalid_electrical_samples_cannot_create_a_total(fields):
     invalid=row(1,1); invalid.update(fields)
     accumulator.extend([row(0,0),invalid,row(2,2)])
     assert accumulator.public(2)['net_wh'] is None
+    assert accumulator.public(2)['soc_scenario']['percent'] is None
+
+
+def test_low_battery_voltage_cannot_supply_charge_and_recovery_skips_unknown_current():
+    accumulator=EnergyAccumulator('a'*16)
+    accumulator.extend([row(0,0,voltage=.8),row(1,1,voltage=7),row(2,2,voltage=7)])
+    result=accumulator.public(2)
+    assert result['net_ah']==pytest.approx(1/3600)
+    assert result['soc_scenario']['origin_seq']==1
+    assert result['soc_scenario']['skipped_intervals'] > 0
+    accumulator.extend([row(3,3,voltage=.8)])
+    assert accumulator.public(3)['soc_scenario']['percent'] is None
+    assert accumulator.public(3)['soc_scenario']['state']=='battery_unavailable'
