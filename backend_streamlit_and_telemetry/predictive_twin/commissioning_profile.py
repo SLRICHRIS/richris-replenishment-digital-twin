@@ -51,3 +51,17 @@ def wheel_magnitude_estimates(measurements):
         result[side + '_rpm_magnitude'] = rate * 60 / PULSES_PER_WHEEL_REVOLUTION if valid else None
         result[side + '_rim_speed_m_s'] = rate * pi * WHEEL_DIAMETER_M / PULSES_PER_WHEEL_REVOLUTION if valid else None
     return result
+
+
+def gyro_bias_correction(measurements, profile=None):
+    """Subtract the recorded Z bias from a valid raw Z rate, both in rad/s."""
+    profile = profile_payload() if profile is None else profile
+    raw = measurements.get('gyro_z_rad_s')
+    bias = profile.get('reported_gyro_bias_rad_s', {}).get('z')
+    valid = lambda value: type(value) in (int, float) and isfinite(value)
+    if (measurements.get('gyro_available') is not True
+            or profile.get('gyro_bias_measured') is not True
+            or not valid(raw) or not valid(bias) or not valid(raw-bias)):
+        return {}
+    return dict(corrected_gyro_rad_s=raw-bias, bias_rad_s=bias,
+                bias_source=profile.get('gyro_bias_source', 'operator_reported_stationary'))

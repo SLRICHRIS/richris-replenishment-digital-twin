@@ -47,6 +47,10 @@ const payload = {
       left_rim_speed_m_s: 0,
       right_rim_speed_m_s: 0.02042035224833366,
     },
+    gyro_estimates: {
+      corrected_gyro_rad_s: 0.019650934149601136,
+      bias_rad_s: 0.00034906585039886593,
+    },
     commissioning: {
       wheel_detail: '65 mm wheels · 100 mm spacing · 20 counted pulses per turn.',
       imu_detail: 'X forward, Y left, Z up. Stationary Z bias: +0.02°/s.',
@@ -91,7 +95,11 @@ assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-gyro').textContent, '0.02000');
 assert.equal(d.getElementById('python-amr01-bias').textContent, '0.00034907');
-assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, '0.01965');
+assert.match(
+  d.getElementById('python-amr01-gyro-input-note').textContent,
+  /raw Z yaw rate.*recorded stationary Z bias/,
+);
 assert.equal(
   d.getElementById('python-amr01-battery-input').textContent,
   'Voltage = 0.820 V\nCurrent = -0.0003 A',

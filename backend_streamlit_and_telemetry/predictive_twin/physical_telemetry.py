@@ -10,7 +10,7 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, Integer, JS
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from .commissioning_profile import profile_payload, wheel_magnitude_estimates
+from .commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction
 from .observed_energy import observed_energy
 
 FRESH_SECONDS = 5.0
@@ -41,7 +41,7 @@ def read_records(db, limit=50):
 def display_payload(db, now=None):
     empty = dict(state='unavailable', label='Telemetry storage unavailable', age_s=None, fresh=False,
                  measurements={}, history=[], recommendations=['Complete the protected EMQX forwarding connection to store physical readings.'],
-                 commissioning=profile_payload(), wheel_estimates={}, energy_observation={},
+                 commissioning=profile_payload(), wheel_estimates={}, gyro_estimates={}, energy_observation={},
                  models_ready=False, model_detail='Wheel geometry and reported stationary Z bias are recorded. Direction evidence, battery calibration and motion validation are required before pose and runtime predictions.')
     if db is None or not isinstance(getattr(db, 'engine', None), Engine):
         return empty
@@ -77,7 +77,7 @@ def display_payload(db, now=None):
         if not row['gyro_available']:
             recommendations.append('IMU readings are unavailable. Check I2C wiring and sensor startup.')
         else:
-            recommendations.append('Stationary Z bias is recorded as +0.02°/s (+0.000349066 rad/s). Complete the remaining model calibration and motion validation before using corrected model rates.')
+            recommendations.append('Z yaw rate is corrected using the recorded stationary bias of +0.02°/s (+0.000349066 rad/s).')
         if not row['battery_available']:
             recommendations.append('Battery readings are unavailable. Check INA219 wiring and its supply.')
         elif row['battery_voltage_v'] < 1:
@@ -96,5 +96,6 @@ def display_payload(db, now=None):
             'received_at': received.isoformat(), 'boot_id': row['boot_id'], 'seq': row['seq'],
             'measurements': row if fresh else {},
             'wheel_estimates': wheel_magnitude_estimates(row) if fresh else {},
+            'gyro_estimates': gyro_bias_correction(row) if fresh else {},
             'energy_observation': {**energy, 'received_at':received.isoformat(), 'fresh':fresh},
             'history': recent, 'recommendations': recommendations}

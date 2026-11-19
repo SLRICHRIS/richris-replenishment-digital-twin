@@ -24,6 +24,13 @@ recoveries show calculation progress until the latest record is included.
 
 ## Recording path
 
+The Gyro bias correction card displays the current raw Z yaw rate minus the
+operator's recorded stationary Z bias (+0.02 degrees/s, converted to
+0.00034906585039886593 rad/s). This per-axis estimate uses the existing raw
+measurement and saved bias independently of wheel, battery and pose models.
+Both inputs must be finite and the IMU sample must be available and fresh.
+Old or invalid gyro readings do not produce a current corrected rate.
+
 The installed ESP32 sends `mh_ir_commissioning` observations to
 `robot/amr01/commissioning`. EMQX forwards that exact topic to an authenticated
 HTTPS receiver on Neon Functions. The receiver validates the device packet and
