@@ -1,3 +1,4 @@
+import { createManualMotorPanel } from './manual_motor_control.js';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 
@@ -7,9 +8,10 @@ export function createVisionRoutingWorkspace(scope) {
     root = d.getElementById('vision-routing-shell');
   if (!root || root.dataset.initialized === 'true') return null;
   root.dataset.initialized = 'true';
-  const physical = createPhysicalRoutePanel(scope),
+  const manual = createManualMotorPanel(scope),
+    physical = createPhysicalRoutePanel(scope),
     practice = createVisionWorkspace(scope);
-  const modes = ['physical', 'practice'],
+  const modes = ['physical', 'manual', 'practice'],
     listeners = [];
   const on = (target, type, fn) => {
     target.addEventListener(type, fn);
@@ -34,7 +36,14 @@ export function createVisionRoutingWorkspace(scope) {
     on(button, 'keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       e.preventDefault();
-      select(e.key === 'Home' ? 'physical' : e.key === 'End' ? 'practice' : modes[1 - index], true);
+      select(
+        e.key === 'Home'
+          ? 'physical'
+          : e.key === 'End'
+            ? 'practice'
+            : modes[(index + (e.key === 'ArrowRight' ? 1 : 2)) % 3],
+        true,
+      );
     });
   });
   d.querySelectorAll('[data-vision-open-setup]').forEach((button) =>
@@ -46,10 +55,12 @@ export function createVisionRoutingWorkspace(scope) {
   );
   select('physical');
   return {
+    manual,
     physical,
     practice,
     select,
     destroy() {
+      manual?.destroy();
       practice?.destroy();
       physical?.destroy();
       listeners.forEach((remove) => remove());

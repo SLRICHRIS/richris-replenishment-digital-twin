@@ -24,23 +24,27 @@ def verified(raw, secret, fields):
     return body.split('|')
 
 
-def drive(boot,epoch,route,seq,operation,left,right,now,secret):
+def drive(boot,epoch,route,seq,operation,left,right,now,secret,lease_ms=DRIVE_LEASE_MS,max_pwm=MAX_PWM):
+    if type(lease_ms) is not int or not 1 <= lease_ms <= DRIVE_LEASE_MS:
+        raise ValueError("Invalid motor command lease")
+    if type(max_pwm) is not int or not 1 <= max_pwm <= 255:
+        raise ValueError("Invalid configured PWM cap")
     for v in (boot,epoch,route): identifier(v)
     if operation not in ('arm','drive','stop') or type(seq) is not int or seq<1:
         raise ValueError('Invalid controller operation')
-    if any(type(v) is not int or abs(v)>MAX_PWM for v in (left,right)):
+    if any(type(v) is not int or abs(v)>max_pwm for v in (left,right)):
         raise ValueError('Motor output exceeds the route limit')
     if operation!='drive' and (left or right): raise ValueError('Arming and stopping require zero output')
-    return signed(('V1',boot,epoch,route,seq,operation,left,right,now,now+DRIVE_LEASE_MS),secret)
+    return signed(('V1',boot,epoch,route,seq,operation,left,right,now,now+lease_ms),secret)
 
 
-def hardware(raw,secret,now):
+def hardware(raw,secret,now,max_pwm=MAX_PWM):
     f=verified(raw,secret,12)
     if f[0]!='H1': raise ValueError('Unsupported hardware packet')
     for v in f[1:3]+[f[4]]: identifier(v)
     values=[int(f[i]) for i in (3,5,7,8,9,10,11)]
     seq,command_seq,left,right,mv,is_ready,stamp=values
-    if seq<0 or command_seq<0 or abs(left)>MAX_PWM or abs(right)>MAX_PWM or not 0<=mv<=32000 or is_ready not in (0,1) or not fresh(stamp,now):
+    if seq<0 or command_seq<0 or abs(left)>max_pwm or abs(right)>max_pwm or not 0<=mv<=32000 or is_ready not in (0,1) or not fresh(stamp,now):
         raise ValueError('Stale or invalid hardware heartbeat')
     if f[6] not in ('idle','armed','moving','interlock','stopped','expired','local_stop','unavailable'):
         raise ValueError('Invalid controller state')

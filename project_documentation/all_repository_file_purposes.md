@@ -291,3 +291,13 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/vision_routing_workspace.js` | Coordinate the Physical AMR and Practice modes with one shared measurement form and explicit camera/presence lifecycle. |
 
 | `automated_software_checks/browser_behavior_checks/test_human_review_usability.cjs` | Check actionable readiness, source isolation, operator ownership, preserved decision inputs, expiry and separate request/reply/sensor outcomes. |
+
+| `automated_software_checks/browser_behavior_checks/test_manual_motor_control.mjs` | Verify one-shot approval and manual control page lifecycle. |
+| `automated_software_checks/predictive_twin_checks/test_manual_motor_control.py` | Implement or verify authenticated one-shot manual motor control. |
+| `backend_streamlit_and_telemetry/predictive_twin/manual_control_workspace.py` | Implement or verify authenticated one-shot manual motor control. |
+| `backend_streamlit_and_telemetry/vision_control/manual.py` | Implement or verify authenticated one-shot manual motor control. |
+| `esp32_telemetry_firmware/AMR01_Manual_WiFi/AMR01_Manual_WiFi.ino` | Preserve the supplied working sketch while adding authenticated expiring Wi-Fi motor commands. |
+| `esp32_telemetry_firmware/AMR01_Manual_WiFi/example_esp32_wifi_and_mqtt_settings.h` | Public placeholders for private Wi-Fi, telemetry and manual receiver settings. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/manual_motor_control.js` | Render attended manual motor review and bridge server-owned approvals. |
+| `project_documentation/manual_motor_control_setup.md` | Step-by-step private connection setup and feedback interpretation for manual AMR control. |
+| `project_maintenance_scripts/add_manual_receiver_to_working_sketch.py` | Implement or verify authenticated one-shot manual motor control. |

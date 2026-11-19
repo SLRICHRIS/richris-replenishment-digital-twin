@@ -34,8 +34,10 @@ def render_warehouse_workspace():
     payload['human_review'] = review_workspace(payload)
     from .predictive_twin.vision_execution_workspace import workspace as vision_workspace
     payload['vision_execution'] = vision_workspace(mode)
+    from .predictive_twin.manual_control_workspace import workspace as manual_workspace
+    payload['manual_control'] = manual_workspace(mode)
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution', 'manual_control'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
@@ -65,7 +67,10 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
-    if result['action'] == 'vision_execution':
+    if result['action'] == 'manual_control':
+        from .predictive_twin.manual_control_workspace import handle
+        handle(result, mode)
+    elif result['action'] == 'vision_execution':
         from .predictive_twin.vision_execution_workspace import handle
         handle(result, mode)
     elif result['action'] == 'human_review':

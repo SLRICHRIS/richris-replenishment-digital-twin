@@ -41,13 +41,19 @@ def owner():
 def workspace(mode):
     p,missing=profile(); auth=authorized(p); value=dict(scene=None,ready=False,review=None)
     available=False
-    if auth:
+    if auth and st.session_state.get('vision_view') and mode=='live':
         try:
-            s=service(p); available=not s.stop.is_set()
-            if st.session_state.get('vision_view') and mode=='live': s.coordinator.touch(owner())
-            else: s.coordinator.cancel(owner())
+            s=service(p)
+            if s.stop.is_set():
+                service.clear(); s=service(p)
+            st.session_state.vision_service=s
+            available=not s.stop.is_set()
+            s.coordinator.touch(owner())
             value=s.coordinator.public(owner())
         except Exception: missing.append('Protected route audit or transport unavailable')
+    else:
+        s=st.session_state.get('vision_service')
+        if s and not s.stop.is_set(): s.coordinator.cancel(owner())
     value.update(authorized=auth,can_unlock=p is not None,available=available,missing=missing,
         feedback=st.session_state.get('vision_feedback',''),physical_mode=mode=='live',
         feedback_nonce=st.session_state.get('vision_feedback_nonce',''))
@@ -62,12 +68,16 @@ def handle(result,mode):
         if type(result.get('active')) is bool:
             st.session_state.vision_view=result['active']
             if not result['active'] and authorized(p):
-                try: service(p).coordinator.cancel(owner())
+                try:
+                    s=st.session_state.get('vision_service')
+                    if s and not s.stop.is_set(): s.coordinator.cancel(owner())
                 except Exception: pass
         return
     if cmd=='logout':
         if authorized(p):
-            try: service(p).coordinator.cancel(owner())
+            try:
+                s=st.session_state.get('vision_service')
+                if s and not s.stop.is_set(): s.coordinator.cancel(owner())
             except Exception: pass
         st.session_state.pop('vision_auth',None)
         st.session_state.vision_feedback='Operator session locked; active route stop requested'

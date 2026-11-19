@@ -10,9 +10,16 @@ from .contracts import SCENE_TOPIC,STATUS_TOPIC,REQUEST_TOPIC,canonical
 
 
 class Service:
+    topics=(SCENE_TOPIC,STATUS_TOPIC)
+    send_topic=REQUEST_TOPIC
+    coordinator_type=Coordinator
+    client_label='vision'
+    encode_packet=staticmethod(canonical)
+
     def __init__(self,p):
         import paho.mqtt.client as mqtt
-        self.stop=threading.Event(); self.connected=False; self.guard=threading.RLock()
+        self.stop=threading.Event(); self.connected=False; self.guard=threading.RLock(); self.closed=False
+        self.created_at_ms=int(time.time()*1000)
         u=make_url(p['audit_url'])
         if not u.drivername.startswith('postgresql') or '-pooler' in (u.host or ''): raise ValueError('Use a direct PostgreSQL audit connection')
         self.engine=create_engine(u,pool_pre_ping=True,connect_args={'connect_timeout':5})
@@ -28,10 +35,10 @@ class Service:
             self.lease.close(); self.engine.dispose(); raise ValueError('Another route coordinator owns this robot')
         self.pid=self.lease.execute(text('SELECT pg_backend_pid()')).scalar_one(); self.lease.commit()
         try:
-            self.coordinator=Coordinator(self.engine,p['control_key'],self.publish,lambda:int(time.time()*1000))
+            self.coordinator=self.coordinator_type(self.engine,p['control_key'],self.publish,lambda:int(time.time()*1000))
         except Exception:
             self.lease.close(); self.engine.dispose(); raise
-        self.client=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id='amr01-vision-website-'+uuid.uuid4().hex[:8])
+        self.client=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id='amr01-'+self.client_label+'-website-'+uuid.uuid4().hex[:8])
         self.client.username_pw_set(p['mqtt_username'],p['mqtt_password']); self.client.tls_set()
         self.client.on_connect=self.on_connect; self.client.on_subscribe=self.on_subscribe
         self.client.on_disconnect=lambda *_:self.disconnected()
@@ -50,10 +57,10 @@ class Service:
 
     def on_connect(self,client,userdata,flags,reason,properties):
         self.disconnected()
-        if not reason.is_failure: client.subscribe([(SCENE_TOPIC,0),(STATUS_TOPIC,0)])
+        if not reason.is_failure: client.subscribe([(topic,0) for topic in self.topics])
 
     def on_subscribe(self,client,userdata,mid,reasons,properties):
-        if reasons and len(reasons)==2 and all(not r.is_failure for r in reasons):
+        if reasons and len(reasons)==len(self.topics) and all(not r.is_failure for r in reasons):
             self.connected=True; self.coordinator.connected=True
 
     def message(self,client,userdata,m):
@@ -67,18 +74,48 @@ class Service:
         with self.guard:
             self.assert_owner()
             if not self.connected: raise RuntimeError('Protected route transport unavailable')
-            result=self.client.publish(REQUEST_TOPIC,canonical(packet),qos=0,retain=False)
+            result=self.client.publish(self.send_topic,self.encode_packet(packet),qos=0,retain=False)
             if result.rc!=0: raise RuntimeError('Route transport did not accept the request')
 
     def monitor(self):
-        while not self.stop.wait(.15):
-            try: self.coordinator.tick()
-            except Exception: self.close_transport(); return
+        try:
+            while not self.stop.wait(.15):
+                self.coordinator.tick()
+                last=max(self.coordinator.presence.copy().values(),default=self.created_at_ms)
+                if int(time.time()*1000)-last>5000: break
+        except Exception: pass
+        finally: self.close()
 
     def close_transport(self):
         self.stop.set(); self.disconnected()
 
     def close(self):
-        self.close_transport()
+        with self.guard:
+            if self.closed: return
+            self.closed=True
+            self.close_transport()
         self.client.disconnect(); self.client.loop_stop()
         self.lease.close(); self.engine.dispose()
+
+
+class ManualService(Service):
+    from .manual import ManualCoordinator as coordinator_type
+    topics=('robot/amr01/vision/hardware',)
+    send_topic='robot/amr01/vision/drive'
+    client_label='manual'
+    encode_packet=staticmethod(str)
+
+    def message(self,client,userdata,m):
+        if m.topic!=self.topics[0]: return
+        try: self.coordinator.observe(m.payload,m.retain)
+        except (ValueError,TypeError,KeyError,UnicodeError): pass
+        except Exception: self.close_transport()
+
+    def monitor(self):
+        try:
+            while not self.stop.wait(.1):
+                self.coordinator.tick()
+                if int(time.time()*1000)-self.coordinator.last_touch>5000: break
+        except Exception: pass
+        finally:
+            self.close()
