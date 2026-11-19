@@ -30,6 +30,7 @@ const payload = {
     age_s: 0.5,
     seq: 1,
     measurements: {
+      interval_s: 0.5,
       left_pulses_total: 0,
       right_pulses_total: 4,
       left_pulse_hz: 0,
@@ -46,6 +47,8 @@ const payload = {
       right_rpm_magnitude: 6,
       left_rim_speed_m_s: 0,
       right_rim_speed_m_s: 0.02042035224833366,
+      left_travel_magnitude_m: 0,
+      right_travel_magnitude_m: 0.01021017612416683,
     },
     gyro_estimates: {
       corrected_gyro_rad_s: 0.019650934149601136,
@@ -108,8 +111,11 @@ assert.equal(d.getElementById('python-amr01-power').textContent, '-0.000246 W');
 for (const field of ['soc', 'pose', 'energy', 'residual', 'runtime', 'forecast']) {
   assert.equal(d.getElementById('python-amr01-' + field).textContent, 'Unavailable');
 }
-assert.match(d.getElementById('python-amr01-travel').textContent, /L = Unavailable/);
-assert.match(d.getElementById('python-amr01-speed').textContent, /R = Unavailable/);
+assert.equal(d.getElementById('python-amr01-travel').textContent, 'L = 0.0000 m\nR = 0.0102 m');
+assert.equal(d.getElementById('python-amr01-speed').textContent, 'L = 0.000 m/s\nR = 0.020 m/s');
+assert.match(d.getElementById('python-amr01-travel-label').textContent, /magnitude/);
+assert.match(d.getElementById('python-amr01-speed-label').textContent, /magnitude/);
+assert.equal(d.getElementById('python-amr01-wheel-input-note').hidden, false);
 assert.match(d.getElementById('hardware-summary').textContent, /Receiving physical telemetry/);
 assert.equal(d.getElementById('python-amr01-age').textContent, '0.5 s');
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, false);
@@ -163,6 +169,9 @@ assert.equal(d.getElementById('python-amr01-bias').textContent, '0.00034907');
 assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-travel').textContent, /L = Unavailable/);
+assert.match(d.getElementById('python-amr01-speed').textContent, /R = Unavailable/);
+assert.equal(d.getElementById('python-amr01-wheel-input-note').hidden, true);
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, true);
 // Missing/invalid metadata must never look like a new packet or a zero-age observation.
 payload.physical_telemetry.received_at = 'not-a-timestamp';

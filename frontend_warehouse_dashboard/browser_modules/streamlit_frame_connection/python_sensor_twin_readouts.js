@@ -100,6 +100,7 @@
       document.documentElement.dataset.readingsAvailable = String(Boolean(available));
       const d = available ? r.derived || {} : {};
       const physicalInput = !available && physical?.fresh === true;
+      const wheel = physicalInput ? physical.wheel_estimates || {} : {};
       // Current raw observations do not authorize the calibrated model outputs.
       const raw = available ? r.raw || {} : physicalInput ? physical.measurements || {} : {};
       const recordedBias =
@@ -139,7 +140,17 @@
       text(key + 'pose', available ? position(r.pose) : 'Unavailable');
       text(
         key + 'travel',
-        `L = ${number(d.ds_left_m, 4, ' m')}\nR = ${number(d.ds_right_m, 4, ' m')}`,
+        `L = ${number(available ? d.ds_left_m : wheel.left_travel_magnitude_m, 4, ' m')}\nR = ${number(available ? d.ds_right_m : wheel.right_travel_magnitude_m, 4, ' m')}`,
+      );
+      text(
+        key + 'travel-label',
+        physicalInput ? 'Wheel travel magnitude this interval' : 'Wheel travel this interval',
+      );
+      text(key + 'speed-label', physicalInput ? 'Wheel speed magnitude' : 'Wheel speed');
+      $(key + 'wheel-input-note').hidden = !physicalInput;
+      text(
+        key + 'wheel-input-note',
+        'Wheel rotation magnitudes use the saved wheel diameter and pulses per revolution. Travel covers the reported sample interval.',
       );
       text(key + 'gyro', number(raw.gyro_z_rad_s, 5));
       $(key + 'gyro-input-note').hidden = !physicalInput;
@@ -207,7 +218,7 @@
       );
       text(
         key + 'speed',
-        `L = ${number(d.v_left_m_s, 3, ' m/s')}\nR = ${number(d.v_right_m_s, 3, ' m/s')}`,
+        `L = ${number(available ? d.v_left_m_s : wheel.left_rim_speed_m_s, 3, ' m/s')}\nR = ${number(available ? d.v_right_m_s : wheel.right_rim_speed_m_s, 3, ' m/s')}`,
       );
       text(key + 'residual', number(d.residual_rad_s, 5, ' rad/s'));
       const forecastAllowed =

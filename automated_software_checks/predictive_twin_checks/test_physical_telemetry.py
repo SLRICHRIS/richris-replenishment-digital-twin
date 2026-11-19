@@ -45,6 +45,7 @@ def test_live_raw_values_are_visible_without_authorizing_models_or_showing_devic
     assert result['commissioning']['gyro_bias_measured'] is True
     assert result['measurements']['rpm_calibration_confirmed'] is False
     assert result['wheel_estimates']['left_rpm_magnitude'] == pytest.approx(row['left_pulse_hz'] * 3)
+    assert result['wheel_estimates']['left_travel_magnitude_m'] == pytest.approx(row['left_pulse_hz']*row['interval_s']*.01021017612416683)
     assert result['gyro_estimates']['corrected_gyro_rad_s'] == pytest.approx(row['gyro_z_rad_s']-.00034906585039886593)
     assert any('below 1 V' in line for line in result['recommendations'])
     assert 'payload' not in result['measurements']
@@ -172,13 +173,31 @@ def test_corrected_geometry_yields_unsigned_quantities_without_promoting_incompl
     assert estimates['left_rpm_magnitude'] == 60
     assert estimates['left_rim_speed_m_s'] == pytest.approx(.20420352248333656)
     assert estimates['right_rpm_magnitude'] == estimates['right_rim_speed_m_s'] == 0
-    assert set(estimates) == {'left_rpm_magnitude', 'right_rpm_magnitude', 'left_rim_speed_m_s', 'right_rim_speed_m_s'}
+    assert estimates['left_travel_magnitude_m'] is None
+    assert set(estimates) == {'left_rpm_magnitude', 'right_rpm_magnitude', 'left_rim_speed_m_s', 'right_rim_speed_m_s', 'left_travel_magnitude_m', 'right_travel_magnitude_m'}
 
 
 @pytest.mark.parametrize('invalid', [None, True, -1, float('nan'), float('inf'), '20'])
 def test_invalid_pulse_frequency_cannot_become_a_wheel_estimate(invalid):
     estimates = wheel_magnitude_estimates(dict(left_pulse_hz=invalid))
     assert all(value is None for value in estimates.values())
+
+
+def test_raw_wheel_travel_and_speed_use_packet_interval_and_preserve_stationary_zero():
+    estimates=wheel_magnitude_estimates(dict(left_pulse_hz=4,right_pulse_hz=0,interval_s=.25))
+    assert estimates['left_travel_magnitude_m']==pytest.approx(.01021017612416683)
+    assert estimates['left_rim_speed_m_s']==pytest.approx(.04084070449666731)
+    assert estimates['right_travel_magnitude_m']==0
+    assert estimates['right_rim_speed_m_s']==0
+    assert profile_payload()['models_ready'] is False
+
+
+@pytest.mark.parametrize('interval',[None,True,0,-1,float('nan'),float('inf')])
+def test_invalid_interval_cannot_create_wheel_travel(interval):
+    estimates=wheel_magnitude_estimates(dict(left_pulse_hz=4,right_pulse_hz=0,interval_s=interval))
+    assert estimates['left_travel_magnitude_m'] is None
+    assert estimates['right_travel_magnitude_m'] is None
+    assert estimates['left_rim_speed_m_s']==pytest.approx(.04084070449666731)
 
 
 @pytest.mark.parametrize('raw', [-.01306, 0, .00034906585039886593, .02])

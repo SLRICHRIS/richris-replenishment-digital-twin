@@ -24,6 +24,14 @@ recoveries show calculation progress until the latest record is included.
 
 ## Recording path
 
+The Wheel motion card displays unsigned rim speed and interval travel directly
+from the commissioning feed. Distance per counted pulse is pi times the saved
+65 mm wheel diameter divided by the confirmed 20 pulses per revolution. Speed
+is pulse frequency times that distance; interval travel is speed times the
+packet's reported interval. Zero pulse frequency displays zero. These wheel
+rotation magnitudes are available independently of signed pose calibration,
+while old, invalid or absent inputs remain unavailable as current readings.
+
 The Gyro bias correction card displays the current raw Z yaw rate minus the
 operator's recorded stationary Z bias (+0.02 degrees/s, converted to
 0.00034906585039886593 rad/s). This per-axis estimate uses the existing raw

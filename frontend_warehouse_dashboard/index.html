@@ -65,7 +65,7 @@
     <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=raw-gyro-20261119"
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=raw-wheels-20261119"
     ></script>
     <script
       defer
@@ -2569,11 +2569,12 @@
                   </div>
                 </header>
                 <dl>
-                  <dt>Wheel travel this interval</dt>
+                  <dt id="python-amr01-travel-label">Wheel travel this interval</dt>
                   <dd id="python-amr01-travel">—</dd>
-                  <dt>Wheel speed</dt>
+                  <dt id="python-amr01-speed-label">Wheel speed</dt>
                   <dd id="python-amr01-speed">—</dd>
                 </dl>
+                <p class="python-card-meaning" id="python-amr01-wheel-input-note" hidden></p>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
                   <p class="python-card-meaning">
