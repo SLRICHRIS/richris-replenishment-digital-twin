@@ -18,7 +18,7 @@ export function createVisionWorkspace(scope) {
   const storageKey = 'amr01.visionSetup.v2';
   // Operator-reported dimensions are planning defaults, never execution authorization.
   const reportedMeasurements = {
-    robotLengthMm: 180,
+    robotLengthMm: 187,
     robotWidthMm: 150,
     robotHeightMm: 150,
     markerHeightMm: 150,
@@ -29,6 +29,14 @@ export function createVisionWorkspace(scope) {
     reference: 'wheel-axle-midpoint',
     forwardMm: 100,
     leftMm: 0,
+    source: 'operator-reported',
+  };
+  const reportedBodyOutline = {
+    reference: 'wheel-axle-midpoint',
+    frontMm: 147,
+    rearMm: 40,
+    lengthMm: 187,
+    longitudinalMidpointForwardMm: 53.5,
     source: 'operator-reported',
   };
   const settingsFields = {
@@ -420,6 +428,7 @@ export function createVisionWorkspace(scope) {
     arena: ARENA,
     settings: state.settings,
     reportedMarkerOffset,
+    reportedBodyOutline,
     start: state.start,
     goal: state.goal,
     obstacles: state.obstacles,

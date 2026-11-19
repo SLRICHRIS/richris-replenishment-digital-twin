@@ -22,7 +22,7 @@ assert.equal(el('pr-map-card').hidden, true, 'Setup does not show an empty execu
 assert.equal(d.querySelectorAll('#vision-settings-form').length, 1);
 assert.ok(el('pr-step-panel-1').contains(el('vision-settings-form')));
 assert.equal(el('vision-camera-height').value, '92');
-assert.equal(el('vision-robot-length').value, '180');
+assert.equal(el('vision-robot-length').value, '187');
 assert.equal(el('vision-robot-width').value, '150');
 assert.equal(el('vision-robot-height').value, '150');
 assert.equal(el('vision-marker-height').value, '150');

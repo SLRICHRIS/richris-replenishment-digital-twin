@@ -80,7 +80,8 @@ All modules share common ground. INA219 observes the motor branch; the buck/ESP3
 
 | Item | Supplied value |
 | --- | --- |
-| Full body | 180 × 150 × 150 mm |
+| Full body | 187 × 150 × 150 mm |
+| Axle to outline | Front 147 mm, rear 40 mm; total length 187 mm. Longitudinal body midpoint is 53.5 mm forward of the axle; lateral centring still requires verification. |
 | Wheels | 65 mm diameter, 100 mm centre spacing, 20 counted pulses per turn |
 | IMU axes and stationary bias | X forward, Y left, Z up; Z bias +0.02°/s = +0.000349066 rad/s |
 | Robot marker | ArUco 4×4/50 ID 0, 40 mm black edge, 150 mm above floor |

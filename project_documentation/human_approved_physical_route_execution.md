@@ -51,10 +51,13 @@ its pulse settings; use 20 only after checking actual counted falling edges.
 Use a fixed overhead USB camera and a flat **425 × 630 mm portrait** floor.
 The reported overhead USB camera height is **920 mm (92 cm)**.
 On 19 November 2026 the operator supplied the full robot dimensions:
-**180 mm length × 150 mm width × 150 mm height**, including its platform and
-protrusions. These values prefill the shared planning form and the example
-camera configuration. Saved browser edits are preserved; previously blank
-dimensions receive these reported values. The operator separately confirmed the
+**187 mm length × 150 mm width × 150 mm height**, including its platform and
+protrusions. The corrected length follows the subsequent axle-to-outline measurements:
+**F = 147 mm to the front, R = 40 mm to the rear**. Their sum is 187 mm,
+superseding the initial 180 mm report. The longitudinal body midpoint is
+`(147 - 40) / 2 = 53.5 mm` forward of the wheel axle. These values prefill the
+shared planning form and the example camera configuration. Saved browser edits are
+preserved; previously blank dimensions receive these reported values. The operator separately confirmed the
 printed marker surface at **150 mm above the floor**, and this value also prefills
 the form and example configuration. The provided robot marker is ID 0 with a
 **40 × 40 mm black square**, now recorded as a 40 mm edge in both setups.
@@ -63,11 +66,14 @@ midpoint and **B = 0 mm sideways**. This robot-to-marker position is recorded in
 the setup summary, planning export and `reported_marker_offset_robot_frame_mm`.
 The camera's `marker_center_to_robot_center_mm` is the reverse displacement in
 the printed marker's coordinate frame, so it remains unset until forward
-alignment is verified. If printed marker +Y is verified to point robot-forward,
-the reverse displacement is `[0, -100]` mm with zero angular offset. Do not infer
-that alignment from the mounting distances alone. During mounting verification,
-also check the full body envelope about the chosen axle reference; body dimensions
-alone do not establish that the axle lies at the geometric body centre.
+alignment is verified. If printed marker +Y is verified to point robot-forward
+and the body midpoint is verified laterally centred on the axle, the displacement
+from marker centre to body midpoint is `[0, -46.5]` mm with zero angular offset:
+`53.5 - 100 = -46.5 mm` longitudinally. This differs from the reverse
+marker-to-axle displacement of 100 mm. The operational marker-frame transform
+remains unset pending mounting verification. Do not infer printed-axis alignment
+or lateral body centring from the longitudinal distances alone. The camera body
+mask and centred footprint must use the same calibrated body reference.
 Every physical calibration check remains false until independently commissioned.
 
 The Windows laptop must remain powered, connected to the camera, Wi-Fi and EMQX
