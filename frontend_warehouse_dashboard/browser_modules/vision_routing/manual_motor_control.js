@@ -27,7 +27,9 @@ export function createManualMotorPanel(scope) {
     listeners = [];
   let current = {},
     pending = false,
-    active = false;
+    active = false,
+    leaving = false,
+    lastPresenceRepair = -Infinity;
   const on = (target, type, fn) => {
     target.addEventListener(type, fn);
     listeners.push(() => target.removeEventListener(type, fn));
@@ -38,6 +40,14 @@ export function createManualMotorPanel(scope) {
         detail: { action: 'manual_control', command, ...fields },
       }),
     );
+  function isManualPageActive() {
+    return (
+      !leaving &&
+      d.body.dataset.view === 'vision' &&
+      d.getElementById('vision-routing-shell')?.dataset.mode === 'manual' &&
+      !d.hidden
+    );
+  }
   function render(value = {}) {
     current = value;
     pending = false;
@@ -133,6 +143,19 @@ export function createManualMotorPanel(scope) {
     el('outcome').textContent =
       r?.reason ||
       (value.busy ? 'Another operator is controlling AMR-01.' : 'No motor request has been sent.');
+    // Recover a lost initial view event, without renewing a hidden/departing page.
+    const now = scope.performance.now();
+    if (
+      value.authorized &&
+      value.physical_mode &&
+      value.view_active === false &&
+      isManualPageActive() &&
+      now - lastPresenceRepair >= 2000
+    ) {
+      lastPresenceRepair = now;
+      active = true;
+      emit('view', { active: true });
+    }
   }
   on(el('source'), 'click', () =>
     d.dispatchEvent(
@@ -171,10 +194,7 @@ export function createManualMotorPanel(scope) {
   on(el('logout'), 'click', () => emit('logout'));
   on(d, 'python-twin:render', (e) => render(e.detail?.manual_control));
   const presence = () => {
-    const next =
-      d.body.dataset.view === 'vision' &&
-      d.getElementById('vision-routing-shell').dataset.mode === 'manual' &&
-      !d.hidden;
+    const next = isManualPageActive();
     if (next !== active) {
       active = next;
       emit('view', { active });
@@ -185,8 +205,13 @@ export function createManualMotorPanel(scope) {
   const observer = new scope.MutationObserver(presence);
   observer.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
   on(scope, 'pagehide', () => {
+    leaving = true;
     active = false;
     emit('view', { active: false });
+  });
+  on(scope, 'pageshow', () => {
+    leaving = false;
+    presence();
   });
   render();
   return {

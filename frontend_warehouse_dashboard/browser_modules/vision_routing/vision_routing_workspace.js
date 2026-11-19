@@ -1,4 +1,4 @@
-import { createManualMotorPanel } from './manual_motor_control.js';
+import { createManualMotorPanel } from './manual_motor_control.js?v=manual-session-20261119';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 

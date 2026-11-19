@@ -244,3 +244,47 @@ def test_coalesced_page_events_restore_manual_presence_and_cancel_only_departing
     assert not state['manual_view'] and not state['vision_view']
     assert ('manual',OWNER) in cancelled
     assert not synchronize_control_view(state,'untrusted')
+
+
+def test_authenticated_connect_starts_listener_even_if_initial_view_event_was_lost(monkeypatch):
+    import threading
+    from types import SimpleNamespace
+    from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as workspace
+    class State(dict):
+        def __getattr__(self,name):return self[name]
+        def __setattr__(self,name,value):self[name]=value
+    state=State(manual_view=False)
+    code='private-test-access-code'
+    config=dict(enabled=True,mqtt_host='example.invalid',mqtt_username='test-only',mqtt_password='test-only',control_key=KEY,audit_url='postgresql+psycopg://test@example.invalid/test')
+    monkeypatch.setattr(workspace,'st',SimpleNamespace(session_state=state,secrets={'manual_control':config,'amr_connection':{'access_code':code}}))
+    touched=[];cancelled=[];started=[]
+    coordinator=SimpleNamespace(touch=touched.append,cancel=cancelled.append,public=lambda owner:dict(ready=False,hardware=None,review=None))
+    service=SimpleNamespace(stop=threading.Event(),coordinator=coordinator,public_transport=lambda:dict(state='connecting',connected=False,reason=''))
+    def start(profile):
+        started.append(profile);state['manual_service']=service;return service
+    monkeypatch.setattr(workspace,'live_service',start)
+    workspace.handle(dict(command='login',access_code=code,operator='Richris'),'live')
+    assert state['manual_view'] and workspace.authorized(workspace.profile()[0])
+    result=workspace.workspace('live')
+    assert result['view_active'] and result['transport']['state']=='connecting'
+    assert len(started)==1 and touched==[state['manual_owner']]
+    # The host has applied the canonical mode; a sibling panel's legacy flag
+    # must not overwrite that full state when handling the same component value.
+    workspace.handle(dict(command='view',active=False,control_mode='manual'),'live')
+    assert state['manual_view']
+    workspace.handle(dict(command='logout'),'live')
+    assert not state['manual_view'] and not workspace.authorized(workspace.profile()[0])
+    assert cancelled==[state['manual_owner']]
+
+
+def test_bad_operator_code_cannot_activate_the_manual_page(monkeypatch):
+    from types import SimpleNamespace
+    from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as workspace
+    class State(dict):
+        def __getattr__(self,name):return self[name]
+        def __setattr__(self,name,value):self[name]=value
+    state=State(manual_view=False)
+    config=dict(enabled=True,mqtt_host='example.invalid',mqtt_username='test',mqtt_password='test',control_key=KEY,audit_url='postgresql+psycopg://test@example.invalid/test')
+    monkeypatch.setattr(workspace,'st',SimpleNamespace(session_state=state,secrets={'manual_control':config,'amr_connection':{'access_code':'private-test-access-code'}}))
+    workspace.handle(dict(command='login',access_code='incorrect-code',operator='Richris'),'live')
+    assert not state['manual_view'] and not workspace.authorized(workspace.profile()[0])

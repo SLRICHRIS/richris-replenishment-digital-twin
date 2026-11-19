@@ -65,6 +65,7 @@ def handle(result,mode):
     if cmd not in ('view','login','logout','capture','decide','stop'): return
     p,_=profile()
     if cmd=='view':
+        if 'control_mode' in result: return  # Host already synchronized both control views.
         if type(result.get('active')) is bool:
             st.session_state.vision_view=result['active']
             if not result['active'] and authorized(p):
