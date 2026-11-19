@@ -107,7 +107,8 @@ def context_provider(store, calibration):
     def read():
         if calibration is None:
             from .physical_telemetry import display_payload
-            return dict(mode='live',observed_at=time.time(),robots={},physical_telemetry=display_payload(store))
+            physical = display_payload(store)
+            return dict(mode='live',observed_at=time.time(),robots={},physical_telemetry=physical)
         snapshot = store.read_snapshot(expected_fingerprint=calibration_fingerprint(calibration), include_history=False)
         snapshot['calibration_fingerprint'] = calibration_fingerprint(calibration)
         return dict(mode='live', observed_at=time.time(), robots={'amr01':snapshot})

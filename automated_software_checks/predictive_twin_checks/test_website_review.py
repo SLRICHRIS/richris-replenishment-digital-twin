@@ -135,3 +135,15 @@ def test_observation_website_action_uses_server_context_without_calibration(brow
     web.handle_website_action(dict(command='create',evidence={'forged':'sensor'}))
     factory.assert_called_once_with(profile,None)
     assert len(instance.create.call_args.args)==1 and not instance.create.call_args.kwargs
+
+
+def test_observation_age_is_not_increased_twice_by_database_read_time(monkeypatch):
+    from backend_streamlit_and_telemetry.predictive_twin import physical_telemetry
+    now=[1000.]
+    def read(_):
+        now[0]+=2
+        return dict(fresh=True,age_s=.1)
+    monkeypatch.setattr(physical_telemetry,'display_payload',read)
+    monkeypatch.setattr(service.time,'time',lambda:now[0])
+    payload=service.context_provider(object(),None)()
+    assert payload['observed_at']==1002. and payload['physical_telemetry']['age_s']==.1
