@@ -41,6 +41,8 @@ def test_live_raw_values_are_visible_without_authorizing_models_or_showing_devic
     assert result['fresh'] and result['state'] == 'receiving'
     assert result['measurements']['left_pulses_total'] == 3
     assert result['models_ready'] is False
+    assert result['motion_observation']['state']=='anchoring'
+    assert result['motion_observation']['direction_source']=='motor_command_estimate'
     assert result['commissioning']['ppr_count_test_confirmed'] is True
     assert result['commissioning']['gyro_bias_measured'] is True
     assert result['measurements']['rpm_calibration_confirmed'] is False
@@ -64,6 +66,7 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     assert result['measurements'] == {} and result['models_ready'] is False
     assert result['wheel_estimates'] == {}
     assert result['gyro_estimates'] == {}
+    assert result['motion_observation'] == {}
     assert len(result['history']) == 1
     assert result['energy_observation']['fresh'] is False
     assert result['energy_observation']['received_at'] == row['received_at'].isoformat()
@@ -219,3 +222,25 @@ def test_missing_sensor_or_recorded_bias_keeps_correction_unavailable():
     assert gyro_bias_correction(measurement,{})=={}
     assert gyro_bias_correction(measurement,{**profile_payload(),'gyro_bias_measured':False})=={}
     assert gyro_bias_correction(measurement,{**profile_payload(),'reported_gyro_bias_rad_s':{'z':None}})=={}
+
+
+def test_motion_reader_replays_stored_evidence_once_and_keeps_model_isolation(physical_db,monkeypatch):
+    from backend_streamlit_and_telemetry.predictive_twin.observed_motion import MotionMonitor
+    import backend_streamlit_and_telemetry.predictive_twin.observed_motion as motion_module
+    from automated_software_checks.predictive_twin_checks.test_observed_motion import records
+    base=synthetic_record()
+    rows=[{**base,**row,'received_at':base['received_at']+timedelta(seconds=row['seq']*.5)}
+          for row in records([(10,10),(0,0)],boot=base['boot_id'])]
+    with physical_db.engine.begin() as connection:connection.execute(samples.insert(),rows)
+    monkeypatch.setattr(motion_module,'READ_BATCH',2)
+    now=rows[-1]['received_at']
+    first=display_payload(physical_db,now=now)
+    assert first['motion_observation']['state']=='loading'
+    result=display_payload(physical_db,now=now)
+    assert result['motion_observation']['pose'][0]==pytest.approx(.1021017612416683)
+    assert not result['models_ready']
+    assert display_payload(physical_db,now=now)['motion_observation']==result['motion_observation']
+    monkeypatch.setattr(motion_module,'READ_BATCH',1000)
+    with physical_db.engine.connect() as connection:
+        recovered=MotionMonitor().read(connection,samples,rows[-1])
+    assert recovered==result['motion_observation']

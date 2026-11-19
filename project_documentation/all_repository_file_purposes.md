@@ -245,6 +245,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/browser_behavior_checks/test_physical_telemetry_display.cjs` | Check physical readout visibility, stale suppression and safe text rendering. |
 | `automated_software_checks/predictive_twin_checks/test_physical_telemetry.py` | Check optional storage, receive-time freshness, bounded records and model isolation. |
 | `automated_software_checks/predictive_twin_checks/test_observed_energy.py` | Check recorded Wh integration, signed current, missing intervals and duplicate/restart handling. |
+| `automated_software_checks/predictive_twin_checks/test_observed_motion.py` | Check command-inferred local odometry, gyro comparison, direction evidence and segment recovery. |
 | `backend_streamlit_and_telemetry/commissioning_webhook/build.mjs` | Bundle the HTTP receiver and dependencies for Node.js 24 deployment. |
 | `backend_streamlit_and_telemetry/commissioning_webhook/contract.mjs` | Validate the installed unsigned sensor packet, preserve units and build immutable evidence hashes. |
 | `backend_streamlit_and_telemetry/commissioning_webhook/emqx_body_template.json.tmpl` | HTTP action template for the protected broker-to-database hop. |
@@ -259,6 +260,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/commissioning_webhook/tests/fixture.mjs` | Synthetic packet fixture used only in isolated software and staging checks. |
 | `backend_streamlit_and_telemetry/predictive_twin/physical_telemetry.py` | Read stored observations without promoting them into calibrated predictions. |
 | `backend_streamlit_and_telemetry/predictive_twin/observed_energy.py` | Reconstruct and increment recorded motor-branch energy from stored battery samples. |
+| `backend_streamlit_and_telemetry/predictive_twin/observed_motion.py` | Reconstruct display-only local odometry and gyro residual from coherent recorded pulse evidence. |
 | `backend_streamlit_and_telemetry/predictive_twin/commissioning_profile.py` | Record supplied AMR-01 geometry, pending IMU/battery evidence and unsigned wheel estimates. |
 | `project_documentation/physical_sensor_recording.md` | Current ESP32-to-EMQX-to-database deployment and measurement interpretation guide. |
 

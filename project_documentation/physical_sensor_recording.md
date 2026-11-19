@@ -24,6 +24,24 @@ recoveries show calculation progress until the latest record is included.
 
 ## Recording path
 
+Position & heading and Motion agreement can use a separate read-only recorded
+estimate. The installed ESP32 reports per-interval signed pulse estimates and
+signed cumulative counts whose direction follows its motor-command estimate.
+The reader verifies these against unsigned counter changes, pulse frequency,
+sample interval and consecutive sequence numbers. It applies the saved wheel
+geometry and midpoint differential-drive equations relative to the first
+stored sample in a continuous segment. The Z gyro comparison is corrected Z
+rate minus the wheel turning rate. Direction remains command-inferred, and the
+cards identify that assumption; this is not a floor-map pose or an arrival check.
+
+Gaps, mixed or missing direction evidence, counter resets and inconsistent
+intervals start a new local origin instead of bridging unknown motion. A boot
+change starts a new estimate. Invalid gyro data withholds the current residual
+while coherent wheel odometry can continue. Refreshes do not replay intervals.
+Recovery reads at most 1,000 records per tick through the existing primary key;
+comparison history is bounded to 120 points and breaks at missing intervals.
+No observational result enters the calibrated model tables or motor controls.
+
 The Wheel motion card displays unsigned rim speed and interval travel directly
 from the commissioning feed. Distance per counted pulse is pi times the saved
 65 mm wheel diameter divided by the confirmed 20 pulses per revolution. Speed

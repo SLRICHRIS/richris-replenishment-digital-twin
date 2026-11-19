@@ -120,6 +120,56 @@ assert.match(d.getElementById('hardware-summary').textContent, /Receiving physic
 assert.equal(d.getElementById('python-amr01-age').textContent, '0.5 s');
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, false);
 assert.match(d.getElementById('python-amr01-battery-input-note').textContent, /below 1 V/);
+payload.physical_telemetry.motion_observation = {
+  state: 'tracking',
+  pose: [0.1, 0.2, 0.3],
+  residual_rad_s: 0.01234,
+  origin_seq: 5,
+  resets: 0,
+  direction_source: 'motor_command_estimate',
+  history: [
+    { sample_time_s: 1, residual_rad_s: 0.01, plot_break_before: true },
+    { sample_time_s: 1.5, residual_rad_s: null, plot_break_before: true },
+    { sample_time_s: 2, residual_rad_s: 0.01234, plot_break_before: false },
+  ],
+};
+render();
+assert.equal(
+  d.getElementById('python-amr01-pose').textContent,
+  'x = 0.100 m\ny = 0.200 m\nHeading = 0.300 rad',
+);
+assert.equal(d.getElementById('python-amr01-residual').textContent, '0.01234 rad/s');
+assert.match(d.getElementById('python-amr01-pose-note').textContent, /motor-command estimates.*#5/);
+assert.match(
+  d.getElementById('python-amr01-advisory').textContent,
+  /Gyro minus wheel turning rate/,
+);
+assert.equal(d.getElementById('python-amr01-advisory').dataset.alert, 'false');
+assert.match(d.getElementById('python-amr01-plot-caption').textContent, /Device sample time/);
+assert.equal(
+  (d.getElementById('python-amr01-plot').getAttribute('d').match(/M/g) || []).length,
+  2,
+  'Comparison line breaks across missing readings',
+);
+assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+payload.physical_telemetry.motion_observation = {
+  ...payload.physical_telemetry.motion_observation,
+  state: 'reanchoring',
+  pose: null,
+  residual_rad_s: null,
+  resets: 1,
+};
+render();
+assert.equal(d.getElementById('python-amr01-pose').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-pose-note').textContent, /new local origin/);
+payload.physical_telemetry.motion_observation = {
+  ...payload.physical_telemetry.motion_observation,
+  state: 'tracking',
+  pose: [0, 0, 0],
+  residual_rad_s: 0,
+};
+render();
+assert.equal(d.getElementById('python-amr01-residual').textContent, '0.00000 rad/s');
 payload.physical_telemetry.energy_observation = {
   state: 'ready',
   net_wh: -0.00001234,
@@ -167,6 +217,9 @@ assert.equal(d.querySelector('.physical-guidance').open, true, 'Refresh preserve
 assert.equal(d.getElementById('python-amr01-gyro').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-bias').textContent, '0.00034907');
 assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-pose').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-residual').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-pose-note').hidden, true);
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-travel').textContent, /L = Unavailable/);
