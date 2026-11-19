@@ -303,7 +303,10 @@
         button.dataset.archNode = String(i);
         button.setAttribute('aria-controls', 'arch-inspector');
         button.innerHTML = `<span class="arch-node-top"><svg class="icon" aria-hidden="true"><use href="#${node.icon}"/></svg><span>${node.where}</span></span><strong>${node.title}</strong><span class="arch-node-brief">${node.brief}</span><span class="arch-node-action">Explore component</span>`;
-        button.addEventListener('click', () => select(i));
+        button.addEventListener('click', () => {
+          select(i);
+          el('inspector').scrollIntoView?.({ block: 'nearest' });
+        });
         item.append(button);
         list.append(item);
       });
@@ -335,7 +338,9 @@
       if (el(id).dataset.state !== state) el(id).dataset.state = state;
     };
     function status() {
-      if (!payload || Date.now() - updatedAt > 5000) {
+      // Streamlit may memoize identical reports. Preserve known blockers while
+      // positive evidence expires below using its own measurement clock.
+      if (!payload) {
         badge('raw-status', 'Awaiting server update', 'unknown');
         badge('model-status', 'Awaiting server update', 'unknown');
         badge('route-status', 'Awaiting server update', 'unknown');
@@ -350,7 +355,9 @@
           'raw-status',
           payload.mode === 'demo'
             ? 'Physical source not selected'
-            : physical?.label || 'Awaiting physical records',
+            : physical?.fresh === true
+              ? 'Waiting for fresh measurements'
+              : physical?.label || 'Awaiting physical records',
           'pending',
         );
       const model = payload.mode === 'live' ? payload.robots?.amr01 : null;
