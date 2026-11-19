@@ -16,6 +16,7 @@ def records(steps, gyro=BIAS, boot=BOOT):
     for seq,(dl,dr) in enumerate([(0,0)]+list(steps)):
         left+=abs(dl); right+=abs(dr); signed_left+=dl; signed_right+=dr
         rows.append(dict(boot_id=boot,seq=seq,sample_time_s=1+seq*.5,interval_s=.5,
+            imu_sample_time_s=1+seq*.5,
             left_pulses_total=left,right_pulses_total=right,
             left_pulse_hz=abs(dl)*2,right_pulse_hz=abs(dr)*2,
             gyro_available=True,gyro_z_rad_s=gyro,
@@ -130,3 +131,49 @@ def test_turning_projection_and_unknown_intervals_do_not_create_routes():
     assert accumulator.public(4)['forecast_pose'] is None
     anchored=MotionAccumulator(BOOT);anchored.extend(records([]))
     assert anchored.public(0)['forecast_pose'] is None
+
+
+def test_gyro_yaw_integrates_corrected_rate_in_degrees_independently_of_wheel_direction():
+    rows=records([(10,10),(10,10)],gyro=BIAS+1)
+    for row in rows: row['payload']={}
+    accumulator=MotionAccumulator(BOOT);accumulator.extend(rows)
+    result=accumulator.public(2)
+    assert result['pose'] is None
+    assert result['gyro_yaw']['degrees']==pytest.approx(180/math.pi)
+    assert result['gyro_yaw']['origin_seq']==0 and result['gyro_yaw']['resets']==0
+    accumulator.extend(rows)
+    assert accumulator.public(2)==result
+    assert accumulator.public(3)['gyro_yaw']['degrees'] is None
+
+
+def test_gyro_yaw_uses_trapezoids_and_acquisition_clock_without_repeating_cached_sample():
+    rows=records([(0,0),(0,0)],gyro=BIAS)
+    rows[1]['gyro_z_rad_s']=BIAS+2
+    rows[2]['gyro_z_rad_s']=BIAS+2
+    rows[2]['imu_sample_time_s']=rows[1]['imu_sample_time_s']
+    accumulator=MotionAccumulator(BOOT);accumulator.extend(rows)
+    assert accumulator.public(2)['gyro_yaw']['degrees']==pytest.approx(.5*180/math.pi)
+
+
+@pytest.mark.parametrize('invalid', [dict(gyro_available=False),dict(gyro_z_rad_s=None),
+    dict(imu_sample_time_s=0),dict(imu_sample_time_s=9),dict(imu_sample_time_s=float('nan'))])
+def test_missing_or_stale_gyro_yaw_resets_local_origin_without_affecting_wheel_pose(invalid):
+    rows=records([(1,1),(1,1),(1,1)],gyro=BIAS+1)
+    rows[1].update(invalid)
+    accumulator=MotionAccumulator(BOOT);accumulator.extend(rows[:2])
+    result=accumulator.public(1)
+    assert result['gyro_yaw']['degrees'] is None and result['pose'] is not None
+    accumulator.extend(rows[2:])
+    yaw=accumulator.public(3)['gyro_yaw']
+    assert yaw['degrees']==pytest.approx(.5*180/math.pi)
+    assert yaw['origin_seq']==2 and yaw['resets']==1
+
+
+def test_sequence_gap_and_reboot_establish_new_gyro_yaw_origins():
+    rows=records([(0,0),(0,0),(0,0)],gyro=BIAS+1)
+    accumulator=MotionAccumulator(BOOT);accumulator.extend([rows[0],rows[2],rows[3]])
+    yaw=accumulator.public(3)['gyro_yaw']
+    assert yaw['origin_seq']==2 and yaw['resets']==1
+    assert yaw['degrees']==pytest.approx(.5*180/math.pi)
+    reboot=MotionAccumulator('b'*16);reboot.extend(records([],gyro=BIAS+1,boot='b'*16))
+    assert reboot.public(0)['gyro_yaw']['degrees']==0

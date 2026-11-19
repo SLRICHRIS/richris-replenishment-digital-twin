@@ -3,7 +3,7 @@
 Single-channel wheel direction is inferred by the ESP32 motor command. These
 display estimates do not enter calibrated model storage or authorize movement.
 """
-from math import isfinite, pi
+from math import degrees, isfinite, pi
 import threading
 from weakref import WeakKeyDictionary
 
@@ -70,6 +70,53 @@ def interval_motion(previous, row):
     return left, right, (right-left)/(WHEEL_TRACK_M*dt)
 
 
+class YawAccumulator:
+    """Gyro-only local angle; wheel evidence never gates the integration."""
+    def __init__(self):
+        self.previous = None
+        self.angle_rad = 0.0
+        self.origin_seq = self.origin_time_s = None
+        self.resets = 0
+        self.state = 'unavailable'
+
+    def extend(self, row):
+        correction = gyro_bias_correction(row)
+        sample_time, imu_time = row.get('sample_time_s'), row.get('imu_sample_time_s')
+        if (not correction or not number(sample_time) or not number(imu_time)
+                or sample_time < 0 or imu_time < 0
+                or not 0 <= sample_time-imu_time <= .500001):
+            self.previous = None
+            self.state = 'unavailable'
+            return
+        current = dict(seq=row['seq'],sample_time_s=sample_time,imu_time_s=imu_time,
+                       rate=correction['corrected_gyro_rad_s'])
+        previous = self.previous
+        continuous = (previous is not None and row['seq'] == previous['seq']+1
+                      and 0 < sample_time-previous['sample_time_s'] <= MAX_INTERVAL_S
+                      and 0 <= imu_time-previous['imu_time_s'] <= MAX_INTERVAL_S)
+        if not continuous:
+            if self.origin_seq is not None: self.resets += 1
+            self.angle_rad = 0.0
+            self.origin_seq, self.origin_time_s = row['seq'], imu_time
+            self.state = 'anchoring'
+        else:
+            dt = imu_time-previous['imu_time_s']
+            self.angle_rad += (previous['rate']+current['rate'])*.5*dt
+            self.state = 'tracking'
+            if not isfinite(degrees(self.angle_rad)):
+                self.previous = None
+                self.state = 'unavailable'
+                return
+        self.previous = current
+
+    def public(self, complete):
+        valid = complete and self.state in ('anchoring','tracking')
+        return dict(state=self.state if complete else 'loading',
+                    degrees=degrees(self.angle_rad) if valid else None,
+                    origin_seq=self.origin_seq, origin_time_s=self.origin_time_s,
+                    resets=self.resets, source='integrated_bias_corrected_z_gyro')
+
+
 class MotionAccumulator:
     def __init__(self, boot_id):
         self.boot_id = boot_id
@@ -83,6 +130,7 @@ class MotionAccumulator:
         self.wheel_speeds = None
         self.history = []
         self.resets = 0
+        self.yaw = YawAccumulator()
 
     def anchor(self, row, reason=''):
         self.pose = (0.0, 0.0, 0.0)
@@ -98,6 +146,7 @@ class MotionAccumulator:
             if row['boot_id'] != self.boot_id or row['seq'] <= self.last_seq:
                 continue
             self.last_seq = row['seq']
+            self.yaw.extend(row)
             self.residual = self.encoder_yaw_rate = None
             self.wheel_speeds = None
             if not number(row['sample_time_s']) or row['sample_time_s'] < 0:
@@ -132,6 +181,7 @@ class MotionAccumulator:
             pose=list(self.pose) if usable else None,
             forecast_pose=list(projected) if projected is not None else None,
             forecast_horizon_s=5.0,
+            gyro_yaw=self.yaw.public(complete),
             residual_rad_s=self.residual if complete else None,
             encoder_yaw_rate_rad_s=self.encoder_yaw_rate if complete else None,
             origin_seq=self.origin_seq, origin_time_s=self.origin_time_s,
@@ -154,7 +204,7 @@ class MotionMonitor:
             if accumulator.last_seq < latest['seq']:
                 fields = ('boot_id', 'seq', 'sample_time_s', 'interval_s',
                     'left_pulses_total', 'right_pulses_total', 'left_pulse_hz', 'right_pulse_hz',
-                    'gyro_available', 'gyro_z_rad_s', 'payload')
+                    'gyro_available', 'gyro_z_rad_s', 'imu_sample_time_s', 'payload')
                 query = select(*(table.c[name] for name in fields)).where(
                     table.c.robot_id == 'amr01', table.c.boot_id == latest['boot_id'],
                     table.c.seq > accumulator.last_seq, table.c.seq <= latest['seq'],

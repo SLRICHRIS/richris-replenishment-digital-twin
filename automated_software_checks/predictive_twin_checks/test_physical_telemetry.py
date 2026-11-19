@@ -92,6 +92,8 @@ def test_energy_comes_from_stored_battery_samples_without_model_calibration(phys
     assert result['runtime_scenario']['actual_remaining_runtime'] is False
     assert energy['net_wh']==pytest.approx(2/3600)
     assert energy['covered_s']==1 and energy['intervals']==2
+    assert energy['soc_scenario']['percent']==pytest.approx((1-.25/3600/2.2)*100)
+    assert energy['soc_scenario']['actual_soc_verified'] is False
     assert display_payload(physical_db, now=now)['energy_observation']==energy
     from backend_streamlit_and_telemetry.predictive_twin.observed_energy import EnergyMonitor
     with physical_db.engine.connect() as connection:
@@ -242,6 +244,7 @@ def test_motion_reader_replays_stored_evidence_once_and_keeps_model_isolation(ph
     assert first['motion_observation']['state']=='loading'
     result=display_payload(physical_db,now=now)
     assert result['motion_observation']['pose'][0]==pytest.approx(.1021017612416683)
+    assert result['motion_observation']['gyro_yaw']['degrees']==pytest.approx(0)
     assert not result['models_ready']
     assert display_payload(physical_db,now=now)['motion_observation']==result['motion_observation']
     monkeypatch.setattr(motion_module,'READ_BATCH',1000)

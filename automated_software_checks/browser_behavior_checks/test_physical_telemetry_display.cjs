@@ -229,6 +229,44 @@ assert.match(d.getElementById('python-amr01-energy').textContent, /Calculating/)
 payload.physical_telemetry.energy_observation = { state: 'ready', net_wh: 0, covered_s: 1 };
 render();
 assert.equal(d.getElementById('python-amr01-energy').textContent, '0.00000000 Wh');
+payload.physical_telemetry.energy_observation.soc_scenario = {
+  state: 'ready',
+  percent: 98.5,
+  capacity_ah: 2.2,
+  assumed_start_soc: 1,
+  origin_seq: 1,
+  skipped_intervals: 2,
+  actual_soc_verified: false,
+};
+payload.physical_telemetry.motion_observation.gyro_yaw = {
+  state: 'tracking',
+  degrees: -12.345,
+  origin_seq: 5,
+  resets: 1,
+};
+render();
+assert.equal(d.getElementById('python-amr01-soc').textContent, '98.50%');
+assert.match(d.getElementById('python-amr01-soc-label').textContent, /reported-start scenario/);
+assert.match(
+  d.getElementById('python-amr01-soc-note').textContent,
+  /assumed 100%.*#1.*2.2 Ah.*actual remaining charge.*omitted/,
+);
+assert.equal(d.getElementById('physical-yaw').textContent, '2.00°', 'Device yaw takes precedence');
+payload.physical_telemetry.measurements.yaw_estimate_deg = null;
+render();
+assert.equal(d.getElementById('physical-yaw').textContent, '-12.35°');
+assert.match(
+  d.getElementById('physical-yaw-note').textContent,
+  /bias-corrected Z gyro.*#5.*drift.*new origin/,
+);
+payload.physical_telemetry.motion_observation.gyro_yaw.degrees = 0;
+render();
+assert.equal(d.getElementById('physical-yaw').textContent, '0.00°');
+payload.physical_telemetry.energy_observation.soc_scenario.percent = 100.2;
+payload.physical_telemetry.energy_observation.soc_scenario.outside_physical_range = true;
+render();
+assert.equal(d.getElementById('python-amr01-soc').textContent, '100.20%');
+assert.match(d.getElementById('python-amr01-soc-note').textContent, /outside 0–100%/);
 payload.physical_telemetry.fresh = false;
 payload.physical_telemetry.state = 'stale';
 payload.physical_telemetry.label = 'Telemetry out of date';
@@ -256,6 +294,9 @@ assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unava
 assert.equal(d.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-residual').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-pose-note').hidden, true);
+assert.equal(d.getElementById('physical-yaw').textContent, '—');
+assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-soc-note').textContent, /fresh ESP32 battery/);
 assert.equal(d.getElementById('python-amr01-runtime').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-forecast-note').textContent, /fresh ESP32 wheel/);
