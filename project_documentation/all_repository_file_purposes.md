@@ -226,6 +226,9 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/predictive_twin/intervention_service.py` | Server-owned review service, PostgreSQL ownership and opt-in MQTT intervention transport. |
 | `project_maintenance_scripts/provision_operator_review_database.py` | Admin-only additive provisioning of the operator review audit table. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/human_review_panel.js` | Human review rehearsal controls and physical outcome display. |
+| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/system_architecture_workspace.js` | Interactive read-only sensor, vision, model and power journeys with conservative server-reported status. |
+| `frontend_warehouse_dashboard/dashboard_stylesheets/system_architecture_styles.css` | Responsive architecture diagrams, component inspection and recorded setup presentation. |
+| `automated_software_checks/browser_behavior_checks/test_system_architecture_workspace.cjs` | Verify architecture navigation, status freshness, source isolation, safe rendering and command-free exploration. |
 | `frontend_warehouse_dashboard/dashboard_stylesheets/human_review_panel_styles.css` | Responsive styling for the human review workflow and audit trail. |
 | `project_documentation/website_human_review_and_action.md` | Website operator workflow, private settings, command contract and physical readiness. |
 | `automated_software_checks/predictive_twin_checks/test_human_review.py` | Review policy tests for stale evidence, duplicate approval, acknowledgements and outcome verification. |

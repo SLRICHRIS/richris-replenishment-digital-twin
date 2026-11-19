@@ -53,6 +53,11 @@
     <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/human_review_panel_styles.css" />
     <link rel="stylesheet" href="./dashboard_stylesheets/vision_routing_styles.css" />
+    <link rel="stylesheet" href="./dashboard_stylesheets/system_architecture_styles.css" />
+    <script
+      defer
+      src="./browser_modules/streamlit_frame_connection/system_architecture_workspace.js"
+    ></script>
     <script
       type="module"
       src="./browser_modules/vision_routing/vision_routing_workspace.js"
@@ -355,6 +360,18 @@
         >
           <svg class="icon" aria-hidden="true"><use href="#i-database" /></svg>
           <span>Database</span>
+        </button>
+        <button
+          id="tab-architecture"
+          type="button"
+          role="tab"
+          aria-controls="architecture"
+          aria-selected="false"
+          tabindex="-1"
+          data-page="architecture"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-map" /></svg>
+          <span>System architecture</span>
         </button>
       </nav>
       <div class="rail-footer">
@@ -1360,6 +1377,250 @@
               commands to the AMR.
             </p>
           </section>
+        </section>
+        <section
+          id="architecture"
+          data-screen
+          role="tabpanel"
+          aria-labelledby="tab-architecture"
+          hidden
+        >
+          <div class="arch-intro">
+            <div>
+              <span class="arch-eyebrow">The complete AMR-01 pipeline</span>
+              <h2>Understand every connection.</h2>
+              <p>
+                Explore how measurements reach the website, how the Logitech webcam supports
+                routing, and how a human-approved request returns to the robot.
+              </p>
+            </div>
+            <span class="arch-guide-tag">Read-only system guide</span>
+          </div>
+          <div
+            class="arch-status-strip"
+            aria-label="Latest server-reported system status"
+            aria-live="polite"
+          >
+            <div>
+              <small>Physical sensor archive</small>
+              <strong id="arch-raw-status" data-state="unknown">Awaiting server update</strong>
+            </div>
+            <div>
+              <small>Calibrated sensor models</small>
+              <strong id="arch-model-status" data-state="unknown">Awaiting server update</strong>
+            </div>
+            <div>
+              <small>Physical route readiness</small>
+              <strong id="arch-route-status" data-state="unknown">Awaiting server update</strong>
+            </div>
+          </div>
+          <div class="arch-path-tabs" role="tablist" aria-label="System pipeline">
+            <button
+              id="arch-tab-sensors"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="arch-path-panel"
+              data-arch-path="sensors"
+            >
+              Sensor data
+            </button>
+            <button
+              id="arch-tab-vision"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="arch-path-panel"
+              data-arch-path="vision"
+              tabindex="-1"
+            >
+              Vision &amp; movement
+            </button>
+            <button
+              id="arch-tab-models"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="arch-path-panel"
+              data-arch-path="models"
+              tabindex="-1"
+            >
+              Models &amp; review
+            </button>
+            <button
+              id="arch-tab-power"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="arch-path-panel"
+              data-arch-path="power"
+              tabindex="-1"
+            >
+              Power
+            </button>
+          </div>
+          <section id="arch-path-panel" role="tabpanel" aria-labelledby="arch-tab-sensors">
+            <div class="arch-path-heading">
+              <div>
+                <h2 id="arch-path-title">Sensor data pipeline</h2>
+                <p id="arch-path-description">
+                  Select a component to inspect its role and connections.
+                </p>
+              </div>
+            </div>
+            <div class="arch-controls">
+              <span id="arch-step">Component 1 of 5</span>
+              <button id="arch-previous" type="button" disabled>Previous component</button>
+              <button id="arch-next" type="button">Next component</button>
+            </div>
+            <ol id="arch-nodes" class="arch-nodes" aria-label="Pipeline components"></ol>
+            <div class="arch-handoff"><p id="arch-handoff"></p></div>
+            <section id="arch-inspector" class="arch-inspector" aria-labelledby="arch-detail-title">
+              <div>
+                <span id="arch-detail-where" class="arch-eyebrow"></span>
+                <h3 id="arch-detail-title">Component details</h3>
+                <p id="arch-detail-role"></p>
+                <button id="arch-open" type="button" hidden>Open workspace</button>
+              </div>
+              <dl>
+                <div>
+                  <dt>Receives</dt>
+                  <dd id="arch-detail-input"></dd>
+                </div>
+                <div>
+                  <dt>Sends or produces</dt>
+                  <dd id="arch-detail-output"></dd>
+                </div>
+              </dl>
+              <div class="arch-requirement">
+                <b>What must be true</b>
+                <p id="arch-detail-gate"></p>
+              </div>
+            </section>
+            <div class="arch-outcome">
+              <svg class="icon" aria-hidden="true"><use href="#i-check" /></svg>
+              <p id="arch-outcome"></p>
+            </div>
+          </section>
+          <div class="arch-reference-grid">
+            <section aria-labelledby="arch-setup-heading">
+              <span class="arch-eyebrow">Recorded setup</span>
+              <h3 id="arch-setup-heading">One robot. One overhead webcam.</h3>
+              <dl>
+                <div>
+                  <dt>AMR body</dt>
+                  <dd>180 × 150 × 150 mm, including the platform and protrusions.</dd>
+                </div>
+                <div>
+                  <dt>Wheels</dt>
+                  <dd>65 mm diameter · 100 mm centre spacing · 20 counted pulses per turn.</dd>
+                </div>
+                <div>
+                  <dt>IMU</dt>
+                  <dd>
+                    X forward, Y left, Z up. Reported stationary Z bias: +0.02°/s (+0.000349066
+                    rad/s).
+                  </dd>
+                </div>
+                <div>
+                  <dt>Robot marker</dt>
+                  <dd>
+                    ArUco 4×4/50 ID 0 · 40 mm black edge · 150 mm above the floor. Centre: 100 mm
+                    forward of the wheel midpoint, 0 mm sideways. Printed-marker alignment still
+                    needs verification.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Camera &amp; floor</dt>
+                  <dd>
+                    Overhead Logitech USB webcam · reported height 920 mm · working paper 425 × 630
+                    mm. USB connects the webcam to the laptop.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Battery</dt>
+                  <dd>
+                    2S lithium pack · 7.4 V nominal · reported 2,200 mAh and 100% trial starting
+                    charge. Current charge and usable capacity require calibration.
+                  </dd>
+                </div>
+              </dl>
+            </section>
+            <section aria-labelledby="arch-boundary-heading">
+              <span class="arch-eyebrow">How to read readiness</span>
+              <h3 id="arch-boundary-heading">A connection is one part of the journey.</h3>
+              <p>
+                Follow the evidence in order: received packet, stored record, valid calibration,
+                recommendation, human decision, controller response, then measured outcome.
+              </p>
+              <ul>
+                <li>Sensor archive connectivity does not prove that every model is calibrated.</li>
+                <li>
+                  The Logitech browser preview helps with placement. Physical routing uses the
+                  laptop program reading that same Logitech webcam.
+                </li>
+                <li>
+                  Approve &amp; run applies to one server-reviewed route. Fresh feedback is needed
+                  throughout execution.
+                </li>
+                <li>
+                  Practice and the illustrative warehouse floor use separate simulation state. Stock
+                  events and virtual movement are not physical sensor evidence.
+                </li>
+              </ul>
+              <details>
+                <summary>Data engineering and recovery</summary>
+                <p>
+                  Robot/boot/sequence identity supports deduplication. Schema and availability
+                  checks reject invalid observations. Original receive time determines freshness.
+                  Full-model writes use a single writer, atomic state/checkpoint updates and
+                  calibration fingerprints. Missing intervals stay unknown.
+                </p>
+                <p>
+                  The commissioning archive is
+                  <code>amr_commissioning_samples</code>
+                  . The full calibrated path has separate samples, derived states, calibration
+                  records and quality events. Human review and physical-route audit records preserve
+                  decisions separately.
+                </p>
+              </details>
+              <details>
+                <summary>What remains before a physical route</summary>
+                <p>
+                  Verify camera lens calibration, four floor references, empty-floor background,
+                  marker alignment and the body envelope. Measure motor polarity, PWM response and
+                  stopping distance, confirm electrical ratings, and validate obstacle detection.
+                  The ESP32 receiver and laptop controller must be running with fresh authenticated
+                  evidence.
+                </p>
+                <p>
+                  Recorded dimensions and successful software tests do not mark these physical
+                  checks complete.
+                </p>
+              </details>
+              <details>
+                <summary>Code and technical guide</summary>
+                <p>
+                  <a
+                    href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/dashboard_and_telemetry_system_architecture.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Read the system architecture
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/human_approved_physical_route_execution.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Read the physical route setup
+                  </a>
+                </p>
+              </details>
+            </section>
+          </div>
         </section>
         <section
           id="vision"
