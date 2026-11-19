@@ -39,7 +39,7 @@ let revealed = 0;
 el('inspector').scrollIntoView = () => revealed++;
 nodes()[3].click();
 assert.equal(revealed, 1, 'Selecting a component reveals its explanation');
-assert.equal(el('detail-title').textContent, 'Neon database');
+assert.equal(el('detail-title').textContent, 'PostgreSQL on Neon');
 let target;
 d.querySelector('[data-page="database"]').addEventListener('click', () => {
   target = 'database';

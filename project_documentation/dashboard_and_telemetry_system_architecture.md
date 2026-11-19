@@ -4,7 +4,7 @@ Open **System architecture** in the digital twin. Four interactive journeys expl
 
 ## Current status and evidence
 
-Physical commissioning observations are stored through EMQX HTTP forwarding into Neon. The calibrated model path and physical vision-control path are implemented separately; their hardware commissioning remains required. Recorded dimensions and passing software tests do not establish physical accuracy or authorize driving. The architecture page reports fresh physical archive availability, valid model outputs and guarded route readiness independently. It withholds positive status when the source is a demo, evidence is old or server updates stop.
+Physical commissioning observations are stored through EMQX HTTP forwarding into PostgreSQL hosted on Neon. PostgreSQL is the database engine; Neon is its cloud hosting service. The calibrated model path and physical vision-control path are implemented separately; their hardware commissioning remains required. Recorded dimensions and passing software tests do not establish physical accuracy or authorize driving. The architecture page reports fresh physical archive availability, valid model outputs and guarded route readiness independently. It withholds positive status when the source is a demo, evidence is old or server updates stop.
 
 ## Sensor data: installed hardware to archive
 
@@ -13,7 +13,7 @@ flowchart TD
   S["MH IR, IMU and INA219"] --> E["ESP32 observations"]
   E -->|"MQTT over TLS"| B["EMQX forwarding rule"]
   B -->|"HTTPS JSON"| R["Authenticated receiver"]
-  R --> D["Neon commissioning archive"]
+  R --> D["PostgreSQL on Neon: commissioning archive"]
   D --> W["Read-only digital twin"]
 ```
 
