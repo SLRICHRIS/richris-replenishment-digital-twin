@@ -100,6 +100,18 @@ def verify(args):
             (sketch / 'esp32_wifi_and_mqtt_settings.h').write_text(settings)
             subprocess.run(command,check=True)
             print('PASS: actual Arduino builds with optional vision receiver disabled AND enabled.')
+            manual = Path(temporary) / 'AMR01_Manual_WiFi'
+            shutil.copytree(ROOT / 'esp32_telemetry_firmware/AMR01_Manual_WiFi', manual)
+            manual_settings=(manual/'example_esp32_wifi_and_mqtt_settings.h').read_text()
+            manual_settings=manual_settings.replace('"REPLACE"','"compile-check-only"')
+            manual_settings=manual_settings.replace('#define AMR_VISION_DRIVE_ENABLED 0','#define AMR_VISION_DRIVE_ENABLED 1').replace('#define AMR_VISION_DRIVE_KEY ""','#define AMR_VISION_DRIVE_KEY "'+'a'*64+'"')
+            manual_settings=manual_settings.replace('#define AMR_VISION_MQTT_USERNAME ""','#define AMR_VISION_MQTT_USERNAME "ci-only"').replace('#define AMR_VISION_MQTT_PASSWORD ""','#define AMR_VISION_MQTT_PASSWORD "ci-only"')
+            (manual/'esp32_wifi_and_mqtt_settings.h').write_text(manual_settings)
+            manual_command=[args.arduino_cli,'compile','--fqbn',args.board,str(manual)]
+            if args.config_file: manual_command+=['--config-file',args.config_file]
+            subprocess.run(manual_command,check=True)
+            print('PASS: supplied working single-file sketch with enabled authenticated manual receiver.')
+
 
 
 if __name__ == '__main__':

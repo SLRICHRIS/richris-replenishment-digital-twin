@@ -103,6 +103,7 @@
         'connection_control',
         'human_review',
         'vision_execution',
+        'manual_control',
       ].includes(action.action)
     )
       return;
@@ -153,6 +154,19 @@
                   : undefined,
               operator:
                 typeof action.operator === 'string' ? action.operator.slice(0, 40) : undefined,
+            }
+          : {}),
+        ...(action.action === 'manual_control'
+          ? {
+              command: action.command,
+              active: action.active,
+              review_id: action.review_id,
+              direction: action.direction,
+              pwm: action.pwm,
+              reason: typeof action.reason === 'string' ? action.reason.slice(0, 240) : '',
+              access_code:
+                typeof action.access_code === 'string' ? action.access_code.slice(0, 256) : '',
+              operator: typeof action.operator === 'string' ? action.operator.slice(0, 40) : '',
             }
           : {}),
         ...(action.action === 'vision_execution'

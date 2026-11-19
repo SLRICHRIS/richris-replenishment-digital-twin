@@ -24,14 +24,16 @@ def verified(raw, secret, fields):
     return body.split('|')
 
 
-def drive(boot,epoch,route,seq,operation,left,right,now,secret):
+def drive(boot,epoch,route,seq,operation,left,right,now,secret,lease_ms=DRIVE_LEASE_MS):
+    if type(lease_ms) is not int or not 1 <= lease_ms <= DRIVE_LEASE_MS:
+        raise ValueError("Invalid motor command lease")
     for v in (boot,epoch,route): identifier(v)
     if operation not in ('arm','drive','stop') or type(seq) is not int or seq<1:
         raise ValueError('Invalid controller operation')
     if any(type(v) is not int or abs(v)>MAX_PWM for v in (left,right)):
         raise ValueError('Motor output exceeds the route limit')
     if operation!='drive' and (left or right): raise ValueError('Arming and stopping require zero output')
-    return signed(('V1',boot,epoch,route,seq,operation,left,right,now,now+DRIVE_LEASE_MS),secret)
+    return signed(('V1',boot,epoch,route,seq,operation,left,right,now,now+lease_ms),secret)
 
 
 def hardware(raw,secret,now):

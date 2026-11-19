@@ -1647,6 +1647,16 @@
                   Physical AMR
                 </button>
                 <button
+                  id="vision-mode-manual"
+                  role="tab"
+                  aria-controls="vision-manual-pane"
+                  aria-selected="false"
+                  tabindex="-1"
+                  type="button"
+                >
+                  Manual control
+                </button>
+                <button
                   id="vision-mode-practice"
                   role="tab"
                   aria-controls="vision-practice-pane"
@@ -1667,6 +1677,14 @@
                   <strong>92 cm · reported</strong>
                 </span>
               </div>
+            </div>
+            <div
+              id="vision-manual-pane"
+              role="tabpanel"
+              aria-labelledby="vision-mode-manual"
+              hidden
+            >
+              <div id="manual-motor-control"></div>
             </div>
             <div id="vision-physical-pane" role="tabpanel" aria-labelledby="vision-mode-physical">
               <div id="vision-shared-setup">
