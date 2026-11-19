@@ -195,6 +195,9 @@
               review_id: action.review_id,
               direction: action.direction,
               pwm: action.pwm,
+              hold_id: action.hold_id,
+              input_seq: action.input_seq,
+              issued_at_ms: action.issued_at_ms,
               reason: typeof action.reason === 'string' ? action.reason.slice(0, 240) : '',
               access_code:
                 typeof action.access_code === 'string' ? action.access_code.slice(0, 256) : '',

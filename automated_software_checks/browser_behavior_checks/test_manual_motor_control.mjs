@@ -2,152 +2,135 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { createManualMotorPanel } from '../../frontend_warehouse_dashboard/browser_modules/vision_routing/manual_motor_control.js';
 const dom = new JSDOM(
-  '<body data-view="vision"><div id="vision-routing-shell" data-mode="manual"></div><div id="manual-motor-control"></div></body>',
+  '<body data-view="vision"><button id="outside">Outside</button><div id="vision-routing-shell" data-mode="manual"></div><div id="manual-motor-control"></div></body>',
   { pretendToBeVisual: true },
 );
 const w = dom.window,
   d = w.document,
-  actions = [];
+  actions = [],
+  intervals = new Map();
+let mono = 0,
+  id = 0;
+w.setInterval = (fn) => {
+  intervals.set(++id, fn);
+  return id;
+};
+w.clearInterval = (value) => intervals.delete(value);
+Object.defineProperty(w.performance, 'now', { value: () => mono });
 d.addEventListener('python-twin:action', (e) => actions.push(e.detail));
 const panel = createManualMotorPanel(w),
   el = (id) => d.getElementById('mc-' + id);
-assert.equal(el('prepare').disabled, true);
-assert.equal(el('code').disabled, false, 'Operator field remains editable');
-const review = {
-  review_id: 'a'.repeat(32),
-  direction: 'F',
-  pwm: 40,
-  duration_ms: 250,
-  state: 'manual_review',
-  reason: 'Review',
-};
-panel.render({
+const ready = {
   authorized: true,
   can_unlock: true,
   physical_mode: true,
+  view_active: true,
   ready: true,
-  review,
-  feedback: '<img src=x>',
-});
-assert.equal(el('feedback').querySelector('img'), null);
-el('reason').value = 'Clear floor observed';
-el('reason').dispatchEvent(new w.Event('input'));
-el('approve').click();
-el('approve').click();
-assert.equal(
-  actions.filter((a) => a.command === 'approve').length,
-  1,
-  'Double clicks cannot repeat a pending approval',
-);
-assert.equal(el('approve').disabled, true);
-panel.render({
-  authorized: true,
-  ready: true,
-  review: { ...review, state: 'manual_stopped', reason: 'ESP32 reports zero motor outputs' },
-});
-assert.equal(el('review').hidden, true);
-assert.match(el('outcome').textContent, /zero motor outputs/);
-d.dispatchEvent(new w.CustomEvent('vision-routing:mode'));
-assert.equal(actions.at(-1).active, true);
-d.getElementById('vision-routing-shell').dataset.mode = 'practice';
-d.dispatchEvent(new w.CustomEvent('vision-routing:mode'));
-assert.equal(actions.at(-1).active, false);
-// Diagnostic text explains a blocked button without making a motor request.
-const countBefore = actions.length;
-panel.render({
-  authorized: true,
-  physical_mode: true,
-  ready: false,
-  transport: { state: 'login_rejected', connected: false, reason: '<img src=x>' },
-  diagnostics: { packet_count: 0 },
-});
-assert.match(el('connection').textContent, /rejected the website login/);
-assert.equal(el('transport').querySelector('img'), null);
-assert.equal(el('prepare').disabled, true);
-panel.render({
-  authorized: true,
-  physical_mode: true,
-  ready: false,
-  transport: { state: 'subscribed', connected: true },
-  diagnostics: {
-    packet_count: 3,
-    accepted_count: 0,
-    rejected_count: 3,
-    last_issue: 'clock_ahead',
-    clock_age_ms: -2000,
-  },
-});
-assert.match(el('connection').textContent, /clock\/freshness/);
-assert.match(el('clock').textContent, /-2000 ms/);
-assert.match(el('hint').textContent, /ahead of the server/);
-assert.equal(el('prepare').disabled, true);
-panel.render({
-  authorized: true,
-  ready: false,
-  transport: { state: 'subscribed', connected: true },
-  diagnostics: { packet_count: 0 },
-});
-assert.match(el('connection').textContent, /no valid ESP32 receiver feedback/);
-assert.equal(
-  actions.length,
-  countBefore,
-  'Diagnostic updates never emit motor or approval actions',
-);
-const hardware = {
-  ready: false,
-  state: 'unavailable',
-  left_duty: 0,
-  right_duty: 0,
-  battery_voltage_v: 7.4,
+  max_pwm: 255,
+  receiver_updated: true,
+  server_time_ms: Date.now(),
+  hardware: { ready: true, state: 'idle', left_duty: 0, right_duty: 0, battery_voltage_v: 7.4 },
 };
-for (const [code, pattern] of [
-  ['controller_not_ready', /controller reports not ready/],
-  ['outputs_active', /outputs are still active/],
-  ['collecting_zero_outputs', /collecting consecutive/],
-]) {
-  panel.render({
-    authorized: true,
-    physical_mode: true,
-    ready: false,
-    hardware,
-    readiness: { code, zero_samples: 1, zero_span_ms: 0, feedback_age_ms: 230 },
-    transport: { state: 'subscribed', connected: true },
-  });
-  assert.match(el('connection').textContent, pattern);
-  assert.match(el('controller').textContent, /ready no.*outputs L 0, R 0.*7.40 V/);
-  assert.match(el('evidence').textContent, /1 samples.*230 ms/);
-  assert.equal(el('prepare').disabled, true);
-}
-panel.render({
-  authorized: true,
-  physical_mode: true,
-  ready: true,
-  hardware: { ...hardware, ready: true },
-  readiness: { code: 'ready', zero_samples: 3, zero_span_ms: 300, feedback_age_ms: 400 },
-});
-assert.match(el('connection').textContent, /ESP32 ready/);
-assert.equal(el('prepare').disabled, false);
-assert.equal(actions.length, countBefore, 'Readiness diagnostics do not send control actions');
-// A visible authenticated page repairs a lost presence event, once per retry window.
-d.getElementById('vision-routing-shell').dataset.mode = 'manual';
-const beforeRepair = actions.length;
-const inactive = { authorized: true, physical_mode: true, view_active: false, ready: false };
-panel.render(inactive);
-assert.equal(actions.length, beforeRepair + 1);
-assert.equal(actions.at(-1).command, 'view');
-assert.equal(actions.at(-1).active, true);
-panel.render(inactive);
-assert.equal(actions.length, beforeRepair + 1, 'Presence repair is throttled');
+const render = (value) => panel.render({ ...ready, server_time_ms: Date.now(), ...value });
+const press = (name) =>
+  el(name).dispatchEvent(new w.MouseEvent('pointerdown', { bubbles: true, button: 0 }));
+const release = (name) => el(name).dispatchEvent(new w.Event('pointerup', { bubbles: true }));
+const holds = () => actions.filter((a) => a.command === 'hold');
+assert.equal(el('forward').disabled, true);
+assert.equal(el('code').disabled, false);
+assert.equal(el('prepare'), null);
+assert.equal(el('approve'), null);
+render({ feedback: '<img src=x>' });
+assert.equal(el('feedback').querySelector('img'), null);
+assert.equal(holds().length, 0, 'Rendering readiness cannot drive');
+press('forward');
+assert.equal(holds().length, 1);
+const hold = holds()[0];
+assert.match(hold.hold_id, /^[0-9a-f]{32}$/);
+assert.equal(hold.direction, 'F');
+assert.equal(hold.pwm, 160);
+mono += 200;
+for (const fn of intervals.values()) fn();
+assert.equal(holds().length, 2);
+assert.equal(holds()[1].hold_id, hold.hold_id);
+assert.equal(holds()[1].input_seq, 2);
+release('forward');
+assert.equal(actions.at(-1).command, 'release');
+assert.equal(intervals.size, 0);
+const count = holds().length;
+render({});
+assert.equal(holds().length, count, 'No restart after release');
+el('pwm').value = '255';
+el('pwm').dispatchEvent(new w.Event('input'));
+press('left');
+assert.equal(holds().at(-1).direction, 'L');
+assert.equal(holds().at(-1).pwm, 255);
+el('pwm').value = '0';
+el('pwm').dispatchEvent(new w.Event('input'));
+assert.equal(actions.at(-1).command, 'stop');
+el('pwm').value = '160';
+el('pwm').dispatchEvent(new w.Event('input'));
+assert.equal(intervals.size, 0);
+press('right');
+assert.equal(holds().at(-1).direction, 'R');
+render({ ready: false });
+assert.equal(actions.at(-1).command, 'stop');
+assert.equal(intervals.size, 0);
+const ended = holds().length;
+render({});
+assert.equal(holds().length, ended);
+const key = (target, type, value, repeat = false) =>
+  target.dispatchEvent(new w.KeyboardEvent(type, { key: value, repeat, bubbles: true }));
+key(el('code'), 'keydown', 'w');
+key(d.getElementById('outside'), 'keydown', 'ArrowUp');
+assert.equal(holds().length, ended);
+key(el('pad'), 'keydown', 'ArrowDown');
+assert.equal(holds().at(-1).direction, 'B');
+const keyed = holds().length;
+key(el('pad'), 'keydown', 'ArrowDown', true);
+assert.equal(holds().length, keyed);
+render({ ready: false });
+render({});
+key(el('pad'), 'keydown', 'ArrowDown', true);
+assert.equal(holds().length, keyed, 'Auto-repeat cannot resume a cancelled hold');
+key(el('pad'), 'keyup', 'ArrowDown');
+key(el('pad'), 'keydown', 'W');
+assert.equal(holds().at(-1).direction, 'F');
+key(el('pad'), 'keyup', 'w');
+assert.equal(intervals.size, 0);
+press('forward');
+w.dispatchEvent(new w.Event('blur'));
+assert.equal(intervals.size, 0);
+assert.equal(actions.at(-1).command, 'release');
+press('backward');
 d.getElementById('vision-routing-shell').dataset.mode = 'practice';
-panel.render(inactive);
-assert.equal(actions.length, beforeRepair + 1, 'Practice cannot renew a physical view');
+d.dispatchEvent(new w.CustomEvent('vision-routing:mode'));
+assert.equal(intervals.size, 0);
+assert.equal(actions.at(-1).active, false);
 d.getElementById('vision-routing-shell').dataset.mode = 'manual';
+d.dispatchEvent(new w.CustomEvent('vision-routing:mode'));
+render({ max_pwm: 160, receiver_updated: false });
+assert.equal(el('pwm').max, '160');
+assert.match(el('receiver-note').textContent, /Existing receiver/);
+render({});
+press('forward');
+mono += 1501;
+for (const fn of [...intervals.values()]) fn();
+assert.equal(actions.at(-1).command, 'stop');
+assert.equal(intervals.size, 0);
+const beforePresence = actions.length;
+render({ view_active: false });
+assert.equal(actions.length, beforePresence + 1);
+assert.equal(actions.at(-1).command, 'view');
+render({ view_active: false });
+assert.equal(actions.length, beforePresence + 1);
+press('left');
 w.dispatchEvent(new w.PageTransitionEvent('pagehide'));
-const afterLeave = actions.length;
-panel.render(inactive);
-assert.equal(actions.length, afterLeave, 'A leaving page cannot restore presence');
+assert.equal(intervals.size, 0);
+assert.equal(actions.at(-1).active, false);
 panel.destroy();
+assert.equal(intervals.size, 0);
 w.close();
 console.log(
-  'PASS: one approval click, editable code, output acknowledgement, escaped feedback and page presence.',
+  'PASS: held pointer/keyboard intent, bounded renewal, release/Stop/page-loss cancellation, no automatic restart, receiver caps, editable authentication and safe diagnostics.',
 );

@@ -28,16 +28,16 @@ def profile():
 
 
 @st.cache_resource(max_entries=1, show_spinner=False)
-def service(p):
+def service(p, protocol_version='held-drive-20261120'):
     from ..vision_control.service import ManualService
     return ManualService(p)
 
 
 def live_service(p):
-    s = service(p)
+    s = service(p, 'held-drive-20261120')
     if s.stop.is_set():
         service.clear()
-        s = service(p)
+        s = service(p, 'held-drive-20261120')
     st.session_state.manual_service = s
     return s
 
@@ -80,7 +80,7 @@ def workspace(mode):
 
 def handle(result, mode):
     cmd = result.get('command')
-    if cmd not in ('view', 'login', 'logout', 'prepare', 'approve', 'stop'):
+    if cmd not in ('view', 'login', 'logout', 'hold', 'release', 'stop'):
         return
     p, _ = profile()
     if cmd == 'view':
@@ -109,15 +109,18 @@ def handle(result, mode):
         from .control_presence import synchronize_control_view
         synchronize_control_view(st.session_state, 'manual')  # Explicit authenticated Connect starts this listener.
         st.session_state.manual_operator = alias
-        st.session_state.manual_feedback = 'Session enabled. Wait for fresh ESP32 feedback before preparing a move.'
+        st.session_state.manual_feedback = 'Connected. Hold a direction to drive; release to stop.'
         return
     if not authorized(p): return
     try:
         if not st.session_state.get('manual_view'): raise ValueError('Open the manual control page first')
         s = live_service(p)
         if cmd == 'stop': s.coordinator.cancel(owner())
-        elif cmd == 'prepare': s.coordinator.capture(owner(), st.session_state.manual_operator, result.get('direction'), result.get('pwm'))
-        elif cmd == 'approve': s.coordinator.approve(owner(), identifier(result.get('review_id')), result.get('reason'))
-        st.session_state.manual_feedback = 'Check the controller status below. No automatic repeat is enabled.'
+        elif cmd == 'hold':
+            s.coordinator.hold(owner(), st.session_state.manual_operator, result.get('hold_id'),
+                result.get('input_seq'), result.get('issued_at_ms'), result.get('direction'), result.get('pwm'))
+        elif cmd == 'release':
+            s.coordinator.end_hold(owner(), result.get('hold_id'), result.get('input_seq'))
+        st.session_state.manual_feedback = ''
     except ValueError as exc: st.session_state.manual_feedback = str(exc)
     except Exception: st.session_state.manual_feedback = 'Private transport unavailable or another controller owns AMR-01; no retry is queued'

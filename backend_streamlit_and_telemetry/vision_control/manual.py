@@ -16,6 +16,8 @@ FEEDBACK_WINDOW_MS = 500
 
 
 class ManualCoordinator:
+    max_pwm = 160
+    allow_manual_protocol = False
     def __init__(self, engine, secret, publish, clock):
         self.engine, self.secret, self.publish, self.clock = engine, secret, publish, clock
         self.lock = threading.RLock()
@@ -123,13 +125,13 @@ class ManualCoordinator:
                 self.rejected_count += 1
                 return
             try:
-                h = hardware(raw, self.secret, self.clock(), max_pwm=160)
+                h = hardware(raw, self.secret, self.clock(), max_pwm=self.max_pwm, allow_manual=self.allow_manual_protocol)
             except (ValueError, TypeError, UnicodeError):
                 self.rejected_count += 1
                 self.last_issue = 'invalid_packet'
                 try:
-                    fields = verified(raw, self.secret, 12)
-                    if fields[0] == 'H1':
+                    fields = verified(raw, self.secret, 13 if raw[:3] in ('H2|',b'H2|') else 12)
+                    if fields[0] in ('H1','H2'):
                         self.clock_age_ms = self.clock() - int(fields[11])
                         if self.clock_age_ms < -100:
                             self.last_issue = 'clock_ahead'

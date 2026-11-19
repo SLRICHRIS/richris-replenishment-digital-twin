@@ -115,7 +115,7 @@ class Service:
 
 
 class ManualService(Service):
-    from .manual import ManualCoordinator as coordinator_type
+    from .held_manual import HeldManualCoordinator as coordinator_type
     topics=('robot/amr01/vision/hardware',)
     send_topic='robot/amr01/vision/drive'
     client_label='manual'

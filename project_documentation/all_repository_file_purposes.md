@@ -300,6 +300,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_manual_motor_control.py` | Implement or verify authenticated one-shot manual motor control. |
 | `backend_streamlit_and_telemetry/predictive_twin/manual_control_workspace.py` | Implement or verify authenticated one-shot manual motor control. |
 | `backend_streamlit_and_telemetry/vision_control/manual.py` | Implement or verify authenticated one-shot manual motor control. |
+| `backend_streamlit_and_telemetry/vision_control/held_manual.py` | Coordinate authenticated human-held motor leases, release, input expiry and restart fences. |
+| `automated_software_checks/predictive_twin_checks/test_held_manual.py` | Verify held driving offline, receiver limits, zero-output arming, source expiry and replay prevention. |
 | `esp32_telemetry_firmware/AMR01_Manual_WiFi/AMR01_Manual_WiFi.ino` | Preserve the supplied working sketch while adding authenticated expiring Wi-Fi motor commands. |
 | `esp32_telemetry_firmware/AMR01_Manual_WiFi/example_esp32_wifi_and_mqtt_settings.h` | Public placeholders for private Wi-Fi, telemetry and manual receiver settings. |
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/manual_motor_control.js` | Render attended manual motor review and bridge server-owned approvals. |
