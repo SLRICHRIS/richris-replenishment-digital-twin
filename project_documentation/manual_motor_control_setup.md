@@ -2,7 +2,7 @@
 
 The supplied ESP32 sketch publishes sensor readings but only reads movement commands from USB Serial. The new **Vision routing → Manual control** tab adds human-approved, one-shot Wi-Fi motor control. It does not require camera calibration. Camera-guided autonomous routes retain their separate requirements.
 
-Each approval requests one burst at PWM 20–60 (out of 255), lasting at most 250 ms after its server issue time. Network delay and reversal interlocks can shorten it. This is a motor-output request, not a guaranteed travel distance. There is no automatic repeat or queued retry.
+Each approval requests one burst at PWM 20–160 (out of 255), lasting at most 250 ms after its server issue time. Network delay and reversal interlocks can shorten it. This is a motor-output request, not a guaranteed travel distance. There is no automatic repeat or queued retry.
 
 ## Connect once
 
@@ -18,7 +18,7 @@ Each approval requests one burst at PWM 20–60 (out of 255), lasting at most 25
 1. Open the [digital twin](https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/) and select **Vision routing → Manual control**.
 2. Select **Use physical AMR source** if shown. Enter an operator alias and the access code you already have, then choose **Enable manual control**. Keep this page open.
 3. Wait for **ESP32 ready · zero outputs reported**. If switching from camera routing, the previous controller releases its database lease after about five seconds without page presence.
-4. Observe the AMR and clear space around it. Select Forward, Backward, Turn left or Turn right, and PWM (default 40). Choose **Prepare move for review**.
+4. Observe the AMR and clear space around it. Select Forward, Backward, Turn left or Turn right, and PWM (default 160, matching the supplied working sketch). Choose **Prepare move for review**.
 5. Read the proposal, enter an approval reason and choose **Approve & move once** within ten seconds. One approval sends one burst. Prepare a fresh review for each further move.
 6. Wait for the controller's zero-output status and observe the physical AMR. **Stop** sends a stop request for the current burst; local Serial **S** also overrides remote control. MCU expiry remains active even if the website disconnects. This short-burst panel is not a physical emergency-stop circuit.
 

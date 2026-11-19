@@ -3,7 +3,7 @@
  * Install esp32 by Espressif Systems (tested 3.3.12), PubSubClient 2.8.0,
  * and Adafruit INA219 1.2.3 with its dependencies.
  * Select the correct ESP32 board and USB port. Serial Monitor: 115200 baud.
- * Private Wi-Fi and broker settings are filled below; keep this file private.
+ * Private Wi-Fi and broker settings are in the companion header.
  * Keep the robot stationary during startup. Local motion continues until S is received.
  * Publishes commissioning measurements; production prediction ingestion is pending.\n * Encoder signed counts infer direction from commanded motor direction; single-channel sensors do not measure direction.
  */
@@ -106,7 +106,7 @@ inline bool number(const char* s,uint64_t& v) {
   for(;*s;++s) { if(*s<'0'||*s>'9'||v>(UINT64_MAX-9)/10) return false; v=v*10+uint64_t(*s-'0'); }
   return true;
 }
-inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>80) return false; v=neg?-int(n):int(n); return true; }
+inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>160) return false; v=neg?-int(n):int(n); return true; }
 // Pass only the authenticated portion, after constant-time HMAC validation.
 inline bool parse(char* body,Command& c) {
   char* f[10]; int n=0; f[n++]=body;
@@ -160,10 +160,10 @@ class Guard {
 #define AMR_VISION_DRIVE_KEY ""
 #define AMR_VISION_MQTT_USERNAME ""
 #define AMR_VISION_MQTT_PASSWORD ""
-#define AMR_VISION_MAX_PWM 60
+#define AMR_VISION_MAX_PWM 160
 #define AMR_VISION_MIN_PACK_V 6.6
 #endif
-static_assert(AMR_VISION_MAX_PWM > 0 && AMR_VISION_MAX_PWM <= 80,"Vision PWM cap must be 1..80");
+static_assert(AMR_VISION_MAX_PWM > 0 && AMR_VISION_MAX_PWM <= 160,"Vision PWM cap must be 1..160");
 static_assert(AMR_VISION_MIN_PACK_V >= 6.0 && AMR_VISION_MIN_PACK_V <= 7.4,"Verify 2S motor-branch cutoff");
 portMUX_TYPE visionMux = portMUX_INITIALIZER_UNLOCKED;
 amr_vision::Guard visionGuard;

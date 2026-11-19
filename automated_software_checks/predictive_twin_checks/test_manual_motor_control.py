@@ -68,7 +68,7 @@ def test_stale_replay_retained_changed_epoch_and_other_owner():
 
 def test_limits_expiry_failure_cancel_and_restart_do_not_replay():
     c,t,out=fixture()
-    for direction,pwm in [('X',40),('F',True),('F',61),('F',0)]:
+    for direction,pwm in [('X',40),('F',True),('F',161),('F',0)]:
         with pytest.raises(ValueError): c.capture(OWNER,'operator',direction,pwm)
     rid=prepare(c); t[0]+=10000; c.tick(); assert c.row['state']=='manual_cancelled' and not out
     c,t,out=fixture(); rid=prepare(c)
@@ -112,3 +112,38 @@ def test_working_sketch_public_template_and_shared_output_writer():
     example=(root/'esp32_telemetry_firmware/AMR01_Manual_WiFi/example_esp32_wifi_and_mqtt_settings.h').read_text()
     for name in ('WIFI_SSID','WIFI_PASSWORD','MQTT_HOST','MQTT_USERNAME','MQTT_PASSWORD'):
         assert name+'[] = "REPLACE"' in example
+
+
+def test_working_160_pwm_is_manual_only_and_hardware_ack_supports_it():
+    c,t,out=fixture()
+    c.capture(OWNER,'operator','F',160);rid=c.row['review_id']
+    c.approve(OWNER,rid,'Clear area inspected')
+    t[0]+=100;beat(c,t,3,rid,1,'armed')
+    assert verified(out[-1],KEY,10)[6:8]==['160','160']
+    t[0]+=100;beat(c,t,4,rid,2,'moving',160,160)
+    assert c.row['state']=='manual_acknowledged'
+    # Camera route protocol retains its original lower default cap.
+    with pytest.raises(ValueError):drive(BOOT,EPOCH,rid,3,'drive',160,160,t[0],KEY)
+
+
+def test_embedded_manual_guard_parses_160_and_expires_without_network(tmp_path):
+    from pathlib import Path
+    import subprocess
+    source=(Path(__file__).resolve().parents[2]/'esp32_telemetry_firmware/AMR01_Manual_WiFi/AMR01_Manual_WiFi.ino').read_text()
+    guard=source[source.index('namespace amr_vision {'):source.index('#ifndef AMR_VISION_DRIVE_ENABLED')]
+    code='#include <cstdint>\n#include <cstring>\n#include <cstdlib>\n#include <climits>\n#include <cassert>\n'+guard+r'''
+int main() {
+  using namespace amr_vision;
+  Guard g;g.connection("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+  char arm[]="V1|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|cccccccccccccccccccccccccccccccc|1|arm|0|0|1000|1500";
+  Command c;assert(parse(arm,c));assert(g.accept(c,1000,0,true,160));
+  char drive[]="V1|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb|cccccccccccccccccccccccccccccccc|2|drive|160|160|1100|1350";
+  assert(parse(drive,c));assert(g.accept(c,1100,100000,true,160));
+  g.tick(100000,true);assert(g.active&&g.left==160&&g.right==160);
+  g.tick(350000,true);assert(!g.active&&g.left==0&&g.right==0);
+  assert(!g.accept(c,1350,350000,true,160));
+}
+'''
+    exe=tmp_path/'manual_guard'
+    subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-x','c++','-','-o',str(exe)],input=code,text=True,check=True)
+    subprocess.run([str(exe)],check=True)

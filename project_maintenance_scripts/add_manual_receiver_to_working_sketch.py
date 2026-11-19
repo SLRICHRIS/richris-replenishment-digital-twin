@@ -16,10 +16,12 @@ def transform(source):
     end = source.index("// User's current wiring:", begin)
     private = source[begin:end]
     s = source[:begin] + '#include "esp32_wifi_and_mqtt_settings.h"\n\n' + source[end:]
+    s = s.replace('Private Wi-Fi and broker settings are filled below; keep this file private.', 'Private Wi-Fi and broker settings are in the companion header.')
     s = s.replace('#include <PubSubClient.h>', '#include <PubSubClient.h>\n#include <mbedtls/md.h>')
     canonical = (CANONICAL / 'publish_mh_ir_commissioning.ino').read_text()
-    guard = (CANONICAL / 'vision_drive_guard.h').read_text().replace('#pragma once', '')
+    guard = (CANONICAL / 'vision_drive_guard.h').read_text().replace('#pragma once', '').replace('n>80', 'n>160')
     config = canonical[canonical.index('#ifndef AMR_VISION_DRIVE_ENABLED'):canonical.index('using amr_ir::Motion;')]
+    config=config.replace('AMR_VISION_MAX_PWM 60', 'AMR_VISION_MAX_PWM 160').replace('AMR_VISION_MAX_PWM <= 80', 'AMR_VISION_MAX_PWM <= 160').replace('cap must be 1..80', 'cap must be 1..160')
     insert = s.index('// ===== WHEEL SENSORS AND LOCAL DRIVE =====')
     s = s[:insert] + guard + '\n' + config + s[insert:]
     s = s.replace('PubSubClient mqtt(tls);', 'PubSubClient mqtt(tls);\nWiFiClientSecure visionTls;\nPubSubClient visionMqtt(visionTls);')

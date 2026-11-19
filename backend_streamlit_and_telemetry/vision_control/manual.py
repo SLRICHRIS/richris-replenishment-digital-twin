@@ -51,8 +51,8 @@ class ManualCoordinator:
         with self.lock:
             if self.row and self.row['state'] in ACTIVE:
                 raise ValueError('Wait for zero-output feedback before another review')
-            if direction not in DIRECTIONS or type(pwm) is not int or not 20 <= pwm <= 60:
-                raise ValueError('Choose F, B, L or R and PWM 20–60')
+            if direction not in DIRECTIONS or type(pwm) is not int or not 20 <= pwm <= 160:
+                raise ValueError('Choose F, B, L or R and PWM 20–160')
             if not self.stationary():
                 raise ValueError('Fresh, ready ESP32 feedback with zero motor outputs is required')
             h, now = self.current, self.clock()
@@ -66,7 +66,7 @@ class ManualCoordinator:
     def packet(self, op, seq, left=0, right=0):
         r = self.row
         return drive(r['boot_id'], r['epoch_id'], r['review_id'], seq, op, left, right,
-                     self.clock(), self.secret, lease_ms=BURST_MS if op == 'drive' else 500)
+                     self.clock(), self.secret, lease_ms=BURST_MS if op == 'drive' else 500, max_pwm=160)
 
     def send(self, op, seq, left=0, right=0):
         try:
@@ -101,7 +101,7 @@ class ManualCoordinator:
         with self.lock:
             if retained:
                 return
-            h = hardware(raw, self.secret, self.clock())
+            h = hardware(raw, self.secret, self.clock(), max_pwm=160)
             identity = (h['boot_id'], h['epoch_id'])
             if identity in self.retired:
                 return

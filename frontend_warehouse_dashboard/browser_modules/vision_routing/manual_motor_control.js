@@ -15,7 +15,7 @@ export function createManualMotorPanel(scope) {
       <form id="mc-login"><label>Operator alias<input id="mc-operator" maxlength="40" autocomplete="username" required></label><label>Operator access code<input id="mc-code" type="password" maxlength="256" autocomplete="current-password" required></label><button id="mc-unlock" type="submit" disabled>Enable manual control</button></form>
       <div id="mc-controls" hidden>
         <button id="mc-logout" type="button">End operator session</button>
-        <form id="mc-proposal"><div class="vision-fields"><label>Direction<select id="mc-direction"><option value="F">Forward</option><option value="B">Backward</option><option value="L">Turn left</option><option value="R">Turn right</option></select></label><label>Motor PWM · 20–60<input id="mc-pwm" type="number" min="20" max="60" step="1" value="40" required></label></div><p>Duration: 250 ms maximum. Each move needs a fresh approval.</p><button id="mc-prepare" type="submit" disabled>Prepare move for review</button></form>
+        <form id="mc-proposal"><div class="vision-fields"><label>Direction<select id="mc-direction"><option value="F">Forward</option><option value="B">Backward</option><option value="L">Turn left</option><option value="R">Turn right</option></select></label><label>Motor PWM · 20–160<input id="mc-pwm" type="number" min="20" max="160" step="1" value="160" required></label></div><p>Duration: 250 ms maximum. Each move needs a fresh approval.</p><button id="mc-prepare" type="submit" disabled>Prepare move for review</button></form>
         <div id="mc-review" hidden><h3>Human approval</h3><p id="mc-summary"></p><label>Approval reason<textarea id="mc-reason" maxlength="240" placeholder="Space checked; approve one short move"></textarea></label><button id="mc-approve" type="button" class="primary" disabled>Approve & move once</button></div>
       </div>
       <p id="mc-outcome" role="status">No motor request has been sent.</p>
@@ -47,6 +47,9 @@ export function createManualMotorPanel(scope) {
       : value.hardware
         ? 'ESP32 connected · waiting for ready zero outputs'
         : 'Waiting for authenticated ESP32 feedback';
+    if (value.hardware && value.hardware.battery_voltage_v < 6.6)
+      el('connection').textContent =
+        `Battery ${value.hardware.battery_voltage_v.toFixed(2)} V · charge above 6.6 V for remote control`;
     el('feedback').textContent = value.feedback || '';
     el('missing').replaceChildren(
       ...(value.missing || []).map((text) => {
