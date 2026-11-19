@@ -147,3 +147,30 @@ int main() {
     exe=tmp_path/'manual_guard'
     subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-x','c++','-','-o',str(exe)],input=code,text=True,check=True)
     subprocess.run([str(exe)],check=True)
+
+
+def test_second_burst_and_server_recovery_continue_controller_sequence():
+    c,t,out=fixture();rid=prepare(c);c.approve(OWNER,rid,'Clear first move')
+    t[0]+=100;beat(c,t,3,rid,1,'armed')
+    for seq in range(4,8):
+        t[0]+=150;beat(c,t,seq,rid,2,'expired')
+    assert c.row['state']=='manual_stopped'
+    rid2=prepare(c);c.approve(OWNER,rid2,'Clear second move')
+    assert verified(out[-1],KEY,10)[4:6]==['3','arm']
+    t[0]+=100;beat(c,t,8,rid2,3,'armed')
+    assert verified(out[-1],KEY,10)[4:6]==['4','drive']
+    for seq in range(9,13):
+        t[0]+=150;beat(c,t,seq,rid2,4,'expired')
+    assert c.row['state']=='manual_stopped'
+    recovered=ManualCoordinator(c.engine,KEY,out.append,lambda:t[0]);recovered.connected=True
+    beat(recovered,t,13,rid2,4,'expired',stamp=t[0]-150)
+    beat(recovered,t,14,rid2,4,'expired')
+    rid3=prepare(recovered);recovered.approve(OWNER,rid3,'Fresh approval after server restart')
+    assert verified(out[-1],KEY,10)[4:6]==['5','arm']
+
+
+def test_changed_controller_sequence_invalidates_a_pending_review():
+    c,t,out=fixture();rid=prepare(c)
+    t[0]+=150;beat(c,t,3,command=9)
+    with pytest.raises(ValueError,match='feedback changed'):c.approve(OWNER,rid,'Old review')
+    assert not out

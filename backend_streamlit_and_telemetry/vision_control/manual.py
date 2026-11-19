@@ -58,7 +58,7 @@ class ManualCoordinator:
             h, now = self.current, self.clock()
             self.row = dict(review_id=uuid.uuid4().hex, owner_id=owner, operator=operator,
                 created_at_ms=now, expires_at_ms=now + 10000, state='manual_review', direction=direction,
-                pwm=pwm, duration_ms=BURST_MS, boot_id=h['boot_id'], epoch_id=h['epoch_id'],
+                pwm=pwm, duration_ms=BURST_MS, boot_id=h['boot_id'], epoch_id=h['epoch_id'], arm_seq=h['command_seq'] + 1,
                 reason='Review one burst and inspect the clear space around the AMR', events=[])
             self.touch(owner)
             self.save()
@@ -86,7 +86,7 @@ class ManualCoordinator:
                 raise ValueError('Prepare a new review; this approval is no longer available')
             if not isinstance(reason, str) or not 1 <= len(reason.strip()) <= 240:
                 raise ValueError('Record a short approval reason')
-            if not self.stationary() or (h['boot_id'], h['epoch_id']) != (r['boot_id'], r['epoch_id']):
+            if not self.stationary() or (h['boot_id'], h['epoch_id']) != (r['boot_id'], r['epoch_id']) or h['command_seq'] != r['arm_seq'] - 1:
                 raise ValueError('ESP32 feedback changed; prepare a new review')
             if now - self.presence.get(owner, 0) > 2000:
                 raise ValueError('Keep this manual control page open before approving')
@@ -95,7 +95,7 @@ class ManualCoordinator:
             self.touch(owner)
             self.zeroes = []
             self.save()  # Durable human decision before any motor command.
-            self.send('arm', 1)
+            self.send('arm', r['arm_seq'])
 
     def observe(self, raw, retained=False):
         with self.lock:
@@ -122,15 +122,15 @@ class ManualCoordinator:
             r = self.row
             if not r or r['state'] not in ACTIVE or identity != (r['boot_id'], r['epoch_id']) or h['route_id'] != r['review_id']:
                 return
-            if r['state'] == 'manual_arming' and h['command_seq'] == 1 and h['state'] == 'armed' and not (h['left_duty'] or h['right_duty']):
+            if r['state'] == 'manual_arming' and h['command_seq'] == r['arm_seq'] and h['state'] == 'armed' and not (h['left_duty'] or h['right_duty']):
                 if not self.connected or not h['ready'] or self.clock() - self.presence.get(r['owner_id'], 0) > 2000:
                     self.cancel(r['owner_id'])
                     return
                 left, right = DIRECTIONS[r['direction']]
                 r.update(state='manual_sent', reason='One 250 ms burst sent; waiting for controller feedback', burst_sent_at_ms=self.clock())
                 self.save()
-                self.send('drive', 2, left * r['pwm'], right * r['pwm'])
-            elif h['command_seq'] >= 2:
+                self.send('drive', r['arm_seq'] + 1, left * r['pwm'], right * r['pwm'])
+            elif h['command_seq'] >= r['arm_seq'] + 1:
                 if h['left_duty'] or h['right_duty']:
                     if r['state'] == 'manual_sent':
                         r.update(state='manual_acknowledged', reason='ESP32 reports applied motor outputs; physical travel is not verified')
@@ -153,7 +153,7 @@ class ManualCoordinator:
             elif r['state'] in ACTIVE and r['state'] != 'manual_stopping':
                 r.update(state='manual_stopping', reason='Stop sent; waiting for ESP32 zero-output feedback')
                 self.save()
-                self.send('stop', 3)
+                self.send('stop', r['arm_seq'] + 2)
 
     def tick(self):
         with self.lock:
