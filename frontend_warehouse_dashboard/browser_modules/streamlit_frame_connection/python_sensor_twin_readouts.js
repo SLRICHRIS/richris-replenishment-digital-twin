@@ -101,6 +101,8 @@
       const d = available ? r.derived || {} : {};
       const physicalInput = !available && physical?.fresh === true;
       const wheel = physicalInput ? physical.wheel_estimates || {} : {};
+      const motion = physicalInput ? physical.motion_observation || {} : {};
+      const observingMotion = physicalInput && !!motion.state;
       // Current raw observations do not authorize the calibrated model outputs.
       const raw = available ? r.raw || {} : physicalInput ? physical.measurements || {} : {};
       const recordedBias =
@@ -137,7 +139,19 @@
           : 'Sample age · ' + number(age, 1, ' s'),
       );
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : 'Unavailable');
-      text(key + 'pose', available ? position(r.pose) : 'Unavailable');
+      text(
+        key + 'pose',
+        available ? position(r.pose) : observingMotion ? position(motion.pose) : 'Unavailable',
+      );
+      $(key + 'pose-note').hidden = !observingMotion;
+      text(
+        key + 'pose-note',
+        motion.state === 'loading'
+          ? 'Rebuilding the local estimate from recorded samples.'
+          : motion.state === 'reanchoring'
+            ? 'Starting a new local origin after missing or ambiguous motion data. Waiting for a consistent interval.'
+            : `Local wheel-odometry estimate; direction follows ESP32 motor-command estimates. Origin: recorded sample #${motion.origin_seq ?? '?'}.${motion.resets ? ' The origin was reset after a recording gap or ambiguous interval.' : ''}`,
+      );
       text(
         key + 'travel',
         `L = ${number(available ? d.ds_left_m : wheel.left_travel_magnitude_m, 4, ' m')}\nR = ${number(available ? d.ds_right_m : wheel.right_travel_magnitude_m, 4, ' m')}`,
@@ -220,7 +234,10 @@
         key + 'speed',
         `L = ${number(available ? d.v_left_m_s : wheel.left_rim_speed_m_s, 3, ' m/s')}\nR = ${number(available ? d.v_right_m_s : wheel.right_rim_speed_m_s, 3, ' m/s')}`,
       );
-      text(key + 'residual', number(d.residual_rad_s, 5, ' rad/s'));
+      text(
+        key + 'residual',
+        number(available ? d.residual_rad_s : motion.residual_rad_s, 5, ' rad/s'),
+      );
       const forecastAllowed =
         available && !r.continuity_lost && r.quality === 'OK' && d.residual_valid !== false;
       text(key + 'runtime', forecastAllowed ? number(r?.runtime_hours, 2, ' h') : 'Unavailable');
@@ -242,25 +259,31 @@
                   : 'Assumes unchanged wheel speeds and battery current, until an assumed 20% charge reserve. This is not a planned route or a battery-life guarantee.',
       );
       text(key + 'state', raw.robot_state || 'Unavailable');
-      const message = !available
-        ? payload.notice
-          ? payload.notice.label + '. Alerts and forecasts are unavailable.'
-          : 'No fresh readings; alerts and forecasts suspended.'
-        : r.continuity_lost
-          ? 'Data was lost: position, charge and energy estimates are partial. Forecasts are withheld.'
-          : d.soc_out_of_bounds
-            ? 'SOC outside [0, 1]: check capacity, initial charge and current calibration.'
-            : d.residual_valid === false
-              ? 'Sensor packet gap: residual and short-term forecasts suppressed for this sample.'
-              : d.advisory
-                ? 'Sustained gyro/encoder disagreement. Inspect motion and sensors.'
-                : Object.keys(d).length
-                  ? 'No sustained motion disagreement at this sample. This does not establish that the robot is fault-free.'
-                  : 'Waiting for a second valid sample to compare the motion sensors.';
+      const message = observingMotion
+        ? motion.state === 'loading'
+          ? 'Rebuilding the recorded motion comparison.'
+          : Number.isFinite(motion.residual_rad_s)
+            ? 'Gyro minus wheel turning rate. Wheel direction follows ESP32 motor-command estimates.'
+            : 'Waiting for a complete wheel interval and valid gyro reading.'
+        : !available
+          ? payload.notice
+            ? payload.notice.label + '. Alerts and forecasts are unavailable.'
+            : 'No fresh readings; alerts and forecasts suspended.'
+          : r.continuity_lost
+            ? 'Data was lost: position, charge and energy estimates are partial. Forecasts are withheld.'
+            : d.soc_out_of_bounds
+              ? 'SOC outside [0, 1]: check capacity, initial charge and current calibration.'
+              : d.residual_valid === false
+                ? 'Sensor packet gap: residual and short-term forecasts suppressed for this sample.'
+                : d.advisory
+                  ? 'Sustained gyro/encoder disagreement. Inspect motion and sensors.'
+                  : Object.keys(d).length
+                    ? 'No sustained motion disagreement at this sample. This does not establish that the robot is fault-free.'
+                    : 'Waiting for a second valid sample to compare the motion sensors.';
       text(key + 'advisory', message);
       $(key + 'advisory').dataset.alert = String(
         Boolean(
-          !available ||
+          (!available && !observingMotion) ||
             d.advisory ||
             d.soc_out_of_bounds ||
             r?.continuity_lost ||
@@ -273,9 +296,13 @@
         key + 'threshold',
         hasThreshold
           ? `Advisory requires a difference beyond ±${number(threshold, 3)} rad/s for ${number(r.residual_hold_s, 2)} s continuously. Dashed lines show this threshold.`
-          : 'Alert threshold requires measured calibration.',
+          : observingMotion
+            ? 'Observed comparison: corrected Z gyro minus the turning rate from command-inferred wheel motion.'
+            : 'Alert threshold requires measured calibration.',
       );
-      const rows = (r?.history || []).filter((row) => Number.isFinite(row.sample_time_s));
+      const rows = (observingMotion ? motion.history || [] : r?.history || []).filter((row) =>
+        Number.isFinite(row.sample_time_s),
+      );
       const start = rows[0]?.sample_time_s || 0;
       const duration = Math.max(0.05, (rows.at(-1)?.sample_time_s || 0) - start);
       const scale = Math.max(
@@ -315,13 +342,13 @@
       text(
         key + 'plot-caption',
         rows.some((row) => Number.isFinite(row.residual_rad_s))
-          ? `${available ? 'Time since boot' : 'Historical'} · ${start.toFixed(2)}–${(start + duration).toFixed(2)} s`
+          ? `${available ? 'Time since boot' : observingMotion ? 'Device sample time' : 'Historical'} · ${start.toFixed(2)}–${(start + duration).toFixed(2)} s`
           : 'No comparison history',
       );
       text(
         key + 'plot-range',
         rows.some((row) => Number.isFinite(row.residual_rad_s))
-          ? `Recorded difference · scale ±${scale.toFixed(3)} rad/s · time ${start.toFixed(2)}–${(start + duration).toFixed(2)} s since device boot${available ? '' : ' · historical data; current readings unavailable'}`
+          ? `Recorded difference · scale ±${scale.toFixed(3)} rad/s · time ${start.toFixed(2)}–${(start + duration).toFixed(2)} s since device boot${available || observingMotion ? '' : ' · historical data; current readings unavailable'}`
           : 'No comparison history available in this view.',
       );
     }
