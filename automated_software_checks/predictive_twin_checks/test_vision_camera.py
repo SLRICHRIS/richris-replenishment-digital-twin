@@ -60,7 +60,8 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     path=Path(__file__).resolve().parents[2]/'backend_streamlit_and_telemetry/vision_control/example_camera_config.json'
     p=json.loads(path.read_text())
     assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(425,630,920)
-    assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(180,150,150)
+    assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(187,150,150)
+    assert p['reported_body_outline_robot_frame_mm']==dict(reference='wheel_axle_midpoint',front=147,rear=40,length=187,longitudinal_midpoint_forward=53.5,source='operator_reported')
     assert p['marker_height_mm']==150
     assert p['marker_edge_mm']==40
     assert p['reported_marker_offset_robot_frame_mm']==dict(reference='wheel_axle_midpoint',forward=100,left=0,source='operator_reported')

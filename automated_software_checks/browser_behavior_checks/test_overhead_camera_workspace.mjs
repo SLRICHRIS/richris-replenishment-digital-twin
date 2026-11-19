@@ -31,7 +31,7 @@ w.localStorage.setItem(
 );
 const workspace = createVisionWorkspace(w);
 assert.equal(createVisionWorkspace(w), null, 'No duplicate event handlers');
-assert.equal(el('robot-length').value, '180');
+assert.equal(el('robot-length').value, '187');
 assert.equal(el('robot-width').value, '150');
 assert.equal(el('robot-height').value, '150');
 assert.equal(el('marker-height').value, '150');
@@ -199,7 +199,7 @@ saved.settings.markerHeightMm = null;
 saved.settings.markerSizeMm = null;
 w.localStorage.setItem('amr01.visionSetup.v2', JSON.stringify(saved));
 const updated = createVisionWorkspace(w);
-assert.equal(updated.snapshot().settings.robotLengthMm, 180);
+assert.equal(updated.snapshot().settings.robotLengthMm, 187);
 assert.equal(updated.snapshot().settings.robotWidthMm, 75);
 assert.equal(updated.snapshot().settings.robotHeightMm, 150);
 assert.equal(updated.snapshot().settings.markerHeightMm, 150);

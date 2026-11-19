@@ -29,7 +29,7 @@
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
   "geometry": {
-    "robot_length_mm": 180,
+    "robot_length_mm": 187,
     "robot_width_mm": 150,
     "robot_height_mm": 150,
     "wheel_track_mm": 100,
@@ -49,5 +49,13 @@
   },
   "floor_width_mm": 425,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Operator-reported on 19 November 2026: full robot length 18 cm, width 15 cm, height 15 cm; marker surface 15 cm above the floor; robot marker ID 0 black square 40 x 40 mm; marker centre 10 cm (100 mm) forward of the wheel-axle midpoint and 0 mm sideways; paper width 42.5 cm and length 63 cm; overhead USB camera height 92 cm. Printed-marker forward alignment and its marker-frame transform remain unverified. Calibration checks remain unverified."
+  "reported_measurements_note": "Operator-reported on 19 November 2026: wheel axle to front F = 14.7 cm (147 mm), axle to rear R = 4 cm (40 mm), giving corrected full length 18.7 cm (187 mm), superseding 18 cm. Width and height remain 15 cm. The longitudinal body midpoint is 53.5 mm ahead of the axle; lateral body centring still requires verification. Marker surface is 150 mm above the floor; robot marker ID 0 black square is 40 x 40 mm; marker centre is 100 mm forward of the wheel-axle midpoint and 0 mm sideways. Paper width is 425 mm and length 630 mm; overhead USB camera height is 920 mm. Printed-marker forward alignment and its marker-frame transform remain unverified. Calibration checks remain unverified.",
+  "reported_body_outline_robot_frame_mm": {
+    "reference": "wheel_axle_midpoint",
+    "front": 147,
+    "rear": 40,
+    "length": 187,
+    "longitudinal_midpoint_forward": 53.5,
+    "source": "operator_reported"
+  }
 }

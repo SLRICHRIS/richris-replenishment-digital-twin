@@ -1,6 +1,6 @@
 # Overhead USB camera provision
 
-Open **Vision routing** in the published Streamlit dashboard. The reported arena is a **425 × 630 mm** portrait paper, origin at the bottom-left, X right and Y up. Reported camera height is **92 cm**, interpreted as lens-to-paper distance pending confirmation. Full robot body length/width and printed robot-marker edge remain blank until measured. The existing 100 mm wheel spacing is not substituted for body width.
+Open **Vision routing** in the published Streamlit dashboard. The reported arena is a **425 × 630 mm** portrait paper, origin at the bottom-left, X right and Y up. Reported camera height is **92 cm**, interpreted as lens-to-paper distance pending confirmation. The reported full robot outline is 187 × 150 × 150 mm, corrected from the original 180 mm length by axle-to-front F = 147 mm and axle-to-rear R = 40 mm. The printed robot-marker black edge is 40 mm at a reported height of 150 mm. These are planning defaults and metadata; saved browser edits are preserved. The 100 mm wheel spacing is not substituted for body width. Camera and motor commissioning remain pending.
 
 ## Page organization
 
