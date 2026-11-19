@@ -35,7 +35,10 @@ assert.match(el('detail-title').textContent, /Physical sensors/);
 el('next').click();
 assert.equal(nodes()[1].getAttribute('aria-pressed'), 'true');
 assert.equal(el('detail-title').textContent, 'ESP32');
+let revealed = 0;
+el('inspector').scrollIntoView = () => revealed++;
 nodes()[3].click();
+assert.equal(revealed, 1, 'Selecting a component reveals its explanation');
 assert.equal(el('detail-title').textContent, 'Neon database');
 let target;
 d.querySelector('[data-page="database"]').addEventListener('click', () => {
@@ -91,6 +94,21 @@ assert.equal(
   'pending',
   'Old scenes cannot keep a readiness badge',
 );
+now += 2000;
+timers[0]();
+assert.equal(
+  el('model-status').dataset.state,
+  'pending',
+  'Model evidence expires without a new report',
+);
+now += 3000;
+timers[0]();
+assert.equal(
+  el('raw-status').dataset.state,
+  'pending',
+  'Sensor evidence expires without a new report',
+);
+assert.match(el('raw-status').textContent, /Waiting for fresh/);
 payload.robots.amr01.continuity_lost = true;
 payload.physical_telemetry = { fresh: false, label: '<img src=x onerror=alert(1)>' };
 render();
@@ -105,7 +123,7 @@ for (const id of ['raw-status', 'model-status', 'route-status'])
 now += 6000;
 timers[0]();
 for (const id of ['raw-status', 'model-status', 'route-status'])
-  assert.equal(el(id).dataset.state, 'unknown');
+  assert.equal(el(id).dataset.state, 'pending', 'Known blockers survive memoized server reports');
 vm.runInContext(source, dom.getInternalVMContext());
 assert.equal(timers.length, 1, 'No duplicate initialization or polling');
 assert.equal(commands, 0, 'Exploration never dispatches commands or source changes');
