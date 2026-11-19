@@ -65,7 +65,7 @@
     <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=raw-motion-20261119"
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=conditional-forecast-20261119"
     ></script>
     <script
       defer
@@ -2847,13 +2847,14 @@
                 <dl>
                   <dt>Estimated position in 5 seconds</dt>
                   <dd id="python-amr01-forecast">—</dd>
-                  <dt>Time until 20% charge</dt>
+                  <dt id="python-amr01-runtime-label">Time until 20% charge</dt>
                   <dd id="python-amr01-runtime">—</dd>
                 </dl>
                 <p id="python-amr01-forecast-note" class="python-card-meaning">
                   Assumes unchanged wheel speeds and battery current. This is not a planned route or
                   a battery-life guarantee.
                 </p>
+                <p id="python-amr01-runtime-note" class="python-card-meaning" hidden></p>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
 
@@ -2867,6 +2868,11 @@
                     forecast pose (m/m/rad); SOC/reserve: fractions; C: usable Ah; Ifuture: assumed
                     positive discharge current (A), here latest reading. Runtime is hours;
                     unavailable for non-positive current.
+                  </p>
+                  <p>
+                    The physical-feed pack scenario substitutes the reported starting charge and
+                    nominal capacity. It describes a hypothetical discharge at the latest
+                    motor-branch current, not the battery's actual remaining runtime.
                   </p>
                   <p class="slide-model-source">
                     Project extension · uses the motion and SOC models; no obstacle or battery-life

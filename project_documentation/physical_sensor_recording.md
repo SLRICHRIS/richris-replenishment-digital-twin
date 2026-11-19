@@ -42,6 +42,24 @@ Recovery reads at most 1,000 records per tick through the existing primary key;
 comparison history is bounded to 120 points and breaks at missing intervals.
 No observational result enters the calibrated model tables or motor controls.
 
+The Short-term forecast card treats motion and battery inputs independently.
+After a coherent wheel interval, its five-second local projection holds those
+signed wheel speeds fixed, using the existing 20-step midpoint model. It shares
+the local origin and command-inferred direction assumptions above. It is a
+conditional projection, not a route, an arrival prediction, or a forecast of
+the guarded motor command, which expires separately. Missing intervals,
+reanchoring, replay progress and stale telemetry withhold the projection.
+
+The physical-feed battery row is explicitly a reported-pack discharge scenario,
+not actual remaining runtime. It uses the operator-reported 2.2 Ah capacity and
+100% starting charge with a 20% reserve, divided by the latest positive
+motor-branch current. It does not infer actual SOC, treat nominal capacity as
+verified usable capacity, subtract partial recorded energy from a fictional
+starting reference, or include unmeasured electronics loads. A zero or negative
+current has no finite discharge time; invalid, old or sub-1 V battery input
+withholds the scenario. Full calibrated model and motor-control gates are
+unchanged.
+
 The Wheel motion card displays unsigned rim speed and interval travel directly
 from the commissioning feed. Distance per counted pulse is pi times the saved
 65 mm wheel diameter divided by the confirmed 20 pulses per revolution. Speed

@@ -107,3 +107,26 @@ def test_backwards_clock_invalid_interval_and_nonfinite_gyro_are_bounded():
     long=MotionAccumulator(BOOT);long.extend(records([(0,0)]*150))
     assert len(long.public(150)['history'])==120
     assert long.public(150)['pose']==[0,0,0]
+
+
+@pytest.mark.parametrize('pulses', [20, -20, 0])
+def test_five_second_projection_holds_signed_wheel_speeds_without_needing_battery(pulses):
+    accumulator=MotionAccumulator(BOOT)
+    accumulator.extend(records([(pulses,pulses)],gyro=None))
+    result=accumulator.public(1)
+    assert result['forecast_pose']==pytest.approx([11*pulses*STEP,0,0])
+    assert result['forecast_horizon_s']==5
+    assert result['residual_rad_s'] is None
+
+
+def test_turning_projection_and_unknown_intervals_do_not_create_routes():
+    accumulator=MotionAccumulator(BOOT)
+    rows=records([(-5,5),(0,0)])
+    accumulator.extend(rows[:2])
+    assert accumulator.public(1)['forecast_pose']==pytest.approx([0,0,11*10*STEP/.1])
+    assert accumulator.public(2)['forecast_pose'] is None
+    rows[2]['seq']=4
+    accumulator.extend(rows[2:])
+    assert accumulator.public(4)['forecast_pose'] is None
+    anchored=MotionAccumulator(BOOT);anchored.extend(records([]))
+    assert anchored.public(0)['forecast_pose'] is None

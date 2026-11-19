@@ -152,6 +152,41 @@ assert.equal(
   'Comparison line breaks across missing readings',
 );
 assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+payload.physical_telemetry.motion_observation.forecast_pose = [0.5, 0.2, 0.3];
+payload.physical_telemetry.runtime_scenario = {
+  state: 'ready',
+  hours: 3.52,
+  capacity_ah: 2.2,
+  assumed_start_soc: 1,
+  reserve_soc: 0.2,
+  actual_remaining_runtime: false,
+};
+render();
+assert.match(d.getElementById('python-amr01-forecast').textContent, /x = 0.500 m/);
+assert.equal(d.getElementById('python-amr01-runtime').textContent, '3.52 h');
+assert.match(d.getElementById('python-amr01-runtime-label').textContent, /reported-pack scenario/);
+assert.match(
+  d.getElementById('python-amr01-runtime-note').textContent,
+  /2.2 Ah.*assumed 100%.*motor-branch.*actual remaining charge are unknown/,
+);
+assert.match(
+  d.getElementById('python-amr01-forecast-note').textContent,
+  /continued for 5 seconds.*expiring motor command/,
+);
+assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
+payload.physical_telemetry.runtime_scenario.state = 'no_positive_discharge';
+payload.physical_telemetry.runtime_scenario.hours = null;
+render();
+assert.equal(d.getElementById('python-amr01-runtime').textContent, 'No positive discharge');
+assert.match(d.getElementById('python-amr01-runtime-note').textContent, /zero or negative current/);
+assert.match(d.getElementById('python-amr01-forecast').textContent, /x = 0.500 m/);
+payload.physical_telemetry.runtime_scenario.state = 'battery_unavailable';
+render();
+assert.equal(d.getElementById('python-amr01-runtime').textContent, 'Unavailable');
+assert.match(
+  d.getElementById('python-amr01-runtime-note').textContent,
+  /valid, current battery sample/,
+);
 payload.physical_telemetry.motion_observation = {
   ...payload.physical_telemetry.motion_observation,
   state: 'reanchoring',
@@ -162,6 +197,7 @@ payload.physical_telemetry.motion_observation = {
 render();
 assert.equal(d.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-pose-note').textContent, /new local origin/);
+assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
 payload.physical_telemetry.motion_observation = {
   ...payload.physical_telemetry.motion_observation,
   state: 'tracking',
@@ -220,6 +256,10 @@ assert.equal(d.getElementById('python-amr01-corrected-gyro').textContent, 'Unava
 assert.equal(d.getElementById('python-amr01-pose').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-residual').textContent, 'Unavailable');
 assert.equal(d.getElementById('python-amr01-pose-note').hidden, true);
+assert.equal(d.getElementById('python-amr01-runtime').textContent, 'Unavailable');
+assert.equal(d.getElementById('python-amr01-forecast').textContent, 'Unavailable');
+assert.match(d.getElementById('python-amr01-forecast-note').textContent, /fresh ESP32 wheel/);
+assert.match(d.getElementById('python-amr01-runtime-note').textContent, /fresh ESP32 battery/);
 assert.match(d.getElementById('python-amr01-battery-input').textContent, /Voltage = Unavailable/);
 assert.equal(d.getElementById('python-amr01-power').textContent, 'Unavailable');
 assert.match(d.getElementById('python-amr01-travel').textContent, /L = Unavailable/);

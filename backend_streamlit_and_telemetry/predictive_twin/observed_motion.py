@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from .commissioning_profile import (WHEEL_DIAMETER_M, WHEEL_TRACK_M,
     PULSES_PER_WHEEL_REVOLUTION, gyro_bias_correction)
-from .models import midpoint_pose
+from .models import midpoint_pose, motion_forecast
 
 READ_BATCH = 1000
 MAX_INTERVAL_S = 2.0
@@ -80,6 +80,7 @@ class MotionAccumulator:
         self.state = 'anchoring'
         self.reason = ''
         self.residual = self.encoder_yaw_rate = None
+        self.wheel_speeds = None
         self.history = []
         self.resets = 0
 
@@ -89,6 +90,7 @@ class MotionAccumulator:
         self.reason = reason
         self.state = 'reanchoring' if reason else 'anchoring'
         self.residual = self.encoder_yaw_rate = None
+        self.wheel_speeds = None
         if reason: self.resets += 1
 
     def extend(self, rows):
@@ -97,6 +99,7 @@ class MotionAccumulator:
                 continue
             self.last_seq = row['seq']
             self.residual = self.encoder_yaw_rate = None
+            self.wheel_speeds = None
             if not number(row['sample_time_s']) or row['sample_time_s'] < 0:
                 self.previous = None
                 self.state, self.reason = 'unavailable', 'invalid_sample_time'
@@ -106,6 +109,8 @@ class MotionAccumulator:
             else:
                 try:
                     left, right, self.encoder_yaw_rate = interval_motion(self.previous, row)
+                    dt = row['sample_time_s']-self.previous['sample_time_s']
+                    self.wheel_speeds = (left/dt, right/dt)
                     self.pose = midpoint_pose(*self.pose, left, right, WHEEL_TRACK_M)
                     correction = gyro_bias_correction(row)
                     if correction:
@@ -121,8 +126,12 @@ class MotionAccumulator:
     def public(self, target_seq):
         complete = self.last_seq == target_seq
         usable = complete and self.state in ('anchoring', 'tracking')
+        projected = (motion_forecast(self.pose, *self.wheel_speeds, WHEEL_TRACK_M)[-1]
+                     if complete and self.state == 'tracking' and self.wheel_speeds is not None else None)
         return dict(state=self.state if complete else 'loading',
             pose=list(self.pose) if usable else None,
+            forecast_pose=list(projected) if projected is not None else None,
+            forecast_horizon_s=5.0,
             residual_rad_s=self.residual if complete else None,
             encoder_yaw_rate_rad_s=self.encoder_yaw_rate if complete else None,
             origin_seq=self.origin_seq, origin_time_s=self.origin_time_s,
