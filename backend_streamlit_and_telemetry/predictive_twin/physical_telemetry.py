@@ -10,7 +10,7 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, Integer, JS
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from .commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction
+from .commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction, pack_discharge_scenario
 from .observed_energy import observed_energy
 from .observed_motion import observed_motion
 
@@ -42,7 +42,7 @@ def read_records(db, limit=50):
 def display_payload(db, now=None):
     empty = dict(state='unavailable', label='Telemetry storage unavailable', age_s=None, fresh=False,
                  measurements={}, history=[], recommendations=['Complete the protected EMQX forwarding connection to store physical readings.'],
-                 commissioning=profile_payload(), wheel_estimates={}, gyro_estimates={}, energy_observation={}, motion_observation={},
+                 commissioning=profile_payload(), wheel_estimates={}, gyro_estimates={}, energy_observation={}, motion_observation={}, runtime_scenario={},
                  models_ready=False, model_detail='Wheel geometry and reported stationary Z bias are recorded. Direction evidence, battery calibration and motion validation are required before pose and runtime predictions.')
     if db is None or not isinstance(getattr(db, 'engine', None), Engine):
         return empty
@@ -104,4 +104,5 @@ def display_payload(db, now=None):
             'gyro_estimates': gyro_bias_correction(row) if fresh else {},
             'energy_observation': {**energy, 'received_at':received.isoformat(), 'fresh':fresh},
             'motion_observation': motion if fresh else {},
+            'runtime_scenario': pack_discharge_scenario(row) if fresh else {},
             'history': recent, 'recommendations': recommendations}

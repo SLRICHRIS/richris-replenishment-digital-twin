@@ -240,23 +240,64 @@
       );
       const forecastAllowed =
         available && !r.continuity_lost && r.quality === 'OK' && d.residual_valid !== false;
-      text(key + 'runtime', forecastAllowed ? number(r?.runtime_hours, 2, ' h') : 'Unavailable');
-      text(key + 'forecast', forecastAllowed ? position(r?.forecast_pose) : 'Unavailable');
+      const recordedForecast = !available && !!physical;
+      const scenario = physicalInput ? physical.runtime_scenario || {} : {};
+      text(
+        key + 'runtime-label',
+        recordedForecast ? '100% to 20% · reported-pack scenario' : 'Time until 20% charge',
+      );
+      text(
+        key + 'runtime',
+        forecastAllowed
+          ? number(r?.runtime_hours, 2, ' h')
+          : physicalInput && scenario.state === 'ready'
+            ? number(scenario.hours, 2, ' h')
+            : physicalInput && scenario.state === 'no_positive_discharge'
+              ? 'No positive discharge'
+              : 'Unavailable',
+      );
+      text(
+        key + 'forecast',
+        forecastAllowed
+          ? position(r?.forecast_pose)
+          : physicalInput && motion.state === 'tracking'
+            ? position(motion.forecast_pose)
+            : 'Unavailable',
+      );
+      $(key + 'runtime-note').hidden = !recordedForecast;
+      text(
+        key + 'runtime-note',
+        !physicalInput
+          ? 'Waiting for fresh ESP32 battery readings.'
+          : scenario.state === 'reported_settings_unavailable'
+            ? 'The reported pack settings are unavailable.'
+            : scenario.state === 'battery_unavailable' || !scenario.state
+              ? 'Waiting for a valid, current battery sample. Input below 1 V cannot support this scenario.'
+              : `Scenario only: reported ${number(scenario.capacity_ah, 1, ' Ah')} capacity, assumed ${number(scenario.assumed_start_soc * 100, 0, '%')} start and 20% reserve, holding the latest motor-branch current constant. Other loads and actual remaining charge are unknown.${scenario.state === 'no_positive_discharge' ? ' A finite discharge time cannot be calculated at zero or negative current.' : ''}`,
+      );
       text(
         key + 'forecast-note',
-        !available
-          ? payload.notice
-            ? payload.notice.label + '. Forecasts are unavailable.'
-            : 'Waiting for current, valid readings. Forecasts are withheld.'
-          : r.continuity_lost
-            ? 'Unavailable after data loss: the accumulated estimates are partial. A new measured trial is needed for quantitative forecasts.'
-            : !Object.keys(d).length
-              ? 'Waiting for a second valid sample to calculate motion and battery use.'
-              : d.residual_valid === false
-                ? 'Unavailable for this interval because sensor packets are missing.'
-                : !(raw.battery_current_a > 0)
-                  ? 'Runtime is unavailable while charging or at zero current. Motion projection assumes unchanged wheel speeds.'
-                  : 'Assumes unchanged wheel speeds and battery current, until an assumed 20% charge reserve. This is not a planned route or a battery-life guarantee.',
+        recordedForecast
+          ? !physicalInput
+            ? 'Waiting for fresh ESP32 wheel readings.'
+            : motion.state === 'tracking' && Array.isArray(motion.forecast_pose)
+              ? 'Local projection if the last wheel speeds continued for 5 seconds. Direction follows motor-command estimates; this is not a planned route or a prediction of the expiring motor command.'
+              : motion.state === 'loading'
+                ? 'Rebuilding the local position from recorded samples.'
+                : 'Waiting for a consistent wheel interval in the current local frame.'
+          : !available
+            ? payload.notice
+              ? payload.notice.label + '. Forecasts are unavailable.'
+              : 'Waiting for current, valid readings. Forecasts are withheld.'
+            : r.continuity_lost
+              ? 'Unavailable after data loss: the accumulated estimates are partial. A new measured trial is needed for quantitative forecasts.'
+              : !Object.keys(d).length
+                ? 'Waiting for a second valid sample to calculate motion and battery use.'
+                : d.residual_valid === false
+                  ? 'Unavailable for this interval because sensor packets are missing.'
+                  : !(raw.battery_current_a > 0)
+                    ? 'Runtime is unavailable while charging or at zero current. Motion projection assumes unchanged wheel speeds.'
+                    : 'Assumes unchanged wheel speeds and battery current, until an assumed 20% charge reserve. This is not a planned route or a battery-life guarantee.',
       );
       text(key + 'state', raw.robot_state || 'Unavailable');
       const message = observingMotion

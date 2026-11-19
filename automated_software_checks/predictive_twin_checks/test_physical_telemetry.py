@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import create_engine, select
 
 from backend_streamlit_and_telemetry.predictive_twin.physical_telemetry import metadata, samples, display_payload, read_records
-from backend_streamlit_and_telemetry.predictive_twin.commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction
+from backend_streamlit_and_telemetry.predictive_twin.commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction, pack_discharge_scenario
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -67,6 +67,7 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     assert result['wheel_estimates'] == {}
     assert result['gyro_estimates'] == {}
     assert result['motion_observation'] == {}
+    assert result['runtime_scenario'] == {}
     assert len(result['history']) == 1
     assert result['energy_observation']['fresh'] is False
     assert result['energy_observation']['received_at'] == row['received_at'].isoformat()
@@ -87,6 +88,8 @@ def test_energy_comes_from_stored_battery_samples_without_model_calibration(phys
     result=display_payload(physical_db, now=now)
     energy=result['energy_observation']
     assert result['fresh'] and not result['models_ready']
+    assert result['runtime_scenario']['hours']==pytest.approx(7.04)
+    assert result['runtime_scenario']['actual_remaining_runtime'] is False
     assert energy['net_wh']==pytest.approx(2/3600)
     assert energy['covered_s']==1 and energy['intervals']==2
     assert display_payload(physical_db, now=now)['energy_observation']==energy
@@ -96,6 +99,7 @@ def test_energy_comes_from_stored_battery_samples_without_model_calibration(phys
     assert all(energy[key]==value for key,value in recovered.items())
     last_recorded=display_payload(physical_db,now=now+timedelta(seconds=10))
     assert last_recorded['measurements']=={}
+    assert last_recorded['runtime_scenario']=={}
     assert last_recorded['energy_observation']['net_wh']==energy['net_wh']
     assert last_recorded['energy_observation']['fresh'] is False
     newer={**records[-1],'seq':3,'sample_time_s':2.5,'battery_sample_time_s':2.5,
@@ -244,3 +248,40 @@ def test_motion_reader_replays_stored_evidence_once_and_keeps_model_isolation(ph
     with physical_db.engine.connect() as connection:
         recovered=MotionMonitor().read(connection,samples,rows[-1])
     assert recovered==result['motion_observation']
+
+
+def test_reported_pack_scenario_is_explicit_and_never_changes_actual_soc_or_model_readiness():
+    measurement=dict(battery_available=True,battery_voltage_v=7.2,battery_current_a=.5,
+                     sample_time_s=10,battery_sample_time_s=9.8)
+    result=pack_discharge_scenario(measurement)
+    assert result['hours']==pytest.approx(3.52)
+    assert result['capacity_ah']==2.2 and result['assumed_start_soc']==1
+    assert result['reserve_soc']==.2 and result['scope']=='motor_branch_only'
+    assert result['actual_remaining_runtime'] is False
+    assert profile_payload()['initial_soc'] is None
+    assert profile_payload()['models_ready'] is False
+
+
+@pytest.mark.parametrize('current', [0,-.0005,-.5])
+def test_nonpositive_current_has_no_finite_pack_discharge_scenario(current):
+    result=pack_discharge_scenario(dict(battery_available=True,battery_voltage_v=7.2,
+        battery_current_a=current,sample_time_s=10,battery_sample_time_s=10))
+    assert result['state']=='no_positive_discharge' and result['hours'] is None
+
+
+@pytest.mark.parametrize('change', [dict(battery_available=False),dict(battery_voltage_v=.8),
+    dict(battery_current_a=float('nan')),dict(battery_current_a=True),
+    dict(battery_sample_time_s=9),dict(battery_sample_time_s=11)])
+def test_invalid_or_old_battery_sample_cannot_create_runtime(change):
+    measurement=dict(battery_available=True,battery_voltage_v=7.2,battery_current_a=.5,
+                     sample_time_s=10,battery_sample_time_s=10)
+    result=pack_discharge_scenario({**measurement,**change})
+    assert result['state']=='battery_unavailable' and result['hours'] is None
+
+
+def test_pack_scenario_needs_reported_settings_and_reports_overflow_as_unavailable():
+    measurement=dict(battery_available=True,battery_voltage_v=7.2,battery_current_a=.5,
+                     sample_time_s=10,battery_sample_time_s=10)
+    assert pack_discharge_scenario(measurement,{})['state']=='reported_settings_unavailable'
+    result=pack_discharge_scenario({**measurement,'battery_current_a':1e-320})
+    assert result['hours'] is None and result['state']=='battery_unavailable'

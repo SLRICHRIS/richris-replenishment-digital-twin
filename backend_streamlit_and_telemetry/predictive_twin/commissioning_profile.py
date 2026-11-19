@@ -72,3 +72,32 @@ def gyro_bias_correction(measurements, profile=None):
         return {}
     return dict(corrected_gyro_rad_s=raw-bias, bias_rad_s=bias,
                 bias_source=profile.get('gyro_bias_source', 'operator_reported_stationary'))
+
+
+def pack_discharge_scenario(measurements, profile=None):
+    """Reported full-pack to reserve scenario; never actual remaining runtime/SOC."""
+    profile = profile_payload() if profile is None else profile
+    reported = profile.get('reported_battery', {})
+    capacity, start = reported.get('capacity_ah'), reported.get('initial_soc')
+    current = measurements.get('battery_current_a')
+    valid = lambda value: type(value) in (int, float) and isfinite(value)
+    result = dict(state='battery_unavailable', hours=None, capacity_ah=capacity,
+                  assumed_start_soc=start, reserve_soc=.2,
+                  scope='motor_branch_only', kind='reported_pack_scenario',
+                  actual_remaining_runtime=False)
+    if (not valid(capacity) or capacity <= 0 or not valid(start) or not 0 <= start <= 1
+            or reported.get('discharge_positive') is not True):
+        return {**result, 'state':'reported_settings_unavailable'}
+    voltage = measurements.get('battery_voltage_v')
+    sample_time = measurements.get('sample_time_s')
+    battery_time = measurements.get('battery_sample_time_s')
+    if (measurements.get('battery_available') is not True or not valid(voltage)
+            or not 1 <= voltage <= 32 or not valid(current)
+            or not valid(sample_time) or not valid(battery_time)
+            or not 0 <= sample_time-battery_time <= .500001):
+        return result
+    if current <= 0:
+        return {**result, 'state':'no_positive_discharge', 'current_a':current}
+    hours = max(0, start-.2)*capacity/current
+    return {**result, 'state':'ready' if isfinite(hours) else 'battery_unavailable',
+            'hours':hours if isfinite(hours) else None, 'current_a':current}
