@@ -1,5 +1,29 @@
 # Physical AMR-01 sensor recording
 
+## Recorded electrical energy
+
+The Battery state card calculates net Wh directly from stored INA219 voltage,
+current and battery acquisition timestamps, independently of wheel calibration
+or the SOC model. It uses trapezoidal integration of signed electrical power.
+Positive energy follows the configured discharge-positive current convention;
+negative energy follows reported reverse current, including any sensor offset.
+
+The total covers observed motor-branch intervals in the current ESP32 boot,
+starting with its first stored sample. It is not a whole-pack capacity or SOC
+measurement. Missing packets, unavailable battery readings, backwards clocks
+and sample gaps over two seconds are omitted. The card reports covered time
+and indicates omissions. If the feed stops, the accumulated value remains
+visible as a clearly labelled last-recorded total. Its timestamp is attached to
+the value; old instantaneous sensor readings remain withheld as live data.
+
+The read-only reader reconstructs the total from durable records after restart,
+then processes only new rows. Each refresh reads at most 2,000 narrow records
+through the existing robot/boot/sequence primary key, with a serialized cache
+per database engine. Duplicate refreshes cannot count a record twice. Long
+recoveries show calculation progress until the latest record is included.
+
+## Recording path
+
 The installed ESP32 sends `mh_ir_commissioning` observations to
 `robot/amr01/commissioning`. EMQX forwards that exact topic to an authenticated
 HTTPS receiver on Neon Functions. The receiver validates the device packet and

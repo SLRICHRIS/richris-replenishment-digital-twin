@@ -106,12 +106,37 @@ assert.match(d.getElementById('hardware-summary').textContent, /Receiving physic
 assert.equal(d.getElementById('python-amr01-age').textContent, '0.5 s');
 assert.equal(d.getElementById('python-amr01-battery-input-note').hidden, false);
 assert.match(d.getElementById('python-amr01-battery-input-note').textContent, /below 1 V/);
+payload.physical_telemetry.energy_observation = {
+  state: 'ready',
+  net_wh: -0.00001234,
+  covered_s: 30,
+  skipped_intervals: 1,
+};
+render();
+assert.equal(d.getElementById('python-amr01-energy').textContent, '-0.00001234 Wh');
+assert.match(
+  d.getElementById('python-amr01-energy-note').textContent,
+  /30.0 s.*recorded intervals/,
+);
+assert.match(d.getElementById('python-amr01-energy-note').textContent, /omitted/);
+assert.equal(d.getElementById('python-amr01-soc').textContent, 'Unavailable');
+payload.physical_telemetry.energy_observation = { state: 'anchoring', net_wh: null };
+render();
+assert.match(d.getElementById('python-amr01-energy').textContent, /Waiting for two/);
+payload.physical_telemetry.energy_observation = { state: 'loading', net_wh: null };
+render();
+assert.match(d.getElementById('python-amr01-energy').textContent, /Calculating/);
+payload.physical_telemetry.energy_observation = { state: 'ready', net_wh: 0, covered_s: 1 };
+render();
+assert.equal(d.getElementById('python-amr01-energy').textContent, '0.00000000 Wh');
 payload.physical_telemetry.fresh = false;
 payload.physical_telemetry.state = 'stale';
 payload.physical_telemetry.label = 'Telemetry out of date';
 payload.physical_telemetry.age_s = 997.8;
 d.querySelector('.physical-guidance').open = true;
 render();
+assert.equal(d.getElementById('python-amr01-energy').textContent, '0.00000000 Wh');
+assert.match(d.getElementById('python-amr01-energy-note').textContent, /Last recorded total/);
 assert.equal(d.getElementById('physical-voltage').textContent, '—');
 assert.equal(d.getElementById('physical-voltage').getAttribute('aria-label'), 'Unavailable');
 assert.equal(d.getElementById('physical-status').textContent, 'Telemetry out of date');

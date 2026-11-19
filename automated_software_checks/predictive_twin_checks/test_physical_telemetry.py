@@ -62,6 +62,58 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     assert result['measurements'] == {} and result['models_ready'] is False
     assert result['wheel_estimates'] == {}
     assert len(result['history']) == 1
+    assert result['energy_observation']['fresh'] is False
+    assert result['energy_observation']['received_at'] == row['received_at'].isoformat()
+
+
+def test_energy_comes_from_stored_battery_samples_without_model_calibration(physical_db):
+    row = synthetic_record()
+    records = []
+    for seq in range(3):
+        record = {**row, 'seq':seq, 'sample_time_s':1+seq*.5,
+                  'battery_sample_time_s':1+seq*.5, 'battery_available':True,
+                  'battery_voltage_v':8.0, 'battery_current_a':.25,
+                  'received_at':row['received_at']+timedelta(seconds=seq*.5)}
+        records.append(record)
+    with physical_db.engine.begin() as connection:
+        connection.execute(samples.insert(), records)
+    now=records[-1]['received_at']+timedelta(seconds=.1)
+    result=display_payload(physical_db, now=now)
+    energy=result['energy_observation']
+    assert result['fresh'] and not result['models_ready']
+    assert energy['net_wh']==pytest.approx(2/3600)
+    assert energy['covered_s']==1 and energy['intervals']==2
+    assert display_payload(physical_db, now=now)['energy_observation']==energy
+    from backend_streamlit_and_telemetry.predictive_twin.observed_energy import EnergyMonitor
+    with physical_db.engine.connect() as connection:
+        recovered=EnergyMonitor().read(connection,samples,records[-1])
+    assert all(energy[key]==value for key,value in recovered.items())
+    last_recorded=display_payload(physical_db,now=now+timedelta(seconds=10))
+    assert last_recorded['measurements']=={}
+    assert last_recorded['energy_observation']['net_wh']==energy['net_wh']
+    assert last_recorded['energy_observation']['fresh'] is False
+    newer={**records[-1],'seq':3,'sample_time_s':2.5,'battery_sample_time_s':2.5,
+           'received_at':now+timedelta(seconds=.5)}
+    with physical_db.engine.begin() as connection:connection.execute(samples.insert(),newer)
+    advanced=display_payload(physical_db,now=newer['received_at'])
+    assert advanced['energy_observation']['net_wh']==pytest.approx(3/3600)
+    reboot={**newer,'boot_id':'f'*16,'seq':0,'sample_time_s':.5,'battery_sample_time_s':.5,
+            'received_at':newer['received_at']+timedelta(seconds=.5)}
+    with physical_db.engine.begin() as connection:connection.execute(samples.insert(),reboot)
+    assert display_payload(physical_db,now=reboot['received_at'])['energy_observation']['state']=='anchoring'
+
+
+def test_large_boot_energy_recovery_is_bounded_per_refresh(physical_db, monkeypatch):
+    import backend_streamlit_and_telemetry.predictive_twin.observed_energy as energy
+    monkeypatch.setattr(energy,'READ_BATCH',2)
+    row=synthetic_record()
+    records=[{**row,'seq':seq,'sample_time_s':1+seq*.5,'battery_sample_time_s':1+seq*.5,
+              'received_at':row['received_at']+timedelta(seconds=seq*.5)} for seq in range(5)]
+    with physical_db.engine.begin() as connection:connection.execute(samples.insert(),records)
+    now=records[-1]['received_at']
+    assert display_payload(physical_db,now=now)['energy_observation']['state']=='loading'
+    assert display_payload(physical_db,now=now)['energy_observation']['state']=='loading'
+    assert display_payload(physical_db,now=now)['energy_observation']['state']=='ready'
 
 
 def test_future_broker_clock_is_not_live_and_archive_is_bounded(physical_db):

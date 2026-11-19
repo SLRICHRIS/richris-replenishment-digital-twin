@@ -165,12 +165,36 @@
       $(key + 'battery-input-note').hidden = !physicalInput;
       text(
         key + 'battery-input-note',
-        'Raw electrical observations. SOC and accumulated energy require battery calibration.' +
+        'Raw electrical observations. SOC requires a starting-charge reference and usable capacity.' +
           (Number.isFinite(raw.battery_voltage_v) && raw.battery_voltage_v < 1
             ? ' Input is below 1 V; check battery power and INA219 VIN connections.'
             : ''),
       );
-      text(key + 'energy', available ? number(r.energy_wh, 4, ' Wh') : 'Unavailable');
+      const energy = physical?.energy_observation || {};
+      const recordedEnergy = !available && !!energy.state;
+      text(
+        key + 'energy',
+        available
+          ? number(r.energy_wh, 4, ' Wh')
+          : recordedEnergy && Number.isFinite(energy.net_wh)
+            ? number(energy.net_wh, 8, ' Wh')
+            : recordedEnergy && energy.state === 'loading'
+              ? 'Calculating stored samples…'
+              : recordedEnergy && energy.state === 'anchoring'
+                ? 'Waiting for two battery samples'
+                : 'Unavailable',
+      );
+      $(key + 'energy-note').hidden = !recordedEnergy;
+      $(key + 'energy').title =
+        recordedEnergy && energy.received_at ? 'Recorded through ' + energy.received_at : '';
+      text(
+        key + 'energy-note',
+        Number.isFinite(energy.net_wh)
+          ? `${physical?.fresh === true ? '' : 'Last recorded total; the sensor feed is out of date. '}Motor-branch estimate over ${number(energy.covered_s, 1, ' s')} of recorded intervals in this ESP32 boot. Positive = discharge; negative follows the reported reverse current.${energy.skipped_intervals ? ' Missing or invalid intervals are omitted.' : ''}`
+          : energy.state === 'loading'
+            ? 'Rebuilding the energy total from stored samples.'
+            : 'Energy will appear after two valid battery samples with increasing timestamps.',
+      );
       text(
         key + 'speed',
         `L = ${number(d.v_left_m_s, 3, ' m/s')}\nR = ${number(d.v_right_m_s, 3, ' m/s')}`,
