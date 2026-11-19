@@ -461,6 +461,10 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   $('python-database-inspection').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
   );
+  assert.equal(doc.body.dataset.view, 'architecture');
+  $('tab-architecture').dispatchEvent(
+    new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+  );
   assert.equal(doc.body.dataset.view, 'environment');
   $('tab-environment').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),

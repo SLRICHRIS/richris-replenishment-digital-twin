@@ -1357,6 +1357,11 @@ function render() {
   motion.sync();
 }
 const pages = {
+  architecture: {
+    title: 'System architecture',
+    context: 'How the complete system works',
+    summary: 'Explore the sensor, vision, approval and power pipelines for AMR-01.',
+  },
   vision: {
     title: 'Overhead vision routing',
     context: 'Camera setup & route review',
@@ -1964,6 +1969,13 @@ function updateSourceUI() {
     $('page-mode').dataset.kind = 'advisory';
     $('rail-mode').textContent = 'Guarded route control';
     $('rail-detail').textContent = 'Verify physical setup before approving movement';
+  }
+  if (activePage === 'architecture') {
+    $('source-badge').textContent = 'System guide';
+    $('page-mode').textContent = 'Read-only architecture';
+    $('page-mode').dataset.kind = 'advisory';
+    $('rail-mode').textContent = 'Explore the system';
+    $('rail-detail').textContent = 'Measurements, decisions and verified outcomes';
   }
   document
     .querySelectorAll('[data-floor-source]')

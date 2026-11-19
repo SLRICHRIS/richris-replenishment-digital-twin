@@ -460,6 +460,13 @@ assert.equal(
   'keyboard navigation includes the shared database view',
 );
 get('python-database-inspection').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
+assert.equal(
+  doc.body.dataset.view,
+  'architecture',
+  'architecture remains in the hosted navigation',
+);
+assert.equal(get('page-mode').textContent, 'Read-only architecture');
+get('tab-architecture').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(doc.body.dataset.view, 'environment', 'keyboard navigation skips retired views');
 assert.equal(
   run('sceneState().sensorWorkspace'),
