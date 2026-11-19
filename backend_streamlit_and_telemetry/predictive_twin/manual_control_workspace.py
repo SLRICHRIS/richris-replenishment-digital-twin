@@ -68,6 +68,7 @@ def workspace(mode):
             s = live_service(p)
             s.coordinator.touch(owner())
             value = s.coordinator.public(owner())
+            value['transport'] = s.public_transport()
         except Exception:
             missing.append('Manual transport unavailable or another controller owns AMR-01')
     else:

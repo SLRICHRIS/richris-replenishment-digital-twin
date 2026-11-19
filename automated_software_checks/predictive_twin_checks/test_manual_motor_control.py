@@ -174,3 +174,73 @@ def test_changed_controller_sequence_invalidates_a_pending_review():
     t[0]+=150;beat(c,t,3,command=9)
     with pytest.raises(ValueError,match='feedback changed'):c.approve(OWNER,rid,'Old review')
     assert not out
+
+
+def test_feedback_diagnostics_never_accept_bad_or_stale_packets():
+    import json
+    c,t,out=fixture();t[0]+=600
+    future=signed(('H1',BOOT,EPOCH,3,'0'*32,0,'idle',0,0,7400,1,t[0]+2000),KEY)
+    with pytest.raises(ValueError):c.observe(future)
+    value=c.public(OWNER)
+    assert not value['ready'] and value['hardware'] is None
+    assert value['diagnostics']['last_issue']=='clock_ahead'
+    assert value['diagnostics']['clock_age_ms']==-2000
+    old=signed(('H1',BOOT,EPOCH,4,'0'*32,0,'idle',0,0,7400,1,t[0]-2000),KEY)
+    with pytest.raises(ValueError):c.observe(old)
+    assert c.public(OWNER)['diagnostics']['last_issue']=='packet_too_old'
+    invalid=signed(('H1',BOOT,EPOCH,5,'0'*32,0,'idle',0,0,7400,1,t[0]),'f'*64)
+    with pytest.raises(ValueError):c.observe(invalid)
+    value=c.public(OWNER)
+    assert not value['ready'] and value['diagnostics']['clock_age_ms'] is None
+    assert value['diagnostics']['last_issue']=='authentication_failed'
+    c.observe(future,retained=True)
+    assert c.public(OWNER)['diagnostics']['last_issue']=='retained_packet'
+    assert KEY not in json.dumps(value) and invalid not in json.dumps(value)
+    assert not out
+    t[0]+=150;beat(c,t,6);t[0]+=150;beat(c,t,7)
+    value=c.public(OWNER)
+    assert value['ready'] and value['diagnostics']['last_issue']==''
+    assert value['diagnostics']['accepted_count']==4
+
+
+def test_broker_diagnostics_distinguish_login_and_topic_rejection():
+    from types import SimpleNamespace
+    from backend_streamlit_and_telemetry.vision_control.service import Service
+    class Reason:
+        def __init__(self,failure):self.is_failure=failure
+        def __str__(self):return 'Not authorized' if self.is_failure else 'Success'
+    service=object.__new__(Service)
+    service.connected=False;service.coordinator=SimpleNamespace(connected=False)
+    service.transport_state='connecting';service.transport_reason=''
+    subscribed=[];client=SimpleNamespace(subscribe=subscribed.append)
+    service.on_connect(client,None,None,Reason(True),None)
+    assert service.public_transport()['state']=='login_rejected' and not service.connected
+    service.disconnected()
+    assert service.public_transport()['state']=='login_rejected'
+    service.on_connect(client,None,None,Reason(False),None)
+    assert service.public_transport()['state']=='subscribing' and subscribed
+    service.on_subscribe(client,None,1,[Reason(False),Reason(False)],None)
+    assert service.public_transport()['state']=='subscribed' and service.connected
+    service.on_subscribe(client,None,2,[Reason(True)],None)
+    assert service.public_transport()['state']=='subscription_rejected' and not service.connected
+    assert not service.coordinator.connected
+
+
+def test_coalesced_page_events_restore_manual_presence_and_cancel_only_departing_owner():
+    from types import SimpleNamespace
+    import threading
+    from backend_streamlit_and_telemetry.predictive_twin.control_presence import synchronize_control_view
+    cancelled=[]
+    def service(name):return SimpleNamespace(stop=threading.Event(),coordinator=SimpleNamespace(cancel=lambda owner:cancelled.append((name,owner))))
+    state={'manual_view':False,'vision_view':True,'manual_service':service('manual'),'vision_service':service('vision'),'manual_owner':OWNER,'vision_owner':'e'*32}
+    # Selecting Manual emitted manual:true followed by vision:false. Either last
+    # Streamlit component value must carry the full selected control mode.
+    for last_action in ('manual_control','vision_execution'):
+        state['manual_view']=False;state['vision_view']=True
+        assert synchronize_control_view(state,'manual')
+        assert state['manual_view'] and not state['vision_view'],last_action
+    assert all(name=='vision' and owner=='e'*32 for name,owner in cancelled)
+    assert synchronize_control_view(state,None)
+    assert not state['manual_view'] and not state['vision_view']
+    assert ('manual',OWNER) in cancelled
+    assert not synchronize_control_view(state,'untrusted')

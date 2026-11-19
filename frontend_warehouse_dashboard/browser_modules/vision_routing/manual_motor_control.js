@@ -9,6 +9,7 @@ export function createManualMotorPanel(scope) {
       <p>Use your working AMR-01 through Wi-Fi. Choose a direction, review one 250 ms motor burst, then approve it. The ESP32 expires the command locally.</p>
       <p>Inspect the space around the vehicle before each move. PWM is motor power, not a distance or speed setting.</p>
       <div class="pr-metrics"><div><strong>1 · Connect</strong><p id="mc-connection">Private connection setup required</p></div><div><strong>2 · Review</strong><p>Choose direction and motor power</p></div><div><strong>3 · Approve</strong><p>One burst, then automatic expiry</p></div></div>
+      <details id="mc-diagnostics" hidden><summary>Connection details</summary><p id="mc-transport"></p><p id="mc-packets"></p><p id="mc-clock"></p><p id="mc-hint"></p></details>
       <p id="mc-feedback" role="status" aria-live="polite"></p>
       <ul id="mc-missing"></ul>
       <button id="mc-source" type="button">Use physical AMR source</button>
@@ -47,6 +48,61 @@ export function createManualMotorPanel(scope) {
       : value.hardware
         ? 'ESP32 connected · waiting for ready zero outputs'
         : 'Waiting for authenticated ESP32 feedback';
+    const diagnostics = value.diagnostics || {},
+      transport = value.transport || {};
+    const transportLabels = {
+      connecting: 'Connecting to EMQX',
+      disconnected: 'Disconnected from EMQX',
+      subscribing: 'Connected; requesting feedback subscription',
+      subscribed: 'Connected; feedback subscription accepted',
+      login_rejected: 'EMQX rejected the website login',
+      subscription_rejected: 'EMQX rejected the feedback subscription',
+    };
+    const issueLabels = {
+      authentication_failed:
+        'Receiver packets arrived, but authentication failed. Check that the ESP32 and website use the same control key.',
+      invalid_packet: 'Receiver packets arrived but failed the expected format checks.',
+      retained_packet: 'Retained feedback was ignored. Live receiver packets are required.',
+      old_connection:
+        'An old receiver connection was ignored. Re-enable the operator session to establish a fresh connection.',
+      old_sequence: 'Duplicate or older receiver feedback was ignored.',
+      clock_ahead:
+        'The authenticated ESP32 clock is ahead of the server. Check Internet time synchronisation on the ESP32.',
+      packet_too_old: 'Authenticated receiver packets arrived outside the 500 ms freshness window.',
+    };
+    el('diagnostics').hidden = !value.authorized;
+    el('transport').textContent =
+      `Website MQTT: ${transportLabels[transport.state] || 'Waiting for the active manual page'}${transport.reason ? ' · ' + transport.reason : ''}`;
+    el('packets').textContent =
+      `Receiver packets: ${diagnostics.packet_count || 0} received · ${diagnostics.accepted_count || 0} accepted · ${diagnostics.rejected_count || 0} ignored`;
+    el('clock').textContent = Number.isFinite(diagnostics.clock_age_ms)
+      ? `Last authenticated packet clock difference (server minus ESP32): ${Math.round(diagnostics.clock_age_ms)} ms`
+      : 'No authenticated packet clock sample';
+    el('hint').textContent =
+      issueLabels[diagnostics.last_issue] ||
+      (diagnostics.packet_count
+        ? 'Keep this page open while fresh, ready zero-output feedback is collected.'
+        : 'The ESP32 receiver must publish live feedback on robot/amr01/vision/hardware. Its command receiver is a separate MQTT connection from sensor telemetry.');
+    if (!value.ready && value.authorized) {
+      if (value.physical_mode === false)
+        el('connection').textContent = 'Select the physical AMR source';
+      else if (transport.state && transport.state !== 'subscribed')
+        el('connection').textContent = 'Website MQTT · ' + transportLabels[transport.state];
+      else if (!value.hardware && diagnostics.last_issue === 'authentication_failed')
+        el('connection').textContent =
+          'Receiver feedback authentication failed · open Connection details';
+      else if (
+        !value.hardware &&
+        ['clock_ahead', 'packet_too_old'].includes(diagnostics.last_issue)
+      )
+        el('connection').textContent =
+          'Receiver feedback rejected by clock/freshness check · open Connection details';
+      else if (!value.hardware && Number.isFinite(diagnostics.last_accepted_age_ms))
+        el('connection').textContent =
+          `Fresh receiver feedback missing · last accepted ${(diagnostics.last_accepted_age_ms / 1000).toFixed(1)} s ago`;
+      else if (!value.hardware && transport.connected)
+        el('connection').textContent = 'Website MQTT connected · no valid ESP32 receiver feedback';
+    }
     if (value.hardware && value.hardware.battery_voltage_v < 6.6)
       el('connection').textContent =
         `Battery ${value.hardware.battery_voltage_v.toFixed(2)} V · charge above 6.6 V for remote control`;

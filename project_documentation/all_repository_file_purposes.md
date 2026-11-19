@@ -301,3 +301,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/vision_routing/manual_motor_control.js` | Render attended manual motor review and bridge server-owned approvals. |
 | `project_documentation/manual_motor_control_setup.md` | Step-by-step private connection setup and feedback interpretation for manual AMR control. |
 | `project_maintenance_scripts/add_manual_receiver_to_working_sketch.py` | Implement or verify authenticated one-shot manual motor control. |
+
+| `backend_streamlit_and_telemetry/predictive_twin/control_presence.py` | Synchronize the selected manual or vision control page atomically when Streamlit coalesces view events; cancel only the departing session’s owned requests. |

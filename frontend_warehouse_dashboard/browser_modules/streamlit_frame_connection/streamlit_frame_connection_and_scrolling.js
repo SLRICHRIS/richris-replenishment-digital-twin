@@ -88,7 +88,22 @@
     if (latestPayload)
       document.dispatchEvent(new CustomEvent('python-twin:render', { detail: latestPayload }));
   });
-  let actionSequence = 0;
+  let actionSequence = 0,
+    controlPageLeaving = false;
+  window.addEventListener(
+    'pagehide',
+    () => {
+      controlPageLeaving = true;
+    },
+    { capture: true },
+  );
+  window.addEventListener(
+    'pageshow',
+    () => {
+      controlPageLeaving = false;
+    },
+    { capture: true },
+  );
   document.addEventListener('python-twin:action', (event) => {
     const action = event.detail;
     if (
@@ -136,9 +151,26 @@
         typeof action.active !== 'boolean')
     )
       return;
+    // Streamlit may retain only the last of the manual/vision view messages.
+    // Both carry the same complete selected mode, so either message restores it.
+    const selectedControl = document.getElementById('vision-routing-shell')?.dataset.mode;
+    let controlMode =
+      document.body.dataset.view === 'vision' && !document.hidden && !controlPageLeaving
+        ? selectedControl === 'manual'
+          ? 'manual'
+          : selectedControl === 'physical'
+            ? 'vision'
+            : null
+        : null;
+    const ownMode = action.action === 'manual_control' ? 'manual' : 'vision';
+    if (action.command === 'view' && action.active === false && controlMode === ownMode)
+      controlMode = null;
     send('streamlit:setComponentValue', {
       value: {
         action: action.action,
+        ...(['manual_control', 'vision_execution'].includes(action.action)
+          ? { control_mode: controlMode }
+          : {}),
         ...(action.action === 'sensor_source' ? { mode: action.mode } : {}),
         ...(action.action === 'demo_trial' ? { trial: action.trial } : {}),
         ...(action.action === 'human_review'

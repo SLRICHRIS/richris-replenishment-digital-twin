@@ -20,6 +20,7 @@ class Service:
         import paho.mqtt.client as mqtt
         self.stop=threading.Event(); self.connected=False; self.guard=threading.RLock(); self.closed=False
         self.created_at_ms=int(time.time()*1000)
+        self.transport_state='connecting'; self.transport_reason=''
         u=make_url(p['audit_url'])
         if not u.drivername.startswith('postgresql') or '-pooler' in (u.host or ''): raise ValueError('Use a direct PostgreSQL audit connection')
         self.engine=create_engine(u,pool_pre_ping=True,connect_args={'connect_timeout':5})
@@ -54,14 +55,29 @@ class Service:
 
     def disconnected(self):
         self.connected=False; self.coordinator.connected=False
+        if self.transport_state not in ('login_rejected','subscription_rejected'):
+            self.transport_state='disconnected'
+
+    def public_transport(self):
+        return dict(state=self.transport_state, connected=self.connected, reason=self.transport_reason)
+
 
     def on_connect(self,client,userdata,flags,reason,properties):
         self.disconnected()
-        if not reason.is_failure: client.subscribe([(topic,0) for topic in self.topics])
+        self.transport_reason=str(reason) if reason.is_failure else ''
+        if not reason.is_failure:
+            self.transport_state='subscribing'
+            client.subscribe([(topic,0) for topic in self.topics])
+        else: self.transport_state='login_rejected'
 
     def on_subscribe(self,client,userdata,mid,reasons,properties):
         if reasons and len(reasons)==len(self.topics) and all(not r.is_failure for r in reasons):
             self.connected=True; self.coordinator.connected=True
+            self.transport_state='subscribed'; self.transport_reason=''
+        else:
+            self.connected=False; self.coordinator.connected=False
+            self.transport_state='subscription_rejected'
+            self.transport_reason='Feedback topic subscription was rejected'
 
     def message(self,client,userdata,m):
         try:
