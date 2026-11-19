@@ -146,14 +146,24 @@
       text(
         key + 'gyro-input-note',
         Number.isFinite(recordedBias)
-          ? 'Raw device observation. The reported stationary Z bias is recorded; corrected model output awaits the remaining calibration.'
-          : 'Raw device observation. Calibrated bias and the corrected model rate still require measured calibration.',
+          ? 'Corrected Z yaw rate = raw Z yaw rate − recorded stationary Z bias. Both inputs use rad/s.'
+          : 'Raw device observation. Record the stationary Z bias to calculate the corrected Z yaw rate.',
       );
       text(
         key + 'bias',
         number(r?.gyro_bias_rad_s ?? recordedBias, r?.gyro_bias_rad_s == null ? 8 : 5),
       );
-      text(key + 'corrected-gyro', number(d.corrected_gyro_rad_s, 5));
+      text(
+        key + 'corrected-gyro',
+        number(
+          available
+            ? d.corrected_gyro_rad_s
+            : physicalInput
+              ? physical.gyro_estimates?.corrected_gyro_rad_s
+              : undefined,
+          5,
+        ),
+      );
       text(
         key + 'battery-input',
         `Voltage = ${number(raw.battery_voltage_v, physicalInput ? 3 : 2, ' V')}\nCurrent = ${number(raw.battery_current_a, physicalInput ? 4 : 3, ' A')}`,

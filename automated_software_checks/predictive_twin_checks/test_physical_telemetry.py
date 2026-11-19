@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import create_engine, select
 
 from backend_streamlit_and_telemetry.predictive_twin.physical_telemetry import metadata, samples, display_payload, read_records
-from backend_streamlit_and_telemetry.predictive_twin.commissioning_profile import profile_payload, wheel_magnitude_estimates
+from backend_streamlit_and_telemetry.predictive_twin.commissioning_profile import profile_payload, wheel_magnitude_estimates, gyro_bias_correction
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +45,7 @@ def test_live_raw_values_are_visible_without_authorizing_models_or_showing_devic
     assert result['commissioning']['gyro_bias_measured'] is True
     assert result['measurements']['rpm_calibration_confirmed'] is False
     assert result['wheel_estimates']['left_rpm_magnitude'] == pytest.approx(row['left_pulse_hz'] * 3)
+    assert result['gyro_estimates']['corrected_gyro_rad_s'] == pytest.approx(row['gyro_z_rad_s']-.00034906585039886593)
     assert any('below 1 V' in line for line in result['recommendations'])
     assert 'payload' not in result['measurements']
     assert 'payload_sha256' not in result['measurements']
@@ -61,6 +62,7 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     assert result['state'] == 'stale' and not result['fresh']
     assert result['measurements'] == {} and result['models_ready'] is False
     assert result['wheel_estimates'] == {}
+    assert result['gyro_estimates'] == {}
     assert len(result['history']) == 1
     assert result['energy_observation']['fresh'] is False
     assert result['energy_observation']['received_at'] == row['received_at'].isoformat()
@@ -177,3 +179,24 @@ def test_corrected_geometry_yields_unsigned_quantities_without_promoting_incompl
 def test_invalid_pulse_frequency_cannot_become_a_wheel_estimate(invalid):
     estimates = wheel_magnitude_estimates(dict(left_pulse_hz=invalid))
     assert all(value is None for value in estimates.values())
+
+
+@pytest.mark.parametrize('raw', [-.01306, 0, .00034906585039886593, .02])
+def test_raw_z_gyro_correction_needs_no_wheel_or_battery_calibration(raw):
+    result=gyro_bias_correction(dict(gyro_available=True,gyro_z_rad_s=raw))
+    assert result['corrected_gyro_rad_s']==pytest.approx(raw-.00034906585039886593)
+    assert result['bias_source']=='operator_reported_stationary'
+    assert profile_payload()['models_ready'] is False
+
+
+@pytest.mark.parametrize('raw', [None, True, float('nan'), float('inf'), '.02'])
+def test_invalid_raw_z_gyro_cannot_be_corrected(raw):
+    assert gyro_bias_correction(dict(gyro_available=True,gyro_z_rad_s=raw))=={}
+
+
+def test_missing_sensor_or_recorded_bias_keeps_correction_unavailable():
+    measurement=dict(gyro_available=True,gyro_z_rad_s=.02)
+    assert gyro_bias_correction({**measurement,'gyro_available':False})=={}
+    assert gyro_bias_correction(measurement,{})=={}
+    assert gyro_bias_correction(measurement,{**profile_payload(),'gyro_bias_measured':False})=={}
+    assert gyro_bias_correction(measurement,{**profile_payload(),'reported_gyro_bias_rad_s':{'z':None}})=={}
