@@ -195,6 +195,78 @@ render({
 assert.equal(el('recommendations').querySelector('img,script'), null);
 assert.equal(el('feedback').querySelector('svg'), null);
 assert.match(el('recommendations').textContent, /<img/);
+const observations = { ...physical, observation_only: true, review: null };
+render(observations);
+assert.equal(el('create').disabled, false);
+assert.match(el('step-1-detail').textContent, /Live sensor evidence/);
+assert.match(el('step-3-detail').textContent, /Fresh sensor follow-up/);
+assert.deepEqual(
+  Array.from(el('action').options, (o) => o.value),
+  ['no_action', 'inspect', 'recharge'],
+);
+assert.match(el('availability').textContent, /Observation review enabled/);
+const observationRow = {
+  ...row,
+  expires_at: now / 1000 + 30,
+  evidence: {
+    ...row.evidence,
+    source: 'live',
+    scope: 'physical_observation',
+    measurements: { battery_voltage_v: 6.2 },
+  },
+};
+render({ ...observations, review: observationRow });
+el('action').value = 'recharge';
+input('reason', 'Check battery power before the next drive');
+render({ ...observations, review: observationRow });
+assert.equal(el('action').value, 'recharge', 'Observation draft survives sensor polling');
+assert.equal(approve.textContent, 'Record decision');
+approve.click();
+assert.equal(actions.at(-1).intervention, 'recharge');
+const observationResult = {
+  ...observationRow,
+  state: 'observing',
+  decision: { action: 'recharge' },
+  verified_samples: 1,
+  events: [
+    {
+      state: 'observing',
+      detail: 'New reading',
+      observation: {
+        measurements: { battery_voltage_v: 6.3 },
+        recommendations: [{ title: 'Charge before driving' }],
+      },
+    },
+  ],
+};
+render({ ...observations, review: observationResult });
+assert.match(el('result-checks').textContent, /Not issued.*1 of 3/s);
+assert.match(el('result-note').textContent, /6.200 → 6.300 V/);
+assert.doesNotMatch(el('result-checks').textContent, /applied|AMR response/);
+render({
+  ...observations,
+  review: { ...observationResult, state: 'observed', verified_samples: 3 },
+});
+assert.match(el('state').textContent, /Follow-up readings recorded/);
+assert.match(el('result-note').textContent, /do not confirm/);
+assert.equal(el('create').disabled, false);
+render(
+  { ...observations, eligible: false },
+  {
+    insights: {
+      recommendations: [{ title: 'Restore the live ESP32 feed', detail: 'Check power and Wi-Fi.' }],
+    },
+  },
+);
+assert.match(el('checklist').textContent, /Restore the live ESP32 feed/);
+assert.doesNotMatch(el('summary-detail').textContent, /calibrat/);
+let driveNavigation = 0;
+d.getElementById('tab-vision').addEventListener('click', () => driveNavigation++);
+d.getElementById('vision-mode-manual').addEventListener('click', () => driveNavigation++);
+const count = actions.length;
+el('drive').click();
+assert.equal(driveNavigation, 2);
+assert.equal(actions.length, count, 'Drive shortcut navigates only; no motor command');
 w.dispatchEvent(new w.Event('pagehide'));
 w.close();
 console.log(

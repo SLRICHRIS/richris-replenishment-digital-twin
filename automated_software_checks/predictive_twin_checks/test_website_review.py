@@ -111,3 +111,27 @@ def test_rehearsal_resource_reset_does_not_crash_the_dashboard(browser, monkeypa
     payload=web.review_workspace(workspace_payload('demo'))
     assert payload['review'] is None and payload['can_review']
     assert 'reset' in payload['feedback'] and 'warehouse_review_baseline' not in state
+
+
+def test_observation_profile_needs_existing_private_writer_and_code_only():
+    private=dict(enabled=True,writer_url='postgresql+psycopg://worker:secret@direct/amr',access_code='x'*32)
+    profile,missing=service.observation_profile(dict(amr_connection=private))
+    assert profile.calibration is None and not missing
+    assert 'secret' not in repr(profile) and profile.access_code not in repr(profile)
+    for key in private:
+        incomplete=deepcopy(private);incomplete.pop(key)
+        assert service.observation_profile(dict(amr_connection=incomplete))[0] is None
+    with pytest.raises(ValueError,match='cannot enable motor'):
+        service.WebsiteReviewService(profile,transport=object())
+
+
+def test_observation_website_action_uses_server_context_without_calibration(browser,monkeypatch):
+    state,old,instance,factory=browser
+    import backend_streamlit_and_telemetry.predictive_twin.amr_connection as connection
+    monkeypatch.setattr(connection,'connection_profile',lambda _: (None,['Measured calibration']))
+    monkeypatch.setattr(web.st,'secrets',dict(amr_connection=dict(enabled=True,writer_url=old.writer_url,access_code=old.access_code)))
+    profile,_=service.observation_profile(web.st.secrets)
+    login(state,profile)
+    web.handle_website_action(dict(command='create',evidence={'forged':'sensor'}))
+    factory.assert_called_once_with(profile,None)
+    assert len(instance.create.call_args.args)==1 and not instance.create.call_args.kwargs

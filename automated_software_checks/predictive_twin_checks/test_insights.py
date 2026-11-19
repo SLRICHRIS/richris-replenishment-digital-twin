@@ -55,3 +55,39 @@ def test_missing_calibration_and_demo_sources_are_distinguished():
     payload = data()
     payload['mode'] = 'demo'
     assert predictive_insights(payload)['source'] == 'Demo example'
+
+
+def observation_data():
+    return dict(mode='live',observed_at=1000.,robots={},physical_telemetry=dict(
+        fresh=True,age_s=.1,commissioning=dict(profile_id='saved-settings'),
+        measurements=dict(robot_id='amr01',boot_id='physical-boot',seq=10,sample_time_s=20.,
+                          battery_available=True,battery_voltage_v=7.2,gyro_available=True),
+        gyro_estimates=dict(corrected_gyro_rad_s=.01),motion_observation=dict(residual_rad_s=.02),
+        energy_observation=dict(soc_scenario=dict(percent=99.,outside_physical_range=False))))
+
+
+def test_observation_guidance_reuses_saved_inputs_without_claiming_full_model_readiness():
+    p=observation_data();result=predictive_insights(p)
+    assert result['ready'] and result['scope']=='physical_observation'
+    assert result['recommendations'][0]['code']=='monitor'
+    assert 'Actual remaining charge is unknown' in result['metrics'][2]['detail']
+    assert not p['robots'] and 'advisory' not in result
+    p['physical_telemetry']['motion_observation']['residual_rad_s']=999.
+    assert predictive_insights(p)['recommendations'][0]['code']=='monitor'  # No invented fault threshold.
+
+
+def test_missing_low_and_stale_observations_produce_specific_guidance():
+    p=observation_data();physical=p['physical_telemetry'];raw=physical['measurements']
+    raw['battery_voltage_v']=6.2
+    assert predictive_insights(p)['recommendations'][0]['code']=='battery_low'
+    raw['battery_available']=False;raw['gyro_available']=False
+    assert [r['code'] for r in predictive_insights(p)['recommendations']]==['battery_input','imu_input']
+    physical['fresh']=False
+    result=predictive_insights(p)
+    assert not result['ready'] and not result['metrics']
+    assert result['recommendations'][0]['code']=='feed_unavailable'
+
+
+def test_out_of_range_charge_scenario_is_not_treated_as_actual_soc():
+    p=observation_data();p['physical_telemetry']['energy_observation']['soc_scenario'].update(percent=101.,outside_physical_range=True)
+    assert predictive_insights(p)['recommendations'][0]['code']=='charge_range'

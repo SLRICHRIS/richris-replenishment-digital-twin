@@ -10,6 +10,7 @@
     'blocked',
     'verified',
     'uncertain',
+    'observed',
   ];
   const labels = {
     pending: 'Your decision is needed',
@@ -23,6 +24,8 @@
     blocked: 'Approval saved; request not delivered',
     verified: 'Sensor effect confirmed',
     uncertain: 'Result not confirmed',
+    observing: 'Decision saved; collecting new readings',
+    observed: 'Follow-up readings recorded',
   };
   const text = (id, value) => {
     if ($(id) && $(id).textContent !== String(value ?? '')) $(id).textContent = String(value ?? '');
@@ -32,6 +35,7 @@
     lastEvents = null,
     lastReviewId = null,
     lastDemo = null,
+    lastObservation = null,
     timer;
   const emit = (detail) =>
     document.dispatchEvent(new CustomEvent('python-twin:action', { detail }));
@@ -47,8 +51,9 @@
   const mayDecide = () => access() && owns() && current.review?.state === 'pending' && !expired();
   function actionHelp() {
     const action = $('human-review-action').value;
-    const description =
-      action === 'no_action'
+    const description = current?.observation_only
+      ? 'Records your choice and follows new sensor readings. Use Drive control to stop before inspection or charging.'
+      : action === 'no_action'
         ? 'Save your review without changing robot operation.'
         : !current?.demo && !current?.commands_enabled
           ? 'Motor delivery is unavailable. This approval is recorded only; it cannot run later.'
@@ -57,8 +62,9 @@
             : 'Request half of the current controller speed limit. Check the observed response afterward.';
     text('human-review-action-help', description);
     const button = $('human-review-form').querySelector('button[value="approve"]');
-    button.textContent =
-      action === 'no_action'
+    button.textContent = current?.observation_only
+      ? 'Record decision'
+      : action === 'no_action'
         ? 'Save review'
         : !current?.demo && !current?.commands_enabled
           ? 'Record approval only'
@@ -131,11 +137,16 @@
         'The private decision log and review service must be available before a review can be recorded.',
       ]);
     if (!current.eligible && !steps.length) {
-      const notice = payload?.notice,
+      const observation = current.observation_only && payload?.insights?.recommendations?.[0],
+        notice = payload?.notice,
         robot = payload?.robots?.amr01;
       steps.push([
-        notice?.label || robot?.quality_label || 'Restore fresh, valid sensor readings',
-        notice?.detail ||
+        observation?.title ||
+          notice?.label ||
+          robot?.quality_label ||
+          'Restore fresh, valid sensor readings',
+        observation?.detail ||
+          notice?.detail ||
           robot?.quality_detail ||
           'Check power, Wi-Fi and sensor continuity. A valid calibrated model sample is needed.',
       ]);
@@ -171,6 +182,10 @@
           'Three new sensor observations met the requested limit after the matching AMR response.',
         uncertain:
           'The requested effect has not been confirmed. Inspect the AMR and the recorded evidence before another decision.',
+        observing:
+          'Your choice is saved. Collecting three distinct new readings; no motor command was issued.',
+        observed:
+          'Three new readings are recorded below. Inspecting or charging the vehicle still requires your observation.',
       };
       return [
         labels[r.state] || current.state_label,
@@ -185,7 +200,10 @@
     if (!current.eligible)
       return [
         'Waiting for usable sensor readings',
-        payload?.notice?.detail ||
+        (current.observation_only && payload?.insights?.recommendations?.[0]?.detail) ||
+          (current.observation_only &&
+            'Check ESP32 power, Wi-Fi and stored sensor forwarding. Fresh physical readings are required.') ||
+          payload?.notice?.detail ||
           payload?.robots?.amr01?.quality_detail ||
           'Fresh, continuous and calibrated readings are required. Check the preparation steps below.',
       ];
@@ -214,16 +232,20 @@
     if (r?.state === 'pending' && owns() && access() && !expired())
       return [
         'Choose your response',
-        current.eligible
-          ? 'Keep operation unchanged, request a speed reduction or request a controlled pause.'
-          : 'Fresh readings are unavailable. You can reject or defer; approval waits for valid evidence.',
+        current.observation_only && current.eligible
+          ? 'Keep monitoring, inspect the AMR or check/recharge its battery. This records a choice without moving the vehicle.'
+          : current.eligible
+            ? 'Keep operation unchanged, request a speed reduction or request a controlled pause.'
+            : 'Fresh readings are unavailable. You can reject or defer; approval waits for valid evidence.',
       ];
     if (r && active())
       return [
         owns() ? 'Follow the result' : 'View this operator’s review',
-        current.demo
-          ? 'Use the practice button below to simulate each response stage.'
-          : 'Wait for the AMR reply and follow-up sensor check.',
+        current.observation_only
+          ? 'Watch the next three distinct live readings. No AMR command or acknowledgement is involved.'
+          : current.demo
+            ? 'Use the practice button below to simulate each response stage.'
+            : 'Wait for the AMR reply and follow-up sensor check.',
       ];
     if (!current.demo && !current.authorized && current.can_unlock)
       return [
@@ -279,39 +301,52 @@
     $('human-review-result').hidden = !r || r.state === 'pending';
     if (!r) return;
     const noRequest = !r.command,
-      verified = r.state === 'verified';
+      verified = r.state === 'verified',
+      observation = r.evidence?.scope === 'physical_observation';
     text(
       'human-review-result-title',
-      verified ? 'Observed effect confirmed' : 'Request and observed response',
+      observation
+        ? 'Decision and sensor follow-up'
+        : verified
+          ? 'Observed effect confirmed'
+          : 'Request and observed response',
     );
-    const values = [
-      [
-        'Request',
-        noRequest
-          ? r.state === 'blocked'
-            ? 'Not delivered'
-            : 'No command sent'
-          : r.state === 'dispatching'
-            ? 'Sending'
-            : r.state === 'uncertain' && r.ack?.status !== 'applied'
-              ? 'Delivery unconfirmed'
-              : 'Sent',
-      ],
-      [
-        'AMR response',
-        r.ack?.status === 'applied'
-          ? 'Reported applied'
-          : r.ack?.status === 'rejected'
-            ? 'Rejected by AMR'
-            : noRequest
-              ? 'Not required'
-              : 'Waiting for reply',
-      ],
-      [
-        'Sensor check',
-        noRequest ? 'Not started' : String(r.verified_samples || 0) + ' of 3 qualifying readings',
-      ],
-    ];
+    const values = observation
+      ? [
+          ['Decision', r.decision ? 'Recorded' : 'Not recorded'],
+          ['Motor request', 'Not issued'],
+          ['Sensor follow-up', String(r.verified_samples || 0) + ' of 3 new readings'],
+        ]
+      : [
+          [
+            'Request',
+            noRequest
+              ? r.state === 'blocked'
+                ? 'Not delivered'
+                : 'No command sent'
+              : r.state === 'dispatching'
+                ? 'Sending'
+                : r.state === 'uncertain' && r.ack?.status !== 'applied'
+                  ? 'Delivery unconfirmed'
+                  : 'Sent',
+          ],
+          [
+            'AMR response',
+            r.ack?.status === 'applied'
+              ? 'Reported applied'
+              : r.ack?.status === 'rejected'
+                ? 'Rejected by AMR'
+                : noRequest
+                  ? 'Not required'
+                  : 'Waiting for reply',
+          ],
+          [
+            'Sensor check',
+            noRequest
+              ? 'Not started'
+              : String(r.verified_samples || 0) + ' of 3 qualifying readings',
+          ],
+        ];
     $('human-review-result-checks').replaceChildren(
       ...values.flatMap(([label, value]) => {
         const dt = document.createElement('dt'),
@@ -323,25 +358,87 @@
     );
     text(
       'human-review-result-note',
-      current.demo
-        ? 'Practice result only. No device was contacted.'
-        : verified
-          ? 'The sensors confirmed the requested limit. This does not identify the cause of any fault.'
-          : 'An AMR reply and fresh sensor confirmation are separate checks.',
+      observation
+        ? observationResult(r)
+        : current.demo
+          ? 'Practice result only. No device was contacted.'
+          : verified
+            ? 'The sensors confirmed the requested limit. This does not identify the cause of any fault.'
+            : 'An AMR reply and fresh sensor confirmation are separate checks.',
+    );
+  }
+  function observationResult(row) {
+    const point = [...(row.events || [])].reverse().find((e) => e.observation)?.observation;
+    if (!point)
+      return 'Waiting for readings after this decision. Inspection and charging are performed by the operator.';
+    const before = row.evidence.measurements?.battery_voltage_v,
+      after = point.measurements?.battery_voltage_v,
+      battery = Number.isFinite(after)
+        ? 'Battery input ' +
+          (Number.isFinite(before) ? before.toFixed(3) + ' → ' : '') +
+          after.toFixed(3) +
+          ' V. '
+        : '',
+      guidance = (point.recommendations || []).map((r) => r.title).join('; ');
+    return (
+      battery +
+      'Latest guidance: ' +
+      guidance +
+      '. These readings do not confirm that inspection or charging occurred.'
     );
   }
   function render(value) {
     if (!$('human-review') || !value?.human_review) return;
     payload = value;
     current = value.human_review;
-    if (lastReviewId !== current.review?.review_id || lastDemo !== current.demo) {
+    if (lastObservation !== !!current.observation_only) {
+      const options = current.observation_only
+        ? [
+            ['no_action', 'Keep monitoring'],
+            ['inspect', 'Inspect the AMR / sensors'],
+            ['recharge', 'Check / recharge battery'],
+          ]
+        : [
+            ['no_action', 'Keep operation unchanged'],
+            ['reduce_speed', 'Halve current controller speed limit'],
+            ['pause', 'Request controlled pause'],
+          ];
+      $('human-review-action').replaceChildren(
+        ...options.map(([value, label]) => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = label;
+          return option;
+        }),
+      );
+    }
+    if (
+      lastReviewId !== current.review?.review_id ||
+      lastDemo !== current.demo ||
+      lastObservation !== !!current.observation_only
+    ) {
       $('human-review-reason').value = '';
       $('human-review-action').value = 'no_action';
     }
     lastReviewId = current.review?.review_id;
     lastDemo = current.demo;
+    lastObservation = !!current.observation_only;
     const row = current.review;
     $('human-review').hidden = false;
+    text(
+      'human-review-detail',
+      current.observation_only
+        ? 'Read the live recommendation, record your response, then follow new sensor readings.'
+        : 'Read the recommendation, choose a response, then check the result.',
+    );
+    text(
+      'human-review-step-1-detail',
+      current.observation_only ? 'Live sensor evidence' : 'Connection and calibration',
+    );
+    text(
+      'human-review-step-3-detail',
+      current.observation_only ? 'Fresh sensor follow-up' : 'AMR reply and fresh readings',
+    );
     text('human-review-source', current.demo ? 'Practice · demo data' : 'Physical AMR');
     $('human-review-source').dataset.demo = String(!!current.demo);
     text('human-review-feedback', current.feedback);
@@ -354,20 +451,21 @@
     $('human-review-physical').hidden = !!current.demo;
     text(
       'human-review-delivery-note',
-      current.commands_enabled
-        ? 'Motor requests are enabled. Each request still needs current evidence and a separate result check.'
-        : 'Motor requests are unavailable. A saved decision cannot queue a command for later.',
+      current.observation_only
+        ? 'Records your choice and follows fresh sensor readings. Use Drive control for movement.'
+        : current.commands_enabled
+          ? 'Motor requests are enabled. Each request still needs current evidence and a separate result check.'
+          : 'Motor requests are unavailable. A saved decision cannot queue a command for later.',
     );
     $('human-review-delivery-note').hidden = !access();
     const [title, description] = summary();
     text('human-review-state', title);
     text('human-review-summary-detail', description);
-    $('human-review-summary').dataset.kind =
-      row?.state === 'verified'
-        ? 'success'
-        : ['uncertain', 'blocked', 'expired'].includes(row?.state) || !current.eligible
-          ? 'warning'
-          : 'neutral';
+    $('human-review-summary').dataset.kind = ['verified', 'observed'].includes(row?.state)
+      ? 'success'
+      : ['uncertain', 'blocked', 'expired'].includes(row?.state) || !current.eligible
+        ? 'warning'
+        : 'neutral';
     const [actionTitle, actionDetail] = nextAction();
     text('human-review-action-title', actionTitle);
     text('human-review-next-action', actionDetail);
@@ -413,6 +511,7 @@
       row?.state === 'acknowledged' ? 'Simulate 3 fresh readings' : 'Simulate AMR reply',
     );
     $('human-review-practice').hidden = !!current.demo;
+    $('human-review-drive').hidden = !!current.demo;
     $('human-review-live').hidden = !current.demo;
     $('human-review-connection').hidden = !!current.demo || (current.eligible && access());
     recommendations();
@@ -433,9 +532,11 @@
       'human-review-availability',
       current.missing?.length
         ? 'Physical setup needs: ' + current.missing.join(' · ')
-        : current.commands_enabled
-          ? 'Physical command delivery enabled; evidence and response checks still apply.'
-          : 'Physical command delivery disabled.',
+        : current.observation_only
+          ? 'Observation review enabled; decisions and fresh sensor follow-up are recorded.'
+          : current.commands_enabled
+            ? 'Physical command delivery enabled; evidence and response checks still apply.'
+            : 'Physical command delivery disabled.',
     );
     text('human-review-server-detail', current.detail);
     const events = JSON.stringify(row?.events || []);
@@ -501,6 +602,10 @@
         send({ command: 'response', review_id: current.review.review_id });
     });
     $('human-review-connection').addEventListener('click', () => $('tab-connection')?.click());
+    $('human-review-drive').addEventListener('click', () => {
+      $('tab-vision')?.click();
+      $('vision-mode-manual')?.click();
+    });
     $('human-review-practice').addEventListener('click', () =>
       emit({ action: 'sensor_source', mode: 'demo' }),
     );

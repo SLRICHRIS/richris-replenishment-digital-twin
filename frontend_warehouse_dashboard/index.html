@@ -65,7 +65,10 @@
       type="module"
       src="./browser_modules/vision_routing/vision_routing_workspace.js?v=held-drive-20261120"
     ></script>
-    <script defer src="./browser_modules/streamlit_frame_connection/human_review_panel.js"></script>
+    <script
+      defer
+      src="./browser_modules/streamlit_frame_connection/human_review_panel.js?v=observations-20261120"
+    ></script>
     <script
       defer
       src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=charge-yaw-20261120"
@@ -2929,7 +2932,7 @@
                   <span>1</span>
                   <div>
                     Get ready
-                    <small>Connection and calibration</small>
+                    <small id="human-review-step-1-detail">Connection and calibration</small>
                   </div>
                 </li>
                 <li id="human-review-step-2">
@@ -2943,7 +2946,7 @@
                   <span>3</span>
                   <div>
                     Check the result
-                    <small>AMR reply and fresh readings</small>
+                    <small id="human-review-step-3-detail">AMR reply and fresh readings</small>
                   </div>
                 </li>
               </ol>
@@ -3075,6 +3078,7 @@
                   </div>
                   <div id="human-review-shortcuts" class="human-review-shortcuts">
                     <button id="human-review-connection" type="button">Check AMR connection</button>
+                    <button id="human-review-drive" type="button">Open Drive control</button>
                     <button id="human-review-practice" type="button">Try a practice review</button>
                     <button id="human-review-live" type="button" hidden>
                       Return to physical readings

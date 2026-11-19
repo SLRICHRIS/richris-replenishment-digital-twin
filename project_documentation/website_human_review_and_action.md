@@ -2,6 +2,18 @@
 
 The website is the operator's decision point. Sensor models shows recommendations and **Review & decide** in one flow. The Python server captures current evidence, authenticates the operator session and records the decision in the shared PostgreSQL audit. No desktop application, local HTTP service or additional workstation is required.
 
+## Live observation review
+
+AMR-01's installed commissioning stream can supply useful recommendations independently of the fully calibrated model pipeline. The page uses the saved wheel geometry, stationary Z bias and current stored physical packets. Missing sensor inputs produce specific connection guidance. Measured battery input below the existing 6.6 V drive cutoff recommends charging. A valid feed with available battery and gyro readings recommends attended monitoring. The turning-rate residual is descriptive; it does not invent a fault threshold. Charge percentage remains the explicitly conditional reported-start scenario.
+
+This scope offers **Keep monitoring**, **Inspect the AMR / sensors** and **Check / recharge battery**. Enter the existing operator alias/code, capture the recommendation, choose a response and record a reason. The review records the choice, then collects three distinct fresh subsequent readings. The result shows battery input before/after and the latest guidance. It never claims that inspection or charging occurred. The state is **Follow-up readings recorded**, distinct from a verified command effect.
+
+Observation review uses the existing `[amr_connection] enabled`, direct `writer_url`, `access_code` and `amr_operator_reviews` permissions. It needs no new calibration, MQTT command settings, firmware upload or database migration. It cannot publish or queue a motor command, even when a command publisher is enabled elsewhere. **Open Drive control** opens the existing vehicle controls for movement and stopping. Practice and the calibrated intervention workflow remain separate.
+
+Only packets up to five seconds old can support an observation review. Each approval captures the current boot, settings and recommendation categories; voltage jitter does not invalidate the same guidance. Changed categories require a new review. Follow-up requires increasing sequence and device time after the decision; duplicate and stale packets do not count. Boot/settings changes leave the outcome unconfirmed. The 30-second follow-up deadline and restart recovery prevent old decisions from resuming.
+
+The following command-delivery sections describe the separate fully calibrated intervention contract; they are not requirements for observation reviews.
+
 ```mermaid
 flowchart TD
   A["Sensor evidence and recommendation"] --> B["Website operator review"]
@@ -38,14 +50,14 @@ The supplied MH IR sketch publishes commissioning measurements and accepts local
 
 The website reuses the existing private configuration. Keep credentials out of Git, browser code, screenshots and downloadable public kits.
 
-| Setting | Purpose |
-| --- | --- |
+| Setting                                                 | Purpose                                                                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `[amr_connection] enabled`, `writer_url`, `access_code` | Existing operator-protected connection; writer uses the direct PostgreSQL host because the review service holds a session lease |
-| `[mqtt] host`, `username`, `password` | Existing telemetry subscriber configuration; never reused to publish commands |
-| `[commissioning] measured_calibration_confirmed` | True only after physical measurement |
-| `[calibration.amr01]` | Same measured calibration as the sensor ingester |
-| `[intervention] enabled`, `controller_ready` | Both must explicitly be true after physical receiver validation; absent means disabled |
-| `[intervention] mqtt_username`, `mqtt_password` | Separate server-only command transport account, needed only for commissioned delivery |
+| `[mqtt] host`, `username`, `password`                   | Existing telemetry subscriber configuration; never reused to publish commands                                                   |
+| `[commissioning] measured_calibration_confirmed`        | True only after physical measurement                                                                                            |
+| `[calibration.amr01]`                                   | Same measured calibration as the sensor ingester                                                                                |
+| `[intervention] enabled`, `controller_ready`            | Both must explicitly be true after physical receiver validation; absent means disabled                                          |
+| `[intervention] mqtt_username`, `mqtt_password`         | Separate server-only command transport account, needed only for commissioned delivery                                           |
 
 No new broker command permissions are created by the website change. The server publishes only through a commissioned transport whose exact acknowledgement subscription has been confirmed. It sends each permitted request once, without retained delivery or automatic replay. No command may start motion, increase a local limit, steer, resume or override local motor protection. A pause is a controlled local stop, not a cloud emergency stop.
 
@@ -57,16 +69,16 @@ One shared server resource owns review recovery and monitoring across browser se
 
 ## Status and outcome interpretation
 
-| Status | Meaning |
-| --- | --- |
-| Awaiting human review | Captured recommendation, pending for at most 30 seconds |
-| Reviewed / rejected / deferred | Decision recorded without a command |
-| Approved · delivery unavailable | Approval recorded, delivery disabled; enabling later cannot replay it |
-| Awaiting controller acknowledgement | Request sent once; execution unconfirmed |
-| Checking new sensor readings | Matching controller reports applied; observed effect still pending |
-| Observed effect verified | Three distinct fresh same-boot observations meet the requested bound |
-| Review expired | Context or review expired before delivery |
-| Outcome unconfirmed | Delivery deadline, transport error, ownership loss or restart; inspect the local controller |
+| Status                              | Meaning                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| Awaiting human review               | Captured recommendation, pending for at most 30 seconds                                     |
+| Reviewed / rejected / deferred      | Decision recorded without a command                                                         |
+| Approved · delivery unavailable     | Approval recorded, delivery disabled; enabling later cannot replay it                       |
+| Awaiting controller acknowledgement | Request sent once; execution unconfirmed                                                    |
+| Checking new sensor readings        | Matching controller reports applied; observed effect still pending                          |
+| Observed effect verified            | Three distinct fresh same-boot observations meet the requested bound                        |
+| Review expired                      | Context or review expired before delivery                                                   |
+| Outcome unconfirmed                 | Delivery deadline, transport error, ownership loss or restart; inspect the local controller |
 
 The physical response deadline is five seconds. Demo rehearsal allows 60 seconds to inspect the stages. Pauses require wheel-speed estimates at or below 0.01 m/s and an explicit paused, stopped or standby state. Reduced-limit verification requires estimates at or below half the pre-dispatch maximum absolute wheel speed plus 0.01 m/s. Duplicate or pre-application samples do not advance verification. These observations do not establish causal diagnosis or independent ground truth.
 
