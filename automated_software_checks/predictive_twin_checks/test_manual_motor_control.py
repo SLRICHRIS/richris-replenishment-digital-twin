@@ -16,8 +16,8 @@ def fixture():
     return c,clock,out
 
 
-def beat(c,clock,seq,route='0'*32,command=0,state='idle',left=0,right=0,stamp=None,epoch=EPOCH,retained=False):
-    c.observe(signed(('H1',BOOT,epoch,seq,route,command,state,left,right,7400,1,stamp or clock[0]),KEY),retained)
+def beat(c,clock,seq,route='0'*32,command=0,state='idle',left=0,right=0,stamp=None,epoch=EPOCH,retained=False,ready=1,mv=7400):
+    c.observe(signed(('H1',BOOT,epoch,seq,route,command,state,left,right,mv,ready,stamp or clock[0]),KEY),retained)
 
 
 def prepare(c):
@@ -174,6 +174,52 @@ def test_changed_controller_sequence_invalidates_a_pending_review():
     t[0]+=150;beat(c,t,3,command=9)
     with pytest.raises(ValueError,match='feedback changed'):c.approve(OWNER,rid,'Old review')
     assert not out
+
+
+@pytest.mark.parametrize('delay_ms', [0, 230, 400, 500])
+def test_delayed_fresh_zero_feedback_can_prepare_but_stale_approval_cannot_move(delay_ms):
+    c,t,out=fixture(); c.history=[]; c.current=None
+    for seq in range(1,7):
+        t[0]+=150; beat(c,t,seq,stamp=t[0]-delay_ms)
+    value=c.public(OWNER)
+    assert value['ready'] and value['readiness']['code']=='ready'
+    assert value['readiness']['zero_span_ms']>=150
+    assert value['diagnostics']['accepted_count']==8
+    rid=prepare(c)
+    assert not out, 'Zero-output readiness alone never sends a motor command'
+    t[0]+=501-delay_ms
+    assert c.public(OWNER)['readiness']['code']=='feedback_stale'
+    with pytest.raises(ValueError,match='feedback changed'): c.approve(OWNER,rid,'Stale review')
+    assert not out
+
+
+@pytest.mark.parametrize('fields,code', [
+    ({'ready':0},'controller_not_ready'),
+    ({'left':40},'outputs_active'),
+    ({'right':-40},'outputs_active'),
+    ({'mv':6599},'battery_low'),
+])
+def test_each_controller_interlock_resets_consecutive_zero_evidence(fields,code):
+    c,t,out=fixture(); t[0]+=150; beat(c,t,3,**fields)
+    value=c.public(OWNER)
+    assert not value['ready'] and value['readiness']['code']==code
+    assert value['readiness']['zero_samples']==0
+    with pytest.raises(ValueError,match='Fresh, ready'): prepare(c)
+    t[0]+=150; beat(c,t,4)
+    assert c.public(OWNER)['readiness']['code']=='collecting_zero_outputs'
+    t[0]+=150; beat(c,t,5)
+    assert c.stationary() and not out
+
+
+def test_feedback_gap_or_connection_change_requires_new_zero_evidence():
+    c,t,out=fixture(); t[0]+=501; beat(c,t,3)
+    assert c.public(OWNER)['readiness']['code']=='collecting_zero_outputs'
+    t[0]+=150; beat(c,t,4)
+    assert c.stationary()
+    t[0]+=150; beat(c,t,5,epoch='e'*32)
+    assert c.public(OWNER)['readiness']['zero_samples']==1 and not c.stationary()
+    c.connected=False
+    assert c.public(OWNER)['readiness']['code']=='transport_disconnected' and not out
 
 
 def test_feedback_diagnostics_never_accept_bad_or_stale_packets():

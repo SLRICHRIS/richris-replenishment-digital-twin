@@ -10,6 +10,9 @@ from .protocol import hardware, drive, verified
 ACTIVE = {'manual_arming', 'manual_sent', 'manual_acknowledged', 'manual_stopping'}
 DIRECTIONS = {'F': (1, 1), 'B': (-1, -1), 'L': (-1, 1), 'R': (1, -1)}
 BURST_MS = 250
+MIN_PACK_V = 6.6
+ZERO_WINDOW_MS = 150
+FEEDBACK_WINDOW_MS = 500
 
 
 class ManualCoordinator:
@@ -44,11 +47,22 @@ class ManualCoordinator:
         with self.lock:
             self.presence[owner] = self.last_touch = self.clock()
 
+    def readiness(self):
+        h, now = self.current, self.clock()
+        span = self.history[-1]['issued_at_ms'] - self.history[0]['issued_at_ms'] if self.history else 0
+        if not self.connected: code = 'transport_disconnected'
+        elif not h: code = 'waiting_feedback'
+        elif not fresh(h['issued_at_ms'], now): code = 'feedback_stale'
+        elif h['battery_voltage_v'] < MIN_PACK_V: code = 'battery_low'
+        elif h['left_duty'] or h['right_duty']: code = 'outputs_active'
+        elif not h['ready']: code = 'controller_not_ready'
+        elif len(self.history) < 2 or span < ZERO_WINDOW_MS: code = 'collecting_zero_outputs'
+        else: code = 'ready'
+        return dict(code=code, zero_samples=len(self.history), zero_span_ms=span,
+                    feedback_age_ms=None if not h else now-h['issued_at_ms'])
+
     def stationary(self):
-        h = self.current
-        return bool(self.connected and h and h['ready'] and fresh(h['issued_at_ms'], self.clock())
-                    and len(self.history) >= 2 and self.history[-1]['issued_at_ms'] - self.history[0]['issued_at_ms'] >= 150
-                    and all(not (p['left_duty'] or p['right_duty']) for p in self.history))
+        return self.readiness()['code'] == 'ready'
 
     def capture(self, owner, operator, direction, pwm):
         with self.lock:
@@ -149,7 +163,15 @@ class ManualCoordinator:
             self.last_accepted_at = self.clock()
             self.accepted_count += 1
             self.last_issue = ''
-            self.history = [p for p in self.history if self.clock() - p['issued_at_ms'] <= 500] + [h]
+            # Every packet has already passed authentication, freshness and replay
+            # checks. Measure consecutive zero-output evidence on the ESP32's
+            # sample timeline, not the server's later receipt clock: network delay
+            # must not erase the preceding sample. The latest sample must still
+            # pass the unchanged 500 ms freshness check at capture and approval.
+            if h['ready'] and not (h['left_duty'] or h['right_duty']) and h['battery_voltage_v'] >= MIN_PACK_V:
+                self.history = [p for p in self.history if h['issued_at_ms']-p['issued_at_ms'] <= FEEDBACK_WINDOW_MS] + [h]
+            else:
+                self.history = []
             r = self.row
             if not r or r['state'] not in ACTIVE or identity != (r['boot_id'], r['epoch_id']) or h['route_id'] != r['review_id']:
                 return
@@ -209,6 +231,7 @@ class ManualCoordinator:
                 rejected_count=self.rejected_count, last_issue=self.last_issue, clock_age_ms=self.clock_age_ms,
                 last_packet_age_ms=None if self.last_packet_at is None else max(0, now-self.last_packet_at),
                 last_accepted_age_ms=None if self.last_accepted_at is None else max(0, now-self.last_accepted_at))
-            return dict(diagnostics=diagnostics, ready=self.stationary(), hardware=copy.deepcopy(h) if h and fresh(h['issued_at_ms'], self.clock()) else None,
+            readiness = self.readiness()
+            return dict(diagnostics=diagnostics, readiness=readiness, ready=readiness['code'] == 'ready', hardware=copy.deepcopy(h) if h and fresh(h['issued_at_ms'], self.clock()) else None,
                         review=copy.deepcopy(self.row) if self.row and self.row['owner_id'] == owner else None,
                         busy=bool(self.row and self.row['state'] in ACTIVE and self.row['owner_id'] != owner))
