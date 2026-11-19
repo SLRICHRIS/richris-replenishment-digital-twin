@@ -93,6 +93,41 @@ assert.equal(
   countBefore,
   'Diagnostic updates never emit motor or approval actions',
 );
+const hardware = {
+  ready: false,
+  state: 'unavailable',
+  left_duty: 0,
+  right_duty: 0,
+  battery_voltage_v: 7.4,
+};
+for (const [code, pattern] of [
+  ['controller_not_ready', /controller reports not ready/],
+  ['outputs_active', /outputs are still active/],
+  ['collecting_zero_outputs', /collecting consecutive/],
+]) {
+  panel.render({
+    authorized: true,
+    physical_mode: true,
+    ready: false,
+    hardware,
+    readiness: { code, zero_samples: 1, zero_span_ms: 0, feedback_age_ms: 230 },
+    transport: { state: 'subscribed', connected: true },
+  });
+  assert.match(el('connection').textContent, pattern);
+  assert.match(el('controller').textContent, /ready no.*outputs L 0, R 0.*7.40 V/);
+  assert.match(el('evidence').textContent, /1 samples.*230 ms/);
+  assert.equal(el('prepare').disabled, true);
+}
+panel.render({
+  authorized: true,
+  physical_mode: true,
+  ready: true,
+  hardware: { ...hardware, ready: true },
+  readiness: { code: 'ready', zero_samples: 3, zero_span_ms: 300, feedback_age_ms: 400 },
+});
+assert.match(el('connection').textContent, /ESP32 ready/);
+assert.equal(el('prepare').disabled, false);
+assert.equal(actions.length, countBefore, 'Readiness diagnostics do not send control actions');
 // A visible authenticated page repairs a lost presence event, once per retry window.
 d.getElementById('vision-routing-shell').dataset.mode = 'manual';
 const beforeRepair = actions.length;

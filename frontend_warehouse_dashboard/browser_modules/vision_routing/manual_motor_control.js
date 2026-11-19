@@ -9,7 +9,7 @@ export function createManualMotorPanel(scope) {
       <p>Use your working AMR-01 through Wi-Fi. Choose a direction, review one 250 ms motor burst, then approve it. The ESP32 expires the command locally.</p>
       <p>Inspect the space around the vehicle before each move. PWM is motor power, not a distance or speed setting.</p>
       <div class="pr-metrics"><div><strong>1 · Connect</strong><p id="mc-connection">Private connection setup required</p></div><div><strong>2 · Review</strong><p>Choose direction and motor power</p></div><div><strong>3 · Approve</strong><p>One burst, then automatic expiry</p></div></div>
-      <details id="mc-diagnostics" hidden><summary>Connection details</summary><p id="mc-transport"></p><p id="mc-packets"></p><p id="mc-clock"></p><p id="mc-hint"></p></details>
+      <details id="mc-diagnostics" hidden><summary>Connection details</summary><p id="mc-transport"></p><p id="mc-packets"></p><p id="mc-clock"></p><p id="mc-controller"></p><p id="mc-evidence"></p><p id="mc-hint"></p></details>
       <p id="mc-feedback" role="status" aria-live="polite"></p>
       <ul id="mc-missing"></ul>
       <button id="mc-source" type="button">Use physical AMR source</button>
@@ -59,7 +59,24 @@ export function createManualMotorPanel(scope) {
         ? 'ESP32 connected · waiting for ready zero outputs'
         : 'Waiting for authenticated ESP32 feedback';
     const diagnostics = value.diagnostics || {},
-      transport = value.transport || {};
+      transport = value.transport || {},
+      readiness = value.readiness || {},
+      hardware = value.hardware;
+    const readinessLabels = {
+      controller_not_ready: 'ESP32 connected · controller reports not ready',
+      outputs_active: 'ESP32 connected · motor outputs are still active',
+      collecting_zero_outputs: 'ESP32 connected · collecting consecutive ready zero outputs',
+    };
+    const readinessHints = {
+      controller_not_ready:
+        'The ESP32 is connected but its ready flag is false. If USB Serial control was used, send S once to release it. Remote readiness also requires successful startup, fresh IMU/INA219 readings and battery voltage of at least 6.6 V. The current firmware does not report which of those local checks failed.',
+      outputs_active:
+        'The ESP32 reports nonzero motor outputs. Stop local Serial control with S and wait for zero-output feedback before preparing a move.',
+      collecting_zero_outputs:
+        'Collecting at least two consecutive ready, zero-output samples spanning 150 ms. Each packet must be fresh when received; the latest must remain within 500 ms.',
+      ready:
+        'ESP32 ready with consecutive zero-output feedback. Inspect the space before preparing one move.',
+    };
     const transportLabels = {
       connecting: 'Connecting to EMQX',
       disconnected: 'Disconnected from EMQX',
@@ -88,7 +105,14 @@ export function createManualMotorPanel(scope) {
     el('clock').textContent = Number.isFinite(diagnostics.clock_age_ms)
       ? `Last authenticated packet clock difference (server minus ESP32): ${Math.round(diagnostics.clock_age_ms)} ms`
       : 'No authenticated packet clock sample';
+    el('controller').textContent = hardware
+      ? `ESP32: ready ${hardware.ready ? 'yes' : 'no'} · state ${hardware.state} · outputs L ${hardware.left_duty}, R ${hardware.right_duty} · battery ${hardware.battery_voltage_v.toFixed(2)} V`
+      : '';
+    el('evidence').textContent = Number.isFinite(readiness.zero_samples)
+      ? `Ready zero-output evidence: ${readiness.zero_samples} samples · ${readiness.zero_span_ms} ms span${Number.isFinite(readiness.feedback_age_ms) ? ' · latest feedback age ' + readiness.feedback_age_ms + ' ms' : ''}`
+      : '';
     el('hint').textContent =
+      readinessHints[readiness.code] ||
       issueLabels[diagnostics.last_issue] ||
       (diagnostics.packet_count
         ? 'Keep this page open while fresh, ready zero-output feedback is collected.'
@@ -98,6 +122,8 @@ export function createManualMotorPanel(scope) {
         el('connection').textContent = 'Select the physical AMR source';
       else if (transport.state && transport.state !== 'subscribed')
         el('connection').textContent = 'Website MQTT · ' + transportLabels[transport.state];
+      else if (hardware && readinessLabels[readiness.code])
+        el('connection').textContent = readinessLabels[readiness.code];
       else if (!value.hardware && diagnostics.last_issue === 'authentication_failed')
         el('connection').textContent =
           'Receiver feedback authentication failed · open Connection details';
