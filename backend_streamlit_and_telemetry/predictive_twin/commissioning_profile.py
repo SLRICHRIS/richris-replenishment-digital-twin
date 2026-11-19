@@ -43,13 +43,20 @@ def profile_payload():
 
 
 def wheel_magnitude_estimates(measurements):
-    """Pulse frequency -> unsigned wheel RPM and rim speed; no pose integration."""
+    """Pulse frequency and interval -> unsigned wheel rotation quantities."""
     result = {}
+    interval = measurements.get('interval_s')
+    valid_interval = type(interval) in (int, float) and isfinite(interval) and interval > 0
+    distance_per_pulse = pi * WHEEL_DIAMETER_M / PULSES_PER_WHEEL_REVOLUTION
     for side in ('left', 'right'):
         rate = measurements.get(side + '_pulse_hz')
         valid = type(rate) in (int, float) and isfinite(rate) and rate >= 0
-        result[side + '_rpm_magnitude'] = rate * 60 / PULSES_PER_WHEEL_REVOLUTION if valid else None
-        result[side + '_rim_speed_m_s'] = rate * pi * WHEEL_DIAMETER_M / PULSES_PER_WHEEL_REVOLUTION if valid else None
+        rpm = rate * 60 / PULSES_PER_WHEEL_REVOLUTION if valid else None
+        speed = rate * distance_per_pulse if valid else None
+        travel = speed * interval if valid and valid_interval else None
+        for name, value in (('_rpm_magnitude', rpm), ('_rim_speed_m_s', speed),
+                            ('_travel_magnitude_m', travel)):
+            result[side + name] = value if value is not None and isfinite(value) else None
     return result
 
 
