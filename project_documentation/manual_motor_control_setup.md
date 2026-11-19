@@ -54,3 +54,5 @@ Open **Connection details** in Manual control. The page reports the website's br
 - **Old connection/sequence ignored**: the replay protection rejected that packet. End and re-enable the operator session to collect fresh state before a new review.
 
 A valid packet is still required to report ready zero outputs before Prepare is enabled. The 6.6 V remote cutoff, short command expiry, approval checks and replay protection continue to apply.
+
+If Connection details reports **Waiting for the active manual page** while the operator session is enabled, the server has not yet received an active-page acknowledgement. A validated operator Connect now explicitly selects Manual control, and a visible Manual page reasserts a lost initial view update at a bounded rate. Hidden, practice and departing pages do not renew that state. Page-state messages include the complete selected mode; the sibling page handler does not overwrite it. Versioned control scripts ensure a refresh loads this event-handling update. Motor readiness, fresh signed feedback and explicit per-burst approval remain required.

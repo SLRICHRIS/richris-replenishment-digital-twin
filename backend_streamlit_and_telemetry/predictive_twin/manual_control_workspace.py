@@ -73,7 +73,7 @@ def workspace(mode):
             missing.append('Manual transport unavailable or another controller owns AMR-01')
     else:
         cancel_existing()
-    value.update(authorized=auth, can_unlock=p is not None, missing=missing,
+    value.update(view_active=bool(st.session_state.get('manual_view')), authorized=auth, can_unlock=p is not None, missing=missing,
                  physical_mode=mode == 'live', feedback=st.session_state.get('manual_feedback', ''))
     return value
 
@@ -84,6 +84,7 @@ def handle(result, mode):
         return
     p, _ = profile()
     if cmd == 'view':
+        if 'control_mode' in result: return  # Host already applied the complete canonical page state.
         if type(result.get('active')) is bool:
             st.session_state.manual_view = result['active']
             if not result['active']: cancel_existing()
@@ -91,6 +92,7 @@ def handle(result, mode):
     if cmd == 'logout':
         cancel_existing()
         st.session_state.pop('manual_auth', None)
+        st.session_state.manual_view = False
         return
     if mode != 'live' or not p:
         st.session_state.manual_feedback = 'Select the physical source and complete the private manual connection setup'
@@ -104,6 +106,8 @@ def handle(result, mode):
             st.session_state.manual_feedback = 'Operator code or alias was not accepted'
             return
         st.session_state.manual_auth = tag(p)
+        from .control_presence import synchronize_control_view
+        synchronize_control_view(st.session_state, 'manual')  # Explicit authenticated Connect starts this listener.
         st.session_state.manual_operator = alias
         st.session_state.manual_feedback = 'Session enabled. Wait for fresh ESP32 feedback before preparing a move.'
         return

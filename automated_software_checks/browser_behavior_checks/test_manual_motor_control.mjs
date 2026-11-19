@@ -93,6 +93,24 @@ assert.equal(
   countBefore,
   'Diagnostic updates never emit motor or approval actions',
 );
+// A visible authenticated page repairs a lost presence event, once per retry window.
+d.getElementById('vision-routing-shell').dataset.mode = 'manual';
+const beforeRepair = actions.length;
+const inactive = { authorized: true, physical_mode: true, view_active: false, ready: false };
+panel.render(inactive);
+assert.equal(actions.length, beforeRepair + 1);
+assert.equal(actions.at(-1).command, 'view');
+assert.equal(actions.at(-1).active, true);
+panel.render(inactive);
+assert.equal(actions.length, beforeRepair + 1, 'Presence repair is throttled');
+d.getElementById('vision-routing-shell').dataset.mode = 'practice';
+panel.render(inactive);
+assert.equal(actions.length, beforeRepair + 1, 'Practice cannot renew a physical view');
+d.getElementById('vision-routing-shell').dataset.mode = 'manual';
+w.dispatchEvent(new w.PageTransitionEvent('pagehide'));
+const afterLeave = actions.length;
+panel.render(inactive);
+assert.equal(actions.length, afterLeave, 'A leaving page cannot restore presence');
 panel.destroy();
 w.close();
 console.log(
