@@ -61,12 +61,12 @@ def test_continuous_collision_and_detour():
 
 
 def test_measured_floor_rejects_legacy_scenes_and_keeps_clearance():
-    assert (WIDTH,HEIGHT)==(425,630)
+    assert (WIDTH,HEIGHT)==(610,630)
     legacy=sample();legacy['version']=1
     with pytest.raises(ValueError,match='Unsupported'):scene(legacy)
     legacy=sample();legacy['floor_width_mm']=841;legacy['floor_length_mm']=1189
     with pytest.raises(ValueError,match='does not match'):scene(legacy)
-    too_large=sample();too_large['geometry']=dict(G,robot_length_mm=180,robot_width_mm=140,max_speed_mm_s=20,left_pwm_per_mm_s=2,right_pwm_per_mm_s=2)
+    too_large=sample();too_large['geometry']=dict(G,robot_length_mm=600,robot_width_mm=600,max_speed_mm_s=20,left_pwm_per_mm_s=2,right_pwm_per_mm_s=2)
     assert radius(too_large['geometry'])>WIDTH/2
     with pytest.raises(ValueError,match='clearance'):plan(too_large,[210,450])
 

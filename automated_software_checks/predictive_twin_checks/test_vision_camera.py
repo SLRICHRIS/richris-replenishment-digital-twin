@@ -59,13 +59,13 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     from pathlib import Path
     path=Path(__file__).resolve().parents[2]/'backend_streamlit_and_telemetry/vision_control/example_camera_config.json'
     p=json.loads(path.read_text())
-    assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(425,630,920)
-    assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(187,150,150)
-    assert p['reported_body_outline_robot_frame_mm']==dict(reference='wheel_axle_midpoint',front=147,rear=40,length=187,longitudinal_midpoint_forward=53.5,source='operator_reported')
+    assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(610,630,1310)
+    assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(170,155,150)
+    assert p.get('reported_body_outline_robot_frame_mm') is None
     assert p['marker_height_mm']==150
     assert p['marker_edge_mm']==40
-    assert p['reported_marker_offset_robot_frame_mm']==dict(reference='wheel_axle_midpoint',forward=100,left=0,source='operator_reported')
-    assert p['marker_center_to_robot_center_mm'] is None
+    assert p['reported_marker_offset_robot_frame_mm']==dict(reference='robot_body_center',forward=0,left=0,source='operator_confirmed_centered_marker')
+    assert p['marker_center_to_robot_center_mm']==[0,0]
     assert p['marker_forward_offset_rad'] is None
     assert not any(p['checks'].values())
     p['checks']={c:True for c in CHECKS};p['floor_width_mm']=841

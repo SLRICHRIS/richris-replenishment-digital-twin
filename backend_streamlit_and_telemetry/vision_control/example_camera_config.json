@@ -16,21 +16,24 @@
     1280,
     720
   ],
-  "camera_height_mm": 920,
+  "camera_height_mm": 1310,
   "marker_edge_mm": 40,
   "marker_height_mm": 150,
   "reported_marker_offset_robot_frame_mm": {
-    "reference": "wheel_axle_midpoint",
-    "forward": 100,
+    "reference": "robot_body_center",
+    "forward": 0,
     "left": 0,
-    "source": "operator_reported"
+    "source": "operator_confirmed_centered_marker"
   },
-  "marker_center_to_robot_center_mm": null,
+  "marker_center_to_robot_center_mm": [
+    0,
+    0
+  ],
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
   "geometry": {
-    "robot_length_mm": 187,
-    "robot_width_mm": 150,
+    "robot_length_mm": 170,
+    "robot_width_mm": 155,
     "robot_height_mm": 150,
     "wheel_track_mm": 100,
     "clearance_mm": 20,
@@ -47,15 +50,7 @@
     "right_polarity": null,
     "min_pack_voltage_v": 6.6
   },
-  "floor_width_mm": 425,
+  "floor_width_mm": 610,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Operator-reported on 19 November 2026: wheel axle to front F = 14.7 cm (147 mm), axle to rear R = 4 cm (40 mm), giving corrected full length 18.7 cm (187 mm), superseding 18 cm. Width and height remain 15 cm. The longitudinal body midpoint is 53.5 mm ahead of the axle; lateral body centring still requires verification. Marker surface is 150 mm above the floor; robot marker ID 0 black square is 40 x 40 mm; marker centre is 100 mm forward of the wheel-axle midpoint and 0 mm sideways. Paper width is 425 mm and length 630 mm; overhead USB camera height is 920 mm. Printed-marker forward alignment and its marker-frame transform remain unverified. Calibration checks remain unverified.",
-  "reported_body_outline_robot_frame_mm": {
-    "reference": "wheel_axle_midpoint",
-    "front": 147,
-    "rear": 40,
-    "length": 187,
-    "longitudinal_midpoint_forward": 53.5,
-    "source": "operator_reported"
-  }
+  "reported_measurements_note": "Updated 20 November 2026: measured floor 610 mm wide x 630 mm long, Logitech lens 1310 mm vertically above floor, AMR body 170 mm long x 155 mm wide x 150 mm high. Robot marker ID 0 is nominally 40 mm; floor corner markers IDs 1-4 are nominally 30 mm. Marker surface height and marker-to-axle offset are NOT remeasured; camera intrinsics, floor reference positions, motor calibration, and clearance remain unverified. Previous axle front/rear body outline (147/40 mm) is superseded and must not be used for route clearance. Operator confirms ArUco ID 0 centred on robot body; marker forward direction relative to robot remains unverified."
 }

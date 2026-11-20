@@ -58,19 +58,22 @@ export function createPhysicalRoutePanel(scope) {
     '<div class="pr-next-action"><span class="pr-next-dot"></span><div><strong id="pr-next-title">Start with the robot measurements</strong><p id="pr-next-copy">Record the full body size, then commission the camera and receiver.</p></div></div>',
     '<div id="pr-body" class="pr-body">',
     '<section id="pr-map-card" class="panel pr-map-card" aria-labelledby="pr-map-title" hidden>',
-    '<div class="pr-card-heading"><div><span class="twin-card-kicker">TRUSTED CAMERA SCENE</span><h2 id="pr-map-title">Working floor</h2></div><span class="vision-chip">425 × 630 mm</span></div>',
-    '<div class="pr-map-wrap"><svg id="pr-map" viewBox="0 0 425 630" role="img" aria-label="Trusted live camera map and server-approved route"><defs><pattern id="pr-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect x="0" y="0" width="425" height="630" class="vision-floor"/><rect width="425" height="630" fill="url(#pr-grid)" class="vision-grid"/><g id="pr-map-content" transform="translate(0 630) scale(1 -1)"></g></svg><div id="pr-map-empty" class="pr-map-empty"><span class="pr-camera-symbol" aria-hidden="true">⌖</span><strong>Waiting for the camera controller</strong><span>A live, calibrated scene is required before a physical route can be captured.</span></div></div>',
+    '<div class="pr-card-heading"><div><span class="twin-card-kicker">TRUSTED CAMERA SCENE</span><h2 id="pr-map-title">Working floor</h2></div><span class="vision-chip">610 × 630 mm</span></div>',
+    '<div class="pr-map-wrap"><svg id="pr-map" viewBox="0 0 610 630" role="img" aria-label="Trusted live camera map and server-approved route"><defs><pattern id="pr-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect x="0" y="0" width="610" height="630" class="vision-floor"/><rect width="610" height="630" fill="url(#pr-grid)" class="vision-grid"/><g id="pr-map-content" transform="translate(0 630) scale(1 -1)"></g></svg><div id="pr-map-empty" class="pr-map-empty"><span class="pr-camera-symbol" aria-hidden="true">⌖</span><strong>Waiting for the camera controller</strong><span>A live, calibrated scene is required before a physical route can be captured.</span></div></div>',
     '<div class="pr-map-legend"><span><i class="pr-key-robot"></i>AMR position</span><span><i class="pr-key-goal"></i>Destination</span><span><i class="pr-key-obstacle"></i>Obstacle</span><span><i class="pr-key-route"></i>Reviewed route</span></div>',
     '<p id="pr-scene" class="pr-scene-status">No trusted camera frame received</p></section>',
     '<div class="pr-stage-content">',
     '<section id="pr-step-panel-1" role="tabpanel" aria-labelledby="pr-step-1"><div class="pr-setup-layout"><div id="pr-setup-slot"></div><aside class="panel pr-guide-card"><span class="twin-card-kicker">BEFORE THE FIRST JOURNEY</span><h2>Make the physical setup ready</h2><ol class="pr-checklist"><li><strong>Measure the whole robot</strong><p>Include wheels, protrusions and the mounted marker. Wheel spacing alone is not the footprint.</p></li><li><strong>Calibrate the overhead camera</strong><p>Verify lens calibration, paper references, marker height and a clear-floor background.</p></li><li><strong>Commission the motor receiver</strong><p>Verify wheel directions, low-speed PWM and stopping distance before enabling physical control.</p></li></ol><a class="pr-guide-link" href="' +
       GUIDE +
-      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button></aside></div></section>',
+      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button></aside></div>',
+    '<section class="panel pr-laptop-camera" aria-labelledby="pr-laptop-camera-title"><div class="pr-card-heading"><div><span class="twin-card-kicker">LOCAL USB WEBCAM</span><h2 id="pr-laptop-camera-title">Logitech camera on this laptop</h2></div><span id="pr-laptop-camera-status" class="vision-chip" role="status">Not connected</span></div>',
+    '<p class="pr-description">See the live overhead view here without the Windows Camera app. This is a local preview only; trusted robot coordinates still require the separate calibrated camera agent.</p><video id="pr-laptop-camera-video" autoplay muted playsinline hidden style="width:100%;max-height:430px;object-fit:contain;background:#0b1c35;border-radius:10px"></video>',
+    '<div class="vision-tools"><button id="pr-laptop-camera-start" type="button">Show Logitech camera</button><button id="pr-laptop-camera-stop" type="button" disabled>Stop preview</button></div><p id="pr-laptop-camera-detail" class="pr-inline-note">Close Windows Camera first. Chrome camera permission is required. Video stays on your laptop and is not transmitted to EMQX.</p></section></section>',
     '<section id="pr-step-panel-2" role="tabpanel" aria-labelledby="pr-step-2" hidden><div class="pr-connect-layout"><section class="panel pr-action-card"><span class="twin-card-kicker">CONNECT THE REAL AMR</span><h2>Check the camera and robot</h2><p class="pr-description">Power the ESP32 and run the USB-camera controller on the Windows laptop. Keep both connected while the route runs.</p><ul id="pr-readiness" class="pr-readiness"></ul><button id="pr-source" type="button">Use physical sensor source</button><details class="pr-technical"><summary>Connection setup details</summary><ul id="pr-missing"></ul><a href="' +
       GUIDE +
       '" target="_blank" rel="noopener">Controller and broker setup ↗</a></details><button id="pr-to-plan" type="button" class="primary" disabled>Continue to route planning →</button></section>',
     '<section class="panel pr-action-card"><span class="twin-card-kicker">OPERATOR SESSION</span><h2>Enable physical review</h2><p class="pr-description">The operator code protects motor control. Approval records are saved automatically in the background.</p><p id="pr-access-wait" class="pr-inline-note">Operator access becomes available after the private connection and commissioning are configured.</p><form id="pr-login" hidden><label>Operator alias<input id="pr-operator" maxlength="40" autocomplete="username" placeholder="Your operator alias" required></label><label>Private operator code<input id="pr-code" type="password" maxlength="256" autocomplete="current-password" required></label><button type="submit" id="pr-unlock" class="primary" disabled>Enable this operator session</button></form><div id="pr-session" hidden><span class="pr-session-check">Operator session enabled</span><button id="pr-lock" type="button">End session & stop</button></div><div class="pr-setup-note">Use the physical source, then enable your session. Stay on this page during movement.</div></section></div></section>',
-    '<section id="pr-step-panel-3" role="tabpanel" aria-labelledby="pr-step-3" hidden class="panel pr-action-card"><span class="twin-card-kicker">PLAN A JOURNEY</span><h2>Choose the destination</h2><p class="pr-description">The start comes from the camera. Select the destination on the live floor or enter its coordinates.</p><div class="vision-fields"><label>Starting rack<select id="pr-rack-start"><option value="">Choose start</option><option>A</option><option>B</option><option>C</option><option>D</option></select></label><label>Destination rack<select id="pr-rack-destination"><option value="">Choose destination</option><option>A</option><option>B</option><option>C</option><option>D</option></select></label></div><p id="pr-rack-status" class="pr-inline-note">Rack coordinates must be measured in the camera floor frame. Configure them below before selecting a rack.</p><details><summary>Measured rack stopping coordinates (mm)</summary><div id="pr-rack-coordinates" class="vision-fields"></div></details><div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="425" step="10" value="210"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="630" step="10" value="450"></label></div><div class="pr-coordinate-note">Origin: bottom-left. X increases right; Y increases upward. The route uses a 10 mm grid.</div><button id="pr-capture" type="button" class="primary" disabled>Calculate physical route</button><p id="pr-plan-help" class="pr-inline-note">Complete the connection step before calculating a physical route.</p><button id="pr-back-connect" type="button" class="pr-text-button">← Check connection</button></section>',
+    '<section id="pr-step-panel-3" role="tabpanel" aria-labelledby="pr-step-3" hidden class="panel pr-action-card"><span class="twin-card-kicker">PLAN A JOURNEY</span><h2>Choose the destination</h2><p class="pr-description">The start comes from the camera. Select the destination on the live floor or enter its coordinates.</p><div class="vision-fields"><label>Starting rack<select id="pr-rack-start"><option value="">Choose start</option><option>A</option><option>B</option><option>C</option><option>D</option></select></label><label>Destination rack<select id="pr-rack-destination"><option value="">Choose destination</option><option>A</option><option>B</option><option>C</option><option>D</option></select></label></div><p id="pr-rack-status" class="pr-inline-note">Rack coordinates must be measured in the camera floor frame. Configure them below before selecting a rack.</p><details><summary>Measured rack stopping coordinates (mm)</summary><div id="pr-rack-coordinates" class="vision-fields"></div></details><div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="610" step="10" value="210"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="630" step="10" value="450"></label></div><div class="pr-coordinate-note">Origin: bottom-left. X increases right; Y increases upward. The route uses a 10 mm grid.</div><button id="pr-capture" type="button" class="primary" disabled>Calculate physical route</button><p id="pr-plan-help" class="pr-inline-note">Complete the connection step before calculating a physical route.</p><button id="pr-back-connect" type="button" class="pr-text-button">← Check connection</button></section>',
     '<section id="pr-step-panel-4" role="tabpanel" aria-labelledby="pr-step-4" hidden class="panel pr-action-card"><span class="twin-card-kicker">HUMAN DECISION</span><h2>Review before movement</h2><p id="pr-route" class="pr-description">Calculate a physical route to review it here.</p><div id="pr-review-metrics" class="pr-metrics"></div><p id="pr-review-clock" class="pr-inline-note">No current proposal</p><label>Decision reason<textarea id="pr-reason" maxlength="240" rows="3" placeholder="Record why you approve, reject or hold this route." disabled></textarea></label><div class="pr-decision-actions"><button id="pr-approve" type="button" class="primary" disabled>Approve & run</button><button id="pr-reject" type="button" disabled>Reject</button><button id="pr-hold" type="button" disabled>Hold</button></div><p class="pr-coordinate-note">Approval applies to this route and this scene. A changed scene needs a new proposal.</p><button id="pr-replan" type="button" class="pr-text-button">← Change destination or calculate again</button></section>',
     '<section id="pr-step-panel-5" role="tabpanel" aria-labelledby="pr-step-5" hidden class="panel pr-action-card"><span class="twin-card-kicker">EXECUTION & EVIDENCE</span><h2 id="pr-run-title">Watch the approved journey</h2><p id="pr-outcome" role="status" aria-live="polite">No physical route has been approved.</p><div id="pr-run-observations" class="pr-run-observations"></div><div class="pr-setup-note">An accepted command is not a verified arrival. Fresh camera frames and zero reported motor output confirm the stopped destination.</div><p class="pr-coordinate-note">Route limit: 60 seconds. Camera, controller or approval loss ends the journey. Keep access to the robot power switch.</p><button id="pr-new-route" type="button">Plan another route</button></section>',
     '</div></div><p id="pr-feedback" class="pr-feedback" role="status" aria-live="polite"></p></div>',
@@ -96,8 +99,64 @@ export function createPhysicalRoutePanel(scope) {
     !d.getElementById('vision-routing-shell') ||
     d.getElementById('vision-routing-shell').dataset.mode === 'physical';
   const active = () => d.body.dataset.view === 'vision' && !d.hidden && modeIsPhysical();
+  let localCameraStream = null;
+  let localCameraGeneration = 0;
+  function stopLocalCamera(message = 'Preview stopped. The USB camera is available for the tracking agent.') {
+    localCameraGeneration += 1;
+    localCameraStream?.getTracks().forEach((track) => track.stop());
+    localCameraStream = null;
+    el('laptop-camera-video').srcObject = null;
+    el('laptop-camera-video').hidden = true;
+    el('laptop-camera-start').disabled = false;
+    el('laptop-camera-stop').disabled = true;
+    el('laptop-camera-status').textContent = 'Not connected';
+    el('laptop-camera-detail').textContent = message;
+  }
+  on(el('laptop-camera-start'), 'click', async () => {
+    if (!scope.navigator.mediaDevices?.getUserMedia) {
+      el('laptop-camera-detail').textContent =
+        'This embedded page cannot access the webcam. Open the dashboard in Chrome on the laptop and allow camera access, or use the Windows camera agent.';
+      return;
+    }
+    stopLocalCamera();
+    const generation = localCameraGeneration;
+    el('laptop-camera-start').disabled = true;
+    el('laptop-camera-stop').disabled = false;
+    el('laptop-camera-status').textContent = 'Requesting camera';
+    el('laptop-camera-detail').textContent = 'Allow the Logitech webcam in Chrome. Close Windows Camera if it is open.';
+    try {
+      const received = await scope.navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      if (generation !== localCameraGeneration || !active() || stage !== 1) {
+        received.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      localCameraStream = received;
+      el('laptop-camera-video').srcObject = received;
+      el('laptop-camera-video').hidden = false;
+      await el('laptop-camera-video').play();
+      if (generation !== localCameraGeneration) return;
+      el('laptop-camera-status').textContent = 'Live on laptop';
+      el('laptop-camera-detail').textContent =
+        'Local camera preview only. Stop preview before starting the calibrated camera tracking agent, so both applications do not compete for the USB camera.';
+      received.getVideoTracks().forEach((track) =>
+        on(track, 'ended', () => stopLocalCamera('Camera disconnected or permission revoked.')));
+    } catch (error) {
+      if (generation !== localCameraGeneration) return;
+      stopLocalCamera(
+        error?.name === 'NotAllowedError'
+          ? 'Chrome denied camera permission or the embedded page blocked it. Allow the Logitech webcam in Chrome or open the local camera agent.'
+          : 'Unable to start the camera. Close Windows Camera and other webcam applications, then try again.',
+      );
+    }
+  });
+  on(el('laptop-camera-stop'), 'click', () => stopLocalCamera());
   function viewChanged() {
     const next = active();
+    if (!next && (localCameraStream || el('laptop-camera-start').disabled))
+      stopLocalCamera('Preview stopped because the physical AMR view is no longer active.');
     if (next !== view) {
       view = next;
       send('view', { active: next });
@@ -107,11 +166,12 @@ export function createPhysicalRoutePanel(scope) {
   observer.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
   on(d, 'visibilitychange', viewChanged);
   on(d, 'vision-routing:mode', viewChanged);
-  on(scope, 'pagehide', () => send('view', { active: false }));
+  on(scope, 'pagehide', () => { stopLocalCamera(); send('view', { active: false }); });
   function showStage(value, manual = false) {
     const running = ACTIVE.includes(payload?.review?.state);
     if (running && value !== 5) return;
     stage = value;
+    if (stage !== 1 && (localCameraStream || el('laptop-camera-start').disabled)) stopLocalCamera();
     if (manual) userStage = true;
     for (let i = 1; i <= 5; i++) {
       el('step-' + i).setAttribute('aria-selected', String(i === stage));
@@ -170,7 +230,7 @@ export function createPhysicalRoutePanel(scope) {
     for (const input of [x, y]) {
       input.type = 'number';
       input.min = '0';
-      input.max = input === x ? '425' : '630';
+      input.max = input === x ? '610' : '630';
       input.step = '1';
       input.placeholder = input === x ? 'X mm' : 'Y mm';
       label.append(input);
@@ -183,7 +243,7 @@ export function createPhysicalRoutePanel(scope) {
     const inputs = stationInputs[rack];
     if (!inputs || inputs.some((input) => input.value.trim() === '')) return null;
     const point = inputs.map((input) => Number(input.value));
-    if (!point.every(Number.isFinite) || point[0] < 0 || point[0] > 425 || point[1] < 0 || point[1] > 630) return null;
+    if (!point.every(Number.isFinite) || point[0] < 0 || point[0] > 610 || point[1] < 0 || point[1] > 630) return null;
     return point;
   }
   function rackSelectionChanged() {
@@ -240,9 +300,9 @@ export function createPhysicalRoutePanel(scope) {
       y = el('goal-y').value;
     if (x === '' || y === '' || !Number.isFinite(Number(x)) || !Number.isFinite(Number(y)))
       return null;
-    if (Number(x) < 0 || Number(x) > 425 || Number(y) < 0 || Number(y) > 630) return null;
+    if (Number(x) < 0 || Number(x) > 610 || Number(y) < 0 || Number(y) > 630) return null;
     return [
-      Math.min(420, Math.round(Number(x) / 10) * 10),
+      Math.min(610, Math.round(Number(x) / 10) * 10),
       Math.min(630, Math.round(Number(y) / 10) * 10),
     ];
   }
@@ -266,14 +326,14 @@ export function createPhysicalRoutePanel(scope) {
     point.x = e.clientX;
     point.y = e.clientY;
     const local = point.matrixTransform(matrix.inverse());
-    el('goal-x').value = String(Math.max(0, Math.min(420, Math.round(local.x / 10) * 10)));
+    el('goal-x').value = String(Math.max(0, Math.min(610, Math.round(local.x / 10) * 10)));
     el('goal-y').value = String(Math.max(0, Math.min(630, Math.round((630 - local.y) / 10) * 10)));
     if (payload) render(payload, false);
   });
   function freshCamera(s) {
     return !!(
       s?.valid &&
-      s.floor_width_mm === 425 &&
+      s.floor_width_mm === 610 &&
       s.floor_length_mm === 630 &&
       typeof s.captured_at_ms === 'number' &&
       Date.now() - s.captured_at_ms <= 500 &&
@@ -599,6 +659,7 @@ export function createPhysicalRoutePanel(scope) {
     showStage: chooseStage,
     getStage: () => stage,
     destroy() {
+      stopLocalCamera();
       observer.disconnect();
       scope.clearInterval(timer);
       listeners.forEach((remove) => remove());

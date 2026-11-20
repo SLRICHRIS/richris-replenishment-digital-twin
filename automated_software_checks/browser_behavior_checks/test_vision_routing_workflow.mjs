@@ -21,13 +21,36 @@ assert.equal(el('pr-step-panel-1').hidden, false);
 assert.equal(el('pr-map-card').hidden, true, 'Setup does not show an empty execution map');
 assert.equal(d.querySelectorAll('#vision-settings-form').length, 1);
 assert.ok(el('pr-step-panel-1').contains(el('vision-settings-form')));
-assert.equal(el('vision-camera-height').value, '92');
-assert.equal(el('vision-robot-length').value, '187');
-assert.equal(el('vision-robot-width').value, '150');
+assert.equal(el('vision-camera-height').value, '131');
+assert.equal(el('vision-robot-length').value, '170');
+assert.equal(el('vision-robot-width').value, '155');
 assert.equal(el('vision-robot-height').value, '150');
 assert.equal(el('vision-marker-height').value, '150');
 assert.equal(el('vision-marker-size').value, '40');
+assert.ok(el('pr-laptop-camera-start'), 'Physical Setup exposes laptop USB preview');
+let physicalCamStopped = 0;
+const physicalTrack = new w.EventTarget();
+physicalTrack.stop = () => physicalCamStopped++;
+w.HTMLVideoElement.prototype.play = async () => {};
+Object.defineProperty(w.navigator, 'mediaDevices', {
+  configurable: true,
+  value: {
+    async getUserMedia(opts) {
+      assert.equal(opts.audio, false, 'Camera preview never asks for audio');
+      return { getTracks: () => [physicalTrack], getVideoTracks: () => [physicalTrack] };
+    },
+  },
+});
+el('pr-laptop-camera-start').click();
+await Promise.resolve();
+await Promise.resolve();
+assert.equal(el('pr-laptop-camera-status').textContent, 'Live on laptop');
+assert.equal(el('pr-laptop-camera-video').hidden, false);
+
 el('pr-to-connect').click();
+await Promise.resolve();
+assert.equal(physicalCamStopped, 1, 'Camera stops when leaving physical Setup');
+assert.equal(el('pr-laptop-camera-video').srcObject, null);
 assert.equal(page.physical.getStage(), 2);
 assert.equal(el('pr-login').hidden, true);
 assert.equal(el('pr-to-plan').disabled, true);

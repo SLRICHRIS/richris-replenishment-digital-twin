@@ -1524,11 +1524,11 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
               <dl>
                 <div>
                   <dt>AMR body</dt>
-                  <dd>187 × 150 × 150 mm, including the platform and protrusions.</dd>
+                  <dd>170 × 155 × 150 mm, including the platform and protrusions.</dd>
                 </div>
                 <div>
                   <dt>Wheel axle to outline</dt>
-                  <dd>147 mm to the front (F) · 40 mm to the rear (R) · total length 187 mm.</dd>
+                  <dd>Front/rear axle offsets require remeasurement for the updated 170 mm body.</dd>
                 </div>
                 <div>
                   <dt>Wheels</dt>
@@ -1552,7 +1552,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                 <div>
                   <dt>Camera &amp; floor</dt>
                   <dd>
-                    Overhead Logitech USB webcam · reported height 920 mm · working paper 425 × 630
+                    Overhead Logitech USB webcam · reported height 1310 mm · working paper 610 × 630
                     mm. USB connects the webcam to the laptop.
                   </dd>
                 </div>
@@ -1684,12 +1684,12 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
               </div>
               <div class="vision-page-facts">
                 <span>
-                  Paper
-                  <strong>425 × 630 mm</strong>
+                  Floor
+                  <strong>610 × 630 mm</strong>
                 </span>
                 <span>
                   Camera
-                  <strong>92 cm · reported</strong>
+                  <strong>131 cm · reported</strong>
                 </span>
               </div>
             </div>
@@ -1711,10 +1711,8 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                     </div>
                   </div>
                   <p>
-                    Recorded AMR-01 size: 187 × 150 × 150 mm (length × width × height), including
-                    wheels and protrusions. From the wheel axle, F = 147 mm to the front and R = 40
-                    mm to the rear. The overhead USB camera height is 92 cm. The marker centre is
-                    100 mm ahead of the wheel-centre midpoint and centred left-to-right.
+                    Recorded AMR-01 size: 170 × 155 × 150 mm (length × width × height), including
+                    wheels and protrusions. Wheel-axle front/rear offsets must be remeasured for this body. The overhead USB camera height is 131 cm. ArUco marker ID 0 is centred on the robot body, as confirmed by the operator. Marker forward alignment remains to be verified.
                   </p>
                   <form id="vision-settings-form">
                     <div class="vision-fields">
@@ -1823,7 +1821,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                   </form>
                   <dl class="vision-readiness">
                     <dt>Floor dimensions</dt>
-                    <dd>Provided · 425 × 630 mm</dd>
+                    <dd>Provided · 610 × 630 mm</dd>
                     <dt>Robot footprint</dt>
                     <dd id="vision-footprint-status">Measurements required</dd>
                     <dt>Camera height</dt>
@@ -1859,7 +1857,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                           <span class="twin-card-kicker">1 · DRAW THE SCENE</span>
                           <h3 id="vision-map-title">Practice floor</h3>
                         </div>
-                        <span class="vision-chip">425 × 630 mm</span>
+                        <span class="vision-chip">610 × 630 mm</span>
                       </div>
                       <p id="vision-map-instructions">
                         Place a start and destination, then drag rectangles over obstacles. This map
@@ -1880,7 +1878,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                       <div class="vision-map-wrap">
                         <svg
                           id="vision-map"
-                          viewBox="0 0 425 630"
+                          viewBox="0 0 610 630"
                           role="img"
                           aria-label="Interactive measured-paper manual route map"
                           aria-describedby="vision-map-instructions"
@@ -1900,9 +1898,9 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                               />
                             </pattern>
                           </defs>
-                          <rect width="425" height="630" class="vision-floor" />
+                          <rect width="610" height="630" class="vision-floor" />
                           <rect
-                            width="425"
+                            width="610"
                             height="630"
                             fill="url(#vision-grid-pattern)"
                             class="vision-grid"
@@ -1933,7 +1931,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                             id="vision-start-x"
                             type="number"
                             min="0"
-                            max="425"
+                            max="610"
                             step="10"
                             placeholder="Set on map"
                           />
@@ -1955,7 +1953,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                             id="vision-goal-x"
                             type="number"
                             min="0"
-                            max="425"
+                            max="610"
                             step="10"
                             placeholder="Set on map"
                           />
@@ -1981,7 +1979,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                               id="vision-obstacle-x"
                               type="number"
                               min="0"
-                              max="425"
+                              max="610"
                               step="1"
                             />
                           </label>
@@ -2001,7 +1999,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                               id="vision-obstacle-width"
                               type="number"
                               min="1"
-                              max="425"
+                              max="610"
                               step="1"
                             />
                           </label>

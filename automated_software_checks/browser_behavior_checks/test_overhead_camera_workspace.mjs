@@ -31,14 +31,14 @@ w.localStorage.setItem(
 );
 const workspace = createVisionWorkspace(w);
 assert.equal(createVisionWorkspace(w), null, 'No duplicate event handlers');
-assert.equal(el('robot-length').value, '187');
-assert.equal(el('robot-width').value, '150');
+assert.equal(el('robot-length').value, '170');
+assert.equal(el('robot-width').value, '155');
 assert.equal(el('robot-height').value, '150');
 assert.equal(el('marker-height').value, '150');
 assert.equal(el('marker-size').value, '40');
-assert.equal(el('camera-height').value, '92');
+assert.equal(el('camera-height').value, '131');
 assert.equal(el('approve').disabled, true);
-el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 425, height: 630 });
+el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 610, height: 630 });
 el('map').dispatchEvent(
   new w.MouseEvent('pointerdown', { button: 0, clientX: 400, clientY: 30, bubbles: true }),
 );
@@ -81,14 +81,14 @@ assert.match(el('feedback').textContent, /between 0 and 200/);
 input('clearance', '20');
 el('settings-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 const saved = JSON.parse(w.localStorage.getItem('amr01.visionSetup.v2'));
-assert.equal(saved.settings.cameraHeightCm, 92);
+assert.equal(saved.settings.cameraHeightCm, 131);
 assert.deepEqual(saved.reportedMarkerOffset, {
-  reference: 'wheel-axle-midpoint',
-  forwardMm: 100,
+  reference: 'robot-body-center',
+  forwardMm: 0,
   leftMm: 0,
-  source: 'operator-reported',
+  source: 'operator-confirmed',
 });
-assert.deepEqual(saved.arena, { widthMm: 425, heightMm: 630, gridMm: 10 });
+assert.deepEqual(saved.arena, { widthMm: 610, heightMm: 630, gridMm: 10 });
 assert.equal(saved.version, 2);
 assert.equal(saved.plan, undefined);
 assert.equal(saved.decision, undefined);
@@ -199,7 +199,7 @@ saved.settings.markerHeightMm = null;
 saved.settings.markerSizeMm = null;
 w.localStorage.setItem('amr01.visionSetup.v2', JSON.stringify(saved));
 const updated = createVisionWorkspace(w);
-assert.equal(updated.snapshot().settings.robotLengthMm, 187);
+assert.equal(updated.snapshot().settings.robotLengthMm, 170);
 assert.equal(updated.snapshot().settings.robotWidthMm, 75);
 assert.equal(updated.snapshot().settings.robotHeightMm, 150);
 assert.equal(updated.snapshot().settings.markerHeightMm, 150);

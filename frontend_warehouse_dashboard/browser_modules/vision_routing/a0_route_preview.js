@@ -1,5 +1,5 @@
 /* Manual measured-floor planning rehearsal. No camera inference or robot commands. */
-export const ARENA = Object.freeze({ widthMm: 425, heightMm: 630, gridMm: 10 });
+export const ARENA = Object.freeze({ widthMm: 610, heightMm: 630, gridMm: 10 });
 const finite = (n) => typeof n === 'number' && Number.isFinite(n);
 export function normalizeSettings(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input))
