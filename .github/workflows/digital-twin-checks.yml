@@ -79,3 +79,19 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest automated_software_checks/predictive_twin_checks/test_postgres_integration.py -q
+
+  browser-camera-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install the same runtime dependencies used on Streamlit Cloud
+        run: python -m pip install -r requirements.txt pytest
+      - name: Import actual WebRTC components and verify OpenCV ArUco availability
+        run: |
+          python -c "import streamlit,streamlit_webrtc,av,cv2; assert hasattr(cv2,'aruco'); from backend_streamlit_and_telemetry.vision_control.browser_streamlit_workspace import render_browser_camera; from backend_streamlit_and_telemetry.vision_control.browser_gateway import BrowserVisionGateway; print('WebRTC camera runtime imports passed')"
+      - name: Exercise server-side browser ArUco and secure profile contracts
+        run: python -m pytest automated_software_checks/predictive_twin_checks/test_browser_camera.py -q
