@@ -27,7 +27,7 @@ const now = Date.now(),
     missing: [],
     scene: {
       valid: true,
-      floor_width_mm: 425,
+      floor_width_mm: 610,
       floor_length_mm: 630,
       seq: 10,
       captured_at_ms: now,
