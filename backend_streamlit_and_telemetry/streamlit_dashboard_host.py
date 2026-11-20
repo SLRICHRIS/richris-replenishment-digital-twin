@@ -36,13 +36,17 @@ def render_warehouse_workspace():
     payload['vision_execution'] = vision_workspace(mode)
     from .predictive_twin.manual_control_workspace import workspace as manual_workspace
     payload['manual_control'] = manual_workspace(mode)
+    payload['camera_panel_open'] = bool(st.session_state.get('warehouse_browser_camera_open'))
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
-    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution', 'manual_control'):
+    if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution', 'manual_control', 'camera_panel'):
         return
     choice = result.get('mode')
     nonce = result.get('nonce')
     if not isinstance(nonce, str) or len(nonce) > 80:
         return
+    if result['action'] == 'camera_panel':
+        if type(result.get('open')) is not bool:
+            return
     if result['action'] == 'human_review':
         permitted = ('create','decide','response') if mode == 'demo' else ('login','logout','create','decide')
         code = result.get('access_code', '')
@@ -71,7 +75,11 @@ def render_warehouse_workspace():
         from .predictive_twin.control_presence import synchronize_control_view
         if not synchronize_control_view(st.session_state, result['control_mode']):
             return
-    if result['action'] == 'manual_control':
+    if result['action'] == 'camera_panel':
+        st.session_state.warehouse_browser_camera_open = result['open']
+        # Open the native WebRTC panel in the parent app, not just this fragment.
+        st.rerun(scope='app')
+    elif result['action'] == 'manual_control':
         from .predictive_twin.manual_control_workspace import handle
         handle(result, mode)
     elif result['action'] == 'vision_execution':
