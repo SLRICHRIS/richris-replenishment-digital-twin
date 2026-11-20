@@ -282,3 +282,52 @@ The operator reported a **610 × 630 mm** floor, **1310 mm** lens-to-floor dista
 **Do not use the old 425 × 630 mm, 92 cm camera, or 187 mm robot measurements.** The sample config records the updated dimensions but leaves physical commissioning checks false. The backend floor marker mapping now matches the observed ID order. The provisional 40 mm corner-centre insets are **not measurements**: record each marker centre's X/Y distance in millimetres relative to the floor origin and verify its printed size before commissioning. Camera intrinsics, marker orientation, empty-floor background and the motor's stopping performance must be independently verified. This one-time setup remains valid until the camera, floor markers, resolution/focus, or robot hardware geometry changes.
 
 The browser's **Physical AMR → Setup → Show Logitech camera** is a video-only preview for the same laptop. Press **Stop preview** before starting the trusted desktop camera agent; simultaneous webcam consumers can conflict. A browser preview, MQTT telemetry packet or a successful offline test is not authorization to move the physical robot.
+
+
+
+## Low-battery human approval and non-overridable critical cutoff
+
+Battery handling has two **separate thresholds**. The real ESP32 signed-drive
+firmware enforces `AMR_VISION_MIN_PACK_V` locally from fresh measured pack voltage;
+a cloud decision **cannot** override it. The example firmware cutoff is **6.6 V
+for a 2S pack**, but the actual safe cutoff must be selected from the battery,
+load, motor driver and battery-management specifications.
+
+The optional camera/motion configuration
+`geometry.battery_advisory_voltage_v` is a **measured** low-battery advisory
+voltage strictly **above** `geometry.min_pack_voltage_v`. Leave it absent until
+the value is verified; the system then uses the mandatory cutoff only and does
+not infer state of charge from unreliable coulomb counts.
+
+The physical route controller implements:
+
+```python
+if pack_voltage_v <= critical_cutoff_v:
+    stop_motors()                       # Cannot be overridden
+elif pack_voltage_v <= advisory_v:      # Only if calibrated advisory is configured
+    stop_motors()                       # Zero output while waiting for human decision
+    if operator_decision == "continue":
+        resume_existing_goal()         # Still obey critical cutoff on every tick
+    elif operator_decision == "divert":
+        stop_existing_route()
+        require_new_approved_safe_route_to_E()
+    else:
+        hold_stopped()
+else:
+    continue_existing_goal()
+```
+
+A diversion approval **does not blindly execute an unreviewed new route**. It
+stops the old mission, selects the *current trusted camera location* as the new
+starting position and battery point **E** as the destination, and requires a
+fresh collision-checked proposal and separate operator approval. If an obstacle
+appears or measured clearance is insufficient, the robot stays stopped. If the
+operator declines diversion, the robot may continue only as long as the real
+battery measurement remains **above** the hard cutoff and all route safety
+checks are satisfied. No answer holds zero PWM while the lease and operator
+session stay live. Loss of telemetry or acknowledgement is a stop, not approval.
+
+On-site tests are still required: measure pack voltage under load, validate
+advisory headroom and cutoff against the actual battery pack/BMS, verify low-PWM
+zero-output behavior, and confirm safe stoppage if communication or camera
+tracking fails. Do not fake a critical reading while wheels are on the ground.
