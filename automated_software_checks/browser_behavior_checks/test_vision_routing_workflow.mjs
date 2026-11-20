@@ -54,6 +54,15 @@ assert.equal(el('pr-laptop-camera-video').srcObject, null);
 assert.equal(page.physical.getStage(), 2);
 assert.equal(el('pr-login').hidden, true);
 assert.equal(el('pr-to-plan').disabled, true);
+el('pr-step-1').click();
+assert.equal(page.physical.getStage(), 1);
+el('pr-laptop-camera-start').click();
+await Promise.resolve();
+await Promise.resolve();
+el('pr-open-streamlit-camera').click();
+assert.equal(physicalCamStopped, 2, 'Opening WebRTC releases local USB preview');
+assert.deepEqual(actions.at(-1), { action: 'camera_panel', open: true });
+el('pr-step-2').click();
 el('pr-source').click();
 assert.deepEqual(actions.at(-1), { action: 'sensor_source', mode: 'live' });
 page.physical.render({
