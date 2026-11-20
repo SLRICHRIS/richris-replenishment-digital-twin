@@ -10,7 +10,7 @@ import json
 import math
 import re
 
-WIDTH, HEIGHT, GRID = 425, 630, 10
+WIDTH, HEIGHT, GRID = 610, 630, 10
 SCENE_VERSION = 2
 SCENE_FRESH_MS, DRIVE_LEASE_MS, APPROVAL_LEASE_MS = 500, 500, 800
 OPERATOR_PRESENCE_MS = 2500
@@ -120,7 +120,7 @@ def scene(raw):
     if not isinstance(raw, dict) or raw.get('version') != SCENE_VERSION or raw.get('robot_id') != 'amr01':
         raise ValueError('Unsupported camera scene')
     if raw.get('floor_width_mm') != WIDTH or raw.get('floor_length_mm') != HEIGHT:
-        raise ValueError('Camera scene does not match the reported 425 x 630 mm floor')
+        raise ValueError('Camera scene does not match the reported 610 x 630 mm floor')
     for n,size in (('agent_boot_id',32),('config_id',64)):
         identifier(raw.get(n),size)
     if type(raw.get('seq')) is not int or raw['seq'] < 0 or type(raw.get('captured_at_ms')) is not int:
