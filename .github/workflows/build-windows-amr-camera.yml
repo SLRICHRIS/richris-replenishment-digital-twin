@@ -1,0 +1,65 @@
+name: Build Windows AMR camera toolkit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'amr01_camera_setup.py'
+      - 'amr01_camera_agent.py'
+      - 'backend_streamlit_and_telemetry/vision_control/**'
+      - '.github/workflows/build-windows-amr-camera.yml'
+  pull_request:
+    paths:
+      - 'amr01_camera_setup.py'
+      - 'amr01_camera_agent.py'
+      - 'backend_streamlit_and_telemetry/vision_control/**'
+      - '.github/workflows/build-windows-amr-camera.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-camera-toolkit:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bundled camera runtime
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend_streamlit_and_telemetry/vision_control/requirements-vision.txt
+          python -m pip install "pyinstaller>=6.11,<7"
+      - name: Build local webcam setup utility
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --onefile --console --paths . --collect-all cv2 --name AMR01_CameraSetup amr01_camera_setup.py
+      - name: Build authenticated camera tracking agent
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --onefile --console --paths . --collect-all cv2 --name AMR01_CameraAgent amr01_camera_agent.py
+      - name: Verify executable entry points without hardware or credentials
+        shell: pwsh
+        run: |
+          & .\dist\AMR01_CameraSetup.exe --help
+          if ($LASTEXITCODE -ne 0) { throw 'Setup executable failed' }
+          & .\dist\AMR01_CameraAgent.exe --help
+          if ($LASTEXITCODE -ne 0) { throw 'Agent executable failed' }
+      - name: Package unsigned tools without credentials or camera files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path camera-toolkit | Out-Null
+          Copy-Item .\dist\AMR01_CameraSetup.exe camera-toolkit\
+          Copy-Item .\dist\AMR01_CameraAgent.exe camera-toolkit\
+          Copy-Item .\backend_streamlit_and_telemetry\vision_control\example_camera_config.json camera-toolkit\
+          Copy-Item .\project_documentation\windows_camera_agent_no_python.md camera-toolkit\README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AMR01-Windows-Camera-Toolkit
+          path: camera-toolkit/
+          retention-days: 14
+          if-no-files-found: error
