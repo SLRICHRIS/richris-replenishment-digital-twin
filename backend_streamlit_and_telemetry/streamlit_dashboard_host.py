@@ -176,4 +176,20 @@ def render_dashboard():
     if not (FRONTEND_DIRECTORY / 'index.html').is_file():
         st.error('Deploy the complete repository: the warehouse dashboard files are missing.')
         st.stop()
+    if st.sidebar.checkbox(
+        'Logitech camera tracking (browser)', value=False,
+        key='warehouse_browser_camera_open',
+        help='Use webcam directly in Chrome through WebRTC. Local Python is not needed.',
+    ):
+        from .vision_control.browser_streamlit_workspace import render_browser_camera
+        render_browser_camera()
+    else:
+        # Unmounting a physical camera page must not leave a signed motor
+        # controller running in the Streamlit process.
+        gateway = st.session_state.pop('amr_browser_vision_gateway', None)
+        if gateway is not None:
+            gateway.close()
+        feed = st.session_state.get('amr_browser_camera_feed')
+        if feed is not None:
+            feed.disconnect()
     render_warehouse_workspace()
