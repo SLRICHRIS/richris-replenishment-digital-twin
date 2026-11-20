@@ -12,10 +12,8 @@ WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND
 
 @st.fragment(run_every='1s')
 def render_warehouse_workspace():
-    from .predictive_twin.workspace_payload import workspace_payload, database_url
-    mode = st.session_state.get('warehouse_sensor_mode')
-    if mode is None:
-        mode = 'live' if database_url() else 'demo'
+    from .predictive_twin.workspace_payload import workspace_payload
+    mode = st.session_state.warehouse_sensor_mode
     payload = workspace_payload(mode, st.session_state.get('warehouse_demo_trial', 'baseline'))
     if st.session_state.get('warehouse_connection_requested'):
         from .predictive_twin.amr_connection import connection_payload, connection_profile, session_connector
@@ -71,13 +69,13 @@ def render_warehouse_workspace():
     if nonce == st.session_state.get('warehouse_sensor_action'):
         return
     st.session_state.warehouse_sensor_action = nonce
+    previous_camera_access = (mode, st.session_state.get('vision_view'), st.session_state.get('vision_auth'))
     if result['action'] in ('manual_control', 'vision_execution') and 'control_mode' in result:
         from .predictive_twin.control_presence import synchronize_control_view
         if not synchronize_control_view(st.session_state, result['control_mode']):
             return
     if result['action'] == 'camera_panel':
-        st.session_state.warehouse_browser_camera_open = result['open']
-        # Open the native WebRTC panel in the parent app, not just this fragment.
+        st.session_state.pending_browser_camera_open = result['open']
         st.rerun(scope='app')
     elif result['action'] == 'manual_control':
         from .predictive_twin.manual_control_workspace import handle
@@ -138,8 +136,21 @@ def render_warehouse_workspace():
         st.session_state.warehouse_review_feedback = ''
         st.session_state.warehouse_database_requested = False
         st.session_state.warehouse_connection_requested = False
+    if st.session_state.get('warehouse_browser_camera_open') and previous_camera_access != (
+            st.session_state.warehouse_sensor_mode, st.session_state.get('vision_view'), st.session_state.get('vision_auth')):
+        # The native camera controls live outside the dashboard fragment.
+        st.rerun(scope='app')
     # The next scheduled fragment tick delivers source/archive changes without
     # remounting the iframe or resetting its page, focus and scroll position.
+
+
+def disconnect_browser_camera():
+    gateway = st.session_state.pop('amr_browser_vision_gateway', None)
+    if gateway is not None:
+        gateway.close()
+    feed = st.session_state.get('amr_browser_camera_feed')
+    if feed is not None:
+        feed.disconnect()
 
 
 def render_dashboard():
@@ -150,10 +161,19 @@ def render_dashboard():
     pending = st.session_state.pop('pending_workspace_view', None)
     if pending in ('Warehouse dashboard', 'Model inspection', 'Database'):
         st.session_state.workspace_view = pending
+    # A fragment can request a widget change after the sidebar has rendered.
+    # Apply it on the next full run, before Streamlit creates the checkbox.
+    camera_open = st.session_state.pop('pending_browser_camera_open', None)
+    if camera_open is not None:
+        st.session_state.warehouse_browser_camera_open = camera_open
+    if 'warehouse_sensor_mode' not in st.session_state:
+        from .predictive_twin.workspace_payload import database_url
+        st.session_state.warehouse_sensor_mode = 'live' if database_url() else 'demo'
     view = st.sidebar.radio('Workspace', ('Warehouse dashboard', 'Model inspection', 'Database'),
                             format_func=lambda name: 'Detailed readings' if name == 'Model inspection' else name,
                             key='workspace_view')
     if view != 'Warehouse dashboard':
+        disconnect_browser_camera()
         st.html('''<style>
             [data-testid="stHeader"] { display: none; }
             [data-testid="stMainBlockContainer"] { padding: 2rem; max-width: 1280px; }
@@ -192,12 +212,5 @@ def render_dashboard():
         from .vision_control.browser_streamlit_workspace import render_browser_camera
         render_browser_camera()
     else:
-        # Unmounting a physical camera page must not leave a signed motor
-        # controller running in the Streamlit process.
-        gateway = st.session_state.pop('amr_browser_vision_gateway', None)
-        if gateway is not None:
-            gateway.close()
-        feed = st.session_state.get('amr_browser_camera_feed')
-        if feed is not None:
-            feed.disconnect()
+        disconnect_browser_camera()
     render_warehouse_workspace()

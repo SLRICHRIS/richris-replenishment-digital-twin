@@ -404,13 +404,15 @@ export function createPhysicalRoutePanel(scope) {
           ? 'Complete the controller connection setup'
           : !p.authorized
             ? 'Enable your operator session'
-            : !freshCamera(p.scene)
+            : p.commissioned === false
+              ? 'Check connections before commissioning'
+              : !freshCamera(p.scene)
               ? 'Start calibrated Streamlit WebRTC or Windows camera tracking'
               : !receiverReady(p.scene)
                 ? 'Bring the ESP32 receiver online'
                 : 'Connection ready for a stationary route capture';
-      copy = !p.can_unlock
-        ? 'Use the setup guide to configure the camera controller, protected broker connection and private approval log.'
+      copy = p.missing?.length
+        ? p.missing[0]
         : !p.authorized
           ? 'Enter the operator alias and code here. This access protects physical movement.'
           : 'Keep the robot stationary and all floor markers visible. A fresh scene and receiver heartbeat are required.';
@@ -496,7 +498,7 @@ export function createPhysicalRoutePanel(scope) {
       )
         showStage(5);
       else if (isNew && r.state === 'pending') showStage(4);
-      else if (!userStage && !r && auth && live) showStage(3);
+      else if (!userStage && !r && canPlan(p)) showStage(3);
       else if (!userStage && !r && p.can_unlock) showStage(2);
       lastState = r?.state || null;
     }
@@ -611,21 +613,32 @@ export function createPhysicalRoutePanel(scope) {
     ]);
     el('feedback').textContent = p.feedback || '';
     el('feedback').hidden = !p.feedback;
+    const brokerStatus = {
+      connecting: 'Connecting to EMQX', subscribing: 'Subscribing to route feedback',
+      subscribed: 'Subscribed to route feedback', disconnected: 'Disconnected',
+      login_rejected: 'Broker rejected the route login',
+      subscription_rejected: 'Broker rejected the route feedback subscriptions',
+    };
     const readiness = [
       ['Physical source', live ? 'Selected' : 'Select physical source', live],
       [
         'Operator session',
-        auth ? 'Enabled' : p.can_unlock ? 'Access code required' : 'Connection setup required',
+        auth ? (p.commissioned === false ? 'Connection checks only' : 'Enabled')
+          : p.can_unlock ? 'Access code required' : 'Connection setup required',
         auth,
       ],
+      ['Route broker', brokerStatus[p.transport?.state] || 'Awaiting operator connection',
+        p.transport?.connected === true],
       [
         'Camera scene',
-        fresh ? 'Fresh calibrated observations' : 'Waiting for calibrated camera tracking',
+        fresh ? 'Fresh calibrated observations' : p.transport?.connected
+          ? 'Waiting for calibrated camera tracking' : 'Awaiting route connection',
         fresh,
       ],
       [
         'ESP32 receiver',
-        hardware && fresh ? 'Fresh heartbeat' : 'Waiting for receiver feedback',
+        hardware && fresh ? 'Fresh heartbeat' : p.transport?.connected
+          ? 'Waiting for receiver feedback from the camera controller' : 'Awaiting route connection',
         hardware && fresh,
       ],
     ];

@@ -4,25 +4,38 @@ import hmac
 import re
 import time
 import uuid
+from collections.abc import Mapping
 import streamlit as st
 from ..vision_control.contracts import key,identifier
 
 
 def profile():
-    missing=[]
     try:
-        p=dict(st.secrets['vision_control'])
-        for n,label in (('enabled','Physical route control enabled'),('commissioned','Attended camera and motor commissioning')):
-            if p.get(n) is not True: missing.append(label)
-        for n in ('mqtt_host','mqtt_username','mqtt_password','control_key','audit_url'):
-            if not isinstance(p.get(n),str) or not p[n]: missing.append('Private route '+n.replace('_',' '))
-        try: key(p.get('control_key'))
-        except ValueError: missing.append('New private route signing key')
-        p['access_code']=st.secrets['amr_connection']['access_code']
-        if not isinstance(p['access_code'],str) or len(p['access_code'])<12: missing.append('Private operator access code')
-        return (None if missing else p),missing
-    except (KeyError,FileNotFoundError):
-        return None,['Private route transport and audit setup','Attended camera and motor commissioning','ESP32 vision receiver upload','Windows USB-camera controller']
+        settings = st.secrets.get('vision_control')
+        operator = st.secrets.get('amr_connection', {})
+    except FileNotFoundError:
+        settings, operator = None, {}
+    if not isinstance(settings, Mapping):
+        return None, ['Add [vision_control] to the Streamlit app secrets for physical routes.']
+    p = dict(settings)
+    missing = []
+    if p.get('enabled') is not True:
+        missing.append('Enable the route connection in [vision_control].')
+    for name in ('mqtt_host', 'mqtt_username', 'mqtt_password', 'audit_url'):
+        if not isinstance(p.get(name), str) or not p[name].strip():
+            missing.append(f'Set [vision_control].{name} in Streamlit app secrets.')
+    try:
+        key(p.get('control_key'))
+    except ValueError:
+        missing.append('Set a private 64-character route signing key in [vision_control].control_key.')
+    p['access_code'] = operator.get('access_code') if isinstance(operator, Mapping) else None
+    if not isinstance(p['access_code'], str) or not 12 <= len(p['access_code']) <= 256:
+        missing.append('Set the operator access code in [amr_connection].')
+    if missing:
+        return None, missing
+    if p.get('commissioned') is not True:
+        missing.append('Connection checks only. Complete attended camera and motor commissioning before enabling routes.')
+    return p, missing
 
 
 @st.cache_resource(max_entries=1,show_spinner=False,on_release=lambda s:s.close())
@@ -31,7 +44,7 @@ def service(p):
     return Service(p)
 
 
-def tag(p): return hashlib.sha256(('vision:'+p['access_code']+p['control_key']).encode()).hexdigest()
+def tag(p): return hashlib.sha256(('vision:'+str(p.get('commissioned') is True)+':'+p['access_code']+p['control_key']).encode()).hexdigest()
 def authorized(p): return bool(p and st.session_state.get('vision_auth')==tag(p))
 def owner():
     if 'vision_owner' not in st.session_state: st.session_state.vision_owner=uuid.uuid4().hex
@@ -47,14 +60,18 @@ def workspace(mode):
             if s.stop.is_set():
                 service.clear(); s=service(p)
             st.session_state.vision_service=s
-            available=not s.stop.is_set()
             s.coordinator.touch(owner())
             value=s.coordinator.public(owner())
+            value['transport'] = s.public_transport()
+            available = s.connected and not s.stop.is_set()
         except Exception: missing.append('Protected route audit or transport unavailable')
     else:
         s=st.session_state.get('vision_service')
         if s and not s.stop.is_set(): s.coordinator.cancel(owner())
-    value.update(authorized=auth,can_unlock=p is not None,available=available,missing=missing,
+    commissioned = bool(p and p.get('commissioned') is True)
+    if not commissioned:
+        value['ready'] = False
+    value.update(authorized=auth,can_unlock=p is not None,available=available,commissioned=commissioned,missing=missing,
         feedback=st.session_state.get('vision_feedback',''),physical_mode=mode=='live',
         feedback_nonce=st.session_state.get('vision_feedback_nonce',''))
     return value
@@ -95,8 +112,13 @@ def handle(result,mode):
         if not isinstance(code,str) or len(code)>256 or not hmac.compare_digest(code,p['access_code']) or not isinstance(alias,str) or re.fullmatch(r'[A-Za-z0-9_-]{1,40}',alias) is None:
             st.session_state.vision_feedback='Operator code or alias was not accepted'; return
         st.session_state.vision_auth=tag(p); st.session_state.vision_operator=alias
-        st.session_state.vision_feedback='Unlocked. Keep the physical route page open during execution'; return
+        st.session_state.vision_feedback = ('Operator session unlocked.' if p.get('commissioned') is True
+            else 'Operator session unlocked for connection checks. Route execution is disabled.')
+        return
     if not authorized(p): return
+    if cmd != 'stop' and p.get('commissioned') is not True:
+        st.session_state.vision_feedback='Connection checks only. Physical routes require completed camera and motor commissioning.'
+        return
     try:
         s=service(p)
         if s.stop.is_set(): raise ValueError('Route coordinator unavailable; no movement is enabled')

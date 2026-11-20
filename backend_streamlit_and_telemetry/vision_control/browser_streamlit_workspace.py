@@ -164,29 +164,34 @@ def render_browser_camera():
         from ..predictive_twin.vision_execution_workspace import (
             profile as route_profile, authorized as route_authorized,
         )
-        route, missing = route_profile()
+        route, route_issues = route_profile()
         try:
             browser = dict(st.secrets["vision_browser"])
         except (KeyError, FileNotFoundError):
             browser = {}
-        permitted = bool(
-            route is not None and route_authorized(route) and
-            st.session_state.get("vision_view") and
-            st.session_state.get("warehouse_sensor_mode") == "live" and
-            feed.tracker is not None
-        )
-        try:
-            if permitted:
+        issues = list(route_issues)
+        if not browser:
+            issues.append("Add [vision_browser] to the Streamlit app secrets for browser-controlled routes.")
+        elif route and route.get("commissioned") is True:
+            try:
                 validate_browser_profile(route, browser)
-        except ValueError as exc:
-            permitted = False
-            st.caption("Physical control still gated: " + str(exc))
-        if not permitted:
-            st.caption(
-                "Automatic motor control is unavailable until the camera is calibrated, "
-                "the protected ESP32 receiver and route-audit service are commissioned, "
-                "and measured WebRTC latency and stopping tests pass."
-            )
+            except ValueError as exc:
+                issues.append(str(exc))
+        if st.session_state.get("warehouse_sensor_mode") != "live" or not st.session_state.get("vision_view"):
+            issues.append("Open Live AMR mission → Physical AMR with the physical source selected.")
+        if route and not route_authorized(route):
+            issues.append("Unlock the operator session under Physical AMR → Connect.")
+        if feed.tracker is None:
+            issues.append("Load the measured camera configuration and verify metric tracking.")
+        permitted = route is not None and not issues
+        if not permitted and gateway is not None:
+            _release(feed, gateway)
+            st.session_state.pop("amr_browser_vision_gateway", None)
+            gateway = None
+        if issues:
+            with st.expander("Physical route connection checks"):
+                for issue in issues:
+                    st.text(issue)
         if st.button(
             "Connect protected camera-to-EMQX mission controller",
             disabled=not permitted or gateway is not None,
