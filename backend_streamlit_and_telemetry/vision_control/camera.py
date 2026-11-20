@@ -28,9 +28,27 @@ def square(edge):
 
 
 def load_config(path):
-    p=json.loads(Path(path).read_text())
+    p=dict(path) if isinstance(path,dict) else json.loads(Path(path).read_text())
     if any(p.get('checks',{}).get(k) is not True for k in CHECKS):
         raise ValueError('Complete and verify every physical commissioning check in the private config')
+    # Physical marker centres must be measured, never silently assumed from
+    # an image or the nominal 40 mm example inset.
+    raw_refs=p.get('floor_reference_positions_mm')
+    if not isinstance(raw_refs,dict) or set(raw_refs)!={'1','2','3','4'}:
+        raise ValueError('Enter all four physically measured floor marker centres')
+    refs={}
+    for i in (1,2,3,4):
+        point=raw_refs[str(i)]
+        if not isinstance(point,(list,tuple)) or len(point)!=2:
+            raise ValueError('Measure both coordinates for floor marker '+str(i))
+        x,y=point
+        if type(x) not in (int,float) or type(y) not in (int,float) or not math.isfinite(x) or not math.isfinite(y) or not 15<=x<=WIDTH-15 or not 15<=y<=HEIGHT-15:
+            raise ValueError('Invalid physically measured floor reference '+str(i))
+        refs[i]=(float(x),float(y))
+    if not (refs[1][0] < refs[4][0] and refs[1][1] > refs[2][1] and
+            refs[2][0] < refs[3][0] and refs[3][1] < refs[4][1]):
+        raise ValueError('Floor reference ID ordering disagrees with observed corners')
+    p['floor_reference_positions_mm']={str(i):list(refs[i]) for i in refs}
     if p.get('floor_width_mm') != WIDTH or p.get('floor_length_mm') != HEIGHT:
         raise ValueError('Measure and configure the current 610 x 630 mm floor; previous A0 calibration is invalid')
     p['geometry']=geometry(p.get('geometry'))
@@ -52,8 +70,9 @@ def load_config(path):
 class Camera:
     def __init__(self,config,background):
         self.p=config; self.k=np.array(config['camera_matrix'],float); self.dist=np.array(config['distortion_coefficients'],float)
-        self.background=cv2.imread(str(background))
+        self.background=background.copy() if isinstance(background,np.ndarray) else cv2.imread(str(background))
         if self.background is None or self.background.shape[1::-1]!=tuple(config['resolution']): raise ValueError('Capture the empty floor at the calibrated resolution')
+        self.refs={int(i):tuple(v) for i,v in config.get('floor_reference_positions_mm',{}).items()} or REFS
         self.dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.detector=cv2.aruco.ArucoDetector(self.dictionary,cv2.aruco.DetectorParameters())
         self.held=np.zeros((HEIGHT,WIDTH),np.float64); self.last_hash=None; self.same_at=0
@@ -75,8 +94,8 @@ class Camera:
 
     def reference_pose(self,image):
         found=self.detect(image)
-        if any(i not in found for i in REFS): raise ValueError('All four floor reference markers must be visible')
-        world=np.concatenate([square(30)+np.array([*REFS[i],0]) for i in REFS])
+        if any(i not in found for i in self.refs): raise ValueError('All four floor reference markers must be visible')
+        world=np.concatenate([square(30)+np.array([*self.refs[i],0]) for i in REFS])
         pixels=np.concatenate([found[i] for i in REFS]).astype(float)
         ok,r,t=cv2.solvePnP(world,pixels,self.k,None,flags=cv2.SOLVEPNP_ITERATIVE)
         if not ok: raise ValueError('Floor camera calibration failed')
@@ -90,7 +109,7 @@ class Camera:
         if fingerprint!=self.last_hash: self.last_hash=fingerprint; self.same_at=now
         if now-self.same_at>500: raise ValueError('Camera frames stopped changing')
         image=cv2.undistort(frame,self.k,self.dist); found=self.detect(image)
-        if any(i not in found for i in REFS) or 0 not in found: raise ValueError('Robot marker or floor reference is obscured')
+        if any(i not in found for i in self.refs) or 0 not in found: raise ValueError('Robot marker or floor reference is obscured')
         refs=np.concatenate([found[i] for i in REFS])
         if np.max(np.linalg.norm(refs-self.ref_pixels,axis=1))>2: raise ValueError('Camera or floor reference moved; recalibrate before another approval')
         # Intersect undistorted marker rays with its MEASURED horizontal plane.
