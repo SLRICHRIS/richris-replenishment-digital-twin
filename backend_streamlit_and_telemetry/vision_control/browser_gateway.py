@@ -52,18 +52,7 @@ class BrowserVisionGateway:
         validate_browser_profile(route, browser)
         import paho.mqtt.client as mqtt
 
-        self.config = config
-        self.route, self.profile = route, browser
-        self.lock = threading.RLock()
-        self.boot = uuid.uuid4().hex
-        self.connected = False
-        self.subscribed = False
-        self.closed = False
-        self.last_video_ms = 0
-        self.last_frame_seq = -1
-        self.seq = 0
-        self.hw = None
-        self.agent = Agent(route["control_key"], self._send_drive)
+        self._initialize_camera(config, route, browser, threading.RLock())
         # Fixed broker client ID forces a different instance to disconnect the
         # existing receiver. Motor firmware independently stops on lost leases.
         self.client = mqtt.Client(
@@ -77,6 +66,23 @@ class BrowserVisionGateway:
         self.client.on_message = self._message
         self.client.connect_async(browser["mqtt_host"], 8883, 10)
         self.client.loop_start()
+        self._start_watchdog()
+
+    def _initialize_camera(self, config, route, browser, lock):
+        self.config = config
+        self.route, self.profile = route, browser
+        self.lock = lock
+        self.boot = uuid.uuid4().hex
+        self.connected = False
+        self.subscribed = False
+        self.closed = False
+        self.last_video_ms = 0
+        self.last_frame_seq = -1
+        self.seq = 0
+        self.hw = None
+        self.agent = Agent(route["control_key"], self._send_drive)
+
+    def _start_watchdog(self):
         self.stop = threading.Event()
         self.watchdog = threading.Thread(
             target=self._watch, daemon=True, name="amr01-browser-vision-watchdog"
@@ -144,9 +150,19 @@ class BrowserVisionGateway:
             h["boot_id"], h["epoch_id"], route_id, seq, operation,
             left, right, stamp, self.profile["drive_key"],
         )
+        self._publish_drive(packet)
+
+    def _publish_drive(self, packet):
         published = self.client.publish(DRIVE_TOPIC, packet, qos=0, retain=False)
         if published.rc != 0:
             raise ValueError("Drive packet did not reach MQTT transport")
+
+    def _hardware(self):
+        return self.hw
+
+    def _report_scene(self, observation, now):
+        self.client.publish(SCENE_TOPIC, canonical(seal("scene", observation, self.route["control_key"])), qos=0, retain=False)
+        self.client.publish(STATUS_TOPIC, canonical(self.agent.status(now)), qos=0, retain=False)
 
     def submit(self, observation):
         """Called only from a real WebRTC video frame callback."""
@@ -165,7 +181,8 @@ class BrowserVisionGateway:
             self.last_video_ms = now
             self.last_frame_seq = observation.frame_seq
             self.seq += 1
-            h = dict(self.hw) if self.hw is not None else dict(
+            latest = self._hardware()
+            h = dict(latest) if latest is not None else dict(
                 boot_id="0" * 32, epoch_id="0" * 32, ready=False,
                 age_ms=600000, battery_voltage_v=0, left_duty=0, right_duty=0
             )
@@ -188,22 +205,27 @@ class BrowserVisionGateway:
                 self.agent.reason = "Browser camera execution halted"
                 self.agent.lease_until = 0
             if self.subscribed:
-                self.client.publish(SCENE_TOPIC, canonical(seal("scene", s, self.route["control_key"])), qos=0, retain=False)
-                self.client.publish(STATUS_TOPIC, canonical(self.agent.status(now)), qos=0, retain=False)
+                self._report_scene(s, now)
 
     def _watch(self):
         while not self.stop.wait(0.05):
             with self.lock:
                 if self.closed:
                     return
+                if not self._session_active():
+                    self.close()
+                    return
                 now = self._now()
                 if self.last_video_ms and now - self.last_video_ms > MAX_FRAME_AGE_MS:
-                    if self.agent.state in ("arming", "running", "stopping"):
+                    if self.agent.state in ("arming", "running", "battery_review", "stopping"):
                         try:
                             self.agent.halt("WebRTC camera feed stalled", now)
                         except Exception:
                             self.agent.state = "blocked"
                             self.agent.lease_until = 0
+
+    def _session_active(self):
+        return True
 
     def public(self):
         with self.lock:
@@ -225,7 +247,10 @@ class BrowserVisionGateway:
             self.connected = False
             self.subscribed = False
         self.stop.set()
-        self.client.disconnect()
-        self.client.loop_stop()
+        self._close_transport()
         if self.watchdog is not threading.current_thread():
             self.watchdog.join(timeout=0.5)
+
+    def _close_transport(self):
+        self.client.disconnect()
+        self.client.loop_stop()

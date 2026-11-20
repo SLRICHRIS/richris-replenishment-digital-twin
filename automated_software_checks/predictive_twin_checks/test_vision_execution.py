@@ -48,6 +48,93 @@ def test_authenticated_protocol_and_bad_boundaries():
         with pytest.raises(ValueError):geometry(v)
 
 
+def test_colocated_browser_uses_only_the_receiver_link_and_audited_owner(monkeypatch):
+    import threading
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    from backend_streamlit_and_telemetry.vision_control import browser_receiver_service as link
+    from backend_streamlit_and_telemetry.vision_control.browser_camera import Observation
+    from backend_streamlit_and_telemetry.vision_control.protocol import verified
+    from backend_streamlit_and_telemetry.vision_control.service import Service
+
+    clock = [10000]
+    def init_online(service, profile):
+        service.engine = create_engine('sqlite://')
+        metadata.create_all(service.engine)
+        service.guard, service.stop = threading.RLock(), threading.Event()
+        service.coordinator = Coordinator(service.engine, SECRET, service.publish, lambda: clock[0])
+        service.coordinator.connected = service.connected = True
+        service.transport_state, service.transport_reason = 'subscribed', ''
+        service.assert_owner = Mock()
+        service.client = Mock()
+        service.client.publish.return_value.rc = 0
+
+    monkeypatch.setattr(Service, '__init__', init_online)
+    monkeypatch.setattr(link, 'time', SimpleNamespace(time=lambda: clock[0] / 1000))
+    monkeypatch.setattr(link._ReceiverCamera, '_now', staticmethod(lambda: clock[0]))
+    settings = dict(control_key=SECRET, drive_key=DRIVE_KEY, commissioned=False)
+    service = link.BrowserReceiverService(settings)
+    config = dict(geometry=G, config_id='f' * 64)
+    owner = '1' * 32
+
+    def heartbeat(seq, protocol='H1', mv=7400, secret=DRIVE_KEY, retained=False, rid='0'*32, ack=0, state='idle'):
+        fields = [protocol, BOOT, EPOCH, seq, rid, ack, state, 0, 0, mv, int(mv > 6600), clock[0]]
+        if protocol == 'H2':
+            fields.append(255)
+        service.message(None, None, SimpleNamespace(topic=HARDWARE_TOPIC, retain=retained, payload=signed(fields, secret)))
+
+    heartbeat(1, retained=True)
+    heartbeat(2, secret=SECRET)
+    assert service.public_transport()['receiver'] is None
+    heartbeat(3, protocol='H2')
+    assert service.public_transport()['receiver']['protocol'] == 'H2' and service.route_hardware() is None
+    with pytest.raises(ValueError, match='commissioning'):
+        service.attach_camera(config, owner)
+    heartbeat(4, mv=4890)
+    heartbeat(3)
+    assert service.route_hardware()['ready'] is False
+    clock[0] += 501
+    assert not service.public_transport()['receiver']['fresh'] and service.route_hardware() is None
+    service.client.publish.assert_not_called()
+
+    settings['commissioned'] = True
+    cam = service.attach_camera(config, owner)
+    try:
+        with pytest.raises(ValueError, match='already owns'):
+            service.attach_camera(config, '2' * 32)
+        assert not service.camera_owned_by('2' * 32)
+        def frame(seq):
+            pose = dict(x=210, y=180, heading=math.pi/2)
+            cam.submit(Observation(clock[0], (0, 1, 2, 3, 4), True, '', pose, (), seq))
+        for seq in range(5, 12):
+            clock[0] += 100
+            heartbeat(seq)
+            frame(seq)
+        c = service.coordinator
+        c.capture(owner, 'tester', [210, 450])
+        rid = c.row['review_id']
+        service.client.publish.assert_not_called()
+        c.decide(owner, rid, 'approve', 'Clear fixture floor')
+        topic, raw = service.client.publish.call_args.args
+        assert topic == DRIVE_TOPIC and service.client.publish.call_args.kwargs == dict(qos=0, retain=False)
+        assert verified(raw, DRIVE_KEY, 10)[5:8] == ['arm', '0', '0']
+        with c.engine.connect() as db:
+            assert db.execute(select(reviews.c.state)).scalar_one() == 'sent'
+        clock[0] += 100
+        heartbeat(12, rid=rid, ack=1, state='armed')
+        frame(12)
+        assert c.row['state'] == 'running'
+        c.cancel(owner)
+        assert verified(service.client.publish.call_args.args[1], DRIVE_KEY, 10)[5:8] == ['stop','0','0']
+        assert all(call.args[0] == DRIVE_TOPIC for call in service.client.publish.call_args_list)
+        service.disconnected()
+        assert not service.camera_owned_by(owner) and service.route_hardware() is None
+        service.connected = True
+        assert not service.camera_owned_by(owner)
+    finally:
+        cam.close()
+
+
 def test_continuous_collision_and_detour():
     obs=[dict(x=200,y=200,width=40,height=100)]
     assert not segment_clear((120,250),(320,250),obs,20)
