@@ -77,6 +77,9 @@ def render_warehouse_workspace():
             return
     if result['action'] == 'camera_panel':
         st.session_state.warehouse_browser_camera_open = result['open']
+        # The WebRTC panel is rendered by the parent app, outside this
+        # one-second data fragment. Explicitly rerun the whole app once.
+        st.rerun(scope='app')
     elif result['action'] == 'manual_control':
         from .predictive_twin.manual_control_workspace import handle
         handle(result, mode)
