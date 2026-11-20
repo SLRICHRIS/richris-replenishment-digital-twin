@@ -309,3 +309,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `project_maintenance_scripts/add_manual_receiver_to_working_sketch.py` | Implement or verify authenticated one-shot manual motor control. |
 
 | `backend_streamlit_and_telemetry/predictive_twin/control_presence.py` | Synchronize the selected manual or vision control page atomically when Streamlit coalesces view events; cancel only the departing session’s owned requests. |
+
+| `amr01_camera_setup.py` | Safe standalone Windows executable entry point for one-time Logitech camera calibration/background capture. |
+| `amr01_camera_agent.py` | Standalone Windows executable entry point for the protected, calibrated vision-to-EMQX controller. |
+| `.github/workflows/build-windows-amr-camera.yml` | Build and smoke-test unsigned Windows camera toolkit executables without bundling operator secrets. |
+| `project_documentation/windows_camera_agent_no_python.md` | Explain how to download and commission the Windows toolkit without installing Python locally. |
