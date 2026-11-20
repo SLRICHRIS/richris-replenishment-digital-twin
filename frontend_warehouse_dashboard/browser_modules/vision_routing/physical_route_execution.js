@@ -221,6 +221,7 @@ export function createPhysicalRoutePanel(scope) {
   });
   on(el('lock'), 'click', () => send('logout'));
   on(el('open-streamlit-camera'), 'click', () => {
+    if (localCameraStream) stopLocalCamera('Local USB preview released for Streamlit WebRTC tracking.');
     d.dispatchEvent(new scope.CustomEvent('python-twin:action', {
       detail: { action: 'camera_panel', open: true },
     }));
