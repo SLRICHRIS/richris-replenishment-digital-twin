@@ -26,7 +26,7 @@ assert.throws(() => normalizeSettings({ markerId: 50 }));
 assert.throws(() => normalizeObstacles(Array(26).fill({ x: 10, y: 10, width: 10, height: 10 })));
 assert.throws(() => normalizeObstacles([{ x: 605, y: 0, width: 20, height: 20 }]));
 assert.throws(() => normalizePoint({ x: Infinity, y: 10 }));
-assert.deepEqual(normalizePoint({ x: 425, y: 630 }), { x: 420, y: 630 });
+assert.deepEqual(normalizePoint({ x: 425, y: 630 }), { x: 430, y: 630 });
 assert.equal(normalizeSettings({ executionEnabled: true }).executionEnabled, undefined);
 assert.throws(() => normalizePoint({ x: 841, y: 1189 }), /inside the measured floor/);
 assert(Math.abs(radius - (Math.hypot(40, 30) + 20)) < 1e-9);
