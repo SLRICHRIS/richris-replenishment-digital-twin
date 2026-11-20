@@ -95,8 +95,8 @@ class Camera:
     def reference_pose(self,image):
         found=self.detect(image)
         if any(i not in found for i in self.refs): raise ValueError('All four floor reference markers must be visible')
-        world=np.concatenate([square(30)+np.array([*self.refs[i],0]) for i in REFS])
-        pixels=np.concatenate([found[i] for i in REFS]).astype(float)
+        world=np.concatenate([square(30)+np.array([*self.refs[i],0]) for i in self.refs])
+        pixels=np.concatenate([found[i] for i in self.refs]).astype(float)
         ok,r,t=cv2.solvePnP(world,pixels,self.k,None,flags=cv2.SOLVEPNP_ITERATIVE)
         if not ok: raise ValueError('Floor camera calibration failed')
         projected=cv2.projectPoints(world,r,t,self.k,None)[0].reshape(-1,2)
@@ -110,7 +110,7 @@ class Camera:
         if now-self.same_at>500: raise ValueError('Camera frames stopped changing')
         image=cv2.undistort(frame,self.k,self.dist); found=self.detect(image)
         if any(i not in found for i in self.refs) or 0 not in found: raise ValueError('Robot marker or floor reference is obscured')
-        refs=np.concatenate([found[i] for i in REFS])
+        refs=np.concatenate([found[i] for i in self.refs])
         if np.max(np.linalg.norm(refs-self.ref_pixels,axis=1))>2: raise ValueError('Camera or floor reference moved; recalibrate before another approval')
         # Intersect undistorted marker rays with its MEASURED horizontal plane.
         # A tiny square alone cannot reliably estimate height/tilt at ceiling range.
@@ -143,7 +143,7 @@ class Camera:
         projected=cv2.projectPoints(np.array(world,float),self.r,self.t,self.k,None)[0]
         body=cv2.perspectiveTransform(projected.astype(np.float32),self.H).reshape(-1,2)
         cv2.fillConvexPoly(mask,cv2.convexHull(body.astype(np.int32)),0)
-        for i in REFS:
+        for i in self.refs:
             polygon=cv2.perspectiveTransform(found[i].reshape(1,4,2).astype(np.float32),self.H)[0]
             cv2.fillConvexPoly(mask,polygon.astype(np.int32),0)
         if np.count_nonzero(mask)>mask.size*.30: raise ValueError('Lighting or foreground changed too much for validated obstacle detection')
