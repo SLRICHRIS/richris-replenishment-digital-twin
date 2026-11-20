@@ -104,6 +104,7 @@
     },
     { capture: true },
   );
+  const selectedVisionMode = () => document.getElementById('vision-routing-shell')?.dataset.mode;
   document.addEventListener('python-twin:action', (event) => {
     const action = event.detail;
     if (
@@ -119,6 +120,7 @@
         'human_review',
         'vision_execution',
         'manual_control',
+        'camera_panel',
       ].includes(action.action)
     )
       return;
@@ -128,6 +130,7 @@
       !['baseline', 'turning', 'disagreement', 'low_charge', 'interruption'].includes(action.trial)
     )
       return;
+    if (action.action === 'camera_panel' && (typeof action.open !== 'boolean' || document.body.dataset.view !== 'vision' || selectedVisionMode() !== 'physical')) return;
     if (action.action === 'connection_view' && typeof action.active !== 'boolean') return;
     if (
       action.action === 'connection_control' &&
@@ -219,6 +222,7 @@
               goal_y: Number.isFinite(action.goal_y) ? action.goal_y : null,
             }
           : {}),
+        ...(action.action === 'camera_panel' ? { open: action.open } : {}),
         ...(action.action === 'connection_view' ? { active: action.active } : {}),
         ...(action.action === 'connection_control'
           ? { command: action.command, access_code: action.access_code }
