@@ -1363,10 +1363,10 @@ const pages = {
     summary: 'Explore the sensor, vision, approval and power pipelines for AMR-01.',
   },
   vision: {
-    title: 'Overhead vision routing',
-    context: 'Camera setup & route review',
+    title: 'Live AMR mission',
+    context: 'Five-point paper warehouse',
     summary:
-      'Prepare the workspace, connect live feedback, then plan, approve and verify one physical journey.',
+      'Select racks A–D, track the overhead camera, and review physical route decisions. Battery station E is a separate target.',
   },
   connection: {
     title: 'Connect AMR',
@@ -1417,7 +1417,7 @@ const pages = {
   },
 };
 function activatePage(name, writeHash = true) {
-  if (!pages[name]) name = 'environment';
+  if (!pages[name]) name = 'vision';
   if (
     ['database', 'connection'].includes(name) &&
     document.documentElement.dataset.pythonTwin !== 'true'
@@ -2199,6 +2199,21 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 reset();
-activatePage(location.hash.slice(1), false);
+// Physical mission is the default. Virtual warehouse tools remain accessible on demand.
+const optionalPages = new Set(['environment', 'routes', 'missions', 'telemetry', 'engineering', 'activity']);
+const advancedToggle = document.getElementById('amr-advanced-toggle');
+let advancedVisible = false;
+function setAdvanced(visible) {
+  advancedVisible = visible;
+  document.documentElement.dataset.amrAdvanced = String(visible);
+  advancedToggle?.setAttribute('aria-pressed', String(visible));
+  if (advancedToggle) advancedToggle.querySelector('span').textContent =
+    visible ? 'Hide simulation tools' : 'Show simulation tools';
+  if (!visible && optionalPages.has(activePage)) activatePage('vision');
+}
+advancedToggle?.addEventListener('click', () => setAdvanced(!advancedVisible));
+const requestedPage = location.hash.slice(1);
+setAdvanced(optionalPages.has(requestedPage));
+activatePage(requestedPage || 'vision', false);
 applySlideWorkspaceScope();
 requestAnimationFrame(frame);
