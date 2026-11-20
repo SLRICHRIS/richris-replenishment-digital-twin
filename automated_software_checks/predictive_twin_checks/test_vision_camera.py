@@ -32,7 +32,7 @@ def fixture(tmp_path):
     base=np.full((960,1280,3),255,np.uint8)
     for i,(x,y) in REFS.items():marker(base,i,x,y,0,30)
     path=tmp_path/'empty.png';cv2.imwrite(str(path),base)
-    p=dict(checks={c:True for c in CHECKS},geometry=G,camera_matrix=k.tolist(),distortion_coefficients=[0]*5,resolution=[1280,960],camera_height_mm=920,floor_width_mm=425,floor_length_mm=630,marker_edge_mm=30,marker_height_mm=50,marker_center_to_robot_center_mm=[0,0],marker_forward_offset_rad=0,max_obstacle_height_mm=40)
+    p=dict(checks={c:True for c in CHECKS},geometry=G,camera_matrix=k.tolist(),distortion_coefficients=[0]*5,resolution=[1280,960],camera_height_mm=920,floor_width_mm=610,floor_length_mm=630,floor_reference_positions_mm={str(i):list(pos) for i,pos in REFS.items()},marker_edge_mm=30,marker_height_mm=50,marker_center_to_robot_center_mm=[0,0],marker_forward_offset_rad=0,max_obstacle_height_mm=40)
     frame=base.copy()
     cv2.fillConvexPoly(frame,poly([[190,270,50],[230,270,50],[230,330,50],[190,330,50]]).astype(np.int32),(70,70,70))
     marker(frame,0,210,300,50,30)
