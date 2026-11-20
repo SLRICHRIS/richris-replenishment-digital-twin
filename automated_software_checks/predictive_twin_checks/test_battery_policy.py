@@ -146,7 +146,7 @@ def test_diversion_approval_stops_old_mission_and_requires_new_route_to_E():
     assert agent.state=="blocked"
     assert "route to E" in agent.reason
     assert commands[-1][3:6]==("stop",0,0)
-    with pytest.raises(ValueError,match="No pending"):
+    with pytest.raises(ValueError,match="already been decided"):
         c.battery_decide(OWNER,rid,"continue","No duplicate")
 
 
