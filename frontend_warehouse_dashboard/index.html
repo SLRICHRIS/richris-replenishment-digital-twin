@@ -71,7 +71,7 @@
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=charge-yaw-20261120"
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=compact-notes-20261120"
     ></script>
     <script
       defer
@@ -2721,14 +2721,14 @@
                   <dd id="python-amr01-battery-input">—</dd>
                   <dt>Electrical power (W)</dt>
                   <dd id="python-amr01-power">—</dd>
-                  <dt>Net energy used (Wh)</dt>
+                  <dt id="python-amr01-energy-label">Net energy used (Wh)</dt>
                   <dd id="python-amr01-energy">—</dd>
                 </dl>
-                <p class="python-card-meaning" id="python-amr01-soc-note" hidden></p>
-                <p class="python-card-meaning" id="python-amr01-battery-input-note" hidden></p>
-                <p class="python-card-meaning" id="python-amr01-energy-note" hidden></p>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
+                  <p class="python-card-meaning" id="python-amr01-soc-note" hidden></p>
+                  <p class="python-card-meaning" id="python-amr01-battery-input-note" hidden></p>
+                  <p class="python-card-meaning" id="python-amr01-energy-note" hidden></p>
                   <p class="python-card-meaning">
                     SOC means state of charge. Positive current means discharge; negative current
                     means charging. Charge and net energy are calculated estimates.
@@ -2866,14 +2866,13 @@
                   <dt id="python-amr01-runtime-label">Time until 20% charge</dt>
                   <dd id="python-amr01-runtime">—</dd>
                 </dl>
-                <p id="python-amr01-forecast-note" class="python-card-meaning">
-                  Assumes unchanged wheel speeds and battery current. This is not a planned route or
-                  a battery-life guarantee.
-                </p>
-                <p id="python-amr01-runtime-note" class="python-card-meaning" hidden></p>
                 <details class="slide-equation">
                   <summary>How it works &amp; source</summary>
-
+                  <p id="python-amr01-forecast-note" class="python-card-meaning">
+                    Assumes unchanged wheel speeds and battery current. This is not a planned route
+                    or a battery-life guarantee.
+                  </p>
+                  <p id="python-amr01-runtime-note" class="python-card-meaning" hidden></p>
                   <p class="slide-equation-text">
                     Repeat midpoint pose update with fixed vL/vR for horizon H in 20 substeps.
                     <br />
