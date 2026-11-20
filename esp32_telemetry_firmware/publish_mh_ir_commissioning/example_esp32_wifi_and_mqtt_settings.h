@@ -40,7 +40,11 @@ static constexpr bool BATTERY_SOC_INITIALIZATION_CONFIRMED = false;
 
 // Enable ONLY after the attended camera/motor commissioning in the route guide.
 // Generate a NEW private 64-character lowercase hex key; never reuse HTTP auth.
-#define AMR_VISION_DRIVE_ENABLED 0
+// Protected Wi-Fi drive feature is compiled in for the user's motor test.
+// EMPTY drive key / receiver credentials still fail visionConfigured(), and
+// invalid/expired signed commands never operate motors. Complete and flash
+// PRIVATE settings on the physical ESP32 before expecting any response.
+#define AMR_VISION_DRIVE_ENABLED 1
 #define AMR_VISION_DRIVE_KEY ""
 #define AMR_VISION_MQTT_USERNAME ""
 #define AMR_VISION_MQTT_PASSWORD ""
