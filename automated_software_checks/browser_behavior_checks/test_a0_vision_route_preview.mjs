@@ -12,7 +12,7 @@ import {
 
 const settings = { robotLengthMm: 80, robotWidthMm: 60, clearanceMm: 20 };
 const radius = clearanceRadius(settings);
-assert.deepEqual(ARENA, { widthMm: 425, heightMm: 630, gridMm: 10 });
+assert.deepEqual(ARENA, { widthMm: 610, heightMm: 630, gridMm: 10 });
 assert.equal(normalizeSettings().robotWidthMm, null, 'Never infer full width from wheel spacing');
 assert.throws(() => normalizeSettings(null));
 assert.throws(
@@ -24,7 +24,7 @@ assert.throws(() => normalizeSettings({ clearanceMm: -1 }));
 assert.throws(() => normalizeSettings({ robotLengthMm: 2001 }));
 assert.throws(() => normalizeSettings({ markerId: 50 }));
 assert.throws(() => normalizeObstacles(Array(26).fill({ x: 10, y: 10, width: 10, height: 10 })));
-assert.throws(() => normalizeObstacles([{ x: 420, y: 0, width: 20, height: 20 }]));
+assert.throws(() => normalizeObstacles([{ x: 605, y: 0, width: 20, height: 20 }]));
 assert.throws(() => normalizePoint({ x: Infinity, y: 10 }));
 assert.deepEqual(normalizePoint({ x: 425, y: 630 }), { x: 420, y: 630 });
 assert.equal(normalizeSettings({ executionEnabled: true }).executionEnabled, undefined);
@@ -59,7 +59,7 @@ const blocked = planRoute({
   settings,
   start,
   goal: end,
-  obstacles: [{ x: 0, y: 400, width: 425, height: 10 }],
+  obstacles: [{ x: 0, y: 400, width: 610, height: 10 }],
 });
 assert.deepEqual(blocked.points, []);
 assert.equal(blocked.lengthMm, null);
