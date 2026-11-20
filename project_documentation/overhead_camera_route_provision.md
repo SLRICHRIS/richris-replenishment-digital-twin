@@ -1,6 +1,15 @@
 # Overhead USB camera provision
 
-Open **Vision routing** in the published Streamlit dashboard. The reported arena is a **425 × 630 mm** portrait paper, origin at the bottom-left, X right and Y up. Reported camera height is **92 cm**, interpreted as lens-to-paper distance pending confirmation. The reported full robot outline is 187 × 150 × 150 mm, corrected from the original 180 mm length by axle-to-front F = 147 mm and axle-to-rear R = 40 mm. The printed robot-marker black edge is 40 mm at a reported height of 150 mm. These are planning defaults and metadata; saved browser edits are preserved. The 100 mm wheel spacing is not substituted for body width. Camera and motor commissioning remain pending.
+Open **Live AMR mission** in the published Streamlit dashboard. The physical floor is **610 × 630 mm**, with origin at the bottom-left, X right and Y up. The Logitech camera is **131 cm** vertically above the floor. The full AMR-01 body is **170 × 155 × 150 mm** (L × W × H). ArUco marker **ID 0** is reported at the body centre; its directional alignment still needs verification. The robot's black-square marker edge is nominally **40 mm** at a reported surface height of **150 mm**.
+
+**Observed physical floor marker arrangement (20 November 2026 image):**
+
+- **ID 1:** top-left corner
+- **ID 2:** bottom-left corner
+- **ID 3:** bottom-right corner
+- **ID 4:** top-right corner
+
+The OpenCV `DICT_4X4_50` detector recognized IDs 0–4 in the supplied screenshot. **Visibility is not metric calibration:** the exact floor coordinates of each *marker centre*, camera intrinsics, marker heading alignment, motor polarity/speed, and stopping distance must be verified before any autonomous drive. The software's 40 mm corner insets are provisional, not physical measurements. Keep all commissioning checks false until independently tested. An on-laptop USB video preview is now available under **Physical AMR → Setup → Show Logitech camera**; it does not feed trusted localization and must be stopped before launching the separate camera agent.
 
 ## Page organization
 
@@ -24,4 +33,4 @@ The preview does not model dynamic obstacles, wheel slip, turn duration, acceler
 
 The protected camera/controller/ESP32 path is implemented, but its physical commissioning remains pending. Follow the [physical execution guide](human_approved_physical_route_execution.md) for measured camera geometry, firmware upload, private backend audit setup, broker permissions and attended commissioning. The browser preview alone is neither automatic obstacle detection nor trusted physical calibration. Practice approval never authorizes the physical AMR.
 
-The 18 November paper measurements supersede the original A0 assumption. Saved A0 maps are not restored into the new coordinate system. Camera calibration and physical commissioning remain pending.
+The 20 November measured floor supersedes all older 425 mm and A0 dimensions. Camera calibration and physical commissioning remain pending. Browser setup/preview alone cannot authorize motion.

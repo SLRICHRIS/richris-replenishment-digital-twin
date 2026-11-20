@@ -48,8 +48,8 @@ its pulse settings; use 20 only after checking actual counted falling edges.
 
 ## 1. Prepare the measured camera scene
 
-Use a fixed overhead USB camera and a flat **425 × 630 mm portrait** floor.
-The reported overhead USB camera height is **920 mm (92 cm)**.
+Use a fixed overhead USB camera and a flat **610 × 630 mm** floor.
+The reported overhead Logitech camera height is **1310 mm (131 cm)**.
 On 19 November 2026 the operator supplied the full robot dimensions:
 **187 mm length × 150 mm width × 150 mm height**, including its platform and
 protrusions. The corrected length follows the subsequent axle-to-outline measurements:
@@ -275,21 +275,10 @@ route in a clear floor area and physically validate each stop condition before
 normal use.
 
 
-## Measured-floor revision: 18 November 2026
+## Measured-floor revision: 20 November 2026
 
-The reported paper is 63 cm long and 42.5 cm wide, replacing the earlier A0 assumption.
-The active coordinate frame is X 0..425 mm and Y 0..630 mm. The reported camera
-height is 92 cm.
-`example_camera_config.json` now records `floor_width_mm=425`,
-`floor_length_mm=630` and `camera_height_mm=920`, with all commissioning checks false.
-Do not mark those checks true merely because the dimensions are entered.
+The operator reported a **610 × 630 mm** floor, **1310 mm** lens-to-floor distance and an **170 × 155 × 150 mm** AMR body. Robot ArUco marker ID 0 is confirmed centred on the robot body. Printed marker IDs **1, 2, 3, 4** appear at the **top-left, bottom-left, bottom-right, top-right**, respectively, and all five IDs were recognized in the supplied Logitech screenshot using OpenCV `DICT_4X4_50`.
 
-Scene contract version 2 explicitly binds the measured floor dimensions. Version 1
-and A0-sized signed scenes are rejected. Download the current camera-controller
-code before commissioning, update the private floor configuration, place floor
-markers at the revised coordinates above and capture a new empty-floor image.
-Revalidate the camera geometry. Intrinsics may be reused only when they remain
-valid for the same lens, focus and resolution. Old browser A0 maps and proposals
-are not restored; the measured-floor browser setup uses a new storage version.
-The route planner preserves all footprint and stopping margins on the smaller
-paper and reports no route if those margins do not fit.
+**Do not use the old 425 × 630 mm, 92 cm camera, or 187 mm robot measurements.** The sample config records the updated dimensions but leaves physical commissioning checks false. The backend floor marker mapping now matches the observed ID order. The provisional 40 mm corner-centre insets are **not measurements**: record each marker centre's X/Y distance in millimetres relative to the floor origin and verify its printed size before commissioning. Camera intrinsics, marker orientation, empty-floor background and the motor's stopping performance must be independently verified. This one-time setup remains valid until the camera, floor markers, resolution/focus, or robot hardware geometry changes.
+
+The browser's **Physical AMR → Setup → Show Logitech camera** is a video-only preview for the same laptop. Press **Stop preview** before starting the trusted desktop camera agent; simultaneous webcam consumers can conflict. A browser preview, MQTT telemetry packet or a successful offline test is not authorization to move the physical robot.

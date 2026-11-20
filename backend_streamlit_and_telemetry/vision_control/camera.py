@@ -15,7 +15,11 @@ from .contracts import geometry,digest,WIDTH,HEIGHT,angle
 CHECKS=('intrinsics_verified','floor_reference_positions_verified','empty_floor_verified',
         'marker_mount_verified','wheel_polarities_verified','pwm_speed_measured',
         'stopping_distance_measured','motor_voltage_current_verified','obstacle_detection_validated')
-REFS={1:(40,40),2:(WIDTH-40,40),3:(WIDTH-40,HEIGHT-40),4:(40,HEIGHT-40)}
+# Verified from the 20 Nov 2026 overhead image (ID 1 top-left, 2 bottom-left,
+# 3 bottom-right, 4 top-right). Nominal 40 mm offsets are NOT measured: the
+# floor_reference_positions_verified commissioning check must remain false
+# until each marker centre is physically measured from the floor origin.
+REFS={1:(40,HEIGHT-40),2:(40,40),3:(WIDTH-40,40),4:(WIDTH-40,HEIGHT-40)}
 
 
 def square(edge):
