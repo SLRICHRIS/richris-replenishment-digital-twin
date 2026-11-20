@@ -412,6 +412,7 @@ class VisionPhysicalWorkspaceTests(unittest.TestCase):
         st.session_state.login_available = profile is not None
         v.handle(dict(command='login', operator='tester', access_code='operator-fixture'), 'live')
         assert v.authorized(profile)
+        assert st.session_state.vision_view and not st.session_state.manual_view
         for cmd in ('capture', 'decide', 'battery_decision'):
             v.handle(dict(command=cmd), 'live')
             assert 'Connection checks only' in st.session_state.vision_feedback
@@ -428,3 +429,31 @@ class VisionPhysicalWorkspaceTests(unittest.TestCase):
             transport.assert_not_called()
             self.assertNotIn('control_key',result)
             self.assertNotIn('audit_url',result)
+
+    def test_existing_receiver_unlocks_only_connection_checks_without_route_secrets(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry.predictive_twin import vision_execution_workspace as v
+        settings = dict(manual_control=dict(enabled=True, mqtt_host='private.invalid',
+            mqtt_username='test-receiver', mqtt_password='test-only', control_key='2' * 64,
+            audit_url='postgresql+psycopg://route@test/amr'), amr_connection=dict(access_code='operator-fixture'))
+        with patch.object(v.st, 'secrets', settings):
+            profile, issues = v.profile()
+            self.assertEqual(profile['transport'], 'browser_receiver')
+            self.assertNotEqual(profile['control_key'], profile['drive_key'])
+            self.assertFalse(profile['commissioned'])
+            self.assertTrue(issues)
+            settings['vision_control'] = dict(transport='browser_receiver', enabled=False)
+            self.assertIsNone(v.profile()[0])
+            settings['vision_control'].update(enabled=True, commissioned=True)
+            self.assertFalse(v.profile()[0]['commissioned'])
+            settings['vision_browser'] = dict(enabled=True, transport_latency_verified=True)
+            self.assertTrue(v.profile()[0]['commissioned'])
+            settings['vision_control'] = dict(enabled=False)
+            self.assertIsNone(v.profile()[0])
+        app = AppTest.from_function(self._run_route_preflight)
+        app.secrets.update({k: settings[k] for k in ('manual_control', 'amr_connection')})
+        with patch.object(v, 'service') as transport:
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(app.session_state['login_available'])
+            transport.assert_not_called()

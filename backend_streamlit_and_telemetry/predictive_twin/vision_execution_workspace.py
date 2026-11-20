@@ -2,11 +2,35 @@
 import hashlib
 import hmac
 import re
+import secrets
 import time
 import uuid
 from collections.abc import Mapping
 import streamlit as st
 from ..vision_control.contracts import key,identifier
+
+
+_LOCAL_ROUTE_KEY = secrets.token_hex(32)
+
+
+def _browser_receiver_profile(settings):
+    from .manual_control_workspace import profile as receiver_profile
+    receiver, _ = receiver_profile()
+    if receiver is None:
+        return None, ['Configure the protected ESP32 receiver in [manual_control] or add a dedicated [vision_control] profile.']
+    if settings is not None and settings.get('enabled') is not True:
+        return None, ['Enable the browser receiver connection in [vision_control].']
+    browser = st.secrets.get('vision_browser', {})
+    measured = bool(settings and settings.get('commissioned') is True)
+    latency = isinstance(browser, Mapping) and browser.get('enabled') is True and browser.get('transport_latency_verified') is True
+    p = dict(receiver, transport='browser_receiver', drive_key=receiver['control_key'],
+             control_key=_LOCAL_ROUTE_KEY, commissioned=measured and latency)
+    issues = []
+    if not measured:
+        issues.append('Connection checks only. Verify camera geometry and motor stopping on the robot before commissioning physical routes.')
+    if not latency:
+        issues.append('Verify the browser camera delay and stopping distance before enabling browser-controlled routes.')
+    return p, issues
 
 
 def profile():
@@ -15,8 +39,10 @@ def profile():
         operator = st.secrets.get('amr_connection', {})
     except FileNotFoundError:
         settings, operator = None, {}
+    if settings is None or (isinstance(settings, Mapping) and settings.get('transport') == 'browser_receiver'):
+        return _browser_receiver_profile(settings)
     if not isinstance(settings, Mapping):
-        return None, ['Add [vision_control] to the Streamlit app secrets for physical routes.']
+        return None, ['Check the [vision_control] table in the Streamlit app secrets.']
     p = dict(settings)
     missing = []
     if p.get('enabled') is not True:
@@ -40,11 +66,17 @@ def profile():
 
 @st.cache_resource(max_entries=1,show_spinner=False,on_release=lambda s:s.close())
 def service(p):
+    if p.get('transport') == 'browser_receiver':
+        from ..vision_control.browser_receiver_service import BrowserReceiverService
+        return BrowserReceiverService(p)
     from ..vision_control.service import Service
     return Service(p)
 
 
-def tag(p): return hashlib.sha256(('vision:'+str(p.get('commissioned') is True)+':'+p['access_code']+p['control_key']).encode()).hexdigest()
+def tag(p):
+    fields = ('vision', str(p.get('commissioned') is True), p['access_code'], p['control_key'],
+              p.get('drive_key', ''), p.get('mqtt_host', ''), p.get('mqtt_username', ''))
+    return hashlib.sha256('\0'.join(fields).encode()).hexdigest()
 def authorized(p): return bool(p and st.session_state.get('vision_auth')==tag(p))
 def owner():
     if 'vision_owner' not in st.session_state: st.session_state.vision_owner=uuid.uuid4().hex
@@ -63,6 +95,8 @@ def workspace(mode):
             s.coordinator.touch(owner())
             value=s.coordinator.public(owner())
             value['transport'] = s.public_transport()
+            if p.get('transport') == 'browser_receiver' and not s.camera_owned_by(owner()):
+                value['ready'] = False
             available = s.connected and not s.stop.is_set()
         except Exception: missing.append('Protected route audit or transport unavailable')
     else:
@@ -112,6 +146,8 @@ def handle(result,mode):
         if not isinstance(code,str) or len(code)>256 or not hmac.compare_digest(code,p['access_code']) or not isinstance(alias,str) or re.fullmatch(r'[A-Za-z0-9_-]{1,40}',alias) is None:
             st.session_state.vision_feedback='Operator code or alias was not accepted'; return
         st.session_state.vision_auth=tag(p); st.session_state.vision_operator=alias
+        from .control_presence import synchronize_control_view
+        synchronize_control_view(st.session_state, 'vision')
         st.session_state.vision_feedback = ('Operator session unlocked.' if p.get('commissioned') is True
             else 'Operator session unlocked for connection checks. Route execution is disabled.')
         return
@@ -124,6 +160,8 @@ def handle(result,mode):
         if s.stop.is_set(): raise ValueError('Route coordinator unavailable; no movement is enabled')
         if cmd=='stop': s.coordinator.cancel(owner())
         elif not st.session_state.get('vision_view'): raise ValueError('Open the physical route page before reviewing')
+        elif p.get('transport') == 'browser_receiver' and not s.camera_owned_by(owner()):
+            raise ValueError('Connect the calibrated browser camera from this operator session before reviewing a physical route')
         elif cmd=='capture': s.coordinator.capture(owner(),st.session_state.vision_operator,[result.get('goal_x'),result.get('goal_y')])
         elif cmd=='decide':
             rid=identifier(result.get('review_id'))

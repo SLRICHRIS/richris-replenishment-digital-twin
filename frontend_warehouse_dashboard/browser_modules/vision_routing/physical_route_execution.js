@@ -619,6 +619,20 @@ export function createPhysicalRoutePanel(scope) {
       login_rejected: 'Broker rejected the route login',
       subscription_rejected: 'Broker rejected the route feedback subscriptions',
     };
+    const directReceiver = p.transport?.feedback_topic === 'hardware';
+    const receiver = p.transport?.receiver;
+    let receiverText = 'Awaiting route connection';
+    if (hardware && fresh) receiverText = 'Fresh heartbeat';
+    else if (directReceiver && p.transport.connected) {
+      if (receiver?.fresh) {
+        const voltage = Number(receiver.battery_voltage_v).toFixed(2) + ' V';
+        receiverText = receiver.protocol === 'H2'
+          ? 'Signed H2 manual receiver · ' + voltage + '. Upload the H1 route receiver for missions.'
+          : 'Signed H1 route receiver · ' + voltage + (receiver.ready ? ' · ready' : ' · onboard interlock active');
+      } else {
+        receiverText = receiver ? 'Last signed receiver heartbeat is stale' : 'Listening for a signed ESP32 heartbeat';
+      }
+    } else if (p.transport?.connected) receiverText = 'Waiting for receiver feedback from the camera controller';
     const readiness = [
       ['Physical source', live ? 'Selected' : 'Select physical source', live],
       [
@@ -627,7 +641,8 @@ export function createPhysicalRoutePanel(scope) {
           : p.can_unlock ? 'Access code required' : 'Connection setup required',
         auth,
       ],
-      ['Route broker', brokerStatus[p.transport?.state] || 'Awaiting operator connection',
+      ['Route broker', directReceiver && p.transport.connected ? 'Subscribed to ESP32 feedback'
+        : brokerStatus[p.transport?.state] || 'Awaiting operator connection',
         p.transport?.connected === true],
       [
         'Camera scene',
@@ -637,9 +652,8 @@ export function createPhysicalRoutePanel(scope) {
       ],
       [
         'ESP32 receiver',
-        hardware && fresh ? 'Fresh heartbeat' : p.transport?.connected
-          ? 'Waiting for receiver feedback from the camera controller' : 'Awaiting route connection',
-        hardware && fresh,
+        receiverText,
+        Boolean(hardware && fresh || receiver?.fresh && receiver.protocol === 'H1' && receiver.ready),
       ],
     ];
     el('readiness').replaceChildren(

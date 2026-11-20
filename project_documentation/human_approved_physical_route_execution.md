@@ -143,6 +143,40 @@ for some full-body measurements; then the planner correctly reports no valid rou
 
 ## 2. Provision separate, least-privilege MQTT identities
 
+### Using the existing receiver with the Streamlit browser camera
+
+If the dashboard can already connect under **Manual control**, the same private
+receiver link can serve **Live AMR mission → Physical AMR → Connect**. With no
+`[vision_control]` configured, an operator can log in and see whether EMQX
+accepted the subscription, the latest signed receiver protocol, its voltage,
+and whether the heartbeat is fresh. This mode cannot send movement commands.
+H2 identifies the hold-to-drive firmware. Physical routes require H1.
+
+For this browser-camera setup the reviewer and the camera controller run inside
+the same Streamlit process. Its existing restricted database role owns the
+robot lease. Only `robot/amr01/vision/hardware` (subscribe) and
+`robot/amr01/vision/drive` (publish) use EMQX. No new MQTT credentials are
+needed. Each approved command still uses the receiver's existing signing key.
+The separate internal route signing key is generated on the server.
+
+The private settings below select this connection. Leave each physical check
+false until verified with the actual equipment. A designated operator can then
+set `commissioned` and `transport_latency_verified` to true. The same
+operator session must connect the measured browser camera and review the route.
+
+```toml
+[vision_control]
+transport = "browser_receiver"
+enabled = true
+commissioned = false
+
+[vision_browser]
+enabled = true
+transport_latency_verified = false
+```
+
+### Using a separate camera controller
+
 Keep the existing `publisher-amr01` account and commissioning topic untouched.
 Create three new identities on the existing Serverless deployment, without changing
 plan, spend limit, HTTP integrations or restarting the broker:

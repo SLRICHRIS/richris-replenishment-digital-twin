@@ -162,7 +162,8 @@ def render_browser_camera():
         # Nothing can reach the protected motor topic until a commissioned
         # operator has explicitly enabled this alternative camera source.
         from ..predictive_twin.vision_execution_workspace import (
-            profile as route_profile, authorized as route_authorized,
+            profile as route_profile, authorized as route_authorized, service as route_service,
+            owner as route_owner,
         )
         route, route_issues = route_profile()
         try:
@@ -170,9 +171,10 @@ def render_browser_camera():
         except (KeyError, FileNotFoundError):
             browser = {}
         issues = list(route_issues)
-        if not browser:
+        integrated = bool(route and route.get("transport") == "browser_receiver")
+        if not integrated and not browser:
             issues.append("Add [vision_browser] to the Streamlit app secrets for browser-controlled routes.")
-        elif route and route.get("commissioned") is True:
+        elif not integrated and route and route.get("commissioned") is True:
             try:
                 validate_browser_profile(route, browser)
             except ValueError as exc:
@@ -198,10 +200,11 @@ def render_browser_camera():
             key="amr-browser-gateway-connect",
         ):
             try:
-                gateway = BrowserVisionGateway(
-                    dict(feed.tracker_config, config_id=feed.tracker.config_id),
-                    route, browser,
-                )
+                config = dict(feed.tracker_config, config_id=feed.tracker.config_id)
+                if integrated:
+                    gateway = route_service(route).attach_camera(config, route_owner())
+                else:
+                    gateway = BrowserVisionGateway(config, route, browser)
                 st.session_state.amr_browser_vision_gateway = gateway
                 with feed.lock:
                     feed.tracker_callback = gateway.submit
