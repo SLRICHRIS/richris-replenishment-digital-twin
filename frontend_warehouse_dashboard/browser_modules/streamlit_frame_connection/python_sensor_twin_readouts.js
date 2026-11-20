@@ -226,6 +226,12 @@
       const energy = physical?.energy_observation || {};
       const recordedEnergy = !available && !!energy.state;
       text(
+        key + 'energy-label',
+        recordedEnergy && physical?.fresh !== true
+          ? 'Last recorded energy (Wh)'
+          : 'Net energy used (Wh)',
+      );
+      text(
         key + 'energy',
         available
           ? number(r.energy_wh, 4, ' Wh')
