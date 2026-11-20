@@ -31,9 +31,13 @@ MrY=
 )PEM";
 
 
-#define AMR_VISION_DRIVE_ENABLED 0
+// Protected Wi-Fi drive feature is compiled in for the user's motor test.
+// EMPTY drive key / receiver credentials still fail visionConfigured(), and
+// invalid/expired signed commands never operate motors. Complete and flash
+// PRIVATE settings on the physical ESP32 before expecting any response.
+#define AMR_VISION_DRIVE_ENABLED 1
 #define AMR_VISION_DRIVE_KEY ""
 #define AMR_VISION_MQTT_USERNAME ""
 #define AMR_VISION_MQTT_PASSWORD ""
-#define AMR_VISION_MAX_PWM 255
+#define AMR_VISION_MAX_PWM 60
 #define AMR_VISION_MIN_PACK_V 6.6
