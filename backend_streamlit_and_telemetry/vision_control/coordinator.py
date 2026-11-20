@@ -120,6 +120,8 @@ class Coordinator:
             s=self.current
             if not ready(s,now) or map_digest(s)!=self.row['map_id']:
                 raise ValueError('Unsafe battery or changed camera scene; no continuation')
+            if not self.stationary():
+                raise ValueError('Wait until the robot is verifiably stopped before battery decision')
             if battery_action(s['hardware']['battery_voltage_v'],
                 s['geometry']['min_pack_voltage_v'],
                 s['geometry'].get('battery_advisory_voltage_v'))!='ask_human':
