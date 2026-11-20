@@ -6,13 +6,14 @@ import uuid
 from sqlalchemy import MetaData, Table, Column, String, Text, BigInteger, select, update
 from .contracts import (scene, unseal, seal, canonical, fresh, ready, map_digest,
                         plan, digest, angle, APPROVAL_LEASE_MS, OPERATOR_PRESENCE_MS)
+from .battery_policy import battery_action
 
 metadata=MetaData()
 reviews=Table('amr_route_reviews',metadata,
     Column('review_id',String(32),primary_key=True),Column('owner_id',String(32),nullable=False),
     Column('created_at_ms',BigInteger,nullable=False),Column('state',String(32),nullable=False),
     Column('record',Text,nullable=False))
-ACTIVE={'sent','arming','running','stopping'}
+ACTIVE={'sent','arming','running','battery_review','stopping'}
 
 
 class Coordinator:
@@ -98,6 +99,48 @@ class Coordinator:
                     r['state']='uncertain'; r['reason']='Dispatch failed; no automatic retry'; self.save()
                     raise ValueError(r['reason'])
 
+    def battery_decide(self,owner,rid,choice,note):
+        """Audit the human's battery choice before issuing a signed command.
+
+        Choice 'continue' declines diversion but NEVER overrides the critical
+        cutoff; choice 'divert' stops this route and requires a separately
+        reviewed, collision-checked route to battery station E.
+        """
+        with self.lock:
+            self.owned(owner,rid)
+            if choice not in ('continue','divert') or self.row['state']!='battery_review':
+                raise ValueError('No pending low-battery human decision')
+            if self.row.get('battery_choice') is not None:
+                raise ValueError('Battery advisory has already been decided')
+            if not isinstance(note,str) or not 1<=len(note.strip())<=240:
+                raise ValueError('Record a short battery decision reason')
+            now=self.clock()
+            if now-self.presence.get(owner,-10000)>OPERATOR_PRESENCE_MS or not self.connected:
+                raise ValueError('Operator session or control connection is not active')
+            s=self.current
+            if not ready(s,now) or map_digest(s)!=self.row['map_id']:
+                raise ValueError('Unsafe battery or changed camera scene; no continuation')
+            if not self.stationary():
+                raise ValueError('Wait until the robot is verifiably stopped before battery decision')
+            if battery_action(s['hardware']['battery_voltage_v'],
+                s['geometry']['min_pack_voltage_v'],
+                s['geometry'].get('battery_advisory_voltage_v'))!='ask_human':
+                raise ValueError('No current low-battery advisory requiring a decision')
+            self.row['battery_choice']=choice
+            self.row['events'].append(dict(at_ms=now,battery_decision=choice,
+                                           reason=note.strip()))
+            self.row['reason']=('Battery diversion approved; stopping before a new E route'
+                if choice=='divert' else
+                'Battery diversion declined; original route may continue above critical cutoff')
+            self.save()
+            try:
+                self.publish(self.packet('battery_divert' if choice=='divert' else 'battery_continue'))
+            except Exception:
+                self.row['state']='uncertain'
+                self.row['reason']='Battery decision dispatch unconfirmed; motors remain stopped'
+                self.save()
+                raise ValueError(self.row['reason'])
+
     def cancel(self,owner):
         with self.lock:
             self.presence.pop(owner,None)
@@ -113,7 +156,7 @@ class Coordinator:
             p=unseal('status',raw,self.secret,4000); now=self.clock(); r=self.row
             if p.get('review_id')!=r['review_id'] or p.get('agent_boot_id')!=r['agent_boot_id'] or not fresh(p.get('issued_at_ms'),now) or type(p.get('seq')) is not int or p['seq']<=self.status_seq: return
             self.status_seq=p['seq']; state=p.get('state')
-            if state not in ('arming','running','stopping','verified','blocked'): return
+            if state not in ('arming','running','battery_review','stopping','verified','blocked'): return
             reason=p.get('reason','')
             if not isinstance(reason,str) or len(reason)>200: return
             if state=='verified':
@@ -137,4 +180,15 @@ class Coordinator:
         with self.lock:
             r=self.row
             row={k:copy.deepcopy(r[k]) for k in ('review_id','state','route','created_at_ms','expires_at_ms','reason')} if r and r['owner_id']==owner else None
-            return dict(scene=copy.deepcopy(self.current),ready=self.connected and self.stationary(),review=row)
+            if row is not None:
+                row['battery_choice']=r.get('battery_choice')
+                row['battery_prompt']=bool(r['state']=='battery_review' and not r.get('battery_choice'))
+            battery=None
+            if self.current:
+                s=self.current
+                critical=s['geometry']['min_pack_voltage_v']
+                advisory=s['geometry'].get('battery_advisory_voltage_v')
+                value=s['hardware']['battery_voltage_v']
+                battery=dict(voltage_v=value,critical_v=critical,advisory_v=advisory,
+                    action=battery_action(value,critical,advisory))
+            return dict(scene=copy.deepcopy(self.current),ready=self.connected and self.stationary(),review=row,battery=battery)

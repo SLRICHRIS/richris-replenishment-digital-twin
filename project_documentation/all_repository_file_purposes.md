@@ -314,3 +314,8 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `amr01_camera_agent.py` | Standalone Windows executable entry point for the protected, calibrated vision-to-EMQX controller. |
 | `.github/workflows/build-windows-amr-camera.yml` | Build and smoke-test unsigned Windows camera toolkit executables without bundling operator secrets. |
 | `project_documentation/windows_camera_agent_no_python.md` | Explain how to download and commission the Windows toolkit without installing Python locally. |
+
+| `backend_streamlit_and_telemetry/vision_control/battery_policy.py` | Enforce separate low-battery advisory and unoverrideable critical-voltage cutoff for AMR route decisions. |
+| `automated_software_checks/predictive_twin_checks/test_battery_policy.py` | Verify signed advisory human decisions, zero-output pause, continued-route limits and absolute critical-voltage stopping. |
+| `backend_streamlit_and_telemetry/vision_control/battery_policy.py` | Deterministic physical voltage policy: operator may decline low-battery diversion only above non-overridable critical cutoff. |
+| `automated_software_checks/predictive_twin_checks/test_battery_policy.py` | Regression test three-way battery conditions, signed human reviews, replay protection and hard-stop dominance. |

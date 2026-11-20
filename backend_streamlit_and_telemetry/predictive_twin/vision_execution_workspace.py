@@ -62,7 +62,7 @@ def workspace(mode):
 
 def handle(result,mode):
     cmd=result.get('command')
-    if cmd not in ('view','login','logout','capture','decide','stop'): return
+    if cmd not in ('view','login','logout','capture','decide','battery_decision','stop'): return
     p,_=profile()
     if cmd=='view':
         if 'control_mode' in result: return  # Host already synchronized both control views.
@@ -106,6 +106,9 @@ def handle(result,mode):
         elif cmd=='decide':
             rid=identifier(result.get('review_id'))
             s.coordinator.decide(owner(),rid,result.get('decision'),result.get('reason'))
+        elif cmd=='battery_decision':
+            rid=identifier(result.get('review_id'))
+            s.coordinator.battery_decide(owner(),rid,result.get('choice'),result.get('reason'))
         st.session_state.vision_feedback='Route workflow updated. Check execution status and camera evidence below'
     except ValueError as e: st.session_state.vision_feedback=str(e)
     except Exception: st.session_state.vision_feedback='Protected route audit or transport unavailable; no retry is queued'

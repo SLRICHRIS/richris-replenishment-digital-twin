@@ -2,6 +2,7 @@
 import copy
 from .contracts import (unseal, seal, digest, map_digest, ready, plan, fresh,
                         Follower, identifier, angle, APPROVAL_LEASE_MS, MAX_ROUTE_MS)
+from .battery_policy import battery_action
 
 
 class Agent:
@@ -9,7 +10,7 @@ class Agent:
         self.key,self.send_drive=control_key,send_drive
         self.scene=None; self.job=None; self.lease_until=0; self.seq=0
         self.state='idle'; self.reason='Waiting for an approved route'; self.done=[]
-        self.status_seq=0; self.seen=set(); self.stop_samples=[]
+        self.status_seq=0; self.seen=set(); self.stop_samples=[]; self.battery_reviewed=False
 
     def status(self,now):
         self.status_seq+=1
@@ -24,10 +25,24 @@ class Agent:
         if not fresh(p.get('issued_at_ms'),now,APPROVAL_LEASE_MS) or not now<p.get('expires_at_ms',0)<=now+APPROVAL_LEASE_MS:
             raise ValueError('Expired approval')
         op=p.get('operation')
+        # Battery decisions are signed and tied to the current reviewed route.
+        # Continuing never relaxes the critical voltage check in tick().
+        if op in ('battery_continue','battery_divert'):
+            if not self.job or rid!=self.job['review_id'] or self.state!='battery_review':
+                raise ValueError('No battery advisory awaiting a human decision')
+            if not ready(self.scene,now) or map_digest(self.scene)!=self.job['map_id']:
+                raise ValueError('Camera scene or critical battery safety changed')
+            if op=='battery_continue':
+                self.battery_reviewed=True
+                self.state='running'
+                self.reason='Operator declined battery diversion; original route resumes above hard cutoff'
+            else:
+                self.halt('Operator approved battery diversion; review a new route to E',now)
+            return
         if op=='cancel' and self.job and rid==self.job['review_id']:
             self.halt('Operator cancelled the route',now); return
         if op=='lease' and self.job and rid==self.job['review_id']:
-            if self.state in ('arming','running','stopping'):
+            if self.state in ('arming','running','battery_review','stopping'):
                 self.lease_until=max(self.lease_until,p['expires_at_ms'])
             return
         if op!='execute' or rid in self.seen or self.state in ('arming','running','stopping'):
@@ -49,6 +64,7 @@ class Agent:
             raise ValueError('Route no longer matches the physical scene')
         if len(self.seen)>=10000: raise ValueError('Restart the stationary controller before another session')
         self.seen.add(rid); self.job=p; self.follower=Follower(route,s['geometry'],now)
+        self.battery_reviewed=False
         self.state='arming'; self.reason='Waiting for a zero-output controller acknowledgement'
         self.started=now; self.lease_until=p['expires_at_ms']; self.stop_samples=[]
         self.command('arm',0,0,now)
@@ -59,13 +75,17 @@ class Agent:
         self.send_drive(self.scene['hardware'],self.job['review_id'],self.seq,operation,left,right,now)
 
     def halt(self,reason,now):
-        if self.state in ('arming','running','stopping'):
+        if self.state in ('arming','running','battery_review','stopping'):
             self.command('stop',0,0,now)
         self.state='blocked'; self.reason=reason; self.lease_until=0
 
     def tick(self,s,now):
         self.scene=s
-        if self.state not in ('arming','running','stopping'): return
+        if self.state not in ('arming','running','battery_review','stopping'): return
+        # Absolute hardware-critical cutoff always wins, including after a
+        # human rejects diversion. There is no operator override of this guard.
+        if s['hardware']['battery_voltage_v'] <= s['geometry']['min_pack_voltage_v']:
+            self.halt('CRITICAL BATTERY: mandatory motor stop; cannot be overridden',now); return
         if now>=self.lease_until or now-self.started>MAX_ROUTE_MS:
             self.halt('Approval lease or route duration expired; approve a new route',now); return
         if not ready(s,now) or map_digest(s)!=self.job['map_id']:
@@ -79,7 +99,21 @@ class Agent:
             return
         if hw.get('route_id')!=self.job['review_id'] or hw.get('state') in ('expired','local_stop','unavailable'):
             self.halt('The ESP32 stopped or lost the active route',now); return
+        if self.state=='battery_review':
+            # Keep the existing expiring drive lease alive with zero PWM while
+            # waiting for an explicit human answer. Unanswered review cannot move.
+            self.command('drive',0,0,now)
+            return
         if self.state=='running':
+            action=battery_action(s['hardware']['battery_voltage_v'],
+                s['geometry']['min_pack_voltage_v'],
+                s['geometry'].get('battery_advisory_voltage_v'),
+                False if self.battery_reviewed else None)
+            if action=='ask_human':
+                self.state='battery_review'
+                self.reason='LOW BATTERY advisory: stopped; choose continue destination or divert to E'
+                self.command('drive',0,0,now)
+                return
             try: left,right,done=self.follower.update(s,now)
             except ValueError as e: self.halt(str(e),now); return
             if done:
