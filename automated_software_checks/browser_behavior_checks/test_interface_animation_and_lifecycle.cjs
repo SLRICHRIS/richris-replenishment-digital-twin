@@ -471,13 +471,13 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   );
   assert.equal(
     doc.body.dataset.view,
-    'connection',
-    'keyboard navigation includes the physical connection view',
+    'vision',
+    'keyboard navigation returns to the live AMR mission without a separate connection tab',
   );
-  $('tab-connection').dispatchEvent(
+  $('tab-vision').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
   );
-  assert.equal(doc.body.dataset.view, 'hardware');
+  assert.equal(doc.body.dataset.view, 'database');
   for (const retired of ['missions', 'activity']) {
     $('tab-' + retired).click();
     assert.equal(doc.body.dataset.view, 'hardware', 'retired deep links stay within sensor scope');
