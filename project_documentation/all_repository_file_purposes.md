@@ -317,3 +317,4 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/vision_control/browser_camera.py` | Receive webcam frames through Streamlit WebRTC, annotate ArUco IDs, capture checkerboard/empty floor and derive server-verified poses only after physical calibration. |
 | `backend_streamlit_and_telemetry/vision_control/browser_gateway.py` | Fail-closed server MQTT transport, signed camera scene and audited Agent route follower after explicit physical WebRTC commissioning. |
 | `backend_streamlit_and_telemetry/vision_control/browser_streamlit_workspace.py` | Render on-page browser camera, calibration, measured camera settings and protected EMQX controls in Streamlit. |
+| `automated_software_checks/predictive_twin_checks/test_browser_camera.py` | Verify server-side ArUco marker detection, reference capture and no uncommissioned control path. |
