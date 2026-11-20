@@ -82,7 +82,7 @@
       rel="stylesheet"
       href="./dashboard_stylesheets/streamlit_dashboard_scroll_container.css"
     />
-  </head>
+  <style id="amr-operator-scope">\nhtml:not([data-amr-advanced="true"]) #tab-environment,\nhtml:not([data-amr-advanced="true"]) #tab-routes,\nhtml:not([data-amr-advanced="true"]) #tab-missions,\nhtml:not([data-amr-advanced="true"]) #tab-telemetry,\nhtml:not([data-amr-advanced="true"]) #tab-engineering,\nhtml:not([data-amr-advanced="true"]) #tab-activity,\nhtml:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !important; }\n</style>\n</head>
   <body data-view="environment">
     <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
@@ -257,7 +257,7 @@
           class="active"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-floor" /></svg>
-          <span>Floor</span>
+          <span>Virtual warehouse</span>
         </button>
         <button
           id="tab-connection"
@@ -281,7 +281,7 @@
           data-page="routes"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-map" /></svg>
-          <span>Route map</span>
+          <span>Simulation routes</span>
         </button>
         <button
           id="tab-hardware"
@@ -304,7 +304,7 @@
           data-page="missions"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-mission" /></svg>
-          <span>Missions</span>
+          <span>Virtual missions</span>
           <span class="nav-count" id="nav-task-count">03</span>
         </button>
         <button
@@ -316,8 +316,9 @@
           data-page="vision"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-map" /></svg>
-          <span>Vision routing</span>
+          <span>Live AMR mission</span>
         </button>
+        <button id="amr-advanced-toggle" type="button" aria-pressed="false" title="Show or hide optional simulation workspaces"><span>Show simulation tools</span></button>
         <button
           id="tab-telemetry"
           data-slide-outside
@@ -328,7 +329,7 @@
           data-page="telemetry"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg>
-          <span>Insights</span>
+          <span>Simulation insights</span>
         </button>
         <button
           id="tab-engineering"
@@ -340,7 +341,7 @@
           data-page="engineering"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-focus" /></svg>
-          <span>Reference lab</span>
+          <span>Advanced models</span>
         </button>
         <button
           id="tab-activity"
