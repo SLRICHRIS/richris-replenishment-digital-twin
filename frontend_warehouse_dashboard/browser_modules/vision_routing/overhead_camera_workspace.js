@@ -26,10 +26,10 @@ export function createVisionWorkspace(scope) {
     cameraHeightCm: 131,
   };
   const reportedMarkerOffset = {
-    reference: 'wheel-axle-midpoint',
-    forwardMm: 100,
+    reference: 'robot-body-center',
+    forwardMm: 0,
     leftMm: 0,
-    source: 'operator-reported',
+    source: 'operator-confirmed',
   };
   const reportedBodyOutline = {
     reference: 'wheel-axle-midpoint',
