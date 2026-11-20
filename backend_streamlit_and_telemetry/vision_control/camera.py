@@ -31,6 +31,8 @@ def load_config(path):
     p=dict(path) if isinstance(path,dict) else json.loads(Path(path).read_text())
     if any(p.get('checks',{}).get(k) is not True for k in CHECKS):
         raise ValueError('Complete and verify every physical commissioning check in the private config')
+    if p.get('floor_width_mm') != WIDTH or p.get('floor_length_mm') != HEIGHT:
+        raise ValueError('Measure and configure the current 610 x 630 mm floor; previous A0 calibration is invalid')
     # Physical marker centres must be measured, never silently assumed from
     # an image or the nominal 40 mm example inset.
     raw_refs=p.get('floor_reference_positions_mm')
@@ -49,8 +51,7 @@ def load_config(path):
             refs[2][0] < refs[3][0] and refs[3][1] < refs[4][1]):
         raise ValueError('Floor reference ID ordering disagrees with observed corners')
     p['floor_reference_positions_mm']={str(i):list(refs[i]) for i in refs}
-    if p.get('floor_width_mm') != WIDTH or p.get('floor_length_mm') != HEIGHT:
-        raise ValueError('Measure and configure the current 610 x 630 mm floor; previous A0 calibration is invalid')
+
     p['geometry']=geometry(p.get('geometry'))
     for name,lo,hi in (('camera_height_mm',200,3000),('marker_edge_mm',15,120),
                         ('marker_height_mm',1,300),('max_obstacle_height_mm',1,400)):
