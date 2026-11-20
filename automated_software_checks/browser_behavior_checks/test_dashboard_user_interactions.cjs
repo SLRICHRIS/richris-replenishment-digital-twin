@@ -375,6 +375,8 @@ const app = fs
   .replace(/if\s*\(document\.fonts\)\s*await document\.fonts\.ready;/, '');
 vm.runInContext(app, ctx);
 const run = (s) => vm.runInContext(s, ctx);
+assert.equal(get('vision').hidden, false, 'Live AMR mission is the default workspace');
+run('setAdvanced(true); activatePage("environment");');
 assert.equal(get('environment').hidden, false);
 assert.equal(run('robots.length'), 1);
 assert.equal(run('robots[0].id'), 0);
