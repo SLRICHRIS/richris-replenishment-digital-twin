@@ -20,12 +20,15 @@
   "marker_edge_mm": 40,
   "marker_height_mm": 150,
   "reported_marker_offset_robot_frame_mm": {
-    "reference": "wheel_axle_midpoint",
-    "forward": null,
-    "left": null,
-    "source": "requires_remeasurement"
+    "reference": "robot_body_center",
+    "forward": 0,
+    "left": 0,
+    "source": "operator_confirmed_centered_marker"
   },
-  "marker_center_to_robot_center_mm": null,
+  "marker_center_to_robot_center_mm": [
+    0,
+    0
+  ],
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
   "geometry": {
@@ -49,5 +52,5 @@
   },
   "floor_width_mm": 610,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Updated 20 November 2026: measured floor 610 mm wide x 630 mm long, Logitech lens 1310 mm vertically above floor, AMR body 170 mm long x 155 mm wide x 150 mm high. Robot marker ID 0 is nominally 40 mm; floor corner markers IDs 1-4 are nominally 30 mm. Marker surface height and marker-to-axle offset are NOT remeasured; camera intrinsics, floor reference positions, motor calibration, and clearance remain unverified. Previous axle front/rear body outline (147/40 mm) is superseded and must not be used for route clearance."
+  "reported_measurements_note": "Updated 20 November 2026: measured floor 610 mm wide x 630 mm long, Logitech lens 1310 mm vertically above floor, AMR body 170 mm long x 155 mm wide x 150 mm high. Robot marker ID 0 is nominally 40 mm; floor corner markers IDs 1-4 are nominally 30 mm. Marker surface height and marker-to-axle offset are NOT remeasured; camera intrinsics, floor reference positions, motor calibration, and clearance remain unverified. Previous axle front/rear body outline (147/40 mm) is superseded and must not be used for route clearance. Operator confirms ArUco ID 0 centred on robot body; marker forward direction relative to robot remains unverified."
 }
