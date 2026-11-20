@@ -210,6 +210,7 @@
               active: action.active,
               review_id: action.review_id,
               decision: action.decision,
+              choice: ['continue', 'divert'].includes(action.choice) ? action.choice : undefined,
               reason: typeof action.reason === 'string' ? action.reason.slice(0, 240) : '',
               access_code:
                 typeof action.access_code === 'string' ? action.access_code.slice(0, 256) : '',
