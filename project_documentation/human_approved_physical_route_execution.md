@@ -331,3 +331,21 @@ On-site tests are still required: measure pack voltage under load, validate
 advisory headroom and cutoff against the actual battery pack/BMS, verify low-PWM
 zero-output behavior, and confirm safe stoppage if communication or camera
 tracking fails. Do not fake a critical reading while wheels are on the ground.
+
+## Battery point E is a parking location, not a physical charger
+
+Rack **A/B/C/D** and battery point **E** are separately measured stopping
+coordinates in the camera floor frame. The AMR **approaches and stops near E**;
+there is no automatic charging connector or docking actuator. Charging is
+performed manually after the stopped position has been verified. A battery
+advisory can be declined if voltage is above the independent critical cutoff.
+Critical low voltage is never operator-overridable. An approved diversion ends
+the current route and requires a new physically valid, approved route to E.
+
+The **protected motor receiver** can now be compiled in by the supplied
+private-settings examples, but the public key and credentials remain empty.
+The actual ESP32 must receive the complete private firmware through a one-time
+upload. A Streamlit click alone cannot enable an unflashed receiver. See
+[protected motor test and E parking](enable_protected_motor_test_and_e_parking.md)
+for the supervised test procedure and receiver requirements.
+
