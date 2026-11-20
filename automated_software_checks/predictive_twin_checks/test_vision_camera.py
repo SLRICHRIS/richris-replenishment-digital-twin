@@ -8,6 +8,16 @@ from backend_streamlit_and_telemetry.vision_control.camera import Camera,square,
 from test_vision_execution import G
 
 
+def test_reference_marker_ids_match_physical_overhead_layout():
+    # Actual printed pattern observed 20 Nov 2026; origin is bottom-left.
+    # Nominal inset offsets must be independently verified on the real floor.
+    from backend_streamlit_and_telemetry.vision_control.contracts import WIDTH, HEIGHT
+    assert set(REFS) == {1, 2, 3, 4}
+    assert REFS[1][0] < REFS[4][0] and REFS[1][1] > REFS[2][1]
+    assert REFS[2][0] < REFS[3][0] and REFS[3][1] < REFS[4][1]
+    assert all(0 < x < WIDTH and 0 < y < HEIGHT for x,y in REFS.values())
+
+
 def fixture(tmp_path):
     k=np.array([[1000,0,640],[0,1000,480],[0,0,1]],float)
     R=np.diag([1.,-1.,-1.]);r=cv2.Rodrigues(R)[0];t=-R@np.array([212.5,315.,920.])
