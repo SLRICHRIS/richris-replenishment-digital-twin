@@ -201,13 +201,25 @@ export function createPhysicalRoutePanel(scope) {
       el('goal-x').value = String(point[0]);
       el('goal-y').value = String(point[1]);
     }
-    goalChanged();
+    if (payload) render(payload, false);
   }
   on(rackStart, 'change', rackSelectionChanged);
   on(rackDestination, 'change', rackSelectionChanged);
   for (const inputs of Object.values(stationInputs))
     for (const input of inputs) on(input, 'input', rackSelectionChanged);
+  function startRackMatchesCamera() {
+    const expected = stationPoint(rackStart.value);
+    const pose = payload?.scene?.pose;
+    if (!expected || !freshCamera(payload?.scene) || !pose) return false;
+    // Camera pose and station coordinates use the same millimetre floor frame.
+    return Math.hypot(pose.x - expected[0], pose.y - expected[1]) <= 25;
+  }
   on(el('capture'), 'click', () => {
+    if (!startRackMatchesCamera()) {
+      el('rack-status').textContent =
+        'Robot not verified at the selected start rack (within 25 mm). Check live camera pose and measured rack coordinates.';
+      return;
+    }
     if (!rackStart.value || !rackDestination.value || rackStart.value === rackDestination.value || !stationPoint(rackStart.value) || !stationPoint(rackDestination.value)) {
       el('rack-status').textContent = 'Select two different racks with measured coordinates before planning.';
       return;
@@ -411,7 +423,7 @@ export function createPhysicalRoutePanel(scope) {
     el('unlock').disabled = !p.can_unlock || !live;
     el('source').hidden = live;
     el('to-plan').disabled = !canPlan(p);
-    el('capture').disabled = !(canPlan(p) && selectedGoal() && !running);
+    el('capture').disabled = !(canPlan(p) && selectedGoal() && !running && rackStart.value && rackDestination.value && rackStart.value !== rackDestination.value && stationPoint(rackStart.value) && stationPoint(rackDestination.value) && startRackMatchesCamera());
     el('capture').textContent = r ? 'Calculate a new route' : 'Calculate physical route';
     el('plan-help').textContent = canPlan(p)
       ? 'Only a proposal is calculated. Movement starts after your separate approval.'
