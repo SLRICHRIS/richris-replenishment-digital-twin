@@ -66,7 +66,7 @@ export function createPhysicalRoutePanel(scope) {
     '<div class="pr-stage-content">',
     '<section id="pr-step-panel-1" role="tabpanel" aria-labelledby="pr-step-1"><div class="pr-setup-layout"><div id="pr-setup-slot"></div><aside class="panel pr-guide-card"><span class="twin-card-kicker">BEFORE THE FIRST JOURNEY</span><h2>Make the physical setup ready</h2><ol class="pr-checklist"><li><strong>Measure the whole robot</strong><p>Include wheels, protrusions and the mounted marker. Wheel spacing alone is not the footprint.</p></li><li><strong>Calibrate the overhead camera</strong><p>Verify lens calibration, paper references, marker height and a clear-floor background.</p></li><li><strong>Commission the motor receiver</strong><p>Verify wheel directions, low-speed PWM and stopping distance before enabling physical control.</p></li></ol><a class="pr-guide-link" href="' +
       GUIDE +
-      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button></aside></div>',
+      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button><button id="pr-open-streamlit-camera" type="button">Start camera tracking in Streamlit</button></aside></div>',
     '<section class="panel pr-laptop-camera" aria-labelledby="pr-laptop-camera-title"><div class="pr-card-heading"><div><span class="twin-card-kicker">LOCAL USB WEBCAM</span><h2 id="pr-laptop-camera-title">Logitech camera on this laptop</h2></div><span id="pr-laptop-camera-status" class="vision-chip" role="status">Not connected</span></div>',
     '<p class="pr-description">See the live overhead view here without the Windows Camera app. This is a local preview only; trusted robot coordinates still require the separate calibrated camera agent.</p><video id="pr-laptop-camera-video" autoplay muted playsinline hidden style="width:100%;max-height:430px;object-fit:contain;background:#0b1c35;border-radius:10px"></video>',
     '<div class="vision-tools"><button id="pr-laptop-camera-start" type="button">Show Logitech camera</button><button id="pr-laptop-camera-stop" type="button" disabled>Stop preview</button></div><p id="pr-laptop-camera-detail" class="pr-inline-note">Close Windows Camera first. Chrome camera permission is required. Video stays on your laptop and is not transmitted to EMQX.</p></section></section>',
@@ -220,6 +220,13 @@ export function createPhysicalRoutePanel(scope) {
     el('code').value = '';
   });
   on(el('lock'), 'click', () => send('logout'));
+  on(el('open-streamlit-camera'), 'click', () => {
+    d.dispatchEvent(new scope.CustomEvent('python-twin:action', {
+      detail: { action: 'camera_panel', open: true },
+    }));
+    el('laptop-camera-detail').textContent =
+      'Opening Streamlit WebRTC camera panel. Stop this local preview before pressing START in WebRTC.';
+  });
   on(el('stop'), 'click', () => send('stop'));
   for (const choice of ['continue', 'divert'])
     on(el('battery-' + choice), 'click', () =>
