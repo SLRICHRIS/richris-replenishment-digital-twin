@@ -65,7 +65,10 @@ export function createPhysicalRoutePanel(scope) {
     '<div class="pr-stage-content">',
     '<section id="pr-step-panel-1" role="tabpanel" aria-labelledby="pr-step-1"><div class="pr-setup-layout"><div id="pr-setup-slot"></div><aside class="panel pr-guide-card"><span class="twin-card-kicker">BEFORE THE FIRST JOURNEY</span><h2>Make the physical setup ready</h2><ol class="pr-checklist"><li><strong>Measure the whole robot</strong><p>Include wheels, protrusions and the mounted marker. Wheel spacing alone is not the footprint.</p></li><li><strong>Calibrate the overhead camera</strong><p>Verify lens calibration, paper references, marker height and a clear-floor background.</p></li><li><strong>Commission the motor receiver</strong><p>Verify wheel directions, low-speed PWM and stopping distance before enabling physical control.</p></li></ol><a class="pr-guide-link" href="' +
       GUIDE +
-      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button></aside></div></section>',
+      '" target="_blank" rel="noopener">Open the setup and upload guide ↗</a><div class="pr-setup-note">Saving measurements creates a planning draft. The laptop controller supplies the trusted calibration.</div><button id="pr-to-connect" type="button" class="primary">Continue to connection →</button></aside></div>',
+    '<section class="panel pr-laptop-camera" aria-labelledby="pr-laptop-camera-title"><div class="pr-card-heading"><div><span class="twin-card-kicker">LOCAL USB WEBCAM</span><h2 id="pr-laptop-camera-title">Logitech camera on this laptop</h2></div><span id="pr-laptop-camera-status" class="vision-chip" role="status">Not connected</span></div>',
+    '<p class="pr-description">See the live overhead view here without the Windows Camera app. This is a local preview only; trusted robot coordinates still require the separate calibrated camera agent.</p><video id="pr-laptop-camera-video" autoplay muted playsinline hidden style="width:100%;max-height:430px;object-fit:contain;background:#0b1c35;border-radius:10px"></video>',
+    '<div class="vision-tools"><button id="pr-laptop-camera-start" type="button">Show Logitech camera</button><button id="pr-laptop-camera-stop" type="button" disabled>Stop preview</button></div><p id="pr-laptop-camera-detail" class="pr-inline-note">Close Windows Camera first. Chrome camera permission is required. Video stays on your laptop and is not transmitted to EMQX.</p></section></section>',
     '<section id="pr-step-panel-2" role="tabpanel" aria-labelledby="pr-step-2" hidden><div class="pr-connect-layout"><section class="panel pr-action-card"><span class="twin-card-kicker">CONNECT THE REAL AMR</span><h2>Check the camera and robot</h2><p class="pr-description">Power the ESP32 and run the USB-camera controller on the Windows laptop. Keep both connected while the route runs.</p><ul id="pr-readiness" class="pr-readiness"></ul><button id="pr-source" type="button">Use physical sensor source</button><details class="pr-technical"><summary>Connection setup details</summary><ul id="pr-missing"></ul><a href="' +
       GUIDE +
       '" target="_blank" rel="noopener">Controller and broker setup ↗</a></details><button id="pr-to-plan" type="button" class="primary" disabled>Continue to route planning →</button></section>',
@@ -96,8 +99,64 @@ export function createPhysicalRoutePanel(scope) {
     !d.getElementById('vision-routing-shell') ||
     d.getElementById('vision-routing-shell').dataset.mode === 'physical';
   const active = () => d.body.dataset.view === 'vision' && !d.hidden && modeIsPhysical();
+  let localCameraStream = null;
+  let localCameraGeneration = 0;
+  function stopLocalCamera(message = 'Preview stopped. The USB camera is available for the tracking agent.') {
+    localCameraGeneration += 1;
+    localCameraStream?.getTracks().forEach((track) => track.stop());
+    localCameraStream = null;
+    el('laptop-camera-video').srcObject = null;
+    el('laptop-camera-video').hidden = true;
+    el('laptop-camera-start').disabled = false;
+    el('laptop-camera-stop').disabled = true;
+    el('laptop-camera-status').textContent = 'Not connected';
+    el('laptop-camera-detail').textContent = message;
+  }
+  on(el('laptop-camera-start'), 'click', async () => {
+    if (!scope.navigator.mediaDevices?.getUserMedia) {
+      el('laptop-camera-detail').textContent =
+        'This embedded page cannot access the webcam. Open the dashboard in Chrome on the laptop and allow camera access, or use the Windows camera agent.';
+      return;
+    }
+    stopLocalCamera();
+    const generation = localCameraGeneration;
+    el('laptop-camera-start').disabled = true;
+    el('laptop-camera-stop').disabled = false;
+    el('laptop-camera-status').textContent = 'Requesting camera';
+    el('laptop-camera-detail').textContent = 'Allow the Logitech webcam in Chrome. Close Windows Camera if it is open.';
+    try {
+      const received = await scope.navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      if (generation !== localCameraGeneration || !active() || stage !== 1) {
+        received.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      localCameraStream = received;
+      el('laptop-camera-video').srcObject = received;
+      el('laptop-camera-video').hidden = false;
+      await el('laptop-camera-video').play();
+      if (generation !== localCameraGeneration) return;
+      el('laptop-camera-status').textContent = 'Live on laptop';
+      el('laptop-camera-detail').textContent =
+        'Local camera preview only. Stop preview before starting the calibrated camera tracking agent, so both applications do not compete for the USB camera.';
+      received.getVideoTracks().forEach((track) =>
+        on(track, 'ended', () => stopLocalCamera('Camera disconnected or permission revoked.')));
+    } catch (error) {
+      if (generation !== localCameraGeneration) return;
+      stopLocalCamera(
+        error?.name === 'NotAllowedError'
+          ? 'Chrome denied camera permission or the embedded page blocked it. Allow the Logitech webcam in Chrome or open the local camera agent.'
+          : 'Unable to start the camera. Close Windows Camera and other webcam applications, then try again.',
+      );
+    }
+  });
+  on(el('laptop-camera-stop'), 'click', () => stopLocalCamera());
   function viewChanged() {
     const next = active();
+    if (!next && (localCameraStream || el('laptop-camera-start').disabled))
+      stopLocalCamera('Preview stopped because the physical AMR view is no longer active.');
     if (next !== view) {
       view = next;
       send('view', { active: next });
@@ -107,11 +166,12 @@ export function createPhysicalRoutePanel(scope) {
   observer.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
   on(d, 'visibilitychange', viewChanged);
   on(d, 'vision-routing:mode', viewChanged);
-  on(scope, 'pagehide', () => send('view', { active: false }));
+  on(scope, 'pagehide', () => { stopLocalCamera(); send('view', { active: false }); });
   function showStage(value, manual = false) {
     const running = ACTIVE.includes(payload?.review?.state);
     if (running && value !== 5) return;
     stage = value;
+    if (stage !== 1 && (localCameraStream || el('laptop-camera-start').disabled)) stopLocalCamera();
     if (manual) userStage = true;
     for (let i = 1; i <= 5; i++) {
       el('step-' + i).setAttribute('aria-selected', String(i === stage));
@@ -599,6 +659,7 @@ export function createPhysicalRoutePanel(scope) {
     showStage: chooseStage,
     getStage: () => stage,
     destroy() {
+      stopLocalCamera();
       observer.disconnect();
       scope.clearInterval(timer);
       listeners.forEach((remove) => remove());
