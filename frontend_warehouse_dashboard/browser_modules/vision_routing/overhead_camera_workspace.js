@@ -18,12 +18,12 @@ export function createVisionWorkspace(scope) {
   const storageKey = 'amr01.visionSetup.v2';
   // Operator-reported dimensions are planning defaults, never execution authorization.
   const reportedMeasurements = {
-    robotLengthMm: 187,
-    robotWidthMm: 150,
+    robotLengthMm: 170,
+    robotWidthMm: 155,
     robotHeightMm: 150,
     markerHeightMm: 150,
     markerSizeMm: 40,
-    cameraHeightCm: 92,
+    cameraHeightCm: 131,
   };
   const reportedMarkerOffset = {
     reference: 'wheel-axle-midpoint',
@@ -33,11 +33,11 @@ export function createVisionWorkspace(scope) {
   };
   const reportedBodyOutline = {
     reference: 'wheel-axle-midpoint',
-    frontMm: 147,
-    rearMm: 40,
-    lengthMm: 187,
-    longitudinalMidpointForwardMm: 53.5,
-    source: 'operator-reported',
+    frontMm: null,
+    rearMm: null,
+    lengthMm: 170,
+    longitudinalMidpointForwardMm: null,
+    source: 'requires-remeasurement',
   };
   const settingsFields = {
     robotLengthMm: 'robot-length',
@@ -471,7 +471,7 @@ export function createVisionWorkspace(scope) {
     const url = scope.URL.createObjectURL(file),
       a = d.createElement('a');
     a.href = url;
-    a.download = 'AMR01_425x630_Camera_Setup_and_Rehearsal.json';
+    a.download = 'AMR01_610x630_Camera_Setup_and_Rehearsal.json';
     d.body.append(a);
     a.click();
     a.remove();
