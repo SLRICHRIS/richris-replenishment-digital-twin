@@ -1417,6 +1417,12 @@ const pages = {
   },
 };
 function activatePage(name, writeHash = true) {
+  // Legacy Connect AMR links open the integrated live mission workspace.
+  if (name === 'connection') {
+    name = 'vision';
+    const setup = document.getElementById('amr-connection-workspace');
+    if (setup) setup.open = true;
+  }
   if (!pages[name]) name = 'vision';
   if (
     ['database', 'connection'].includes(name) &&
