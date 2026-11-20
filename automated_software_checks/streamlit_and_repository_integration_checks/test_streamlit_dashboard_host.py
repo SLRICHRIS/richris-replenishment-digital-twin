@@ -6,6 +6,24 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
+    def test_mission_camera_button_opens_sidebar_camera_and_preserves_source(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        from backend_streamlit_and_telemetry.vision_control import browser_streamlit_workspace as camera
+
+        app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+        action = dict(action='camera_panel', open=True, nonce='open-camera')
+        with patch.object(host, 'WAREHOUSE_WORKSPACE', return_value=action), \
+                patch.object(camera, 'render_browser_camera') as render:
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(app.sidebar.checkbox[0].value)
+            self.assertEqual(app.session_state.warehouse_sensor_mode, 'demo')
+            render.assert_called()
+            app.sidebar.checkbox[0].uncheck().run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertFalse(app.sidebar.checkbox[0].value)
+
     def test_selected_trial_survives_tick_and_native_detailed_readings(self):
         from unittest.mock import patch
         import json
@@ -370,6 +388,34 @@ class StreamlitHostTests(unittest.TestCase):
 
 
 class VisionPhysicalWorkspaceTests(unittest.TestCase):
+    def test_uncommissioned_profile_can_check_connections_but_cannot_capture_or_drive(self):
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry.predictive_twin import vision_execution_workspace as v
+        settings = dict(vision_control=dict(enabled=True, commissioned=False,
+            mqtt_host='broker.test', mqtt_username='route', mqtt_password='fixture',
+            audit_url='postgresql+psycopg://route@test/amr', control_key='1' * 64),
+            amr_connection=dict(access_code='operator-fixture'))
+        app = AppTest.from_function(self._run_route_preflight)
+        app.secrets.update(settings)
+        with patch.object(v, 'service') as transport:
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            self.assertTrue(app.session_state['login_available'])
+            self.assertIn('Connection checks only', app.session_state['vision_feedback'])
+            transport.assert_not_called()
+
+    @staticmethod
+    def _run_route_preflight():
+        import streamlit as st
+        from backend_streamlit_and_telemetry.predictive_twin import vision_execution_workspace as v
+        profile, _ = v.profile()
+        st.session_state.login_available = profile is not None
+        v.handle(dict(command='login', operator='tester', access_code='operator-fixture'), 'live')
+        assert v.authorized(profile)
+        for cmd in ('capture', 'decide', 'battery_decision'):
+            v.handle(dict(command=cmd), 'live')
+            assert 'Connection checks only' in st.session_state.vision_feedback
+
     def test_missing_commissioning_never_starts_physical_transport_or_exports_secrets(self):
         from unittest.mock import patch
         from backend_streamlit_and_telemetry.predictive_twin import vision_execution_workspace as v
