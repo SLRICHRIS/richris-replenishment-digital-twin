@@ -42,7 +42,7 @@ class Agent:
         if op=='cancel' and self.job and rid==self.job['review_id']:
             self.halt('Operator cancelled the route',now); return
         if op=='lease' and self.job and rid==self.job['review_id']:
-            if self.state in ('arming','running','stopping'):
+            if self.state in ('arming','running','battery_review','stopping'):
                 self.lease_until=max(self.lease_until,p['expires_at_ms'])
             return
         if op!='execute' or rid in self.seen or self.state in ('arming','running','stopping'):
