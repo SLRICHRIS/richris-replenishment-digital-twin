@@ -82,6 +82,15 @@ def geometry(raw):
     if not isinstance(raw, dict):
         raise ValueError('Measured motion configuration is missing')
     result = {n:numeric(raw.get(n), *r, n) for n,r in ranges.items()}
+    # Optional verified advisory threshold for human diversion to battery point E.
+    # Without a verified value the controller still enforces the hard battery cutoff,
+    # but does not invent a low-battery advisory from uncalibrated SOC.
+    advisory = raw.get('battery_advisory_voltage_v')
+    if advisory is not None:
+        numeric(advisory, 6.01, 8.4, 'battery_advisory_voltage_v')
+        if advisory <= result['min_pack_voltage_v']:
+            raise ValueError('Battery advisory must exceed the hard battery cutoff')
+        result['battery_advisory_voltage_v'] = advisory
     for n in ('left_polarity', 'right_polarity'):
         if type(raw.get(n)) is not int or raw[n] not in (-1, 1):
             raise ValueError('Verify both physical wheel polarities')
