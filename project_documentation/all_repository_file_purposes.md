@@ -319,3 +319,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_battery_policy.py` | Verify signed advisory human decisions, zero-output pause, continued-route limits and absolute critical-voltage stopping. |
 | `backend_streamlit_and_telemetry/vision_control/battery_policy.py` | Deterministic physical voltage policy: operator may decline low-battery diversion only above non-overridable critical cutoff. |
 | `automated_software_checks/predictive_twin_checks/test_battery_policy.py` | Regression test three-way battery conditions, signed human reviews, replay protection and hard-stop dominance. |
+| `project_documentation/enable_protected_motor_test_and_e_parking.md` | One-time ESP32 protected motor receiver provisioning and supervised Streamlit motor test; battery station E is parking only. |
+| `automated_software_checks/predictive_twin_checks/test_motor_enable_parking_contract.py` | Verify both firmware templates compile in signed-drive receiver without public credentials and the UI states E is non-docking parking. |
