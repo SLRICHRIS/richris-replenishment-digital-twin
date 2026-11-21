@@ -1,4 +1,39 @@
 // Human-held input renews a bounded server/ESP32 lease. Rendering never drives.
+function wirelessReadinessHint(value, physical) {
+  const hardware = value.hardware;
+  if (hardware?.protocol !== 'H1' || value.max_pwm !== 60 || hardware.ready) return '';
+  const notes = [];
+  if (hardware.battery_voltage_v === 0) {
+    notes.push('The receiver has no valid battery reading. Check the battery monitor.');
+  } else if (Number.isFinite(hardware.battery_voltage_v) && hardware.battery_voltage_v <= 6.6) {
+    notes.push('Battery at or below the 6.60 V cutoff. Switch the AMR off and use a charged pack.');
+  }
+  const sample = physical.measurements;
+  if (
+    physical.fresh &&
+    physical.h1_pwm_limit === 60 &&
+    sample?.gyro_available === true &&
+    sample.gyro_bias_estimate_rad_s === null
+  ) {
+    notes.push(
+      'Startup gyro calibration is missing. Keep the wheels still, press ESP32 EN/RESET once and leave the robot untouched for 10 seconds. Wait here for Controller ready.',
+    );
+  }
+  return notes.join(' ');
+}
+
+function waitingStatus(hardware, cap) {
+  if (!hardware) return 'Waiting for authenticated ESP32 feedback';
+  if (hardware.protocol === 'H1' && cap === 60 && !hardware.ready) {
+    if (hardware.battery_voltage_v === 0) return 'Battery reading unavailable';
+    if (hardware.battery_voltage_v <= 6.6) return 'Battery at or below 6.60 V';
+  }
+  if (hardware.battery_voltage_v < 6.6) return 'Battery below 6.6 V';
+  if (!hardware.ready) return 'Controller not ready';
+  if (hardware.left_duty || hardware.right_duty) return 'Wait for zero motor outputs';
+  return 'Waiting for controller readiness';
+}
+
 export function createManualMotorPanel(scope) {
   const d = scope.document,
     root = d.getElementById('manual-motor-control');
@@ -141,22 +176,17 @@ export function createManualMotorPanel(scope) {
           ? 'Controller connected · direction held'
           : value.ready
             ? 'Controller ready · hold a direction'
-            : h
-              ? h.battery_voltage_v < 6.6
-                ? 'Battery below 6.6 V'
-                : !h.ready
-                  ? 'Controller not ready'
-                  : h.left_duty || h.right_duty
-                    ? 'Wait for zero motor outputs'
-                    : 'Waiting for controller readiness'
-              : 'Waiting for authenticated ESP32 feedback';
-    el('receiver-note').textContent = value.receiver_updated
-      ? 'Receiver supports PWM 0–255. Left and right use one wheel, matching your sketch.'
-      : cap === 60
-        ? 'AMR-01 Wireless H1 r3 supports PWM 0–60. Hold a direction to apply the selected power.'
-        : h
-          ? 'Existing receiver: PWM up to 160. Upload the updated receiver for the full 0–255 range and IMU-independent manual driving.'
-          : 'Connect the controller to read its PWM capability. The updated receiver supports 0–255 PWM.';
+            : waitingStatus(h, cap);
+    const receiverHint = wirelessReadinessHint(value, physical);
+    el('receiver-note').textContent =
+      receiverHint ||
+      (value.receiver_updated
+        ? 'Receiver supports PWM 0–255. Left and right use one wheel, matching your sketch.'
+        : cap === 60
+          ? 'AMR-01 Wireless H1 r3 supports PWM 0–60.'
+          : h
+            ? 'Existing receiver: PWM up to 160. Upload the updated receiver for the full 0–255 range and IMU-independent manual driving.'
+            : 'Connect the controller to read its PWM capability. The updated receiver supports 0–255 PWM.');
     el('outcome').textContent = r?.reason || 'No direction is held.';
     el('feedback').textContent = value.feedback || '';
     el('transport').textContent =
