@@ -19,7 +19,7 @@ streamlit run streamlit_app.py
 
 The dashboard opens on **Floor**, a single-AMR warehouse simulation. **Connect AMR** provides the operator-protected, on-demand EMQX recorder. **Sensor models** shows six Python models with Demo data or Stored sensor data, their equations, sources and recommendations. **Detailed readings and export** opens packet values and charts. **Database** browses saved records, attributes and storage status. Display reads use a private SELECT-only account; the optional recorder uses a separate limited writer. Physical data collection and measured calibration require independent commissioning.
 
-For attended manual driving, open **Live AMR mission → Direct Wi-Fi drive** and enter the ESP32's local IP address. Its controller opens in a separate tab and receives commands directly over the local Wi-Fi network; EMQX continues carrying sensor data. See the [direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
+For attended manual driving, open **Live AMR mission → Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry or firmware upload is needed. Allow local-network access if Chrome asks. Commands travel directly over local Wi-Fi; EMQX continues carrying sensor data. See the [direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
 
 ## Reproducible demonstration
 

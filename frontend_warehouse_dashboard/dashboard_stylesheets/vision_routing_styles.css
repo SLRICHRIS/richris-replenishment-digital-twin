@@ -1032,22 +1032,42 @@
   }
 }
 
-.manual-direct-form {
-  display: grid;
+.manual-direct-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
-  max-width: 520px;
-  margin-block: 24px;
+  margin-block: 20px 12px;
 }
-.manual-direct-open {
-  display: inline-flex;
-  justify-content: center;
+.manual-direct-actions button {
   padding: 14px 20px;
   border-radius: 10px;
-  text-decoration: none;
 }
-.manual-direct-open[aria-disabled='true'] {
+.manual-direct-actions button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+.manual-controller-frame-host {
+  margin-block: 20px;
+  border: 1px solid var(--line, #26364d);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0b1220;
+}
+.manual-controller-frame {
+  display: block;
+  width: 100%;
+  height: 1120px;
+  border: 0;
+  background: #0b1220;
+}
+.manual-direct-help {
+  margin-block: 16px;
+}
+@media (max-width: 720px) {
+  .manual-controller-frame {
+    height: 1460px;
+  }
 }
 .manual-drive-layout {
   display: grid;
