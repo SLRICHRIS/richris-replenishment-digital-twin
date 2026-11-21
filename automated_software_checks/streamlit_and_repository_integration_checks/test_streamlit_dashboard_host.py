@@ -6,6 +6,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
+    def test_drive_callback_handles_visible_live_input_once_before_dashboard_reads(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
+        from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as manual
+
+        event = dict(action='manual_control', command='hold', control_mode='manual', nonce='one')
+        state = {'warehouse-workspace': event, 'warehouse_sensor_mode': 'live', 'manual_view': True}
+        with patch.object(host, 'st', SimpleNamespace(session_state=state)), patch.object(manual, 'handle') as handle:
+            host.handle_drive_input()
+            host.handle_drive_input()
+            handle.assert_called_once_with(event, 'live')
+            for change in ({'control_mode': None}, {'action': 'vision_execution'}, {'command': 'login'}):
+                state['warehouse-workspace'] = dict(event, nonce='ignored', **change)
+                host.handle_drive_input()
+            self.assertEqual(handle.call_count, 1)
+            state['warehouse-workspace'] = dict(event, nonce='two', command='release')
+            host.handle_drive_input()
+            self.assertEqual(handle.call_count, 2)
+            state['manual_view'] = False
+            state['warehouse-workspace'] = dict(event, nonce='hidden')
+            host.handle_drive_input()
+            self.assertEqual(handle.call_count, 2)
+
     def test_mission_camera_button_opens_sidebar_camera_and_preserves_source(self):
         from unittest.mock import patch
         from backend_streamlit_and_telemetry import streamlit_dashboard_host as host

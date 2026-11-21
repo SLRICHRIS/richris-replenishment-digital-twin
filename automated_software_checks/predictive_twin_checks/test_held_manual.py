@@ -82,6 +82,24 @@ def test_legacy_receiver_caps_pwm_and_one_wheel_left_right_match_attachment():
     beat(c,t,3,HOLD,c.row['next_seq']-1,'moving',0,160,updated=False);c.tick()
     assert verified(out[-1],KEY,10)[6:8]==['160','0']
 
+
+def test_r3_identification_only_lowers_the_authenticated_h1_session_limit():
+    c,t,out=fixture(updated=False)
+    assert c.public(OWNER,h1_pwm_limit=60)['max_pwm']==60
+    assert c.public(OWNER)['max_pwm']==60
+    assert c.public(OWNER,h1_pwm_limit=255)['max_pwm']==60
+    with pytest.raises(ValueError): hold(c,t,pwm=160)
+    assert out==[]
+    hold(c,t,pwm=40)
+    t[0]+=100;beat(c,t,2,HOLD,1,'armed',updated=False)
+    assert verified(out[-1],KEY,10)[6:8]==['40','40']
+    c.end_hold(OWNER,HOLD,2)
+    assert verified(out[-1],KEY,10)[5:8]==['stop','0','0']
+    t[0]+=50;beat(c,t,1,epoch='f'*32,updated=False)
+    assert c.public(OWNER)['max_pwm']==160
+    t[0]+=20;beat(c,t,1,epoch='1'*32,updated=True)
+    assert c.public(OWNER,h1_pwm_limit=60)['max_pwm']==255
+
 def test_other_owner_replay_restart_and_old_inputs_cannot_create_another_move():
     c,t,out=fixture();hold(c,t)
     with pytest.raises(ValueError):hold(c,t,2,owner='f'*32)

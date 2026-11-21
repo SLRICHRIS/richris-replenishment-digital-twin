@@ -305,7 +305,7 @@ def test_authenticated_connect_starts_listener_even_if_initial_view_event_was_lo
     config=dict(enabled=True,mqtt_host='example.invalid',mqtt_username='test-only',mqtt_password='test-only',control_key=KEY,audit_url='postgresql+psycopg://test@example.invalid/test')
     monkeypatch.setattr(workspace,'st',SimpleNamespace(session_state=state,secrets={'manual_control':config,'amr_connection':{'access_code':code}}))
     touched=[];cancelled=[];started=[]
-    coordinator=SimpleNamespace(touch=touched.append,cancel=cancelled.append,public=lambda owner:dict(ready=False,hardware=None,review=None))
+    coordinator=SimpleNamespace(touch=touched.append,cancel=cancelled.append,public=lambda owner, **kwargs:dict(ready=False,hardware=None,review=None))
     service=SimpleNamespace(stop=threading.Event(),coordinator=coordinator,public_transport=lambda:dict(state='connecting',connected=False,reason=''))
     def start(profile):
         started.append(profile);state['manual_service']=service;return service
