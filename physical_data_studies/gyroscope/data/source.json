@@ -1,0 +1,25 @@
+{
+  "source_filename": "AMR01_Physical_Telemetry.csv",
+  "source_sha256": "146017902d7c16ed1cfa3a847dac389b4db387a320e87b71356344e256c55635",
+  "source_bytes": 25617169,
+  "snapshot_cutoff_utc": "2026-11-21T19:21:37.463612Z",
+  "archive_source": "AMR-01 commissioning telemetry from public.amr_commissioning_samples",
+  "robot_id": "amr01",
+  "topic": "robot/amr01/commissioning",
+  "packet_key": [
+    "robot_id",
+    "boot_id",
+    "seq"
+  ],
+  "input_units": {
+    "gyro_z_dps": "degrees per second",
+    "gyro_bias_estimate_rad_s": "radians per second"
+  },
+  "software": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.0"
+  }
+}

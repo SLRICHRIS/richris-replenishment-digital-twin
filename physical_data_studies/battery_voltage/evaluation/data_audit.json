@@ -1,0 +1,46 @@
+{
+  "raw_rows": 68130,
+  "unique_packets": 68130,
+  "exact_duplicate_rows_removed": 0,
+  "boots": 86,
+  "valid_voltage_packets": 68126,
+  "missing_voltage_packets": 4,
+  "gyro_available_packets": 62032,
+  "nonzero_pwm_packets": 3085,
+  "continuity_breaks_within_boot": 450,
+  "contiguous_segments": 536,
+  "ten_second_bins": 3928,
+  "eligible_coverage_bins": 3132,
+  "consecutive_bin_pairs": 3392,
+  "insufficient_coverage_pairs": 501,
+  "input_below_5p5_pairs": 1373,
+  "missing_input_feature_pairs": 0,
+  "examples": 1518,
+  "splits": {
+    "train": {
+      "raw_packets": 32704,
+      "raw_boots": 40,
+      "examples": 704,
+      "eligible_boots": 18,
+      "first_received": "2026-11-17T15:52:04.091000+00:00",
+      "last_received": "2026-11-19T18:50:37.559000+00:00"
+    },
+    "validation": {
+      "raw_packets": 19509,
+      "raw_boots": 33,
+      "examples": 450,
+      "eligible_boots": 9,
+      "first_received": "2026-11-19T18:50:43.861000+00:00",
+      "last_received": "2026-11-20T13:49:29.040000+00:00"
+    },
+    "test": {
+      "raw_packets": 15917,
+      "raw_boots": 13,
+      "examples": 364,
+      "eligible_boots": 3,
+      "first_received": "2026-11-21T07:29:15.417000+00:00",
+      "last_received": "2026-11-21T18:45:41.165000+00:00"
+    }
+  },
+  "modeling_boots": 30
+}

@@ -325,3 +325,57 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/vision_control/browser_streamlit_workspace.py` | Render on-page browser camera, calibration, measured camera settings and protected EMQX controls in Streamlit. |
 | `automated_software_checks/predictive_twin_checks/test_browser_camera.py` | Verify server-side ArUco marker detection, reference capture and no uncommissioned control path. |
 | `project_documentation/streamlit_webrtc_amr_camera.md` | Commission the server-side Streamlit WebRTC webcam, ArUco tracker and protected MQTT control gates. |
+
+## Physical data studies
+
+| File | Purpose |
+| --- | --- |
+| `physical_data_studies/.gitignore` | Exclude local prediction exports and study environments. |
+| `physical_data_studies/.gitattributes` | Preserve binary reports and compressed data; keep study text line endings stable on Windows. |
+| `physical_data_studies/README.md` | Explain the study, measured counts, results and reproduction steps. |
+| `physical_data_studies/SHA256SUMS.txt` | Record SHA-256 fingerprints for the packaged study files. |
+| `physical_data_studies/battery_voltage/AMR01_Data_Study_Report.pdf` | Present the completed voltage data study, methods and measured held-out results. |
+| `physical_data_studies/battery_voltage/README.md` | Explain the study, measured counts, results and reproduction steps. |
+| `physical_data_studies/battery_voltage/SHA256SUMS.txt` | Record SHA-256 fingerprints for the packaged study files. |
+| `physical_data_studies/battery_voltage/dataset/AMR01_Model_Dataset.csv` | Store 1,518 labelled voltage examples with history, future target and chronological split. |
+| `physical_data_studies/battery_voltage/dataset/boot_sessions.csv` | Inventory packet counts, chronological partitions and eligible examples by ESP32 boot. |
+| `physical_data_studies/battery_voltage/dataset/count.sql` | Reproduce the frozen physical packet count against an authorized database connection. |
+| `physical_data_studies/battery_voltage/dataset/data_dictionary.md` | Define sensor fields, units, feature columns, target construction and evaluation metadata. |
+| `physical_data_studies/battery_voltage/dataset/export.sql` | Define the fixed noncredential projection of physical commissioning records. |
+| `physical_data_studies/battery_voltage/dataset/physical_packets.csv.gz` | Losslessly store all 68,130 physical packets with 42 selected telemetry/provenance fields. |
+| `physical_data_studies/battery_voltage/dataset/snapshot.json` | Record the frozen database count, extraction cutoff, firmware inventory and sensor coverage. |
+| `physical_data_studies/battery_voltage/evaluation/data_audit.json` | Account for input quality, exclusions, window construction and split counts. |
+| `physical_data_studies/battery_voltage/evaluation/results.json` | Record chosen model settings, held-out scores and study-specific evaluation details. |
+| `physical_data_studies/battery_voltage/evaluation/test_metrics.csv` | Compare the trained model and simple baselines on the same held-out forecast origins. |
+| `physical_data_studies/battery_voltage/evaluation/test_metrics_by_boot.csv` | Report held-out forecasting errors separately for each eligible boot. |
+| `physical_data_studies/battery_voltage/evaluation/test_predictions.csv` | Retain every held-out target and all method predictions for independent scoring. |
+| `physical_data_studies/battery_voltage/evaluation/validation_grid.csv` | Retain validation scores for every candidate model setting. |
+| `physical_data_studies/battery_voltage/model/voltage_ridge.json` | Store fitted voltage-model coefficients, intercept, scaler and input order. |
+| `physical_data_studies/battery_voltage/requirements.txt` | Pin the numerical and machine-learning dependencies used by the offline studies. |
+| `physical_data_studies/battery_voltage/study.py` | Preprocess voltage packets, build labelled windows, fit Ridge and evaluate held-out boots. |
+| `physical_data_studies/faculty_review.md` | Present the five faculty questions with linked data, preprocessing, training and evaluation evidence. |
+| `physical_data_studies/gyroscope/AMR01_Gyro_Study_Report.pdf` | Present the completed gyro data study, held-out results and offset sensitivity. |
+| `physical_data_studies/gyroscope/README.md` | Explain the study, measured counts, results and reproduction steps. |
+| `physical_data_studies/gyroscope/SHA256SUMS.txt` | Record SHA-256 fingerprints for the packaged study files. |
+| `physical_data_studies/gyroscope/data/AMR01_Gyro_Model_Dataset.csv` | Store 18,766 labelled gyro examples with source sequences, features, future target and split. |
+| `physical_data_studies/gyroscope/data/AMR01_Gyro_Packets.csv.gz` | Losslessly store the 17-field gyro projection of the same 68,130 physical packets. |
+| `physical_data_studies/gyroscope/data/boot_sessions.csv` | Inventory packet counts, chronological partitions and eligible examples by ESP32 boot. |
+| `physical_data_studies/gyroscope/data/data_dictionary.md` | Define sensor fields, units, feature columns, target construction and evaluation metadata. |
+| `physical_data_studies/gyroscope/data/source.json` | Identify the shared physical export, source hash, units and original software versions. |
+| `physical_data_studies/gyroscope/evaluation/boot_gyro_offsets.csv` | Inspect raw and bias-corrected gyro levels and motor output for each boot. |
+| `physical_data_studies/gyroscope/evaluation/data_audit.json` | Account for input quality, exclusions, window construction and split counts. |
+| `physical_data_studies/gyroscope/evaluation/offset_sensitivity.csv` | Report fixed-prediction sensitivity to the flagged zero-output gyro boot. |
+| `physical_data_studies/gyroscope/evaluation/results.json` | Record chosen model settings, held-out scores and study-specific evaluation details. |
+| `physical_data_studies/gyroscope/evaluation/test_metrics.csv` | Compare the trained model and simple baselines on the same held-out forecast origins. |
+| `physical_data_studies/gyroscope/evaluation/test_metrics_by_boot.csv` | Report held-out forecasting errors separately for each eligible boot. |
+| `physical_data_studies/gyroscope/evaluation/test_predictions.csv` | Retain every held-out target and all method predictions for independent scoring. |
+| `physical_data_studies/gyroscope/evaluation/validation_baselines.csv` | Retain validation scores for the simple gyro forecasting methods. |
+| `physical_data_studies/gyroscope/evaluation/validation_grid.csv` | Retain validation scores for every candidate model setting. |
+| `physical_data_studies/gyroscope/gyro_study.py` | Preprocess gyro packets, build labelled windows, fit boosted trees and evaluate held-out boots. |
+| `physical_data_studies/gyroscope/model/gyro_forecaster.json` | Store the fitted gradient-boosted trees and feature order for portable inference. |
+| `physical_data_studies/gyroscope/requirements.txt` | Pin the numerical and machine-learning dependencies used by the offline studies. |
+| `physical_data_studies/gyroscope/verify_study.py` | Trace every gyro forecast window to source packets and check portable-model predictions and subgroup scores. |
+| `physical_data_studies/reproduce.py` | Verify source fingerprints, rebuild both studies in temporary folders and compare all recorded datasets, model parameters and evaluations. |
+| `physical_data_studies/requirements.txt` | Pin the numerical and machine-learning dependencies used by the offline studies. |
+| `physical_data_studies/source_manifest.json` | Record original archive/report fingerprints, the shared snapshot and lossless source packaging. |
+| `.github/workflows/physical-data-studies.yml` | Reproduce both physical data studies on relevant changes and manual runs using Python 3.12. |

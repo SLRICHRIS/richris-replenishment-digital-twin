@@ -1,0 +1,41 @@
+{
+  "model": "Ridge regression of the change in mean voltage",
+  "prediction": "voltage_mean_v + intercept + sum(coefficient * (feature - mean) / scale)",
+  "output_unit": "V",
+  "target": "next_10s_mean_v",
+  "alpha": 1000.0,
+  "fitting_examples": 1154,
+  "features": [
+    "voltage_mean_v",
+    "last_minus_mean_v",
+    "slope_v_per_s",
+    "voltage_sd_v",
+    "mean_abs_current_a",
+    "mean_pwm_duty"
+  ],
+  "feature_mean": [
+    7.02643877763842,
+    -0.0033583963559244956,
+    -0.0005828490504887838,
+    0.06513494552370527,
+    0.0016912291343610325,
+    0.3075116300282769
+  ],
+  "feature_scale": [
+    0.37862909119783483,
+    0.08632815195862553,
+    0.011533821404194849,
+    0.05522813537770773,
+    0.014555873178128544,
+    4.281009451679189
+  ],
+  "coefficient": [
+    0.0005000322508835116,
+    0.003776878615056989,
+    0.003069312289610904,
+    -0.0061966090711429965,
+    -0.007778550275127274,
+    -0.006711075422192769
+  ],
+  "intercept": -0.01681875248563351
+}

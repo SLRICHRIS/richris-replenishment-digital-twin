@@ -4,6 +4,14 @@ One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measu
 
 [Open the digital twin](https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/).
 
+## Real sensor data: datasets, training and evaluation
+
+The [physical data studies](physical_data_studies/README.md) contain **68,130 recorded AMR-01 packets from 86 boots**, preprocessing code, labelled datasets, fitted models, test predictions and PDF reports. The frozen snapshot supports two experiments: next-10-second monitored-voltage forecasting and next-two-reading gyro-rate forecasting.
+
+Start with the [faculty review guide](physical_data_studies/faculty_review.md), then open the [voltage study](physical_data_studies/battery_voltage/README.md) or [gyro study](physical_data_studies/gyroscope/README.md). Each study compares its trained model with simple baselines on later held-out boots. A single [offline reproduction command](physical_data_studies/README.md#reproduce-on-windows) rebuilds and checks the results.
+
+## Run the dashboard
+
 ```sh
 python -m pip install -r requirements.txt
 streamlit run streamlit_app.py

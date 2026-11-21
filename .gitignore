@@ -1,5 +1,6 @@
 # Python and JavaScript development environments
 .venv/
+.venv-study/
 venv/
 __pycache__/
 *.py[cod]

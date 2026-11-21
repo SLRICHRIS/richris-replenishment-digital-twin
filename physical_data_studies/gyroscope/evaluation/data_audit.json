@@ -1,0 +1,56 @@
+{
+  "raw_rows": 68130,
+  "unique_packets": 68130,
+  "exact_duplicates_removed": 0,
+  "raw_boots": 86,
+  "flag_valid": 62032,
+  "fresh_gyro_packets": 62032,
+  "fresh_gyro_boots": 81,
+  "unusable_flag_or_freshness": 6098,
+  "fresh_without_bias": 23237,
+  "calibrated_packets": 38795,
+  "calibrated_boots": 60,
+  "valid_segments": 349,
+  "calibrated_packets_with_pwm": 1918,
+  "first_received": "2026-11-17T15:52:04.091000+00:00",
+  "last_received": "2026-11-21T18:45:41.165000+00:00",
+  "examples": 18766,
+  "eligible_boots": 55,
+  "splits": {
+    "train": {
+      "raw_boots": 8,
+      "raw_packets": 13704,
+      "calibrated_packets": 12533,
+      "examples": 6107,
+      "eligible_boots": 7,
+      "target_pwm_examples": 57,
+      "target_pwm_boots": 4
+    },
+    "validation": {
+      "raw_boots": 32,
+      "raw_packets": 19000,
+      "calibrated_packets": 8406,
+      "examples": 4097,
+      "eligible_boots": 19,
+      "target_pwm_examples": 750,
+      "target_pwm_boots": 9
+    },
+    "test": {
+      "raw_boots": 46,
+      "raw_packets": 35426,
+      "calibrated_packets": 17856,
+      "examples": 8562,
+      "eligible_boots": 29,
+      "target_pwm_examples": 149,
+      "target_pwm_boots": 8
+    }
+  },
+  "segments_too_short": 129,
+  "packets_in_short_segments": 286,
+  "unused_tail_packets_in_eligible_segments": 97,
+  "target_packets": 37532,
+  "median_horizon_s": 1.0010000000000048,
+  "min_horizon_s": 0.977593000000013,
+  "max_horizon_s": 1.025999000000013,
+  "high_rate_threshold_dps": 10.0
+}

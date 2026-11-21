@@ -1,0 +1,31 @@
+name: Physical data studies
+
+on:
+  push:
+    paths:
+      - 'physical_data_studies/**'
+      - '.github/workflows/physical-data-studies.yml'
+  pull_request:
+    paths:
+      - 'physical_data_studies/**'
+      - '.github/workflows/physical-data-studies.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: physical_data_studies/requirements.txt
+      - name: Install study dependencies
+        run: python -m pip install -r physical_data_studies/requirements.txt
+      - name: Reproduce datasets, fitted models and held-out evaluations
+        run: python physical_data_studies/reproduce.py

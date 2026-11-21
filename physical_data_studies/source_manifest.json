@@ -1,0 +1,50 @@
+{
+  "snapshot_cutoff_utc": "2026-11-21T19:21:37.463612Z",
+  "snapshot_cutoff_ist": "2026-11-22T00:51:37.463612+05:30",
+  "source_packet_count": 68130,
+  "source_boot_count": 86,
+  "source_archives": [
+    {
+      "filename": "AMR01_Data_Study.zip",
+      "bytes": 7200528,
+      "sha256": "9c8f4a026b201757e6515be3efd1b50cc82a092b2e5c2b89fa3921b242133eeb"
+    },
+    {
+      "filename": "AMR01_Gyro_Study.zip",
+      "bytes": 5906756,
+      "sha256": "ac68cf349fdbd862b71eebaefceb8185cce0b930c6460e07aec0257677fa0cf0"
+    }
+  ],
+  "reports": [
+    {
+      "filename": "AMR01_Data_Study_Report.pdf",
+      "bytes": 282216,
+      "sha256": "52480469149c2975aa57cdb4ac4c1e099a1aca4c5726d1a9752f87afc8e2d8d4"
+    },
+    {
+      "filename": "AMR01_Gyro_Study_Report.pdf",
+      "bytes": 145623,
+      "sha256": "544a849119e856c189aebe54b47f72fb18a2d365795b98d47d0aac0642811156"
+    }
+  ],
+  "packet_exports": [
+    {
+      "repository_path": "battery_voltage/dataset/physical_packets.csv.gz",
+      "uncompressed_bytes": 25617169,
+      "uncompressed_sha256": "146017902d7c16ed1cfa3a847dac389b4db387a320e87b71356344e256c55635"
+    },
+    {
+      "repository_path": "gyroscope/data/AMR01_Gyro_Packets.csv.gz",
+      "uncompressed_bytes": 13887667,
+      "uncompressed_sha256": "353b4f060e782db238c3b2b7cf46ccee021944b7502bb8bea72d577bb7d99a2e"
+    }
+  ],
+  "packaging_changes": [
+    "Extracted the two completed study archives into battery_voltage and gyroscope.",
+    "Stored the raw packet CSVs as lossless gzip; decompressed bytes are unchanged.",
+    "Updated raw input paths and Windows instructions for the repository layout.",
+    "Used the separately saved PDF reports, retaining their exact bytes.",
+    "Added the study index, faculty guide, combined reproduction runner and fresh checksum manifests.",
+    "Preserved dataset rows, split boundaries, fitted models and evaluation values from the study archives."
+  ]
+}

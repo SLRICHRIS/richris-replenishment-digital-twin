@@ -1,0 +1,234 @@
+{
+  "chosen_depth": 3,
+  "chosen_min_leaf": 60,
+  "trees": 80,
+  "learning_rate": 0.06,
+  "validation_model_mae_dps": 1.7378417777573922,
+  "validation_reference": "Zero rate",
+  "validation_reference_mae_dps": 1.7568249244698653,
+  "final_fit_examples": 10204,
+  "test_metrics": [
+    {
+      "group": "All",
+      "method": "Zero rate",
+      "boots": 29,
+      "n": 8562,
+      "mae_dps": 7.120923441630285,
+      "rmse_dps": 14.426694095296222,
+      "bias_dps": -6.347222483339611,
+      "r2": -0.24003031792370177
+    },
+    {
+      "group": "All",
+      "method": "Last reading",
+      "boots": 29,
+      "n": 8562,
+      "mae_dps": 0.6462043209530484,
+      "rmse_dps": 4.167006426735771,
+      "bias_dps": -0.04399878100911001,
+      "r2": 0.896546068899287
+    },
+    {
+      "group": "All",
+      "method": "Four-reading mean",
+      "boots": 29,
+      "n": 8562,
+      "mae_dps": 0.56996786153936,
+      "rmse_dps": 3.911401096423216,
+      "bias_dps": -0.022855738670871272,
+      "r2": 0.9088485957441845
+    },
+    {
+      "group": "All",
+      "method": "Four-reading median",
+      "boots": 29,
+      "n": 8562,
+      "mae_dps": 0.541888879350619,
+      "rmse_dps": 3.885833980809237,
+      "bias_dps": -0.0289433473487503,
+      "r2": 0.9100363347539138
+    },
+    {
+      "group": "All",
+      "method": "Boosted trees",
+      "boots": 29,
+      "n": 8562,
+      "mae_dps": 2.62578601625117,
+      "rmse_dps": 5.7256973812760075,
+      "bias_dps": -1.9310095189384353,
+      "r2": 0.8046760768591177
+    },
+    {
+      "group": "Target PWM active",
+      "method": "Zero rate",
+      "boots": 8,
+      "n": 149,
+      "mae_dps": 9.818283732137314,
+      "rmse_dps": 19.5109499905823,
+      "bias_dps": 2.850969325368582,
+      "r2": -0.021817325948258137
+    },
+    {
+      "group": "Target PWM active",
+      "method": "Last reading",
+      "boots": 8,
+      "n": 149,
+      "mae_dps": 8.875864516778524,
+      "rmse_dps": 16.908431681951882,
+      "bias_dps": -1.1286951208053688,
+      "r2": 0.23259772038999205
+    },
+    {
+      "group": "Target PWM active",
+      "method": "Four-reading mean",
+      "boots": 8,
+      "n": 149,
+      "mae_dps": 9.312221395973154,
+      "rmse_dps": 17.717405341604053,
+      "bias_dps": -0.15929352013422787,
+      "r2": 0.15740927723117415
+    },
+    {
+      "group": "Target PWM active",
+      "method": "Four-reading median",
+      "boots": 8,
+      "n": 149,
+      "mae_dps": 9.236615604026845,
+      "rmse_dps": 18.700578065146924,
+      "bias_dps": -0.26387110067114083,
+      "r2": 0.0613007005176085
+    },
+    {
+      "group": "Target PWM active",
+      "method": "Boosted trees",
+      "boots": 8,
+      "n": 149,
+      "mae_dps": 9.1987327389398,
+      "rmse_dps": 18.826173922032392,
+      "bias_dps": 2.5687523979573097,
+      "r2": 0.04864947139806797
+    },
+    {
+      "group": "Target PWM zero",
+      "method": "Zero rate",
+      "boots": 29,
+      "n": 8413,
+      "mae_dps": 7.073151340918822,
+      "rmse_dps": 14.320389833930433,
+      "bias_dps": -6.5101287687904055,
+      "r2": -0.2605034771610897
+    },
+    {
+      "group": "Target PWM zero",
+      "method": "Last reading",
+      "boots": 29,
+      "n": 8413,
+      "mae_dps": 0.5004513946273624,
+      "rmse_dps": 3.550784739449724,
+      "bias_dps": -0.024788064899560203,
+      "r2": 0.9225033273703175
+    },
+    {
+      "group": "Target PWM zero",
+      "method": "Four-reading mean",
+      "boots": 29,
+      "n": 8413,
+      "mae_dps": 0.41513655562819446,
+      "rmse_dps": 3.1639400753326545,
+      "bias_dps": -0.0204393319862118,
+      "r2": 0.9384694402946823
+    },
+    {
+      "group": "Target PWM zero",
+      "method": "Four-reading median",
+      "boots": 29,
+      "n": 8413,
+      "mae_dps": 0.3878993058362059,
+      "rmse_dps": 3.0287785052383955,
+      "bias_dps": -0.024782615713776296,
+      "r2": 0.9436142455407531
+    },
+    {
+      "group": "Target PWM zero",
+      "method": "Boosted trees",
+      "boots": 29,
+      "n": 8413,
+      "mae_dps": 2.5093746217806356,
+      "rmse_dps": 5.204529181953641,
+      "bias_dps": -2.0107033886183907,
+      "r2": 0.8335065077923478
+    },
+    {
+      "group": "Absolute target at least 10 dps",
+      "method": "Zero rate",
+      "boots": 10,
+      "n": 1969,
+      "mae_dps": 29.648437897408428,
+      "rmse_dps": 29.974471226717778,
+      "bias_dps": -28.361687854164124,
+      "r2": -8.549688211308025
+    },
+    {
+      "group": "Absolute target at least 10 dps",
+      "method": "Last reading",
+      "boots": 10,
+      "n": 1969,
+      "mae_dps": 1.388512384713052,
+      "rmse_dps": 7.26153586473308,
+      "bias_dps": -0.13648383113255458,
+      "r2": 0.43954195858385126
+    },
+    {
+      "group": "Absolute target at least 10 dps",
+      "method": "Four-reading mean",
+      "boots": 10,
+      "n": 1969,
+      "mae_dps": 1.3206223078974098,
+      "rmse_dps": 7.381494662643773,
+      "bias_dps": -0.22479152120365656,
+      "r2": 0.4208717485220377
+    },
+    {
+      "group": "Absolute target at least 10 dps",
+      "method": "Four-reading median",
+      "boots": 10,
+      "n": 1969,
+      "mae_dps": 1.3439941041137635,
+      "rmse_dps": 7.453297768685803,
+      "bias_dps": -0.23575147130523105,
+      "r2": 0.40955006953771655
+    },
+    {
+      "group": "Absolute target at least 10 dps",
+      "method": "Boosted trees",
+      "boots": 10,
+      "n": 1969,
+      "mae_dps": 10.26074884768284,
+      "rmse_dps": 11.727385562387953,
+      "bias_dps": -9.013418680537294,
+      "r2": -0.46180195667016943
+    }
+  ],
+  "paired_boot_comparison": {
+    "baseline": "Zero rate",
+    "pooled_mae_gain_dps": 4.495137425379116,
+    "low95_dps": 0.0038424969823338934,
+    "high95_dps": 11.144015772194484,
+    "test_boots": 29,
+    "resamples": 2000,
+    "seed": 42
+  },
+  "offset_check": {
+    "boot_id": "0898f54262727dc1",
+    "all_packets": 3887,
+    "fresh_calibrated_packets": 3880,
+    "test_examples": 1891,
+    "raw_median_z_dps": -0.534351,
+    "median_bias_rad_s": -0.527523057,
+    "median_bias_dps": -30.22484476193916,
+    "corrected_median_z_dps": 29.69049376193916,
+    "all_nonzero_pwm_packets": 0
+  },
+  "test_true_target_min_dps": -83.20631042360878,
+  "test_true_target_max_dps": 100.96430526129092
+}

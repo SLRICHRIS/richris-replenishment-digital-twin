@@ -1,6 +1,26 @@
-# Historical software verification
+# Software verification record
 
-> These October results describe the earlier multi-AMR/UART reference implementation. They are retained for reproducibility, not as current single-AMR capability or physical evidence. Use [current AMR-01 software evidence](../single_amr_alignment_validation.md) and [scope](../implemented_dashboard_features_and_limits.md) for the active path.
+## Physical data study packaging and replay: 22 November 2026
+
+Baseline before this addition: `7f81def53a9cde4b8564a92b0c2e9ff83220d1c3`. Scope: the offline [physical data studies](../../physical_data_studies/README.md), repository navigation, source catalog and study CI. Dashboard and firmware behavior were not changed.
+
+Using Python 3.12.14, NumPy 2.3.5, pandas 2.2.3, SciPy 1.17.0 and scikit-learn 1.8.0:
+
+| Verification | Observed result |
+| --- | --- |
+| Packaged evidence | All 47 file fingerprints pass; both gzip sources decompress to the original byte counts and SHA-256 values. |
+| Shared source | The 17-field gyro projection matches the same 68,130 physical packets in the voltage export. |
+| Voltage replay | Rebuilt 1,518 labelled examples and 364 test predictions; 10 dataset, fitted-model and evaluation files match the recorded outputs at numeric tolerance 1e-9. |
+| Gyro replay | Rebuilt 18,766 labelled examples and 8,562 test predictions; 13 dataset, fitted-model and evaluation files match at numeric tolerance 1e-9. |
+| Gyro source verification | All 68,130 packet identities, 18,766 six-packet windows, saved-model forecasts and subgroup error scores pass. |
+| Repository integration | Local references, catalog coverage and source boundaries pass; all 7 existing downloadable kits still match their canonical sources. |
+| Syntax and whitespace | Study Python compilation and `git diff --check` pass. |
+
+Reproduce with `python physical_data_studies/reproduce.py`. This verifies repeatability of forecasts against recorded sensors. Independent ground truth for physical heading, travel and battery lifetime remains separate from these checks.
+
+## Historical software verification
+
+> The October sections below describe the earlier multi-AMR/UART reference implementation. They are retained for reproducibility, not as current single-AMR capability or physical evidence. Use [current AMR-01 software evidence](../single_amr_alignment_validation.md) and [scope](../implemented_dashboard_features_and_limits.md) for the active path.
 
 Recorded 11 October 2026. Baseline GitHub commit: `b5c847813141e6744272579583ce8e673f48d260`.
 Runtime: Python 3.12.14, Streamlit 1.65.0, Node.js 24.19.0, jsdom 26.1.0, Prettier 3.6.2.

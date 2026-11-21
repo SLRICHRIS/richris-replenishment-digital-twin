@@ -1,0 +1,49 @@
+{
+  "source_table": "public.amr_commissioning_samples",
+  "filter": "robot_id='amr01' AND received_at<='2026-11-21T19:21:37.463612Z'::timestamptz AND stored_at<='2026-11-21T19:21:37.463612Z'::timestamptz",
+  "audit": {
+    "cutoff_utc": "2026-11-21T19:21:37.463612Z",
+    "packet_count": "68130",
+    "unique_packets": "68130",
+    "boots": "86",
+    "first_received": "2026-11-17T15:52:04.091Z",
+    "last_received": "2026-11-21T18:45:41.165Z",
+    "has_voltage": "68126",
+    "has_gyro": "62032",
+    "output_active": "3085",
+    "min_v": 0.78396,
+    "max_v": 7.59198
+  },
+  "provenance": [
+    {
+      "topic": "robot/amr01/commissioning",
+      "message_type": "mh_ir_commissioning",
+      "device_client": "amr01-ir-<id>",
+      "revision": "not recorded",
+      "packets": "61582",
+      "boots": "83"
+    },
+    {
+      "topic": "robot/amr01/commissioning",
+      "message_type": "mh_ir_commissioning",
+      "device_client": "amr01-ir-<id>",
+      "revision": "AMR01-Wireless-H1-r3",
+      "packets": "6548",
+      "boots": "3"
+    }
+  ],
+  "related_tables": {
+    "other_sensor_table_rows": "0",
+    "derived_twin_states": "0",
+    "review_records": "0"
+  },
+  "quality": {
+    "with_bias": "38970",
+    "below_two": "5340",
+    "lowrange": "25677",
+    "packrange": "37109",
+    "unusual_interval": "0",
+    "clientids": "86",
+    "types": "1"
+  }
+}
