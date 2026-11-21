@@ -10,7 +10,7 @@
 | Reserve, reserved, in-transit, picking | Models when stock physically moves | Prevents double counting and early stock availability | Single global stock variable | Inventory reconciliation with observed transfers |
 | Transactional SQLite | Persists snapshots and event audit for a local research instance | Reproducible replay and rollback under failure | Distributed cloud database | Restart and concurrent access tests |
 | Quarantined telemetry | Saves external packet without changing synthetic state | Device data is uncalibrated and cannot be assumed correct | Immediate physical-to-digital synchronization | Coordinate, clock and firmware contract verification |
-| Session-local Streamlit app | Exposes the engine through a readable research interface | Makes mechanisms easier for faculty to inspect | Public multi-user warehouse controller | Security and persistence redesign before production |
+| Session-local Streamlit app | Exposes the engine through a readable research interface | Makes model behavior easier to inspect | Public multi-user warehouse controller | Security and persistence redesign before production |
 
 ## Provenance
 These are **our** engineering choices, influenced by Ferrari et al. (2024)'s insistence on integrated physical/control-system modelling and experimental validation. Ferrari did not specify this graph, our quantity variables, FIFO-versus-urgency experiment or the Python web stack.

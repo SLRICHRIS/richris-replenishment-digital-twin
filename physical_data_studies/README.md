@@ -4,7 +4,7 @@
 
 Two reproducible studies use one frozen export of **68,130 unique physical sensor packets from 86 ESP32 boots**. A packet is one recorded observation from AMR-01. The voltage and gyro studies reuse these observations; their packet counts must not be added together.
 
-**Start with the [faculty review guide](faculty_review.md).** It follows the five questions: data count, preprocessing, labelled dataset, model training and model evaluation.
+**Start with the [methodology guide](methodology.md).** It documents data acquisition, preprocessing, labelled datasets, model training and evaluation.
 
 ## Choose a study
 

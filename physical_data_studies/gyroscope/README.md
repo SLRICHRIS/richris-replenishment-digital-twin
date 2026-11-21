@@ -49,7 +49,7 @@ To make forecasts with the saved JSON model, run the command below. You can repl
 
 | File | Contents |
 | --- | --- |
-| AMR01_Gyro_Study_Report.pdf | Faculty report with the sample count, preprocessing, model, results and a measured trace. |
+| AMR01_Gyro_Study_Report.pdf | Study report with the sample count, preprocessing, model, results and a measured trace. |
 | data/AMR01_Gyro_Packets.csv.gz | Seventeen gyro and provenance fields from every packet in the frozen physical export, including unavailable readings. Use the original packet key to locate a source record. |
 | data/AMR01_Gyro_Model_Dataset.csv | One row per labelled forecasting example, including its split and source sequence numbers. |
 | data/data_dictionary.md | Units, six model inputs, two target packets and audit fields. |
@@ -64,4 +64,4 @@ To make forecasts with the saved JSON model, run the command below. You can repl
 
 Direct execution rewrites generated results. The [combined reproduction runner](../README.md#reproduce-on-windows) checks both studies in a temporary folder.
 
-[Study index](../README.md) · [Faculty review](../faculty_review.md) · [PDF report](AMR01_Gyro_Study_Report.pdf)
+[Study index](../README.md) · [Methodology](../methodology.md) · [PDF report](AMR01_Gyro_Study_Report.pdf)

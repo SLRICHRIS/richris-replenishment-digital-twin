@@ -1,4 +1,4 @@
-"""Independent expectations and replay evidence for the faculty demonstration."""
+"""Independent expectations and replay evidence for the sensor demonstration."""
 import hashlib
 import json
 import math

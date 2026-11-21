@@ -49,6 +49,6 @@ Rebuilding writes the labelled dataset, split summaries, validation scores, fitt
 .\.venv\Scripts\python.exe study.py --predict dataset/AMR01_Model_Dataset.csv --output predictions.csv
 ```
 
-For the faculty review, use the test-set predictions under `evaluation/`. Complete definitions and units are in `dataset/data_dictionary.md`. To reproduce the source count against an authorized database connection, run `dataset/count.sql`; to export the fixed source projection, run `dataset/export.sql`. The SHA-256 list in this study folder identifies the packaged files. Direct execution rewrites generated results; the [combined reproduction runner](../README.md#reproduce-on-windows) checks them in a temporary folder.
+For evaluation details, use the test-set predictions under `evaluation/`. Complete definitions and units are in `dataset/data_dictionary.md`. To reproduce the source count against an authorized database connection, run `dataset/count.sql`; to export the fixed source projection, run `dataset/export.sql`. The SHA-256 list in this study folder identifies the packaged files. Direct execution rewrites generated results; the [combined reproduction runner](../README.md#reproduce-on-windows) checks them in a temporary folder.
 
-[Study index](../README.md) · [Faculty review](../faculty_review.md) · [PDF report](AMR01_Data_Study_Report.pdf)
+[Study index](../README.md) · [Methodology](../methodology.md) · [PDF report](AMR01_Data_Study_Report.pdf)

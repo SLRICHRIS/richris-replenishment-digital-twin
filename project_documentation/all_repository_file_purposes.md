@@ -198,7 +198,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `backend_streamlit_and_telemetry/predictive_twin/workspace_payload.py` | Build public Python-derived sensor readouts for the Sensor models view. |
 | `automated_software_checks/predictive_twin_checks/test_demo_trials.py` | Independently verify generated trial outcomes, analytic motion/energy expectations, evidence replay, source matching and altered-result rejection. |
 | `project_maintenance_scripts/replay_generated_trial.py` | Replay downloaded generated packets without PostgreSQL and verify source fingerprints, final state, forecasts and recommendations. |
-| `project_documentation/faculty_demonstration_guide.md` | Explain the demonstration sequence, expected trial outcomes, replay command and limits of software versus hardware evidence. |
+| `project_documentation/demonstration_and_evidence_guide.md` | Explain the demonstration sequence, expected trial outcomes, replay command and limits of software versus hardware evidence. |
 | `backend_streamlit_and_telemetry/predictive_twin/amr_connection.py` | Manage the optional session-bound EMQX subscriber and leased PostgreSQL writer behind operator authorization; expose sanitized pipeline readiness. |
 | `backend_streamlit_and_telemetry/predictive_twin/insights.py` | Derive operator recommendations from current, continuous sensor-model evidence and distinguish generated examples. |
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/amr_connection_panel.js` | Render connection stages, protected controls and Python-derived guidance without persisting credentials in the browser. |
@@ -353,7 +353,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `physical_data_studies/battery_voltage/model/voltage_ridge.json` | Store fitted voltage-model coefficients, intercept, scaler and input order. |
 | `physical_data_studies/battery_voltage/requirements.txt` | Pin the numerical and machine-learning dependencies used by the offline studies. |
 | `physical_data_studies/battery_voltage/study.py` | Preprocess voltage packets, build labelled windows, fit Ridge and evaluate held-out boots. |
-| `physical_data_studies/faculty_review.md` | Present the five faculty questions with linked data, preprocessing, training and evaluation evidence. |
+| `physical_data_studies/methodology.md` | Explain data acquisition, preprocessing, training and evaluation with linked evidence. |
 | `physical_data_studies/gyroscope/AMR01_Gyro_Study_Report.pdf` | Present the completed gyro data study, held-out results and offset sensitivity. |
 | `physical_data_studies/gyroscope/README.md` | Explain the study, measured counts, results and reproduction steps. |
 | `physical_data_studies/gyroscope/SHA256SUMS.txt` | Record SHA-256 fingerprints for the packaged study files. |

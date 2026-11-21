@@ -1,8 +1,8 @@
-# Faculty review: AMR-01 data science workflow
+# AMR-01 data science methodology
 
-**Review order: real observations → preprocessing → labelled dataset → training → held-out evaluation.**
+**Workflow: real observations → preprocessing → labelled dataset → training → held-out evaluation.**
 
-## 1. How many real data points do you have?
+## 1. Data acquisition
 
 The frozen database export contains **68,130 unique AMR-01 sensor packets from 86 ESP32 boots**. Each packet is identified by `(robot_id, boot_id, seq)` and retains the stored source-payload SHA-256. Of these packets, **3,085 report nonzero motor PWM**. PWM describes reported motor output; it is not independent proof of chassis movement.
 
@@ -17,9 +17,9 @@ The [snapshot](battery_voltage/dataset/snapshot.json) records the source table a
 | Boots contributing examples | 30 | 55 |
 | Held-out test examples | 364 | 8,562 |
 
-## 2. Did you preprocess the data?
+## 2. Data preprocessing
 
-**Yes.** Both pipelines check packet identity, remove exact duplicate rows if present, reject conflicting packet keys, retain missing values in the raw export and construct windows within continuous device sessions. This snapshot had no exact duplicate rows.
+Both pipelines check packet identity, remove exact duplicate rows if present, reject conflicting packet keys, retain missing values in the raw export and construct windows within continuous device sessions. This snapshot had no exact duplicate rows.
 
 | Rule | Voltage | Gyro |
 | --- | --- | --- |
@@ -33,9 +33,9 @@ The voltage threshold selects an observed voltage range; the actual supply conne
 
 Exact exclusions are recorded in the [voltage audit](battery_voltage/evaluation/data_audit.json) and [gyro audit](gyroscope/evaluation/data_audit.json). Definitions and units appear in each study's data dictionary.
 
-## 3. Did you create a dataset?
+## 3. Labelled datasets and chronological splits
 
-**Yes.** Each labelled row contains the history features, a future measured target, source sequence identifiers and its train/validation/test assignment.
+Each labelled row contains the history features, a future measured target, source sequence identifiers and its train/validation/test assignment.
 
 | Partition | Voltage examples / boots | Gyro examples / boots |
 | --- | ---: | ---: |
@@ -47,9 +47,9 @@ Voltage boots are split by first receipt: before 20 November IST, on 20 November
 
 Open the [voltage dataset](battery_voltage/dataset/AMR01_Model_Dataset.csv) and [gyro dataset](gyroscope/data/AMR01_Gyro_Model_Dataset.csv).
 
-## 4. Did you train a model?
+## 4. Model training
 
-**Yes, one model for each target.** Validation selects settings; the final fit uses the earlier training and validation examples. Test examples do not enter fitting or parameter selection.
+A separate model is trained for each target. Validation selects settings; the final fit uses the earlier training and validation examples. Test examples do not enter fitting or parameter selection.
 
 | | Voltage Ridge model | Gyro boosted-tree model |
 | --- | --- | --- |
@@ -60,9 +60,9 @@ Open the [voltage dataset](battery_voltage/dataset/AMR01_Model_Dataset.csv) and 
 | Final fitting rows | 1,154 | 10,204 |
 | Saved model | [Scaler and coefficients](battery_voltage/model/voltage_ridge.json) | [Portable fitted trees](gyroscope/model/gyro_forecaster.json) |
 
-## 5. Did you evaluate the models?
+## 5. Model evaluation
 
-**Yes, on later held-out boots, using the same test origins for each model and its baselines.** MAE is average absolute prediction error. RMSE gives greater weight to large errors. Both use the target's units. R² describes variance explained on the evaluated targets; it is not an accuracy percentage.
+Models are evaluated on later held-out boots, using the same test origins for each model and its baselines. MAE is average absolute prediction error. RMSE gives greater weight to large errors. Both use the target's units. R² describes variance explained on the evaluated targets; it is not an accuracy percentage.
 
 ### Voltage: 364 test examples from 3 boots
 
@@ -88,7 +88,7 @@ There are **149 motor-active target windows from 8 test boots**, about 1.7% of t
 
 One zero-output boot contributes 1,891 test windows with a large recorded startup offset. It remains in the primary evaluation. The [offset sensitivity table](gyroscope/evaluation/offset_sensitivity.csv) reports its effect with all model predictions fixed. Forecast consistency with the instrument does not independently verify physical rotation.
 
-## A concise explanation for the review
+## Study overview
 
 > We collected 68,130 real sensor packets from one AMR across 86 boots. We checked sensor validity and time continuity, then built separate voltage and gyro forecasting datasets. We trained Ridge regression and gradient-boosted trees, selected their settings on validation boots, and evaluated on later boots. We compared every trained model with simple baselines and retained the datasets, fitted parameters and each held-out prediction so the results can be reproduced.
 

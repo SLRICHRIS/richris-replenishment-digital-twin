@@ -8,7 +8,7 @@ One ESP32 2WD robot publishes raw encoder, MPU6050 gyro and INA219 battery measu
 
 The [physical data studies](physical_data_studies/README.md) contain **68,130 recorded AMR-01 packets from 86 boots**, preprocessing code, labelled datasets, fitted models, test predictions and PDF reports. The frozen snapshot supports two experiments: next-10-second monitored-voltage forecasting and next-two-reading gyro-rate forecasting.
 
-Start with the [faculty review guide](physical_data_studies/faculty_review.md), then open the [voltage study](physical_data_studies/battery_voltage/README.md) or [gyro study](physical_data_studies/gyroscope/README.md). Each study compares its trained model with simple baselines on later held-out boots. A single [offline reproduction command](physical_data_studies/README.md#reproduce-on-windows) rebuilds and checks the results.
+Start with the [methodology guide](physical_data_studies/methodology.md), then open the [voltage study](physical_data_studies/battery_voltage/README.md) or [gyro study](physical_data_studies/gyroscope/README.md). Each study compares its trained model with simple baselines on later held-out boots. A single [offline reproduction command](physical_data_studies/README.md#reproduce-on-windows) rebuilds and checks the results.
 
 ## Run the dashboard
 
@@ -29,7 +29,7 @@ Choose one of five generated trials in Sensor models: baseline, turning, sustain
 python -m project_maintenance_scripts.replay_generated_trial amr01_disagreement_synthetic_trial.json
 ```
 
-The verifier rejects altered outputs and mismatched source files. It checks software reproducibility, not physical validity or signed origin. See the [demonstration and evidence guide](project_documentation/faculty_demonstration_guide.md) for the walkthrough, expected outcomes and evidence boundaries.
+The verifier rejects altered outputs and mismatched source files. It checks software reproducibility, not physical validity or signed origin. See the [demonstration and evidence guide](project_documentation/demonstration_and_evidence_guide.md) for the walkthrough, expected outcomes and evidence boundaries.
 
 ## Human review and action
 
