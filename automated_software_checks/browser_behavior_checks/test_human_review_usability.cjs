@@ -13,6 +13,11 @@ const w = dom.window,
   el = (id) => d.getElementById('human-review-' + id),
   actions = [];
 d.addEventListener('python-twin:action', (e) => actions.push(JSON.parse(JSON.stringify(e.detail))));
+const scrollFrames = [];
+w.requestAnimationFrame = (callback) => {
+  scrollFrames.push(callback);
+  return scrollFrames.length;
+};
 const style = d.createElement('style');
 style.textContent = fs.readFileSync(
   path.join(root, 'dashboard_stylesheets/human_review_panel_styles.css'),
@@ -73,6 +78,7 @@ assert.equal(navigated, 1);
 const rec = [{ title: 'Inspect motion sensors', detail: 'Compare the current motion readings.' }];
 const ready = { demo: true, eligible: true, can_review: true, missing: [], recommendations: rec };
 render(ready);
+assert.match(el('verification-note').textContent, /matching applied controller acknowledgement/);
 assert.equal(el('preparation').hidden, true);
 assert.equal(el('step-2').getAttribute('aria-current'), 'step');
 assert.equal(el('create').disabled, false);
@@ -197,6 +203,11 @@ assert.equal(el('feedback').querySelector('svg'), null);
 assert.match(el('recommendations').textContent, /<img/);
 const observations = { ...physical, observation_only: true, review: null };
 render(observations);
+assert.match(el('verification-note').textContent, /requires no controller acknowledgement/);
+assert.match(
+  el('verification-note').textContent,
+  /cannot prove that the physical task was completed/,
+);
 assert.equal(el('create').disabled, false);
 assert.match(el('step-1-detail').textContent, /Live sensor evidence/);
 assert.match(el('step-3-detail').textContent, /Fresh sensor follow-up/);
@@ -345,8 +356,44 @@ assert.doesNotMatch(el('recommendations').textContent, /4.300/);
 render({ ...observations, authorized: false, can_unlock: true, review: null });
 assert.match(el('next-action').textContent, /protects decision recording/);
 assert.doesNotMatch(el('next-action').textContent, /protects physical control/);
-w.dispatchEvent(new w.Event('pagehide'));
-w.close();
-console.log(
-  'PASS: actionable calibration blockers, isolated practice, owned decision gates, preserved inputs, request/reply/verification separation, expiry and safe text.',
-);
+async function checkReviewScrollOrder() {
+  scrollFrames.length = 0;
+  const main = d.getElementById('main-content');
+  d.body.dataset.view = 'vision';
+  main.scrollTop = 250;
+  let reveals = 0;
+  d.getElementById('human-review').scrollIntoView = () => {
+    reveals++;
+    main.scrollTop = 900;
+  };
+  d.getElementById('tab-hardware').addEventListener('click', () => {
+    d.body.dataset.view = 'hardware';
+  });
+  const reset = new w.MutationObserver(() => {
+    main.scrollTop = 0;
+  });
+  reset.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
+  d.dispatchEvent(new w.CustomEvent('human-review:open', { detail: {} }));
+  assert.equal(reveals, 0, 'Review navigation defers revealing until after host tab cleanup');
+  await Promise.resolve();
+  assert.equal(main.scrollTop, 0, 'Host mutation observer resets the new page first');
+  scrollFrames.splice(0).forEach((callback) => callback());
+  assert.equal(main.scrollTop, 900, 'Review remains visible after the host reset');
+  assert.equal(reveals, 1);
+  d.dispatchEvent(new w.CustomEvent('human-review:open', { detail: {} }));
+  d.body.dataset.view = 'vision';
+  await Promise.resolve();
+  scrollFrames.splice(0).forEach((callback) => callback());
+  assert.equal(reveals, 1, 'A quick navigation away cancels the delayed reveal');
+  reset.disconnect();
+  w.dispatchEvent(new w.Event('pagehide'));
+  w.close();
+  console.log(
+    'PASS: review gates, current/history distinction, review-specific outcomes and scroll after host navigation reset.',
+  );
+}
+checkReviewScrollOrder().catch((error) => {
+  w.close();
+  console.error(error);
+  process.exitCode = 1;
+});

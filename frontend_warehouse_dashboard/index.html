@@ -8,7 +8,7 @@
       name="description"
       content="A single-AMR digital twin by S L RICHRIS for interpreting motion, battery and sensor consistency. Demo values and stored physical measurements remain separate."
     />
-    <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js?v=operator-audit-20261122"></script>
+    <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js?v=operator-audit-20261122b"></script>
     <script src="./browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js"></script>
     <meta name="author" content="S L RICHRIS" />
     <meta name="copyright" content="© 2026 S L RICHRIS. All rights reserved." />
@@ -73,7 +73,7 @@
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/human_review_panel.js?v=operator-audit-20261122"
+      src="./browser_modules/streamlit_frame_connection/human_review_panel.js?v=operator-audit-20261122b"
     ></script>
     <script
       defer
@@ -81,11 +81,11 @@
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/amr_connection_panel.js?v=operator-audit-20261122"
+      src="./browser_modules/streamlit_frame_connection/amr_connection_panel.js?v=operator-audit-20261122b"
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=operator-audit-20261122"
+      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=operator-audit-20261122b"
     ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
@@ -3196,10 +3196,8 @@
                 <p id="human-review-evidence"></p>
                 <p id="human-review-availability"></p>
                 <p id="human-review-server-detail"></p>
-                <p>
-                  A request is verified only after a matching applied controller acknowledgement and
-                  three new qualifying sensor observations. Local emergency protection remains on
-                  the AMR.
+                <p id="human-review-verification-note">
+                  Outcome checks depend on the selected review type. Waiting for review status.
                 </p>
                 <section id="human-review-log" hidden>
                   <h4>Decision history</h4>

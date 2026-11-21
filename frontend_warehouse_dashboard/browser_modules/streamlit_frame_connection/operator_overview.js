@@ -124,7 +124,12 @@
       const settings = $('amr-connection-workspace');
       if (settings) {
         settings.open = true;
-        settings.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        // Navigation resets the host scroll in a MutationObserver. Wait for
+        // the next frame so the requested section stays visible afterward.
+        window.requestAnimationFrame(() => {
+          if (document.body.dataset.view === 'vision' && settings.open)
+            settings.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        });
       }
     });
     document.addEventListener('python-twin:render', (e) => render(e.detail));

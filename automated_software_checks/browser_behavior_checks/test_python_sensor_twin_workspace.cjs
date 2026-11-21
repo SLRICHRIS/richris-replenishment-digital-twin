@@ -550,9 +550,16 @@ assert.equal(evidenceLink.hasAttribute('download'), false);
 assert.equal(evidenceLink.getAttribute('aria-disabled'), 'true');
 assert.equal(objectURLs, 2, 'physical readings cannot be exported under a generated-trial label');
 delete payload.demo_trial;
-doc.dispatchEvent(new w.CustomEvent('python-twin:connection-open'));
+const connectionDrawer = doc.getElementById('amr-connection-workspace');
+const beforeOpeningDrawer = sent.length;
+connectionDrawer.open = true;
+connectionDrawer.dispatchEvent(new w.Event('toggle'));
 assert.equal(sent.at(-1).value.action, 'connection_view');
 assert.equal(sent.at(-1).value.active, true);
+assert.match(doc.getElementById('amr-pipeline').textContent, /Loading sensor connection status/);
+assert.equal(sent.length, beforeOpeningDrawer + 1, 'Opening the drawer only requests status');
+doc.dispatchEvent(new w.CustomEvent('python-twin:connection-open'));
+assert.equal(sent.length, beforeOpeningDrawer + 1, 'Repeated opening does not duplicate requests');
 payload.amr_connection = {
   configured: false,
   authorized: false,
@@ -587,7 +594,10 @@ deliver(parent, w.location.origin);
 assert.equal(codeField.disabled, false);
 assert.equal(codeField.value, 'private-fixture-draft', 'Polling preserves the typed code');
 assert.equal(doc.activeElement, codeField, 'Polling preserves code-entry focus');
-assert.match(doc.getElementById('amr-link-detail').textContent, /calibration.*commissioning telemetry.*independently/);
+assert.match(
+  doc.getElementById('amr-link-detail').textContent,
+  /calibration.*commissioning telemetry.*independently/,
+);
 const blockedConnectCount = sent.length;
 doc.getElementById('amr-link-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 assert.equal(sent.length, blockedConnectCount, 'Editable code cannot bypass setup readiness');
@@ -637,7 +647,8 @@ assert.match(doc.getElementById('amr-pipeline').textContent, /Waiting for physic
 assert.equal(doc.getElementById('amr-live-recommendations').querySelector('img'), null);
 doc.getElementById('amr-link-disconnect').click();
 assert.equal(sent.at(-1).value.command, 'disconnect');
-doc.dispatchEvent(new w.CustomEvent('python-twin:connection-close'));
+connectionDrawer.open = false;
+connectionDrawer.dispatchEvent(new w.Event('toggle'));
 assert.equal(sent.at(-1).value.action, 'connection_view');
 assert.equal(sent.at(-1).value.active, false);
 payload.human_review = {

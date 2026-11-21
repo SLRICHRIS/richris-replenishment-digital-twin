@@ -51,6 +51,10 @@
   let queued = false;
   let latestPayload;
   let payloadReceivedAt = 0;
+  // A 1s fragment schedule does not guarantee 1s completed responses: database
+  // and model reads run synchronously. Host communication gets its own timeout;
+  // sensor evidence still expires independently at 2s/5s and camera evidence at 500ms.
+  const HOST_UPDATE_TIMEOUT_MS = 30000;
   const sampleClocks = new Map();
   const monotonic = () => window.performance.now();
   const ageOf = (name) => {
@@ -237,7 +241,7 @@
       const age = ageOf('connection'),
         limit = link.sample_source === 'physical_observation' ? 5 : 2;
       const fresh = link.sample_fresh === true && within(age, limit, limit === 5 ? -1 : 0);
-      const subscriptionUnknown = monotonic() - payloadReceivedAt > 5000;
+      const subscriptionUnknown = monotonic() - payloadReceivedAt > HOST_UPDATE_TIMEOUT_MS;
       const subscriptionDetail =
         'Last known subscription; dashboard updates paused. Reconnect or refresh the dashboard to check the current recorder status.';
       result.amr_connection = {
@@ -302,7 +306,8 @@
     }
     result.display_freshness = {
       update_age_s: Math.max(0, monotonic() - payloadReceivedAt) / 1000,
-      dashboard_stalled: monotonic() - payloadReceivedAt > 5000,
+      dashboard_stalled: monotonic() - payloadReceivedAt > HOST_UPDATE_TIMEOUT_MS,
+      timeout_s: HOST_UPDATE_TIMEOUT_MS / 1000,
     };
     return result;
   }

@@ -22,6 +22,9 @@ behavior checks. Physical motor performance is outside a cloud UI audit.
 | Architecture | The diagram omitted direct Wi-Fi and mixed current observation review with commissioned command delivery; route readiness used obsolete dimensions. | Added the actual direct-control journey and corrected conditional model/camera paths. Readiness uses server commissioning and valid scene dimensions rather than old hardcoded floor measurements. |
 | Appearance | Small labels and dense explanations made operator decisions harder to scan. | Larger telemetry and review text, consistent action sizing, clear stale/priority styling, responsive status cards and readable mobile steps in both themes. |
 | HTML quality | A literal escaped newline rendered at the top of the page. | Removed the stray text and refreshed changed asset versions. |
+| Shortcut navigation | Changing workspaces reset the scroll after a review or connection shortcut selected its destination. | Shortcuts scroll after the workspace reset, with guards against later navigation. |
+| Connection drawer | The embedded drawer did not request the status previously loaded by its standalone page. | Opening the drawer requests current pipeline status without starting the optional recorder. |
+| Update cadence | A five-second host timeout could briefly report a stopped dashboard during a slow server refresh. | Host communication has its own thirty-second timeout; sensor and camera evidence keep their shorter validity limits. |
 
 ## State and action contract
 
@@ -46,6 +49,11 @@ source-aware connection stages and command-free operator shortcuts. Repository
 checks cover local references, module delivery, unique HTML IDs, public download
 consistency and the file-purpose catalog. The deployed interface is inspected
 again after publishing.
+
+The audit passed 325 Python tests and all 25 browser behavior scripts. Five
+optional local PostgreSQL integration checks were skipped. The deployed direct
+drive, sensor review, historical evidence and architecture views were inspected
+in bright and dark appearance. No device movement was requested during inspection.
 
 No new measured calibration, motor-current limit, obstacle-detection capability
 or physical command acknowledgement is claimed. The installed controller still

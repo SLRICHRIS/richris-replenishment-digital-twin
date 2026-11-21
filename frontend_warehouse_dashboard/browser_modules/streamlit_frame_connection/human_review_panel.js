@@ -611,6 +611,12 @@
             : 'Physical command delivery disabled.',
     );
     text('human-review-server-detail', current.detail);
+    text(
+      'human-review-verification-note',
+      current.observation_only
+        ? 'Observation review records your decision and three fresh follow-up readings. It issues no motor command, requires no controller acknowledgement, and cannot prove that the physical task was completed.'
+        : 'A command outcome is verified only after a matching applied controller acknowledgement and three new qualifying sensor observations. Duplicate or stale observations do not advance verification.',
+    );
     const events = JSON.stringify(row?.events || []);
     if (lastEvents !== events) {
       lastEvents = events;
@@ -683,7 +689,12 @@
       $('tab-hardware')?.click();
       if (preferredAction && mayDecide()) $('human-review-action').value = preferredAction;
       updateDecision();
-      $('human-review')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      // The host resets the workspace scroll in a MutationObserver after the
+      // tab changes. Reveal the review in the next frame, after that reset.
+      window.requestAnimationFrame(() => {
+        if (document.body.dataset.view === 'hardware')
+          $('human-review')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      });
     });
     $('human-review-drive').addEventListener('click', () => {
       $('tab-vision')?.click();

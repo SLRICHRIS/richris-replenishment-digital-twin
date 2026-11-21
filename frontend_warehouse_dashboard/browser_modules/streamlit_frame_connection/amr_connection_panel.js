@@ -121,6 +121,24 @@
       connectionOpen = false;
       action({ action: 'connection_view', active: false });
     });
+    // The connection workspace now lives in a disclosure, not a separate page.
+    // Request its status when opened; this never starts the optional recorder.
+    const drawer = $('amr-connection-workspace');
+    const updateDrawer = () => {
+      document.dispatchEvent(
+        new CustomEvent(
+          drawer.open ? 'python-twin:connection-open' : 'python-twin:connection-close',
+        ),
+      );
+      if (drawer.open && !$('amr-pipeline')?.childElementCount) {
+        const item = document.createElement('li');
+        item.dataset.state = 'waiting';
+        item.textContent = 'Loading sensor connection status…';
+        $('amr-pipeline')?.append(item);
+      }
+    };
+    drawer?.addEventListener('toggle', updateDrawer);
+    if (drawer?.open) updateDrawer();
     $('amr-link-form')?.addEventListener('submit', (event) => {
       event.preventDefault();
       if ($('amr-link-connect').disabled) return;

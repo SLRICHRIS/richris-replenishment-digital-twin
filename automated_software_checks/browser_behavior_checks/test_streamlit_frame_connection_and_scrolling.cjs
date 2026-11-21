@@ -342,6 +342,28 @@ async function check() {
     'Captured audit evidence is unchanged',
   );
   assert.equal(rendered.at(-1).amr_connection.stages[0].state, 'waiting');
+  assert.equal(
+    rendered.at(-1).display_freshness.dashboard_stalled,
+    false,
+    'The 5s sensor deadline is not a host connection timeout',
+  );
+  assert.equal(rendered.at(-1).display_freshness.timeout_s, 30);
+  // Real host updates may finish several seconds apart due to synchronous SQL
+  // reads. They must not flap the dashboard warning or revive the old packet.
+  for (const delay of [6000, 8000, 10000]) {
+    receive(live);
+    tick(delay);
+    assert.equal(rendered.at(-1).display_freshness.dashboard_stalled, false);
+    assert.equal(rendered.at(-1).amr_connection.subscribed, true);
+    assert.equal(rendered.at(-1).physical_telemetry.fresh, false);
+    assert.equal(approve.disabled, true);
+  }
+  tick(20001);
+  assert.equal(
+    rendered.at(-1).display_freshness.dashboard_stalled,
+    true,
+    'Only prolonged host silence marks the connection unknown',
+  );
   const pausedLink = rendered.at(-1).amr_connection;
   assert.equal(pausedLink.state, 'unknown');
   assert.equal(
@@ -385,6 +407,11 @@ async function check() {
   updated.physical_telemetry.received_at = '2026-11-22T00:00:01Z';
   updated.amr_connection.sample_identity[2] = 2;
   receive(updated);
+  assert.equal(
+    rendered.at(-1).display_freshness.dashboard_stalled,
+    false,
+    'A new host response clears the communication warning',
+  );
   assert.equal(
     rendered.at(-1).physical_telemetry.fresh,
     true,
