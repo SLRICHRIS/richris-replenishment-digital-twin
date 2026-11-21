@@ -122,8 +122,10 @@ export function createManualMotorPanel(scope) {
     el('unlock').disabled = !value.can_unlock || !value.physical_mode;
     el('source').hidden = !!value.physical_mode;
     const cap = Number.isInteger(value.max_pwm) ? value.max_pwm : 255;
+    const selected = Number(el('pwm').value);
+    if (held && selected > cap) finish(true);
     el('pwm').max = String(cap);
-    if (Number(el('pwm').value) > cap) el('pwm').value = String(cap);
+    if (selected > cap) el('pwm').value = String(cap === 60 ? 40 : cap);
     el('speed-text').textContent = el('pwm').value + ' / ' + cap;
     el('pwm').disabled = !value.authorized || value.busy;
     root.querySelectorAll('[data-direction]').forEach((button) => {
@@ -150,9 +152,11 @@ export function createManualMotorPanel(scope) {
               : 'Waiting for authenticated ESP32 feedback';
     el('receiver-note').textContent = value.receiver_updated
       ? 'Receiver supports PWM 0–255. Left and right use one wheel, matching your sketch.'
-      : h
-        ? 'Existing receiver: PWM up to 160. Upload the updated receiver for the full 0–255 range and IMU-independent manual driving.'
-        : 'Connect the controller to read its PWM capability. The updated receiver supports 0–255 PWM.';
+      : cap === 60
+        ? 'AMR-01 Wireless H1 r3 supports PWM 0–60. Hold a direction to apply the selected power.'
+        : h
+          ? 'Existing receiver: PWM up to 160. Upload the updated receiver for the full 0–255 range and IMU-independent manual driving.'
+          : 'Connect the controller to read its PWM capability. The updated receiver supports 0–255 PWM.';
     el('outcome').textContent = r?.reason || 'No direction is held.';
     el('feedback').textContent = value.feedback || '';
     el('transport').textContent =

@@ -10,6 +10,23 @@ FRONTEND_DIRECTORY = REPOSITORY_ROOT / 'frontend_warehouse_dashboard'
 WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND_DIRECTORY))
 
 
+def handle_drive_input():
+    """Process live held input before SQL reads for the next dashboard frame."""
+    state = st.session_state
+    event = state.get('warehouse-workspace')
+    if (not isinstance(event, dict) or event.get('action') != 'manual_control'
+            or event.get('command') not in ('hold', 'release', 'stop')
+            or event.get('control_mode') != 'manual' or not state.get('manual_view')
+            or state.get('warehouse_sensor_mode') != 'live'):
+        return
+    nonce = event.get('nonce')
+    if not isinstance(nonce, str) or not 0 < len(nonce) <= 80 or nonce == state.get('warehouse_sensor_action'):
+        return
+    from .predictive_twin.manual_control_workspace import handle
+    state['warehouse_sensor_action'] = nonce
+    handle(event, 'live')
+
+
 @st.fragment(run_every='1s')
 def render_warehouse_workspace():
     from .predictive_twin.workspace_payload import workspace_payload
@@ -33,9 +50,9 @@ def render_warehouse_workspace():
     from .predictive_twin.vision_execution_workspace import workspace as vision_workspace
     payload['vision_execution'] = vision_workspace(mode)
     from .predictive_twin.manual_control_workspace import workspace as manual_workspace
-    payload['manual_control'] = manual_workspace(mode)
+    payload['manual_control'] = manual_workspace(mode, payload.get('physical_telemetry'))
     payload['camera_panel_open'] = bool(st.session_state.get('warehouse_browser_camera_open'))
-    result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload)
+    result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload, on_change=handle_drive_input)
     if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution', 'manual_control', 'camera_panel'):
         return
     choice = result.get('mode')

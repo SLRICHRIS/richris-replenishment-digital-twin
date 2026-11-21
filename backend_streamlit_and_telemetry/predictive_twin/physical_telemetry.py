@@ -48,11 +48,13 @@ def display_payload(db, now=None):
         return empty
     try:
         with db.engine.connect() as connection:
-            query = select(*(samples.c[name] for name in PUBLIC_FIELDS)).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(1)
+            revision = samples.c.payload['firmware_revision'].as_string().label('firmware_revision')
+            query = select(*(samples.c[name] for name in PUBLIC_FIELDS), revision).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(1)
             row = connection.execute(query).mappings().first()
             if row is None:
                 return {**empty, 'state': 'waiting', 'label': 'Waiting for the first stored packet'}
             row = dict(row)
+            firmware_revision = row.pop('firmware_revision')
             history = connection.execute(select(*(samples.c[name] for name in ('boot_id', 'seq', 'sample_time_s', 'received_at', 'battery_voltage_v', 'battery_current_a', 'left_pulse_hz', 'right_pulse_hz'))).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(60)).mappings().all()
             try:
                 energy = observed_energy(connection, samples, row)
@@ -99,6 +101,7 @@ def display_payload(db, now=None):
     # Stale records remain inspectable in the archive; never display them as live values.
     return {**empty, 'state': state, 'label': label, 'age_s': age, 'fresh': fresh,
             'received_at': received.isoformat(), 'boot_id': row['boot_id'], 'seq': row['seq'],
+            'h1_pwm_limit': 60 if fresh and firmware_revision == 'AMR01-Wireless-H1-r3' else None,
             'measurements': row if fresh else {},
             'wheel_estimates': wheel_magnitude_estimates(row) if fresh else {},
             'gyro_estimates': gyro_bias_correction(row) if fresh else {},

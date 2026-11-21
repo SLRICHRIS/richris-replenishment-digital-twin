@@ -59,7 +59,7 @@ def cancel_existing():
         except Exception: pass
 
 
-def workspace(mode):
+def workspace(mode, physical=None):
     p, missing = profile()
     auth = authorized(p)
     value = dict(ready=False, hardware=None, review=None, busy=False)
@@ -67,7 +67,7 @@ def workspace(mode):
         try:
             s = live_service(p)
             s.coordinator.touch(owner())
-            value = s.coordinator.public(owner())
+            value = s.coordinator.public(owner(), h1_pwm_limit=(physical or {}).get('h1_pwm_limit'))
             value['transport'] = s.public_transport()
         except Exception:
             missing.append('Manual transport unavailable or another controller owns AMR-01')

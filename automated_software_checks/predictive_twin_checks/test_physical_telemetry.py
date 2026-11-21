@@ -73,6 +73,17 @@ def test_retry_store_time_cannot_make_an_old_broker_packet_fresh(physical_db):
     assert result['energy_observation']['received_at'] == row['received_at'].isoformat()
 
 
+def test_r3_drive_limit_uses_only_the_known_fresh_stored_revision(physical_db):
+    row = synthetic_record()
+    now = row['received_at']
+    row['payload']['firmware_revision'] = 'AMR01-Wireless-H1-r3'
+    with physical_db.engine.begin() as connection:
+        connection.execute(samples.insert(), row)
+    result = display_payload(physical_db, now=now)
+    assert result['h1_pwm_limit'] == 60 and 'payload' not in result['measurements']
+    assert display_payload(physical_db, now=now+timedelta(seconds=30))['h1_pwm_limit'] is None
+
+
 def test_energy_comes_from_stored_battery_samples_without_model_calibration(physical_db):
     row = synthetic_record()
     records = []

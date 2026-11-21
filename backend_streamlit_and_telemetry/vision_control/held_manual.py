@@ -17,8 +17,18 @@ class HeldManualCoordinator(ManualCoordinator):
 
     def __init__(self, *args):
         super().__init__(*args)
+        self.limited_receiver = None
         with self.engine.begin() as db:
             db.execute(update(reviews).where(reviews.c.state.in_(HELD)).values(state='manual_uncertain'))
+
+    def receiver_pwm_limit(self):
+        h = self.current or {}
+        cap = min(self.max_pwm, h.get('max_pwm', 160))
+        if h.get('protocol') == 'H1' and self.limited_receiver:
+            boot, epoch, limit = self.limited_receiver
+            if (boot, epoch) == (h['boot_id'], h['epoch_id']):
+                return min(cap, limit)
+        return cap
 
     def hardware_ready(self, zero=False):
         h=self.current
@@ -33,7 +43,7 @@ class HeldManualCoordinator(ManualCoordinator):
             if (type(input_seq) is not int or not 1<=input_seq<=2147483647
                     or type(issued) is not int or not -100<=now-issued<=500):
                 raise ValueError('Held input expired; release and press again')
-            cap=min(255,(self.current or {}).get('max_pwm',160))
+            cap=self.receiver_pwm_limit()
             if direction not in DIRECTIONS or type(pwm) is not int or not 1<=pwm<=cap:
                 raise ValueError('Choose a direction and PWM within the receiver limit')
             r=self.row
@@ -117,6 +127,9 @@ class HeldManualCoordinator(ManualCoordinator):
     def renew(self):
         r=self.row
         if r['state']!='hold_driving' or self.clock()>=r['input_until_ms']: return
+        if r['pwm'] > self.receiver_pwm_limit():
+            self.cancel(r['owner_id'])
+            return
         left,right=DIRECTIONS[r['direction']]
         self.send_held('drive',left*r['pwm'],right*r['pwm'])
 
@@ -157,14 +170,20 @@ class HeldManualCoordinator(ManualCoordinator):
             if r['state']=='hold_driving' and now-r['last_sent_ms']>=RENEW_MS:
                 self.renew()
 
-    def public(self, owner):
+    def public(self, owner, *, h1_pwm_limit=None):
         with self.lock:
+            h = self.current
+            # A known sensor revision can only lower the limit for a signed H1
+            # receiver. Retain it through sensor gaps for this receiver session.
+            if (h and h['protocol'] == 'H1' and type(h1_pwm_limit) is int
+                    and 0 < h1_pwm_limit < self.receiver_pwm_limit()):
+                self.limited_receiver = (h['boot_id'], h['epoch_id'], h1_pwm_limit)
             value=super().public(owner)
             r=self.row
             owned=bool(r and r['owner_id']==owner and r['state'] in ('hold_arming','hold_driving'))
             value.update(ready=self.hardware_ready(zero=not owned),
                          busy=bool(r and r['state'] in HELD and r['owner_id']!=owner),
-                         max_pwm=min(255,(self.current or {}).get('max_pwm',160)),
+                         max_pwm=self.receiver_pwm_limit(),
                          server_time_ms=self.clock(),input_lease_ms=INPUT_LEASE_MS,
                          holding=owned,receiver_updated=(self.current or {}).get('protocol')=='H2')
             return value
