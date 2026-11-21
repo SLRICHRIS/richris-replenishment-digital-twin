@@ -195,11 +195,13 @@ def session_connector():
 
 
 def connection_payload(controller, profile, missing, authorized=False, live_payload=None):
-    from .workspace_payload import database_connection, workspace_payload
+    from .workspace_payload import workspace_payload
     from .insights import predictive_insights
     link = controller.snapshot()
-    _, storage_state = database_connection()
     live = live_payload if live_payload is not None else workspace_payload('live')
+    # The dashboard already queried storage. Keep the recorder drawer cheap and
+    # report that read result; full schema diagnostics remain in Database.
+    storage_state = live.get('storage_read_state') if live.get('mode') == 'live' else None
     insights = predictive_insights(live)
     robot = live.get('robots', {}).get('amr01') or {}
     physical = live.get('physical_telemetry') or {}
@@ -224,7 +226,7 @@ def connection_payload(controller, profile, missing, authorized=False, live_payl
                     dict(id='broker',label='EMQX recorder', state='ready' if link['subscribed'] else 'waiting',
                          detail='This session subscription is verified' if link['subscribed'] else 'This session recorder is not subscribed; forwarding may run independently'),
                     dict(id='storage',label='Sensor database', state='ready' if storage_state == 'ready' else 'blocked',
-                         detail='Connected · storage verified' if storage_state == 'ready' else 'Connection or database setup needs attention'),
+                         detail='Stored sensor records readable' if storage_state == 'ready' else 'Stored sensor records could not be read; open Database for connection and schema status'),
                     dict(id='insights',label='Live guidance', state='ready' if insights['ready'] else 'waiting',
                          detail=('Current observation checks available' if observational else 'Current calibrated model guidance available')
                          if insights['ready'] else 'Waiting for usable, current sensor evidence'),

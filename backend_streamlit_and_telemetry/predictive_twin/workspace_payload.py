@@ -21,6 +21,13 @@ def with_insights(payload):
         except Exception:
             db = None
         payload['physical_telemetry'] = display_payload(db)
+        # Reuse the outcome of these reads in the connection drawer. A schema
+        # audit there would add another round of remote queries on every tick.
+        # Reading historical/empty storage is independent of sample freshness
+        # and measured calibration; it does not establish either one.
+        readable = bool(payload.get('robots')) or payload['physical_telemetry'].get('state') in (
+            'receiving', 'stale', 'clock_skew', 'waiting')
+        payload['storage_read_state'] = 'ready' if readable else 'unavailable'
         if (payload.get('notice',{}).get('label')=='Measured calibration required'
                 and payload['physical_telemetry'].get('fresh') is True):
             payload['notice']=dict(label='Live physical observations',tone='info',

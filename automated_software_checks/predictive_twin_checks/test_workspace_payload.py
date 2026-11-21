@@ -27,6 +27,7 @@ def test_unconfigured_live_returns_no_synthetic_robot_state():
         result = workspace_payload('live')
     assert result['robots'] == {}
     assert result['notice']['label'] == 'Database not configured'
+    assert result['storage_read_state'] == 'unavailable'
 
 
 def test_storage_check_does_not_require_calibration_and_sanitizes_errors():
@@ -66,6 +67,7 @@ def test_fresh_commissioning_packet_enables_observation_guidance_independently()
     from unittest.mock import Mock
     module='backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
     physical=observation_data()['physical_telemetry']
+    physical['state']='receiving'
     with patch(module+'.st.secrets',{'database':{'url':'postgresql://private:secret@host/db'}}), \
          patch(module+'.database_reader',return_value=Mock(spec=SensorDatabase)), \
          patch('backend_streamlit_and_telemetry.predictive_twin.physical_telemetry.display_payload',return_value=physical):
@@ -73,6 +75,27 @@ def test_fresh_commissioning_packet_enables_observation_guidance_independently()
     assert payload['robots']=={} and payload['insights']['ready']
     assert payload['insights']['scope']=='physical_observation'
     assert payload['notice']['label']=='Live physical observations'
+    assert payload['storage_read_state']=='ready'
+
+
+@pytest.mark.parametrize('state,expected', [
+    ('stale','ready'), ('clock_skew','ready'), ('waiting','ready'), ('unavailable','unavailable'),
+])
+def test_storage_read_status_is_independent_of_calibration_and_current_samples(state, expected):
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    module='backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    physical=observation_data()['physical_telemetry']
+    physical.update(state=state,fresh=False,age_s=3600.,measurements={})
+    with patch(module+'.st.secrets',{'database':{'url':'sqlite://'}}), \
+         patch(module+'.database_reader',return_value=SimpleNamespace()), \
+         patch('backend_streamlit_and_telemetry.predictive_twin.physical_telemetry.display_payload',return_value=physical):
+        payload=workspace_payload('live')
+    assert payload['storage_read_state']==expected
+    assert payload['robots']=={}
+    assert payload['notice']['label']=='Measured calibration required'
+    assert not payload['physical_telemetry']['fresh']
+    assert payload['physical_telemetry']['measurements']=={}
+    assert not payload['insights']['ready']
 
 
 @pytest.mark.parametrize('error,label', [
@@ -101,6 +124,7 @@ def test_live_display_does_not_leak_database_credentials_or_forecast_stale_robot
          patch('backend_streamlit_and_telemetry.predictive_twin.workspace_payload.database_reader', return_value=db):
         payload = workspace_payload('live')
     assert payload['mode'] == 'live'
+    assert payload['storage_read_state'] == 'ready'
     for robot in payload['robots'].values():
         assert robot['stale']
         assert robot['forecast_pose'] is None

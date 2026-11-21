@@ -205,3 +205,40 @@ def test_fresh_calibrated_model_and_stale_commissioning_feed_are_independent():
     assert not result['sample_fresh']
     assert result['stages'][0]['state']=='waiting'
     assert result['stages'][1]['state']=='ready','A broker subscription is not proof of current sensor data'
+
+
+def test_connection_drawer_reuses_storage_read_outcome_without_new_database_queries():
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    from backend_streamlit_and_telemetry.predictive_twin.amr_connection import connection_payload
+    payload=observation_data()
+    payload['physical_telemetry'].update(state='stale',fresh=False,age_s=3600.,measurements={})
+    controller=SimpleNamespace(snapshot=lambda:dict(subscribed=False,state='disconnected'))
+    module='backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    with patch(module+'.database_connection',side_effect=AssertionError('Drawer must not recheck schema')) as check, \
+         patch(module+'.workspace_payload',side_effect=AssertionError('Reuse supplied snapshot')) as read:
+        for storage_state in ('ready','unavailable',None):
+            payload['storage_read_state']=storage_state
+            result=connection_payload(controller,None,['Measured calibration'],live_payload=payload)
+            stages={stage['id']:stage for stage in result['stages']}
+            assert stages['storage']['state']==('ready' if storage_state=='ready' else 'blocked')
+            assert not result['sample_fresh'] and not result['insights']['ready']
+            assert stages['telemetry']['state']=='waiting'
+            if storage_state=='ready':
+                assert stages['storage']['detail']=='Stored sensor records readable'
+        check.assert_not_called()
+        read.assert_not_called()
+
+
+def test_connection_drawer_without_live_snapshot_reads_it_once_without_separate_schema_audit():
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    from backend_streamlit_and_telemetry.predictive_twin.amr_connection import connection_payload
+    payload=observation_data()
+    payload['storage_read_state']='ready'
+    controller=SimpleNamespace(snapshot=lambda:dict(subscribed=False,state='disconnected'))
+    module='backend_streamlit_and_telemetry.predictive_twin.workspace_payload'
+    with patch(module+'.database_connection',side_effect=AssertionError('Drawer must not recheck schema')) as check, \
+         patch(module+'.workspace_payload',return_value=payload) as read:
+        result=connection_payload(controller,None,[])
+        read.assert_called_once_with('live')
+        check.assert_not_called()
+    assert result['stages'][2]['state']=='ready'
