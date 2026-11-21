@@ -7,6 +7,8 @@ import uuid
 import streamlit as st
 from ..vision_control.contracts import key, identifier
 
+MANUAL_SERVICE_VERSION = 'wireless-h1-r3-limit'
+
 
 def profile():
     try:
@@ -28,16 +30,16 @@ def profile():
 
 
 @st.cache_resource(max_entries=1, show_spinner=False)
-def service(p, protocol_version='held-drive-20261120'):
+def service(p, protocol_version=MANUAL_SERVICE_VERSION):
     from ..vision_control.service import ManualService
     return ManualService(p)
 
 
 def live_service(p):
-    s = service(p, 'held-drive-20261120')
+    s = service(p, MANUAL_SERVICE_VERSION)
     if s.stop.is_set():
         service.clear()
-        s = service(p, 'held-drive-20261120')
+        s = service(p, MANUAL_SERVICE_VERSION)
     st.session_state.manual_service = s
     return s
 
