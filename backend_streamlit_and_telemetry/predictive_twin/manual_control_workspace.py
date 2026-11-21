@@ -111,7 +111,7 @@ def handle(result, mode):
         from .control_presence import synchronize_control_view
         synchronize_control_view(st.session_state, 'manual')  # Explicit authenticated Connect starts this listener.
         st.session_state.manual_operator = alias
-        st.session_state.manual_feedback = 'Connected. Hold a direction to drive; release to stop.'
+        st.session_state.manual_feedback = ''
         return
     if not authorized(p): return
     try:

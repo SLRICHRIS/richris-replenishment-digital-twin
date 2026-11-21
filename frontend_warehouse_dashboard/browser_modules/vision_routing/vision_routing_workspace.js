@@ -1,4 +1,4 @@
-import { createManualMotorPanel } from './manual_motor_control.js?v=wireless-h1-r3';
+import { createManualMotorPanel } from './manual_motor_control.js?v=wireless-h1-r3-readiness';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 

@@ -31,7 +31,8 @@ const ready = {
   server_time_ms: Date.now(),
   hardware: { ready: true, state: 'idle', left_duty: 0, right_duty: 0, battery_voltage_v: 7.4 },
 };
-const render = (value) => panel.render({ ...ready, server_time_ms: Date.now(), ...value });
+const render = (value, physical) =>
+  panel.render({ ...ready, server_time_ms: Date.now(), ...value }, physical);
 const press = (name) =>
   el(name).dispatchEvent(new w.MouseEvent('pointerdown', { bubbles: true, button: 0 }));
 const release = (name) => el(name).dispatchEvent(new w.Event('pointerup', { bubbles: true }));
@@ -120,6 +121,47 @@ assert.match(el('receiver-note').textContent, /Wireless H1 r3/);
 press('forward');
 assert.equal(holds().at(-1).pwm, 40);
 release('forward');
+const lockedH1 = {
+  ready: false,
+  max_pwm: 60,
+  receiver_updated: false,
+  hardware: { ...ready.hardware, protocol: 'H1', ready: false, battery_voltage_v: 6.74 },
+};
+const uncalibrated = {
+  fresh: true,
+  h1_pwm_limit: 60,
+  measurements: { gyro_available: true, gyro_bias_estimate_rad_s: null },
+};
+const previousHolds = holds().length;
+render(lockedH1, uncalibrated);
+assert.match(el('receiver-note').textContent, /Startup gyro calibration is missing/);
+assert.equal(el('forward').disabled, true);
+press('forward');
+assert.equal(holds().length, previousHolds, 'Sensor diagnostics cannot authorize a hold');
+const lowPack = { ...lockedH1, hardware: { ...lockedH1.hardware, battery_voltage_v: 6.6 } };
+render(lowPack, uncalibrated);
+assert.match(el('connection').textContent, /6.60 V/);
+assert.match(el('receiver-note').textContent, /charged pack.*gyro calibration/);
+render({ ...lowPack, hardware: { ...lowPack.hardware, battery_voltage_v: 0 } }, uncalibrated);
+assert.match(el('connection').textContent, /reading unavailable/);
+assert.doesNotMatch(el('receiver-note').textContent, /charged pack/);
+render(lockedH1, { ...uncalibrated, fresh: false });
+assert.doesNotMatch(el('receiver-note').textContent, /gyro calibration/);
+render(lockedH1, {
+  ...uncalibrated,
+  measurements: { gyro_available: true, gyro_bias_estimate_rad_s: 0 },
+});
+assert.doesNotMatch(el('receiver-note').textContent, /gyro calibration/);
+render(
+  {
+    ...lockedH1,
+    max_pwm: 255,
+    receiver_updated: true,
+    hardware: { ...lockedH1.hardware, protocol: 'H2' },
+  },
+  uncalibrated,
+);
+assert.doesNotMatch(el('receiver-note').textContent, /gyro calibration/);
 render({});
 press('forward');
 mono += 1501;
