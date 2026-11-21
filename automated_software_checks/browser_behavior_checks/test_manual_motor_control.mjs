@@ -8,7 +8,8 @@ const dom = new JSDOM(
 const w = dom.window,
   d = w.document,
   actions = [],
-  intervals = new Map();
+  intervals = new Map(),
+  timeouts = new Map();
 let mono = 0,
   id = 0;
 w.setInterval = (fn) => {
@@ -16,6 +17,11 @@ w.setInterval = (fn) => {
   return id;
 };
 w.clearInterval = (value) => intervals.delete(value);
+w.setTimeout = (fn) => {
+  timeouts.set(++id, fn);
+  return id;
+};
+w.clearTimeout = (value) => timeouts.delete(value);
 Object.defineProperty(w.performance, 'now', { value: () => mono });
 d.addEventListener('python-twin:action', (e) => actions.push(e.detail));
 const panel = createManualMotorPanel(w),
@@ -168,6 +174,18 @@ mono += 1501;
 for (const fn of [...intervals.values()]) fn();
 assert.equal(actions.at(-1).command, 'stop');
 assert.equal(intervals.size, 0);
+// A stopped page update must not keep displaying enabled, ready controls.
+render({});
+const beforeStalePress = holds().length;
+mono += 1501;
+for (const fn of [...timeouts.values()]) fn();
+assert.equal(el('forward').disabled, true);
+assert.match(el('connection').textContent, /fresh controller update/i);
+press('forward');
+assert.equal(holds().length, beforeStalePress);
+render({});
+assert.equal(el('forward').disabled, false);
+assert.equal(holds().length, beforeStalePress, 'A fresh frame cannot resume movement');
 const beforePresence = actions.length;
 render({ view_active: false });
 assert.equal(actions.length, beforePresence + 1);
@@ -180,6 +198,7 @@ assert.equal(intervals.size, 0);
 assert.equal(actions.at(-1).active, false);
 panel.destroy();
 assert.equal(intervals.size, 0);
+assert.equal(timeouts.size, 0);
 w.close();
 console.log(
   'PASS: held pointer/keyboard intent, bounded renewal, release/Stop/page-loss cancellation, no automatic restart, receiver caps, editable authentication and safe diagnostics.',

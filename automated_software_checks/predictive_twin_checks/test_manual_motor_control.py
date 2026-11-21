@@ -335,3 +335,34 @@ def test_bad_operator_code_cannot_activate_the_manual_page(monkeypatch):
     monkeypatch.setattr(workspace,'st',SimpleNamespace(session_state=state,secrets={'manual_control':config,'amr_connection':{'access_code':'private-test-access-code'}}))
     workspace.handle(dict(command='login',access_code='incorrect-code',operator='Richris'),'live')
     assert not state['manual_view'] and not workspace.authorized(workspace.profile()[0])
+
+
+def test_releasing_or_stopping_does_not_erase_a_rejected_drive_request(monkeypatch):
+    from types import SimpleNamespace
+    from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as workspace
+    class State(dict):
+        def __getattr__(self, name): return self[name]
+        def __setattr__(self, name, value): self[name] = value
+    state = State(manual_view=True, manual_owner=OWNER, manual_operator='operator')
+    p = dict(access_code='private-test-access-code', control_key=KEY)
+    state.manual_auth = workspace.tag(p)
+    monkeypatch.setattr(workspace, 'st', SimpleNamespace(session_state=state))
+    monkeypatch.setattr(workspace, 'profile', lambda: (p, []))
+    from backend_streamlit_and_telemetry.vision_control.held_manual import HeldManualCoordinator
+    engine = create_engine('sqlite://'); metadata.create_all(engine)
+    clock, packets = [10000], []
+    c = HeldManualCoordinator(engine, KEY, packets.append, lambda: clock[0])
+    c.connected = True
+    beat(c, clock, 1)
+    monkeypatch.setattr(workspace, 'live_service', lambda _: SimpleNamespace(coordinator=c))
+    event = dict(command='hold', hold_id='f'*32, input_seq=1, issued_at_ms=clock[0]-501,
+                 direction='F', pwm=40)
+    workspace.handle(event, 'live')
+    error = state.manual_feedback
+    assert 'expired' in error and not packets
+    workspace.handle(dict(command='release', hold_id=event['hold_id'], input_seq=2), 'live')
+    workspace.handle(dict(command='stop'), 'live')
+    assert state.manual_feedback == error and not packets
+    workspace.handle({**event, 'issued_at_ms':clock[0]}, 'live')
+    assert state.manual_feedback == ''
+    assert verified(packets[-1], KEY, 10)[5:8] == ['arm', '0', '0']

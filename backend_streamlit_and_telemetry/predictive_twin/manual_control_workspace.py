@@ -121,8 +121,10 @@ def handle(result, mode):
         elif cmd == 'hold':
             s.coordinator.hold(owner(), st.session_state.manual_operator, result.get('hold_id'),
                 result.get('input_seq'), result.get('issued_at_ms'), result.get('direction'), result.get('pwm'))
+            st.session_state.manual_feedback = ''
         elif cmd == 'release':
             s.coordinator.end_hold(owner(), result.get('hold_id'), result.get('input_seq'))
-        st.session_state.manual_feedback = ''
+        # Release/Stop must always work, but are not a successful drive request.
+        # Keep a rejection visible until an authenticated hold succeeds.
     except ValueError as exc: st.session_state.manual_feedback = str(exc)
     except Exception: st.session_state.manual_feedback = 'Private transport unavailable or another controller owns AMR-01; no retry is queued'

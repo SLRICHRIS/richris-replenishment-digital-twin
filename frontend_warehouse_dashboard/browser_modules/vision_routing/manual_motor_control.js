@@ -64,6 +64,7 @@ export function createManualMotorPanel(scope) {
   let current = {},
     held = null,
     timer = null,
+    freshnessTimer = null,
     active = false,
     leaving = false,
     destroyed = false;
@@ -86,8 +87,10 @@ export function createManualMotorPanel(scope) {
     !d.hidden &&
     d.body.dataset.view === 'vision' &&
     d.getElementById('vision-routing-shell')?.dataset.mode === 'manual';
+  const frameFresh = () => scope.performance.now() - renderedAt <= 1500;
   const usable = () =>
     visible() &&
+    frameFresh() &&
     current.authorized &&
     current.physical_mode &&
     current.ready &&
@@ -108,7 +111,11 @@ export function createManualMotorPanel(scope) {
   }
   function pulse() {
     if (!held) return;
-    if (!usable() || scope.performance.now() - renderedAt > 1500) {
+    if (!frameFresh()) {
+      pauseStaleFrame();
+      return;
+    }
+    if (!usable()) {
       finish(true);
       return;
     }
@@ -120,8 +127,25 @@ export function createManualMotorPanel(scope) {
       pwm: Number(el('pwm').value),
     });
   }
+  function pauseStaleFrame() {
+    if (frameFresh() || !visible() || !current.authorized) return;
+    if (freshnessTimer !== null) scope.clearTimeout(freshnessTimer);
+    freshnessTimer = null;
+    const wasHeld = !!held;
+    finish(wasHeld);
+    root.querySelectorAll('[data-direction]').forEach((button) => {
+      button.disabled = true;
+    });
+    el('connection').textContent = 'Waiting for a fresh controller update';
+    el('outcome').textContent = wasHeld
+      ? 'Hold ended because website updates were delayed. Wait for Controller ready, then press again.'
+      : 'Drive controls paused because website updates were delayed. Wait for Controller ready.';
+  }
   function start(direction, input) {
-    if (held || !usable() || Number(el('pwm').value) === 0) return;
+    if (held || !usable() || Number(el('pwm').value) === 0) {
+      pauseStaleFrame();
+      return;
+    }
     const bytes = new Uint8Array(16);
     scope.crypto.getRandomValues(bytes);
     held = {
@@ -136,11 +160,17 @@ export function createManualMotorPanel(scope) {
         button.setAttribute('aria-pressed', String(button.dataset.direction === direction)),
       );
     pulse();
-    if (held) timer = scope.setInterval(pulse, 200);
+    if (held) {
+      el('connection').textContent = 'Sending held direction to website';
+      el('outcome').textContent = 'Direction held; waiting for website acknowledgement.';
+      timer = scope.setInterval(pulse, 200);
+    }
   }
   function render(value = {}, physical = {}) {
     current = value;
     renderedAt = scope.performance.now();
+    if (freshnessTimer !== null) scope.clearTimeout(freshnessTimer);
+    freshnessTimer = scope.setTimeout(pauseStaleFrame, 1501);
     if (Number.isFinite(value.server_time_ms)) offset = value.server_time_ms - Date.now();
     const h = value.hardware,
       r = value.review,
@@ -174,9 +204,11 @@ export function createManualMotorPanel(scope) {
         ? 'Another operator is driving'
         : value.holding
           ? 'Controller connected · direction held'
-          : value.ready
-            ? 'Controller ready · hold a direction'
-            : waitingStatus(h, cap);
+          : held
+            ? 'Sending held direction to website'
+            : value.ready
+              ? 'Controller ready · hold a direction'
+              : waitingStatus(h, cap);
     const receiverHint = wirelessReadinessHint(value, physical);
     el('receiver-note').textContent =
       receiverHint ||
@@ -187,7 +219,10 @@ export function createManualMotorPanel(scope) {
           : h
             ? 'Existing receiver: PWM up to 160. Upload the updated receiver for the full 0–255 range and IMU-independent manual driving.'
             : 'Connect the controller to read its PWM capability. The updated receiver supports 0–255 PWM.');
-    el('outcome').textContent = r?.reason || 'No direction is held.';
+    el('outcome').textContent =
+      held && r?.review_id !== held.id
+        ? 'Direction held; waiting for website acknowledgement.'
+        : r?.reason || 'No direction is held.';
     el('feedback').textContent = value.feedback || '';
     el('transport').textContent =
       'Website MQTT: ' + (t.state || 'waiting') + (t.reason ? ' · ' + t.reason : '');
@@ -336,6 +371,8 @@ export function createManualMotorPanel(scope) {
     render,
     destroy() {
       finish();
+      if (freshnessTimer !== null) scope.clearTimeout(freshnessTimer);
+      freshnessTimer = null;
       destroyed = true;
       observer.disconnect();
       listeners.forEach((remove) => remove());
