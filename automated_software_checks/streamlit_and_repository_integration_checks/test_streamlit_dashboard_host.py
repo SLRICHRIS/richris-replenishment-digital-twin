@@ -6,29 +6,51 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class StreamlitHostTests(unittest.TestCase):
-    def test_drive_callback_handles_visible_live_input_once_before_dashboard_reads(self):
+    def test_legacy_drive_events_end_cloud_control_without_dispatching_a_hold(self):
         from types import SimpleNamespace
         from unittest.mock import patch
         from backend_streamlit_and_telemetry import streamlit_dashboard_host as host
         from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as manual
 
         event = dict(action='manual_control', command='hold', control_mode='manual', nonce='one')
-        state = {'warehouse-workspace': event, 'warehouse_sensor_mode': 'live', 'manual_view': True}
-        with patch.object(host, 'st', SimpleNamespace(session_state=state)), patch.object(manual, 'handle') as handle:
+        state = {'warehouse-workspace': event, 'warehouse_sensor_mode': 'live',
+                 'manual_view': True, 'manual_auth': 'previous-auth'}
+        with patch.object(host, 'st', SimpleNamespace(session_state=state)), \
+                patch.object(manual, 'handle') as handle, \
+                patch.object(manual, 'cancel_existing') as cancel, \
+                patch.object(manual, 'live_service') as start:
             host.handle_drive_input()
             host.handle_drive_input()
-            handle.assert_called_once_with(event, 'live')
-            for change in ({'control_mode': None}, {'action': 'vision_execution'}, {'command': 'login'}):
-                state['warehouse-workspace'] = dict(event, nonce='ignored', **change)
+            cancel.assert_called_once_with()
+            self.assertFalse(state['manual_view'])
+            self.assertNotIn('manual_auth', state)
+            for command in ('login', 'hold', 'release', 'stop'):
+                state['warehouse-workspace'] = dict(event, nonce=command, command=command)
                 host.handle_drive_input()
-            self.assertEqual(handle.call_count, 1)
-            state['warehouse-workspace'] = dict(event, nonce='two', command='release')
+            self.assertEqual(cancel.call_count, 5)
+            state['warehouse-workspace'] = dict(event, nonce='other', action='vision_execution')
             host.handle_drive_input()
-            self.assertEqual(handle.call_count, 2)
-            state['manual_view'] = False
-            state['warehouse-workspace'] = dict(event, nonce='hidden')
-            host.handle_drive_input()
-            self.assertEqual(handle.call_count, 2)
+            self.assertEqual(cancel.call_count, 5)
+            handle.assert_not_called()
+            start.assert_not_called()
+
+    def test_direct_drive_frame_does_not_start_a_manual_mqtt_service(self):
+        import json
+        from unittest.mock import patch
+        from backend_streamlit_and_telemetry.predictive_twin import manual_control_workspace as manual
+        app = AppTest.from_file(str(ROOT / 'streamlit_app.py'))
+        app.session_state['manual_view'] = True
+        app.session_state['manual_auth'] = 'previous-auth'
+        with patch.object(manual, 'workspace') as old_workspace, \
+                patch.object(manual, 'live_service') as start:
+            app.run(timeout=30)
+            self.assertFalse(app.exception)
+            payload = json.loads(app.get('component_instance')[0].proto.json_args)['python_twin']
+            self.assertEqual(payload['manual_control'], {'transport': 'direct_wifi'})
+            self.assertFalse(app.session_state['manual_view'])
+            self.assertNotIn('manual_auth', app.session_state)
+            old_workspace.assert_not_called()
+            start.assert_not_called()
 
     def test_mission_camera_button_opens_sidebar_camera_and_preserves_source(self):
         from unittest.mock import patch

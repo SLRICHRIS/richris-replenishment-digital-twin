@@ -10,25 +10,30 @@ FRONTEND_DIRECTORY = REPOSITORY_ROOT / 'frontend_warehouse_dashboard'
 WAREHOUSE_WORKSPACE = declare_component('replenish_workspace', path=str(FRONTEND_DIRECTORY))
 
 
+def retire_cloud_manual_control():
+    """Stop this session's old cloud hold without starting a new service."""
+    from .predictive_twin.manual_control_workspace import cancel_existing
+    cancel_existing()
+    st.session_state['manual_view'] = False
+    st.session_state.pop('manual_auth', None)
+
+
 def handle_drive_input():
-    """Process live held input before SQL reads for the next dashboard frame."""
+    """An old browser tab cannot continue MQTT driving after the LAN switch."""
     state = st.session_state
     event = state.get('warehouse-workspace')
-    if (not isinstance(event, dict) or event.get('action') != 'manual_control'
-            or event.get('command') not in ('hold', 'release', 'stop')
-            or event.get('control_mode') != 'manual' or not state.get('manual_view')
-            or state.get('warehouse_sensor_mode') != 'live'):
+    if not isinstance(event, dict) or event.get('action') != 'manual_control':
         return
     nonce = event.get('nonce')
     if not isinstance(nonce, str) or not 0 < len(nonce) <= 80 or nonce == state.get('warehouse_sensor_action'):
         return
-    from .predictive_twin.manual_control_workspace import handle
     state['warehouse_sensor_action'] = nonce
-    handle(event, 'live')
+    retire_cloud_manual_control()
 
 
 @st.fragment(run_every='1s')
 def render_warehouse_workspace():
+    retire_cloud_manual_control()
     from .predictive_twin.workspace_payload import workspace_payload
     mode = st.session_state.warehouse_sensor_mode
     payload = workspace_payload(mode, st.session_state.get('warehouse_demo_trial', 'baseline'))
@@ -49,8 +54,7 @@ def render_warehouse_workspace():
     payload['human_review'] = review_workspace(payload)
     from .predictive_twin.vision_execution_workspace import workspace as vision_workspace
     payload['vision_execution'] = vision_workspace(mode)
-    from .predictive_twin.manual_control_workspace import workspace as manual_workspace
-    payload['manual_control'] = manual_workspace(mode, payload.get('physical_telemetry'))
+    payload['manual_control'] = dict(transport='direct_wifi')
     payload['camera_panel_open'] = bool(st.session_state.get('warehouse_browser_camera_open'))
     result = WAREHOUSE_WORKSPACE(key='warehouse-workspace', default=None, python_twin=payload, on_change=handle_drive_input)
     if not isinstance(result, dict) or result.get('action') not in ('sensor_source', 'demo_trial', 'model_inspection', 'database_inspection', 'database_browse', 'connection_view', 'connection_control', 'human_review', 'vision_execution', 'manual_control', 'camera_panel'):
@@ -95,8 +99,7 @@ def render_warehouse_workspace():
         st.session_state.pending_browser_camera_open = result['open']
         st.rerun(scope='app')
     elif result['action'] == 'manual_control':
-        from .predictive_twin.manual_control_workspace import handle
-        handle(result, mode)
+        retire_cloud_manual_control()
     elif result['action'] == 'vision_execution':
         from .predictive_twin.vision_execution_workspace import handle
         handle(result, mode)

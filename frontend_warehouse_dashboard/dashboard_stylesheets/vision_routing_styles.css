@@ -1032,6 +1032,23 @@
   }
 }
 
+.manual-direct-form {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  margin-block: 24px;
+}
+.manual-direct-open {
+  display: inline-flex;
+  justify-content: center;
+  padding: 14px 20px;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.manual-direct-open[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .manual-drive-layout {
   display: grid;
   grid-template-columns: minmax(240px, 360px) minmax(220px, 1fr);
