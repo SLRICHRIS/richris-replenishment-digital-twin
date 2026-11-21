@@ -1,3 +1,4 @@
+import { createLiveSensorRecommendations } from './live_sensor_recommendations.js?v=live-guidance-20261122';
 // Embed the installed ESP32 page; its own code remains the only LAN command sender.
 export const DIRECT_CONTROLLER_URL = 'http://10.15.213.112/';
 
@@ -15,7 +16,9 @@ export function createManualMotorPanel(scope) {
         <a id="mc-open-direct" href="${DIRECT_CONTROLLER_URL}" target="_blank" rel="noopener noreferrer">Open separately ↗</a>
       </div>
       <p id="mc-connection-status" role="status">Address saved. Select Connect controller, then allow local-network access if Chrome asks.</p>
+      <div id="mc-reviewed-response" class="manual-reviewed-response" hidden><strong id="mc-reviewed-title"></strong><p id="mc-reviewed-detail"></p><p>Apply the response using the controls below or complete the physical check. Opening this page does not execute the saved decision.</p></div>
       <div id="mc-controller-frame-host" class="manual-controller-frame-host" hidden></div>
+      <div id="mc-live-guidance"></div>
       <details class="manual-direct-help"><summary>If the controller does not appear</summary><p>Allow local-network access for this dashboard in Chrome, then select Connect controller again. If your browser cannot embed the page, use Open separately. The laptop and ESP32 must be on the same hotspot, and the robot must still have address 10.15.213.112.</p></details>
       <p id="mc-sensor-feed" role="status"></p>
       <a href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/manual_motor_control_setup.md" target="_blank" rel="noopener noreferrer">Direct Wi-Fi setup</a>
@@ -27,6 +30,7 @@ export function createManualMotorPanel(scope) {
     status = d.getElementById('mc-connection-status'),
     host = d.getElementById('mc-controller-frame-host'),
     listeners = [];
+  const guidance = createLiveSensorRecommendations(scope, d.getElementById('mc-live-guidance'));
   let frame = null,
     destroyed = false;
   const on = (target, type, listener) => {
@@ -94,6 +98,14 @@ export function createManualMotorPanel(scope) {
     closeController('Embedded controller closed. Use the separate ESP32 tab.'),
   );
   on(d, 'python-twin:render', (event) => render({}, event.detail?.physical_telemetry));
+  on(d, 'human-review:drive', (event) => {
+    const response = event.detail;
+    d.getElementById('mc-reviewed-response').hidden = !response?.label;
+    d.getElementById('mc-reviewed-title').textContent = response?.label
+      ? 'Saved response: ' + response.label
+      : '';
+    d.getElementById('mc-reviewed-detail').textContent = response?.detail || '';
+  });
   on(d, 'vision-routing:mode', viewChanged);
   on(d, 'visibilitychange', viewChanged);
   on(scope, 'pagehide', () => closeController());
@@ -106,6 +118,7 @@ export function createManualMotorPanel(scope) {
       destroyed = true;
       closeController();
       observer.disconnect();
+      guidance?.destroy();
       listeners.forEach((remove) => remove());
       root.replaceChildren();
     },

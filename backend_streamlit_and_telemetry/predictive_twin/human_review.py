@@ -12,6 +12,7 @@ import time
 from sqlalchemy import (MetaData, Table, Column, String, Float, Integer, JSON,
                         Index, BigInteger, select, update, text)
 from .insights import predictive_insights
+from .sensor_recommendations import ACTION_CATALOG
 
 metadata = MetaData()
 reviews = Table('amr_operator_reviews', metadata,
@@ -27,8 +28,8 @@ reviews = Table('amr_operator_reviews', metadata,
     Column('last_verified_seq', BigInteger, nullable=False, default=-1))
 Index('ix_amr_reviews_state_created', reviews.c.state, reviews.c.created_at)
 TERMINAL = {'reviewed', 'rejected', 'deferred', 'expired', 'blocked', 'verified', 'uncertain', 'observed'}
-ACTIONS = {'no_action', 'reduce_speed', 'pause', 'inspect', 'recharge'}
-OBSERVATION_ACTIONS = {'no_action', 'inspect', 'recharge'}
+OBSERVATION_ACTIONS = {item['id'] for item in ACTION_CATALOG}
+ACTIONS = OBSERVATION_ACTIONS | {'reduce_speed', 'pause'}
 COMMAND_TOPIC = 'robot/amr01/commands'
 ACK_TOPIC = 'robot/amr01/command_ack'
 LABELS = {'pending':'Awaiting human review', 'dispatching':'Sending approved request',
@@ -63,7 +64,7 @@ def evidence(payload):
         # Include the settings as well as their identifier: a change cannot reuse an approval.
         return dict(source='live', scope='physical_observation', boot_id=raw['boot_id'],
             seq=raw['seq'], sample_time_s=raw['sample_time_s'],
-            calibration=deepcopy(profile), recommendations=guidance['recommendations'],
+            calibration=deepcopy(profile), recommendation_policy=deepcopy(guidance.get('policy')), recommendations=guidance['recommendations'],
             raw=deepcopy(raw), measurements=dict(
                 battery_voltage_v=raw.get('battery_voltage_v') if raw.get('battery_available') is True else None,
                 corrected_gyro_rad_s=(physical.get('gyro_estimates') or {}).get('corrected_gyro_rad_s')))
@@ -187,12 +188,13 @@ class ReviewCoordinator:
                 return self._save(c, row, 'rejected' if decision == 'reject' else 'deferred',
                                   'Human decision recorded; no command issued.', decision=choice)
             current = self._evidence(payload)
-            signature = lambda items: [(item.get('code'),item.get('tone')) for item in items]
+            signature = lambda items: [(item.get('code'),item.get('tone'),item.get('priority'),item.get('action')) for item in items]
             changed = (signature(current['recommendations']) != signature(row['evidence']['recommendations'])
                        if observational else current['recommendations'] != row['evidence']['recommendations'])
             if (current['source'] != row['evidence']['source'] or current['boot_id'] != row['evidence']['boot_id']
                     or current.get('scope') != row['evidence'].get('scope')
                     or current['seq'] < row['evidence']['seq'] or current['calibration'] != row['evidence']['calibration']
+                    or current.get('recommendation_policy') != row['evidence'].get('recommendation_policy')
                     or changed):
                 return self._save(c, row, 'expired', 'Evidence changed; request a new human review.')
             if observational:
@@ -271,6 +273,7 @@ class ReviewCoordinator:
                     captured = row['evidence']
                     if (current.get('scope') != 'physical_observation'
                             or current['boot_id'] != captured['boot_id']
+                            or current.get('recommendation_policy') != captured.get('recommendation_policy')
                             or current['calibration'] != captured['calibration']):
                         self._save(c, row, 'uncertain', 'Device boot or saved settings changed before follow-up finished.')
                         continue
@@ -339,7 +342,7 @@ def panel(payload, row=None, feedback=''):
     except ValueError:
         proof, eligible = None, False
     return dict(source='Demo rehearsal' if demo else 'Website operator review', demo=demo,
-        eligible=eligible, observation_only=observational, feedback=feedback, review=row,
+        eligible=eligible, observation_only=observational, available_actions=deepcopy(ACTION_CATALOG) if observational else [], feedback=feedback, review=row,
         state_label=LABELS.get(row['state'], row['state']) if row else 'Ready for review' if eligible else 'Waiting for valid sensor evidence',
         detail=('Rehearse the operator decision and response checks. Generated evidence never contacts a device.' if demo else
                 'Record a response to the live observations, then follow three new sensor readings. Use Drive control for movement; this review issues no motor command.' if observational else

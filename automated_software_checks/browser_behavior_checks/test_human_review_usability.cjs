@@ -261,12 +261,59 @@ render(
 assert.match(el('checklist').textContent, /Restore the live ESP32 feed/);
 assert.doesNotMatch(el('summary-detail').textContent, /calibrat/);
 let driveNavigation = 0;
+const handoffs = [];
+d.addEventListener('human-review:drive', (event) => handoffs.push(event.detail));
 d.getElementById('tab-vision').addEventListener('click', () => driveNavigation++);
 d.getElementById('vision-mode-manual').addEventListener('click', () => driveNavigation++);
+const localConnect = d.createElement('button');
+localConnect.id = 'mc-connect';
+let connections = 0;
+localConnect.addEventListener('click', () => connections++);
+d.body.append(localConnect);
 const count = actions.length;
 el('drive').click();
 assert.equal(driveNavigation, 2);
+assert.equal(connections, 1, 'Explicit handoff opens the native controller page');
 assert.equal(actions.length, count, 'Drive shortcut navigates only; no motor command');
+const catalog = [
+  { id: 'no_action', label: 'Keep monitoring', detail: 'Compare the next readings.' },
+  {
+    id: 'inspect_power',
+    label: 'Inspect motor power',
+    detail: 'Check VM and STBY with power off.',
+  },
+  {
+    id: 'lower_power',
+    label: 'Review lower power',
+    detail: 'Stop first and select a verified lower setting.',
+  },
+];
+render({ ...observations, available_actions: catalog, review: null });
+const priorActions = actions.length;
+d.dispatchEvent(new w.CustomEvent('human-review:open', { detail: { action: 'inspect_power' } }));
+assert.equal(actions.length, priorActions, 'Recommendation selection does not capture or approve');
+render({ ...observations, available_actions: catalog, review: observationRow });
+assert.equal(
+  el('action').value,
+  'inspect_power',
+  'Suggested response survives explicit evidence capture',
+);
+assert.match(el('action-help').textContent, /VM and STBY/);
+input('reason', 'Check supply wiring');
+render({ ...observations, available_actions: catalog, review: observationRow });
+assert.equal(el('action').value, 'inspect_power');
+assert.equal(el('reason').value, 'Check supply wiring');
+render({
+  ...observations,
+  available_actions: catalog,
+  review: { ...observationResult, decision: { decision: 'approve', action: 'lower_power' } },
+});
+el('drive').click();
+assert.equal(handoffs.at(-1).label, 'Review lower power');
+assert.equal(actions.length, priorActions, 'Handing off a saved response cannot send a command');
+render({ ...observations, demo: true, observation_only: false, review: null });
+render({ ...observations, available_actions: catalog, review: observationRow });
+assert.equal(el('action').value, 'no_action', 'Changing sources clears a suggested action');
 w.dispatchEvent(new w.Event('pagehide'));
 w.close();
 console.log(

@@ -16,6 +16,16 @@ def test_fresh_evidence_produces_bounded_insights_and_monitoring_guidance():
     assert 'Assumes unchanged current' in result['metrics'][1]['detail']
 
 
+def test_commissioned_model_retains_independent_raw_sensor_checks_without_changing_its_actions():
+    p=data();p['physical_telemetry']=observation_data()['physical_telemetry']
+    p['physical_telemetry']['measurements']['battery_voltage_v']=6.1
+    result=predictive_insights(p)
+    assert result['recommendations'][0]['title']=='Continue monitoring'
+    assert result['sensor_checks']['recommendations'][0]['code']=='battery_low'
+    p['mode']='demo'
+    assert 'sensor_checks' not in predictive_insights(p)
+
+
 def test_old_forecasts_and_alerts_cannot_generate_current_guidance():
     for field in ['stale', 'continuity_lost']:
         payload = data()

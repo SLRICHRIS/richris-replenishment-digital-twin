@@ -36,6 +36,8 @@
     lastReviewId = null,
     lastDemo = null,
     lastObservation = null,
+    lastActionOptions = null,
+    preferredAction = null,
     timer;
   const emit = (detail) =>
     document.dispatchEvent(new CustomEvent('python-twin:action', { detail }));
@@ -52,7 +54,9 @@
   function actionHelp() {
     const action = $('human-review-action').value;
     const description = current?.observation_only
-      ? 'Records your choice and follows new sensor readings. Use Drive control to stop before inspection or charging.'
+      ? (current.available_actions?.find((item) => item.id === action)?.detail ||
+          'Records your choice and follows new sensor readings.') +
+        ' Record the decision here, then apply it with the direct controller or complete the physical task.'
       : action === 'no_action'
         ? 'Save your review without changing robot operation.'
         : !current?.demo && !current?.commands_enabled
@@ -391,13 +395,22 @@
     if (!$('human-review') || !value?.human_review) return;
     payload = value;
     current = value.human_review;
-    if (lastObservation !== !!current.observation_only) {
+    if (lastDemo !== current.demo || lastObservation !== !!current.observation_only)
+      preferredAction = null;
+    const optionSignature = JSON.stringify([
+      !!current.observation_only,
+      current.available_actions || [],
+    ]);
+    if (lastActionOptions !== optionSignature) {
+      lastActionOptions = optionSignature;
       const options = current.observation_only
-        ? [
-            ['no_action', 'Keep monitoring'],
-            ['inspect', 'Inspect the AMR / sensors'],
-            ['recharge', 'Check / recharge battery'],
-          ]
+        ? current.available_actions?.length
+          ? current.available_actions.map((item) => [item.id, item.label])
+          : [
+              ['no_action', 'Keep monitoring'],
+              ['inspect', 'Inspect the AMR / sensors'],
+              ['recharge', 'Check / recharge battery'],
+            ]
         : [
             ['no_action', 'Keep operation unchanged'],
             ['reduce_speed', 'Halve current controller speed limit'],
@@ -418,7 +431,10 @@
       lastObservation !== !!current.observation_only
     ) {
       $('human-review-reason').value = '';
-      $('human-review-action').value = 'no_action';
+      const proposed = current.available_actions?.some((item) => item.id === preferredAction)
+        ? preferredAction
+        : 'no_action';
+      $('human-review-action').value = current.observation_only ? proposed : 'no_action';
     }
     lastReviewId = current.review?.review_id;
     lastDemo = current.demo;
@@ -602,9 +618,30 @@
         send({ command: 'response', review_id: current.review.review_id });
     });
     $('human-review-connection').addEventListener('click', () => $('tab-connection')?.click());
+    document.addEventListener('human-review:open', (event) => {
+      preferredAction =
+        current?.observation_only &&
+        current.available_actions?.some((item) => item.id === event.detail?.action)
+          ? event.detail.action
+          : null;
+      $('tab-hardware')?.click();
+      if (preferredAction && mayDecide()) $('human-review-action').value = preferredAction;
+      updateDecision();
+      $('human-review')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    });
     $('human-review-drive').addEventListener('click', () => {
       $('tab-vision')?.click();
       $('vision-mode-manual')?.click();
+      const response =
+        current?.observation_only && current.review?.decision?.decision === 'approve'
+          ? current.available_actions?.find((item) => item.id === current.review.decision.action)
+          : null;
+      document.dispatchEvent(
+        new CustomEvent('human-review:drive', {
+          detail: response ? { label: response.label, detail: response.detail } : null,
+        }),
+      );
+      $('mc-connect')?.click();
     });
     $('human-review-practice').addEventListener('click', () =>
       emit({ action: 'sensor_source', mode: 'demo' }),

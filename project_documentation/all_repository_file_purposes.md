@@ -379,3 +379,13 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `physical_data_studies/requirements.txt` | Pin the numerical and machine-learning dependencies used by the offline studies. |
 | `physical_data_studies/source_manifest.json` | Record original archive/report fingerprints, the shared snapshot and lossless source packaging. |
 | `.github/workflows/physical-data-studies.yml` | Reproduce both physical data studies on relevant changes and manual runs using Python 3.12. |
+
+## Live sensor recommendations
+
+| File | Purpose |
+| --- | --- |
+| `backend_streamlit_and_telemetry/predictive_twin/sensor_recommendations.py` | Compute bounded live sensor screening checks and the operator response catalog without sending commands. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/live_sensor_recommendations.js` | Show sensor coverage, prioritized evidence and review links beside direct Wi-Fi control, with local freshness expiry. |
+| `automated_software_checks/predictive_twin_checks/test_sensor_recommendations.py` | Exercise sag, output/feedback disagreements, sensor validity and continuous same-boot screening windows. |
+| `automated_software_checks/browser_behavior_checks/test_live_sensor_recommendations.mjs` | Verify freshness expiry, demo isolation, safe text and recommendation-to-review navigation without actuation. |
+| `project_documentation/live_sensor_recommendations.md` | Explain measured channels, screening thresholds, available responses and the direct-control human review workflow. |

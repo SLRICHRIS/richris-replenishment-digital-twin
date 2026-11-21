@@ -51,6 +51,18 @@ the last command it accepts. Returning to the panel requires Connect controller
 again and never automatically resumes a hold. Regular sensor refreshes leave
 the active embedded page intact.
 
+## Live recommendations and human review
+
+Below the embedded controller, **Live recommendations** shows six sensor coverage
+areas and prioritized checks from recent readings. Each finding includes the
+supporting evidence and a **Review: …** button. That button opens the protected
+review flow with a suggested response; it does not approve or execute it.
+
+After recording your response, **Open Drive control** returns here, displays the
+saved instructions and opens the ESP32 page. Apply the response with its controls
+or complete the physical task. The audit's follow-up samples do not independently
+confirm that the task was performed. See the [sensor checks and action catalog](live_sensor_recommendations.md).
+
 ## Separation from the cloud command path
 
 The Streamlit drive panel does not start the MQTT manual coordinator or

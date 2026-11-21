@@ -28,6 +28,7 @@ samples = Table('amr_commissioning_samples', metadata, *_key, *_required,
     Column('pwm_duty', Integer, nullable=False), Column('imu_who_am_i', Integer, nullable=False),
     *[Column(name, Boolean, nullable=False) for name in _bools],
     Column('payload_sha256', String(64), nullable=False), Column('payload', JSON, nullable=False), Column('quality_notes', JSON, nullable=False))
+HISTORY_FIELDS = ('boot_id seq sample_time_s interval_s received_at battery_voltage_v battery_current_a battery_power_w battery_available battery_sample_time_s gyro_available imu_sample_time_s gyro_x_dps gyro_y_dps gyro_z_dps gyro_z_rad_s accel_x_g accel_y_g accel_z_g left_pulse_hz right_pulse_hz commanded_motion motor_output pwm_duty').split()
 PUBLIC_FIELDS = [name for name in samples.c.keys() if name not in ('payload', 'payload_sha256', 'client_id', 'topic', 'schema_version', 'message_type', 'device_soc_estimate_percent')]
 
 
@@ -55,7 +56,7 @@ def display_payload(db, now=None):
                 return {**empty, 'state': 'waiting', 'label': 'Waiting for the first stored packet'}
             row = dict(row)
             firmware_revision = row.pop('firmware_revision')
-            history = connection.execute(select(*(samples.c[name] for name in ('boot_id', 'seq', 'sample_time_s', 'received_at', 'battery_voltage_v', 'battery_current_a', 'left_pulse_hz', 'right_pulse_hz'))).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(60)).mappings().all()
+            history = connection.execute(select(*(samples.c[name] for name in HISTORY_FIELDS)).where(samples.c.robot_id == 'amr01').order_by(samples.c.received_at.desc(), samples.c.boot_id.desc(), samples.c.seq.desc()).limit(60)).mappings().all()
             try:
                 energy = observed_energy(connection, samples, row)
             except (SQLAlchemyError, AttributeError, TypeError, ValueError):

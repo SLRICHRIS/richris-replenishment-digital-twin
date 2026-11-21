@@ -35,7 +35,11 @@ The verifier rejects altered outputs and mismatched source files. It checks soft
 
 ## Human review and action
 
-Sensor models places **Human review & action** after recommendations. Operators review evidence and record decisions directly in the website using the private operator code. The server captures fresh context, records the audit and permits delivery only through an explicitly commissioned transport. A matching controller acknowledgement and three new sensor observations are separate outcome checks. Generated rehearsal is isolated from physical records. The current ESP32 command receiver still needs implementation and physical commissioning, so delivery remains disabled. See the [website operator review guide](project_documentation/website_human_review_and_action.md).
+Live recommendations cover **battery, power, wheel feedback, gyro/acceleration, controller output and connection quality**. Current packets and up to 30 seconds of history support specific checks such as load-related voltage drops, missing encoder feedback and requests that remain stopped. Each finding shows evidence, priority and a suggested response. Stale data stops supporting current guidance.
+
+**Review & decide** records nine available operator responses using the existing protected audit. The operator captures evidence, chooses a response and records a reason. **Open Drive control** opens the embedded local controller with the saved instructions; the operator applies the response or performs the physical check. This observation review sends no motor command. Three subsequent readings record follow-up without claiming that the physical task was completed. The separate commissioned model-intervention contract retains its own acknowledgement and outcome checks.
+
+See the [live checks and action catalog](project_documentation/live_sensor_recommendations.md) and [website operator review guide](project_documentation/website_human_review_and_action.md).
 
 ## Active architecture
 

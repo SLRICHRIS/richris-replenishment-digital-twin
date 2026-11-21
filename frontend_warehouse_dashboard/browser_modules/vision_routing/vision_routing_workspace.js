@@ -1,4 +1,4 @@
-import { createManualMotorPanel } from './manual_motor_control.js?v=embedded-wifi-20261122';
+import { createManualMotorPanel } from './manual_motor_control.js?v=live-guidance-20261122';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 

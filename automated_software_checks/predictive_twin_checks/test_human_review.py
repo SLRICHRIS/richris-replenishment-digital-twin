@@ -214,3 +214,32 @@ def test_observation_deadline_does_not_replay_old_decision(observation):
     assert c.get(ID)['state']=='expired'
     p['observed_at']=now[0];p['physical_telemetry']['measurements']['seq']+=50
     c.observe(p);assert c.get(ID)['state']=='expired' and not sent
+
+
+@pytest.mark.parametrize('action', ['stop_and_inspect','lower_power','inspect_power','inspect_wheels','calibrate_imu','check_feed'])
+def test_specific_observation_actions_are_recorded_without_enabling_motor_transport(observation,action):
+    c,p,sent,now=observation;c.create(p,ID)
+    row=approve(c,p,action)
+    assert row['state']=='observing' and row['decision']['action']==action
+    assert row['command'] is None and row['ack'] is None and not sent
+
+
+def test_changed_screening_policy_requires_a_fresh_human_decision(observation,monkeypatch):
+    from backend_streamlit_and_telemetry.predictive_twin.sensor_recommendations import POLICY
+    c,p,sent,now=observation;c.create(p,ID)
+    monkeypatch.setitem(POLICY,'drive_cutoff_v',6.7)
+    assert approve(c,p,'inspect_power')['state']=='expired' and not sent
+
+
+def test_priority_escalation_with_same_recommendation_code_requires_new_review(observation,monkeypatch):
+    from backend_streamlit_and_telemetry.predictive_twin import human_review
+    original=human_review.predictive_insights
+    priority=['check']
+    def guidance(payload):
+        result=original(payload)
+        result['recommendations']=[dict(code='voltage_sag',tone='warning',priority=priority[0],action='inspect_power')]
+        return result
+    monkeypatch.setattr(human_review,'predictive_insights',guidance)
+    c,p,sent,now=observation;c.create(p,ID)
+    priority[0]='stop'
+    assert approve(c,p,'inspect_power')['state']=='expired' and not sent

@@ -16,9 +16,7 @@ const w = dom.window,
 w.fetch = () => {
   throw Error('The parent must not fetch LAN commands');
 };
-w.setInterval = () => {
-  throw Error('Only the installed ESP32 page can renew commands');
-};
+
 w.localStorage.setItem('amr01.direct_wifi_address', '8.8.8.8/cmd?c=F');
 d.addEventListener('python-twin:action', (e) => actions.push(e.detail));
 let panel = createManualMotorPanel(w);
@@ -35,6 +33,20 @@ assert.equal(
 assert.equal(el('open-direct').target, '_blank');
 assert.match(el('open-direct').rel, /noopener/);
 assert.equal(el('disconnect').disabled, true);
+d.dispatchEvent(
+  new w.CustomEvent('human-review:drive', {
+    detail: { label: 'Review lower power', detail: 'Stop first.' },
+  }),
+);
+assert.equal(el('reviewed-response').hidden, false);
+assert.match(el('reviewed-title').textContent, /Review lower power/);
+assert.equal(
+  el('controller-frame'),
+  null,
+  'A response handoff cannot connect or actuate by itself',
+);
+d.dispatchEvent(new w.CustomEvent('human-review:drive', { detail: null }));
+assert.equal(el('reviewed-response').hidden, true);
 
 el('connect').click();
 let frame = el('controller-frame');
