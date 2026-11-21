@@ -389,3 +389,12 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_sensor_recommendations.py` | Exercise sag, output/feedback disagreements, sensor validity and continuous same-boot screening windows. |
 | `automated_software_checks/browser_behavior_checks/test_live_sensor_recommendations.mjs` | Verify freshness expiry, demo isolation, safe text and recommendation-to-review navigation without actuation. |
 | `project_documentation/live_sensor_recommendations.md` | Explain measured channels, screening thresholds, available responses and the direct-control human review workflow. |
+
+
+## Operator workspace audit
+
+| File | Purpose |
+| --- | --- |
+| `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/operator_overview.js` | Show an observe-decide-act workflow with separate telemetry, review and local-controller states. |
+| `automated_software_checks/browser_behavior_checks/test_operator_overview.cjs` | Check current/source status, review gates and navigation shortcuts without actuation. |
+| `project_documentation/operator_workspace_audit.md` | Record the dashboard clarity, flow, logic, stale-data and visual audit with implemented fixes and validation limits. |

@@ -72,36 +72,95 @@
         },
       ],
     },
+    direct: {
+      label: 'Direct control',
+      title: 'From a human decision to local Wi-Fi control',
+      description:
+        'The installed ESP32 page is embedded in the dashboard at 10.15.213.112. The operator applies movement and power changes on the same Wi-Fi network.',
+      handoff:
+        'Your browser talks directly to the ESP32 over local Wi-Fi. EMQX carries sensor telemetry separately; the cloud server does not relay local motor requests.',
+      outcome:
+        'A saved observation decision records intent. The operator applies it using the controller or performs the physical task. Later sensor readings record follow-up, not proof that the task was completed.',
+      nodes: [
+        {
+          title: 'Recommendation + decision',
+          where: 'Dashboard',
+          icon: 'i-check',
+          brief: 'Review fresh evidence and record a response.',
+          input: 'Sensor findings, supporting readings and the operator reason.',
+          output: 'A saved decision with its source evidence and review history.',
+          role: 'Nine observation responses cover monitoring, stopping, lower power, battery, motor supply, wheels, IMU and connection checks. Recording a decision does not send a motor command.',
+          gate: 'Expired or changed evidence requires a new review. A recorded decision cannot execute later on its own.',
+          page: 'hardware',
+          pageLabel: 'Open sensor review',
+        },
+        {
+          title: 'Local controller page',
+          where: 'Your browser',
+          icon: 'i-wifi',
+          brief: 'Loads the ESP32 controls after Connect controller.',
+          input: 'Your explicit direction hold, Stop or motor-power selection.',
+          output: 'Local requests to the ESP32 at 10.15.213.112.',
+          role: 'The embedded native page owns its local requests. The laptop and ESP32 must share a Wi-Fi network; a separate-tab fallback uses the same saved address.',
+          gate: 'An iframe loading is not a controller acknowledgement. Read the status inside the native page. This architecture guide sends no requests.',
+          page: 'vision',
+          mode: 'manual',
+          pageLabel: 'Open direct Wi-Fi drive',
+        },
+        {
+          title: 'ESP32 + TB6612',
+          where: 'On the AMR',
+          icon: 'i-robot',
+          brief: 'Applies attended local control to the motors.',
+          input: 'Local command and motor-power setting.',
+          output: 'Reported direction and PWM; physical motor response must be observed.',
+          role: 'The installed local controller refreshes a direction hold and expires it 700 ms after its last accepted command. Release, Stop or leaving the control context ends the hold.',
+          gate: 'This local path does not inherit the separate cloud receiver’s gyro, low-voltage or PWM gates. Check readings and actual wheel response during an attended trial.',
+        },
+        {
+          title: 'Sensor follow-up',
+          where: 'AMR → archive → dashboard',
+          icon: 'i-chart',
+          brief: 'Compares fresh observations after the recorded decision.',
+          input: 'New same-boot sensor packets through the existing telemetry path.',
+          output: 'Three later readings in the review record and updated guidance.',
+          role: 'The stored stream supplies voltage, motor-branch current, wheel pulses, gyro/acceleration and requested/reported output. Follow-up keeps its timestamps and packet identity.',
+          gate: 'The installed local page has no dashboard approval API. These observations cannot certify that an inspection, charge or approved control change occurred.',
+          page: 'hardware',
+          pageLabel: 'View sensor follow-up',
+        },
+      ],
+    },
     vision: {
       label: 'Vision & movement',
-      title: 'From the overhead view to a human-approved journey',
+      title: 'Camera routes: a separately commissioned workflow',
       description:
-        'One overhead Logitech USB webcam supplies the physical view. A laptop program processes that same webcam; the operator reviews routes on the website.',
+        'An overhead webcam can supply a calibrated physical view through the browser tracker or a commissioned Windows agent. Camera routes have their own readiness checks; direct Wi-Fi driving does not enable them.',
       handoff:
-        'USB brings images into the laptop. Authenticated EMQX scene, request and drive messages connect the laptop, server and ESP32. Camera feedback closes the loop.',
+        'The selected camera transport supplies current scenes to the route service. Its commissioned receiver path uses authenticated EMQX messages, separately from direct Wi-Fi manual control.',
       outcome:
-        'Arrival is verified from distinct fresh camera observations and stopped-state evidence. A sent command or controller reply alone is not arrival.',
+        'When commissioned, route verification requires distinct fresh camera observations and stopped-state evidence. A sent command or controller reply alone is not arrival.',
       nodes: [
         {
           title: 'Logitech webcam',
           where: 'Above the floor',
           icon: 'i-focus',
           brief: 'Views the robot, floor markers and obstacles.',
-          input: 'The 425 × 630 mm working paper and the robot marker.',
+          input: 'The measured working floor, reference markers and robot marker.',
           output: 'USB camera frames on the laptop.',
-          role: 'This is the single overhead camera, mounted at the reported 92 cm height. The robot has a 40 mm marker at a reported 15 cm height.',
-          gate: 'Lens calibration, four floor references, marker alignment and a validated obstacle scene are required. Webcam placement preview is available in Practice.',
+          role: 'One overhead camera observes the scene. Use the current measured floor, camera height, marker size and marker height from Camera routes; this guide does not override that configuration.',
+          gate: 'Lens calibration, floor references, marker alignment and a validated obstacle scene are required. A placement preview alone does not establish route readiness.',
         },
         {
           title: 'Vision processor',
-          where: 'Laptop',
+          where: 'Configured camera service',
           icon: 'i-map',
           brief: 'Finds the AMR pose and occupied floor regions.',
           input:
             'Logitech frames, measured camera configuration and an empty-floor reference image.',
           output:
             'Fresh signed camera scenes with robot pose, obstacles and configuration identity.',
-          role: 'Our program runs on the Windows laptop and reads the Logitech webcam. It locates the marker, corrects for its height and mounting offset, and checks floor references and image continuity.',
+          role: 'The configured browser/WebRTC processor or Windows agent reads the Logitech webcam. It locates the marker, corrects for height and mounting offset, and checks floor references and image continuity.',
           gate: 'Camera movement, missing references, obscured robot marker or stale frames invalidate the scene. The Windows Camera app is not required.',
         },
         {
@@ -114,16 +173,17 @@
           role: 'The server calculates a route with the measured footprint and stopping allowance. The operator checks the proposed path and chooses Approve & run, Reject or Hold.',
           gate: 'Changed evidence, expired proposals or missing readiness prevent execution. Browser drawings and practice decisions cannot authorize physical movement.',
           page: 'vision',
-          pageLabel: 'Open vision routing',
+          mode: 'physical',
+          pageLabel: 'Open camera routes',
         },
         {
           title: 'Route follower',
-          where: 'Laptop',
+          where: 'Configured route service',
           icon: 'i-motion',
           brief: 'Follows the approved path with camera feedback.',
           input: 'The matching approved route and fresh camera and receiver observations.',
           output: 'Short-lived authenticated motor requests through EMQX.',
-          role: 'The same laptop process follows the approved route. It adjusts motion using current pose and verifies destination and stop observations.',
+          role: 'The commissioned browser/server route service or Windows agent follows the approved route. It uses current pose to adjust motion and checks destination and stop observations.',
           gate: 'Stop, lost operator presence, stale evidence, a changed obstacle map or path departure ends the movement grant. A replacement route needs a new review.',
         },
         {
@@ -140,13 +200,13 @@
     },
     models: {
       label: 'Models & review',
-      title: 'From calibrated evidence to a verified decision',
+      title: 'Calibrated models: additional evidence requirements',
       description:
         'The full Python model pipeline has a separate calibrated input contract. The installed unsigned commissioning feed remains useful for raw observations.',
       handoff:
         'The full-model worker subscribes to robot/amr01/state. Its calibrated signed observations are separate from the commissioning topic and raw archive.',
       outcome:
-        'Sensor recommendations require valid current inputs. Physical intervention reviews distinguish the request, controller acknowledgement and three fresh confirming sensor observations.',
+        'Current observation reviews record a choice and later readings. The separate calibrated intervention contract requires a commissioned transport, matching acknowledgement and new sensor observations before reporting an effect.',
       nodes: [
         {
           title: 'Calibrated input',
@@ -200,8 +260,8 @@
           brief: 'Records a decision and checks its outcome.',
           input: 'A recommendation with its exact sensor context and an operator reason.',
           output: 'An auditable decision with distinct delivery and verification states.',
-          role: 'Review & decide captures the evidence, applies server checks and follows request, acknowledgement and sensor verification. Practice uses isolated generated examples.',
-          gate: 'An approval is permission for an eligible request; it is not proof of execution. Vision-route arrival uses camera verification in its separate workflow.',
+          role: 'The active observation review records a choice, then the operator applies it through direct controls or a physical task. Only the separate commissioned model-intervention path follows a delivered request, matching acknowledgement and sensor verification. Practice uses isolated generated examples.',
+          gate: 'Recording an observation decision issues no motor command. Even in a commissioned command path, an approval is not proof of execution. Camera-route arrival has separate evidence requirements.',
           page: 'hardware',
           pageLabel: 'Open review workspace',
         },
@@ -278,6 +338,7 @@
       el('open').hidden = !node.page;
       el('open').textContent = node.pageLabel || '';
       el('open').dataset.target = node.page || '';
+      el('open').dataset.mode = node.mode || '';
     }
     function show(nextMode, focus = false) {
       if (!paths[nextMode]) return;
@@ -333,6 +394,8 @@
       const target = el('open').dataset.target;
       if (['hardware', 'vision', 'database'].includes(target))
         document.querySelector(`[data-page="${target}"]`)?.click();
+      if (target === 'vision' && ['manual', 'physical'].includes(el('open').dataset.mode))
+        document.getElementById('vision-mode-' + el('open').dataset.mode)?.click();
     });
     const badge = (id, label, state) => {
       text(id, label);
@@ -348,8 +411,9 @@
         return;
       }
       const physical = payload.mode === 'live' ? payload.physical_telemetry : null;
-      const age = Date.now() - Date.parse(physical?.received_at);
-      if (physical?.fresh === true && physical.state === 'receiving' && age >= -1000 && age <= 5000)
+      const elapsed = Math.max(0, performance.now() - updatedAt) / 1000;
+      const age = Number.isFinite(physical?.age_s) ? physical.age_s + elapsed : Infinity;
+      if (physical?.fresh === true && physical.state === 'receiving' && age >= -1 && age <= 5)
         badge('raw-status', 'Fresh measurements available', 'good');
       else
         badge(
@@ -362,8 +426,7 @@
           'pending',
         );
       const model = payload.mode === 'live' ? payload.robots?.amr01 : null;
-      const modelAge =
-        typeof model?.age_s === 'number' ? model.age_s + (Date.now() - updatedAt) / 1000 : Infinity;
+      const modelAge = Number.isFinite(model?.age_s) ? model.age_s + elapsed : Infinity;
       const modelReady =
         model?.quality === 'OK' &&
         !model.stale &&
@@ -386,30 +449,36 @@
         route.physical_mode &&
         route.ready &&
         scene?.valid &&
-        scene.floor_width_mm === 425 &&
-        scene.floor_length_mm === 630 &&
+        Number.isFinite(scene.floor_width_mm) &&
+        scene.floor_width_mm > 0 &&
+        Number.isFinite(scene.floor_length_mm) &&
+        scene.floor_length_mm > 0 &&
         typeof scene.captured_at_ms === 'number' &&
         now - scene.captured_at_ms <= 500 &&
         now >= scene.captured_at_ms - 100 &&
         scene.hardware?.ready &&
-        typeof scene.hardware.age_ms === 'number' &&
-        scene.hardware.age_ms <= 500;
+        Number.isFinite(scene.hardware.age_ms) &&
+        scene.hardware.age_ms >= 0 &&
+        scene.hardware.age_ms + elapsed * 1000 <= 500;
       badge(
         'route-status',
         ready
           ? 'Server reports route readiness'
           : route?.can_unlock
-            ? 'Open Vision routing to check readiness'
+            ? 'Open Camera routes to check readiness'
             : 'Physical commissioning required',
         ready ? 'good' : 'pending',
       );
     }
     document.addEventListener('python-twin:render', (event) => {
       payload = event.detail;
-      updatedAt = Date.now();
+      updatedAt = performance.now();
       status();
     });
-    setInterval(status, 1000);
+    const timer = setInterval(status, 500);
+    window.addEventListener('pagehide', (event) => {
+      if (!event.persisted) clearInterval(timer);
+    });
     show('sensors');
     status();
   }

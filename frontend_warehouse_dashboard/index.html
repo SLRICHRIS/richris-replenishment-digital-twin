@@ -8,7 +8,7 @@
       name="description"
       content="A single-AMR digital twin by S L RICHRIS for interpreting motion, battery and sensor consistency. Demo values and stored physical measurements remain separate."
     />
-    <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js?v=held-drive-20261120"></script>
+    <script src="./browser_modules/streamlit_frame_connection/streamlit_frame_connection_and_scrolling.js?v=operator-audit-20261122"></script>
     <script src="./browser_modules/dashboard_navigation_and_appearance/restore_saved_dashboard_theme.js"></script>
     <meta name="author" content="S L RICHRIS" />
     <meta name="copyright" content="© 2026 S L RICHRIS. All rights reserved." />
@@ -49,52 +49,71 @@
       href="./dashboard_stylesheets/dashboard_animation_and_transition_styles.css"
     />
     <link rel="stylesheet" href="./dashboard_stylesheets/robot_model_validation_panel_styles.css" />
-    <link rel="stylesheet" href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css" />
-    <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
-    <link rel="stylesheet" href="./dashboard_stylesheets/human_review_panel_styles.css" />
     <link
       rel="stylesheet"
-      href="./dashboard_stylesheets/vision_routing_styles.css?v=live-guidance-20261122"
+      href="./dashboard_stylesheets/python_sensor_twin_panel_styles.css?v=operator-audit-20261122"
+    />
+    <link rel="stylesheet" href="./dashboard_stylesheets/amr_connection_panel_styles.css" />
+    <link
+      rel="stylesheet"
+      href="./dashboard_stylesheets/human_review_panel_styles.css?v=operator-audit-20261122"
+    />
+    <link
+      rel="stylesheet"
+      href="./dashboard_stylesheets/vision_routing_styles.css?v=operator-audit-20261122"
     />
     <link rel="stylesheet" href="./dashboard_stylesheets/system_architecture_styles.css" />
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/system_architecture_workspace.js"
+      src="./browser_modules/streamlit_frame_connection/system_architecture_workspace.js?v=operator-audit-20261122"
     ></script>
     <script
       type="module"
-      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=live-guidance-20261122"
+      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=operator-audit-20261122"
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/human_review_panel.js?v=live-guidance-20261122"
+      src="./browser_modules/streamlit_frame_connection/human_review_panel.js?v=operator-audit-20261122"
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=compact-notes-20261120"
+      src="./browser_modules/streamlit_frame_connection/python_sensor_twin_readouts.js?v=operator-audit-20261122"
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/amr_connection_panel.js"
+      src="./browser_modules/streamlit_frame_connection/amr_connection_panel.js?v=operator-audit-20261122"
+    ></script>
+    <script
+      defer
+      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=operator-audit-20261122"
     ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
       rel="stylesheet"
       href="./dashboard_stylesheets/streamlit_dashboard_scroll_container.css"
     />
-  <style id="amr-operator-scope">
-#tab-connection { display:none !important; }
-#amr-connection-workspace .amr-embedded-connection { padding: 12px 18px 18px; }
-#amr-connection-workspace .amr-insights-panel { margin-top: 16px; }
+    <style id="amr-operator-scope">
+      #tab-connection {
+        display: none !important;
+      }
+      #amr-connection-workspace .amr-embedded-connection {
+        padding: 12px 18px 18px;
+      }
+      #amr-connection-workspace .amr-insights-panel {
+        margin-top: 16px;
+      }
 
-html:not([data-amr-advanced="true"]) #tab-environment,
-html:not([data-amr-advanced="true"]) #tab-routes,
-html:not([data-amr-advanced="true"]) #tab-missions,
-html:not([data-amr-advanced="true"]) #tab-telemetry,
-html:not([data-amr-advanced="true"]) #tab-engineering,
-html:not([data-amr-advanced="true"]) #tab-activity,
-html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !important; }
-</style>\n</head>
+      html:not([data-amr-advanced='true']) #tab-environment,
+      html:not([data-amr-advanced='true']) #tab-routes,
+      html:not([data-amr-advanced='true']) #tab-missions,
+      html:not([data-amr-advanced='true']) #tab-telemetry,
+      html:not([data-amr-advanced='true']) #tab-engineering,
+      html:not([data-amr-advanced='true']) #tab-activity,
+      html:not([data-amr-advanced='true']) #vision-mode-practice {
+        display: none !important;
+      }
+    </style>
+  </head>
   <body data-view="environment">
     <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
@@ -183,7 +202,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
     <a class="skip-link" href="#main-content">Skip to workspace</a>
     <div class="twin-initializing" role="status">
       <span class="loading-ring"></span>
-      Preparing workspace
+      <span>Waiting for dashboard data. If this persists, reload the full dashboard.</span>
     </div>
     <header class="masthead">
       <a class="brand" href="#environment" aria-label="Replenish floor control">
@@ -329,9 +348,16 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
           data-page="vision"
         >
           <svg class="icon" aria-hidden="true"><use href="#i-map" /></svg>
-          <span>Live AMR mission</span>
+          <span>Drive &amp; review</span>
         </button>
-        <button id="amr-advanced-toggle" type="button" aria-pressed="false" title="Show or hide optional simulation workspaces"><span>Show simulation tools</span></button>
+        <button
+          id="amr-advanced-toggle"
+          type="button"
+          aria-pressed="false"
+          title="Show or hide optional simulation workspaces"
+        >
+          <span>Show simulation tools</span>
+        </button>
         <button
           id="tab-telemetry"
           data-slide-outside
@@ -441,6 +467,32 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
           <p id="demo-caption">Review readiness, arrival time and battery reserve.</p>
         </div>
       </div>
+      <section id="operator-overview" aria-label="Observe, decide and act">
+        <div class="operator-overview-top">
+          <strong id="operator-source">Waiting for the dashboard service</strong>
+          <button id="operator-connect" type="button">Sensor connection</button>
+        </div>
+        <div class="operator-status-grid">
+          <article id="operator-feed" data-state="waiting">
+            <span class="eyebrow">1 · Observe</span>
+            <strong id="operator-feed-title">Waiting for data</strong>
+            <p id="operator-feed-detail">Read the sensor evidence.</p>
+            <button id="operator-readings" type="button">View sensor readings</button>
+          </article>
+          <article id="operator-review" data-state="waiting">
+            <span class="eyebrow">2 · Decide</span>
+            <strong id="operator-review-title">Fresh evidence needed</strong>
+            <p id="operator-review-detail">Review recommendations before choosing a response.</p>
+            <button id="operator-decide" type="button">Review recommendations</button>
+          </article>
+          <article id="operator-control" data-state="neutral">
+            <span class="eyebrow">3 · Act and check</span>
+            <strong id="operator-control-title">Direct Wi-Fi control</strong>
+            <p id="operator-control-detail">Apply your response using the local controller.</p>
+            <button id="operator-drive" type="button">Open drive view</button>
+          </article>
+        </div>
+      </section>
       <section class="metrics" aria-label="Session overview">
         <article>
           <div class="metric-label">
@@ -1352,6 +1404,17 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
               Sensor data
             </button>
             <button
+              id="arch-tab-direct"
+              type="button"
+              data-arch-path="direct"
+              role="tab"
+              aria-controls="arch-path-panel"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Direct control
+            </button>
+            <button
               id="arch-tab-vision"
               type="button"
               role="tab"
@@ -1439,7 +1502,9 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                 </div>
                 <div>
                   <dt>Wheel axle to outline</dt>
-                  <dd>Front/rear axle offsets require remeasurement for the updated 170 mm body.</dd>
+                  <dd>
+                    Front/rear axle offsets require remeasurement for the updated 170 mm body.
+                  </dd>
                 </div>
                 <div>
                   <dt>Wheels</dt>
@@ -1560,119 +1625,127 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
           tabindex="0"
           hidden
         >
-          <details id="amr-connection-workspace" class="panel vision-card" style="margin-bottom:16px;">
-            <summary style="cursor:pointer;padding:14px 18px;font-weight:700;">ESP32 connection and sensor insights <span id="amr-embedded-link-state" style="font-weight:400;">· Open settings</span></summary>
-        <section
-          id="connection" class="amr-embedded-connection"
-        >
-          <div class="amr-connect-card">
-            <div class="amr-connect-heading">
-              <span class="twin-database-icon">
-                <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
-              </span>
-              <div>
-                <span class="twin-card-kicker">Physical device</span>
-                <h2>
-                  AMR-01
-                  <span>ESP32</span>
-                </h2>
-              </div>
-              <span class="twin-connection-chip" id="amr-link-state" data-state="loading">
-                Checking setup
-              </span>
-            </div>
-            <p>
-              This optional recorder starts a recording session through EMQX. Existing HTTP
-              forwarding to the database runs independently.
-            </p>
-            <form id="amr-link-form" class="amr-link-form">
-              <label id="amr-code-field" for="amr-access-code">
-                Operator access code
-                <input
-                  id="amr-access-code"
-                  type="password"
-                  maxlength="256"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="Private operator code"
-                  aria-describedby="amr-link-detail"
-                />
-              </label>
-              <button class="primary" type="submit" id="amr-link-connect" disabled>
-                Connect AMR
-              </button>
-              <button type="button" id="amr-link-disconnect" disabled>Disconnect</button>
-            </form>
-            <p id="amr-link-detail" role="status" aria-live="polite">
-              Checking the saved connection profile.
-            </p>
-            <p id="amr-link-feedback" role="alert" hidden></p>
-            <div class="amr-link-footnote">
-              For physical human approvals, use Review &amp; decide in Sensor models or the Connect
-              step in Vision routing. Disconnecting this recorder preserves committed records.
-            </div>
-          </div>
-          <ol class="amr-pipeline" id="amr-pipeline" aria-label="Sensor data pipeline"></ol>
-          <details class="amr-setup-details" id="amr-setup-details">
-            <summary>Connection setup</summary>
-            <p>
-              The owner configures the subscriber, a separate database writer, an operator code and
-              measured calibration in private app settings.
-            </p>
-            <ul id="amr-setup-missing"></ul>
-            <p>
-              First use: flash the raw-sensor firmware with the ESP32 Wi-Fi and EMQX publisher
-              settings. The website cannot scan or join the ESP32's local Wi-Fi.
-            </p>
-            <p>
-              MQTT over TLS · port 8883 · topic
-              <code>robot/amr01/state</code>
-            </p>
-            <a
-              href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/single_amr_sensor_twin_setup.md#connect-amr-from-the-site"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open connection setup guide ↗
-            </a>
+          <details
+            id="amr-connection-workspace"
+            class="panel vision-card"
+            style="margin-bottom: 16px"
+          >
+            <summary style="cursor: pointer; padding: 14px 18px; font-weight: 700">
+              ESP32 connection and sensor insights
+              <span id="amr-embedded-link-state" style="font-weight: 400">· Open settings</span>
+            </summary>
+            <section id="connection" class="amr-embedded-connection">
+              <ol class="amr-pipeline" id="amr-pipeline" aria-label="Sensor data pipeline"></ol>
+              <details class="amr-connect-card">
+                <summary>Optional calibrated recorder</summary>
+                <div class="amr-connect-heading">
+                  <span class="twin-database-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#i-wifi" /></svg>
+                  </span>
+                  <div>
+                    <span class="twin-card-kicker">Physical device</span>
+                    <h2>
+                      AMR-01
+                      <span>ESP32</span>
+                    </h2>
+                  </div>
+                  <span class="twin-connection-chip" id="amr-link-state" data-state="loading">
+                    Checking setup
+                  </span>
+                </div>
+                <p>
+                  This optional recorder starts a recording session through EMQX. Existing HTTP
+                  forwarding to the database runs independently.
+                </p>
+                <form id="amr-link-form" class="amr-link-form">
+                  <label id="amr-code-field" for="amr-access-code">
+                    Operator access code
+                    <input
+                      id="amr-access-code"
+                      type="password"
+                      maxlength="256"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="Private operator code"
+                      aria-describedby="amr-link-detail"
+                    />
+                  </label>
+                  <button class="primary" type="submit" id="amr-link-connect" disabled>
+                    Start optional recorder
+                  </button>
+                  <button type="button" id="amr-link-disconnect" disabled>Disconnect</button>
+                </form>
+                <p id="amr-link-detail" role="status" aria-live="polite">
+                  Checking the saved connection profile.
+                </p>
+                <p id="amr-link-feedback" role="alert" hidden></p>
+                <div class="amr-link-footnote">
+                  For physical human approvals, use Review &amp; decide in Sensor models or the
+                  Connect step in Vision routing. Disconnecting this recorder preserves committed
+                  records.
+                </div>
+              </details>
+              <details class="amr-setup-details" id="amr-setup-details">
+                <summary>Optional calibrated recorder setup</summary>
+                <p>
+                  The owner configures the subscriber, a separate database writer, an operator code
+                  and measured calibration in private app settings.
+                </p>
+                <ul id="amr-setup-missing"></ul>
+                <p>
+                  The installed controller and commissioning feed work independently of this
+                  optional calibrated recorder. Keep the working firmware when using direct Wi-Fi
+                  control.
+                </p>
+                <p>
+                  Optional calibrated stream · MQTT/TLS 8883 · topic
+                  <code>robot/amr01/state</code>
+                </p>
+                <a
+                  href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/single_amr_sensor_twin_setup.md#connect-amr-from-the-site"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open connection setup guide ↗
+                </a>
+              </details>
+              <section class="amr-insights-panel" aria-labelledby="amr-insights-title">
+                <div class="amr-section-heading">
+                  <h2 id="amr-insights-title">Current sensor guidance</h2>
+                  <span>Physical sensor data</span>
+                </div>
+                <div id="amr-live-metrics" class="amr-insight-metrics"></div>
+                <p id="amr-insights-empty">Waiting for fresh sensor evidence.</p>
+                <h3>Recommendations</h3>
+                <div id="amr-live-recommendations" class="amr-recommendations"></div>
+                <p class="amr-link-footnote">
+                  Operator guidance from the motion and battery models. Recommendations do not send
+                  commands to the AMR.
+                </p>
+              </section>
+            </section>
           </details>
-          <section class="amr-insights-panel" aria-labelledby="amr-insights-title">
-            <div class="amr-section-heading">
-              <h2 id="amr-insights-title">Predictive insights</h2>
-              <span>Physical sensor data</span>
-            </div>
-            <div id="amr-live-metrics" class="amr-insight-metrics"></div>
-            <p id="amr-insights-empty">Waiting for calibrated, continuous physical readings.</p>
-            <h3>Recommendations</h3>
-            <div id="amr-live-recommendations" class="amr-recommendations"></div>
-            <p class="amr-link-footnote">
-              Operator guidance from the motion and battery models. Recommendations do not send
-              commands to the AMR.
-            </p>
-          </section>
-        </section>
-          </details>
-          <div id="vision-routing-shell" data-mode="physical">
+          <div id="vision-routing-shell" data-mode="manual">
             <div class="vision-page-toolbar">
               <div role="tablist" aria-label="Vision routing mode" class="vision-mode-tabs">
-                <button
-                  id="vision-mode-physical"
-                  role="tab"
-                  aria-controls="vision-physical-pane"
-                  aria-selected="true"
-                  type="button"
-                >
-                  Physical AMR
-                </button>
                 <button
                   id="vision-mode-manual"
                   role="tab"
                   aria-controls="vision-manual-pane"
+                  aria-selected="true"
+                  type="button"
+                >
+                  Direct Wi-Fi drive
+                </button>
+                <button
+                  id="vision-mode-physical"
+                  role="tab"
+                  aria-controls="vision-physical-pane"
                   aria-selected="false"
                   tabindex="-1"
                   type="button"
                 >
-                  Direct Wi-Fi drive
+                  Camera routes
                 </button>
                 <button
                   id="vision-mode-practice"
@@ -1696,15 +1769,15 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                 </span>
               </div>
             </div>
-            <div
-              id="vision-manual-pane"
-              role="tabpanel"
-              aria-labelledby="vision-mode-manual"
-              hidden
-            >
+            <div id="vision-manual-pane" role="tabpanel" aria-labelledby="vision-mode-manual">
               <div id="manual-motor-control"></div>
             </div>
-            <div id="vision-physical-pane" role="tabpanel" aria-labelledby="vision-mode-physical">
+            <div
+              id="vision-physical-pane"
+              role="tabpanel"
+              aria-labelledby="vision-mode-physical"
+              hidden
+            >
               <div id="vision-shared-setup">
                 <section class="panel vision-card" aria-labelledby="vision-setup-title">
                   <div class="vision-card-heading">
@@ -1715,7 +1788,10 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
                   </div>
                   <p>
                     Recorded AMR-01 size: 170 × 155 × 150 mm (length × width × height), including
-                    wheels and protrusions. Wheel-axle front/rear offsets must be remeasured for this body. The overhead USB camera height is 131 cm. ArUco marker ID 0 is centred on the robot body, as confirmed by the operator. Marker forward alignment remains to be verified.
+                    wheels and protrusions. Wheel-axle front/rear offsets must be remeasured for
+                    this body. The overhead USB camera height is 131 cm. ArUco marker ID 0 is
+                    centred on the robot body, as confirmed by the operator. Marker forward
+                    alignment remains to be verified.
                   </p>
                   <form id="vision-settings-form">
                     <div class="vision-fields">
@@ -2302,6 +2378,19 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
           tabindex="0"
           hidden
         >
+          <section id="operator-host-note" class="panel">
+            <h2>Open the full digital twin</h2>
+            <p>
+              This standalone page has no connection to the dashboard's sensor service or protected
+              reviews.
+            </p>
+            <a
+              href="https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/"
+              target="_top"
+            >
+              Open full dashboard
+            </a>
+          </section>
           <div id="python-sensor-panel">
             <div class="python-sensor-toolbar" role="group" aria-label="Sensor twin source">
               <span class="python-control-label">Data source</span>
@@ -4297,7 +4386,7 @@ html:not([data-amr-advanced="true"]) #vision-mode-practice { display: none !impo
     </dialog>
     <script
       type="module"
-      src="./browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js"
+      src="./browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js?v=operator-audit-20261122"
     ></script>
   </body>
 </html>

@@ -168,3 +168,40 @@ def test_on_demand_controller_uses_the_real_persisted_sensor_pipeline(tmp_path):
         finally:
             controller.close()
             reader.engine.dispose()
+
+
+def test_pipeline_uses_current_commissioning_feed_without_claiming_model_calibration():
+    from automated_software_checks.predictive_twin_checks.test_insights import observation_data
+    from backend_streamlit_and_telemetry.predictive_twin.amr_connection import connection_payload
+    payload=observation_data()
+    controller=SimpleNamespace(snapshot=lambda:dict(subscribed=False,state='disconnected'))
+    with patch('backend_streamlit_and_telemetry.predictive_twin.workspace_payload.database_connection',return_value=(None,'ready')):
+        result=connection_payload(controller,None,[],live_payload=payload)
+    stages={stage['id']:stage for stage in result['stages']}
+    assert stages['telemetry']['state']=='ready'
+    assert stages['insights']['detail']=='Current observation checks available'
+    assert stages['broker']['state']=='waiting'
+    assert 'independently' in stages['broker']['detail']
+    assert result['sample_source']=='physical_observation' and result['sample_fresh']
+    assert result['sample_age_s']==.1
+    assert result['sample_identity'][1:3]==['physical-boot',10]
+
+
+def test_fresh_calibrated_model_and_stale_commissioning_feed_are_independent():
+    from automated_software_checks.predictive_twin_checks.test_insights import data,observation_data
+    from backend_streamlit_and_telemetry.predictive_twin.amr_connection import connection_payload
+    payload=data();payload['robots']['amr01']['age_s']=.1
+    payload['physical_telemetry']=observation_data()['physical_telemetry']
+    payload['physical_telemetry'].update(fresh=False,age_s=100.)
+    controller=SimpleNamespace(snapshot=lambda:dict(subscribed=True,state='subscribed'))
+    with patch('backend_streamlit_and_telemetry.predictive_twin.workspace_payload.database_connection',return_value=(None,'ready')):
+        result=connection_payload(controller,None,[],live_payload=payload)
+    assert result['sample_source']=='calibrated_model' and result['sample_fresh']
+    assert result['stages'][0]['state']=='ready'
+    assert result['stages'][-1]['detail']=='Current calibrated model guidance available'
+    payload['robots']['amr01'].update(stale=True,age_s=100.)
+    with patch('backend_streamlit_and_telemetry.predictive_twin.workspace_payload.database_connection',return_value=(None,'ready')):
+        result=connection_payload(controller,None,[],live_payload=payload)
+    assert not result['sample_fresh']
+    assert result['stages'][0]['state']=='waiting'
+    assert result['stages'][1]['state']=='ready','A broker subscription is not proof of current sensor data'

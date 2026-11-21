@@ -15,7 +15,21 @@ d.addEventListener('python-twin:action', (e) => actions.push(e.detail));
 const page = createVisionRoutingWorkspace(w),
   el = (id) => d.getElementById(id);
 assert.equal(createVisionRoutingWorkspace(w), null);
-assert.equal(el('vision-routing-shell').dataset.mode, 'physical');
+assert.equal(el('vision-routing-shell').dataset.mode, 'manual');
+assert.equal(el('vision-manual-pane').hidden, false);
+assert.equal(
+  el('mc-controller-frame'),
+  null,
+  'Default drive view does not connect or move the AMR',
+);
+el('vision-mode-manual').dispatchEvent(
+  new w.KeyboardEvent('keydown', { key: 'End', bubbles: true }),
+);
+assert.equal(
+  d.activeElement,
+  el('vision-mode-physical'),
+  'Hidden practice tab is excluded from keyboard navigation',
+);
 assert.equal(el('vision-practice-pane').hidden, true);
 assert.equal(el('pr-step-panel-1').hidden, false);
 assert.equal(el('pr-map-card').hidden, true, 'Setup does not show an empty execution map');
@@ -74,6 +88,7 @@ page.physical.render({
 assert.equal(el('pr-feedback').querySelector('img'), null);
 assert.match(el('pr-feedback').textContent, /<img/);
 assert.equal(el('pr-login').hidden, true);
+d.documentElement.dataset.amrAdvanced = 'true';
 el('vision-mode-practice').click();
 assert.equal(el('vision-physical-pane').hidden, true);
 assert.equal(el('vision-practice-pane').hidden, false);

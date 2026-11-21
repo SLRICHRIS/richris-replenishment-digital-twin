@@ -53,7 +53,7 @@ class BrowserReceiverService(Service):
             packet = self._feedback
             if packet:
                 now = int(time.time() * 1000)
-                result['receiver'] = {k: packet[k] for k in ('protocol', 'ready', 'state', 'battery_voltage_v')}
+                result['receiver'] = {k: packet[k] for k in ('protocol', 'ready', 'state', 'battery_voltage_v', 'boot_id', 'epoch_id', 'seq', 'issued_at_ms')}
                 result['receiver'].update(fresh=self.connected and fresh(packet['issued_at_ms'], now),
                                           age_ms=max(0, now - packet['issued_at_ms']))
             return result

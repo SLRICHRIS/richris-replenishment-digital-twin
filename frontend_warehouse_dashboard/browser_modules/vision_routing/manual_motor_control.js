@@ -53,6 +53,7 @@ export function createManualMotorPanel(scope) {
     host.replaceChildren();
     host.hidden = true;
     frame = null;
+    d.dispatchEvent(new scope.CustomEvent('manual-controller:view'));
     connect.textContent = 'Connect controller';
     disconnect.disabled = true;
     status.textContent = message;
@@ -73,6 +74,7 @@ export function createManualMotorPanel(scope) {
     frame = next;
     host.hidden = false;
     host.append(next);
+    d.dispatchEvent(new scope.CustomEvent('manual-controller:view'));
     connect.textContent = 'Reload controller';
     disconnect.disabled = false;
     // Cross-origin load events also fire on some browser error pages. Never

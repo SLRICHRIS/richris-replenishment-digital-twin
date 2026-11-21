@@ -6,6 +6,7 @@ No Streamlit APIs are called from a background thread.
 """
 from dataclasses import dataclass, field
 import hmac
+import math
 import threading
 import time
 
@@ -200,18 +201,32 @@ def connection_payload(controller, profile, missing, authorized=False, live_payl
     _, storage_state = database_connection()
     live = live_payload if live_payload is not None else workspace_payload('live')
     insights = predictive_insights(live)
-    robot = live.get('robots', {}).get('amr01')
-    fresh = bool(robot and not robot.get('stale'))
+    robot = live.get('robots', {}).get('amr01') or {}
+    physical = live.get('physical_telemetry') or {}
+    def current_age(value, limit, minimum=0):
+        return type(value) in (int,float) and math.isfinite(value) and minimum <= value <= limit
+    model_fresh = bool(robot and not robot.get('stale') and current_age(robot.get('age_s'),2))
+    raw_fresh = physical.get('fresh') is True and current_age(physical.get('age_s'),5,-1)
+    observational = insights.get('scope') == 'physical_observation'
+    use_physical = (raw_fresh and (observational or not model_fresh)) or (not model_fresh and observational)
+    selected = physical if use_physical else robot
+    source_raw = selected.get('measurements' if use_physical else 'raw') or {}
+    sample_fresh = raw_fresh if use_physical else model_fresh
+    source = 'physical_observation' if use_physical else 'calibrated_model'
     link.update(configured=profile is not None, missing=missing, authorized=authorized,
-                topic=TOPIC, insights=insights, sample_age_s=robot.get('age_s') if robot else None,
+                topic=TOPIC, insights=insights, sample_age_s=selected.get('age_s'),
+                sample_source=source, sample_fresh=sample_fresh,
+                sample_identity=[source, source_raw.get('boot_id',selected.get('boot_id')),
+                                 source_raw.get('seq',selected.get('seq')),selected.get('received_at')],
                 stages=[
-                    dict(label='ESP32 over Wi-Fi', state='ready' if fresh else 'waiting',
-                         detail='Fresh device sample stored' if fresh else 'Waiting for physical samples'),
-                    dict(label='EMQX', state='ready' if link['subscribed'] else 'waiting',
-                         detail='Topic subscription verified' if link['subscribed'] else 'Subscription not verified in this session'),
-                    dict(label='Sensor database', state='ready' if storage_state == 'ready' else 'blocked',
+                    dict(id='telemetry',label='ESP32 telemetry', state='ready' if raw_fresh or model_fresh else 'waiting',
+                         detail='Current physical packet stored' if raw_fresh or model_fresh else 'Waiting for fresh physical samples'),
+                    dict(id='broker',label='EMQX recorder', state='ready' if link['subscribed'] else 'waiting',
+                         detail='This session subscription is verified' if link['subscribed'] else 'This session recorder is not subscribed; forwarding may run independently'),
+                    dict(id='storage',label='Sensor database', state='ready' if storage_state == 'ready' else 'blocked',
                          detail='Connected · storage verified' if storage_state == 'ready' else 'Connection or database setup needs attention'),
-                    dict(label='Predictive insights', state='ready' if insights['ready'] else 'waiting',
-                         detail='Fresh model results available' if insights['ready'] else 'Needs calibrated, continuous readings'),
+                    dict(id='insights',label='Live guidance', state='ready' if insights['ready'] else 'waiting',
+                         detail=('Current observation checks available' if observational else 'Current calibrated model guidance available')
+                         if insights['ready'] else 'Waiting for usable, current sensor evidence'),
                 ])
     return link

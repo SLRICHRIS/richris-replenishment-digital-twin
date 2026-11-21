@@ -1228,3 +1228,151 @@
   border: 1px solid #2d6ec4;
   border-radius: 10px;
 }
+
+/* Physical operation never inherits the warehouse simulation's status claims. */
+body[data-view='vision'] .metrics,
+body[data-view='vision'] .session-action,
+body[data-view='vision'] #sync,
+body[data-view='vision'][data-vision-mode='manual'] .vision-page-facts {
+  display: none !important;
+}
+.manual-drive-panel > .pr-topline h2 {
+  font-size: clamp(22px, 2.2vw, 28px);
+  line-height: 1.25;
+  margin-top: 6px;
+}
+.manual-drive-panel > p,
+.manual-direct-help p,
+.manual-reviewed-response p,
+.live-guidance p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+.manual-drive-panel > .pr-topline > span {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--panel-alt);
+}
+.manual-direct-actions button,
+.live-guidance button {
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.manual-direct-actions a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-underline-offset: 4px;
+  font-size: 14px;
+}
+#mc-connection-status {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-alt);
+}
+.live-guidance {
+  padding: clamp(16px, 2vw, 24px);
+  background: var(--panel-alt);
+}
+.live-guidance h3 {
+  font-size: 22px;
+  margin-top: 6px;
+  line-height: 1.3;
+}
+#mc-guidance-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.live-guidance-coverage > div,
+.live-guidance-list article {
+  background: var(--panel);
+}
+.live-guidance-coverage strong {
+  font-size: 14px;
+  color: var(--text);
+}
+.live-guidance-coverage span {
+  color: var(--text-secondary);
+}
+.live-guidance-list article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.live-guidance-list h4 {
+  margin: 0;
+  line-height: 1.4;
+}
+.live-guidance-list article > button {
+  margin-top: auto;
+  text-align: left;
+  border-color: var(--line-strong);
+}
+.live-guidance-list [data-priority='stop'] .live-guidance-category {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.live-guidance-list [data-priority='check'] .live-guidance-category {
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.live-guidance details,
+.manual-direct-help {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.live-guidance summary,
+.manual-direct-help summary {
+  min-height: 44px;
+  padding-block: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.live-guidance-actions > div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.live-guidance-actions p,
+.manual-reviewed-response p {
+  margin-top: 8px;
+}
+.manual-reviewed-response {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+}
+@media (max-width: 720px) {
+  .manual-direct-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .manual-direct-actions button {
+    padding: 12px;
+  }
+  .manual-direct-actions a {
+    grid-column: 1 / -1;
+  }
+  .live-guidance-coverage {
+    grid-template-columns: 1fr;
+  }
+  .live-guidance-list article > button {
+    width: 100%;
+  }
+}

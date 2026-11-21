@@ -2,7 +2,7 @@
 
 AMR-01 sends measured channels through EMQX to the stored sensor pipeline. The
 dashboard computes recommendations from the latest packet and up to 30 seconds
-of recent history. **Live AMR mission → Direct Wi-Fi drive** places these checks
+of recent history. **Drive & review → Direct Wi-Fi drive** places these checks
 beside the existing ESP32 controller. **Sensor models → Review & decide** records
 the operator's response and collects subsequent readings.
 

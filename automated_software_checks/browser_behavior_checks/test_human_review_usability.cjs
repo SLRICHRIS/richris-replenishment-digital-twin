@@ -314,6 +314,37 @@ assert.equal(actions.length, priorActions, 'Handing off a saved response cannot 
 render({ ...observations, demo: true, observation_only: false, review: null });
 render({ ...observations, available_actions: catalog, review: observationRow });
 assert.equal(el('action').value, 'no_action', 'Changing sources clears a suggested action');
+const expiredCapture = {
+  ...observationRow,
+  state: 'expired',
+  created_at: now / 1000 - 60,
+  evidence: {
+    ...observationRow.evidence,
+    recommendations: [{ title: 'Battery was 4.300 V', detail: 'Captured low battery input.' }],
+  },
+};
+render({ ...observations, eligible: false, review: expiredCapture });
+assert.doesNotMatch(el('recommendations').textContent, /4.300/);
+assert.match(el('recommendations').textContent, /Fresh evidence unavailable/);
+assert.match(el('captured-history').textContent, /4.300/);
+assert.match(
+  el('captured-history').textContent,
+  /Historical evidence.*not a current recommendation/,
+);
+assert.match(el('captured-history').textContent, /IST.*Physical evidence.*sample/s);
+assert.equal(el('captured-history').open, false);
+assert.match(el('result-note').textContent, /review expired/);
+assert.doesNotMatch(el('result-note').textContent, /Waiting for readings/);
+render({
+  ...observations,
+  review: expiredCapture,
+  recommendations: [{ title: 'Current monitoring', detail: 'Current usable readings.' }],
+});
+assert.match(el('recommendations').textContent, /Current monitoring/);
+assert.doesNotMatch(el('recommendations').textContent, /4.300/);
+render({ ...observations, authorized: false, can_unlock: true, review: null });
+assert.match(el('next-action').textContent, /protects decision recording/);
+assert.doesNotMatch(el('next-action').textContent, /protects physical control/);
 w.dispatchEvent(new w.Event('pagehide'));
 w.close();
 console.log(

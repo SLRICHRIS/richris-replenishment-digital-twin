@@ -136,7 +136,7 @@
           ? trial
             ? trial.label + ' · 6 seconds'
             : 'Fixed demo trial · 6 seconds'
-          : 'Sample age · ' + number(age, 1, ' s'),
+          : 'Sample age · ' + physicalAge(age),
       );
       const charge = physicalInput ? physical.energy_observation?.soc_scenario || {} : {};
       text(key + 'soc', available ? number(r.soc * 100, 1, '%') : number(charge.percent, 2, '%'));

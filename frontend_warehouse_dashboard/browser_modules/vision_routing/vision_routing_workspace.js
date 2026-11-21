@@ -1,8 +1,8 @@
-import { createManualMotorPanel } from './manual_motor_control.js?v=live-guidance-20261122';
+import { createManualMotorPanel } from './manual_motor_control.js?v=operator-audit-20261122';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 
-// One page, two explicit modes. Practice never maintains a physical execution grant.
+// Direct driving, commissioned camera routes and command-free practice stay distinct.
 export function createVisionRoutingWorkspace(scope) {
   const d = scope.document,
     root = d.getElementById('vision-routing-shell');
@@ -11,7 +11,7 @@ export function createVisionRoutingWorkspace(scope) {
   const manual = createManualMotorPanel(scope),
     physical = createPhysicalRoutePanel(scope),
     practice = createVisionWorkspace(scope);
-  const modes = ['physical', 'manual', 'practice'],
+  const modes = ['manual', 'physical', 'practice'],
     listeners = [];
   const on = (target, type, fn) => {
     target.addEventListener(type, fn);
@@ -20,6 +20,7 @@ export function createVisionRoutingWorkspace(scope) {
   function select(mode, focus = false) {
     if (!modes.includes(mode)) return;
     root.dataset.mode = mode;
+    d.body.dataset.visionMode = mode;
     modes.forEach((name) => {
       const selected = name === mode,
         button = d.getElementById('vision-mode-' + name);
@@ -30,18 +31,25 @@ export function createVisionRoutingWorkspace(scope) {
     d.dispatchEvent(new scope.CustomEvent('vision-routing:mode', { detail: { mode } }));
     if (focus) d.getElementById('vision-mode-' + mode).focus();
   }
-  modes.forEach((mode, index) => {
+  modes.forEach((mode) => {
     const button = d.getElementById('vision-mode-' + mode);
     on(button, 'click', () => select(mode));
     on(button, 'keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       e.preventDefault();
+      const visibleModes = modes.filter(
+        (name) => name !== 'practice' || d.documentElement.dataset.amrAdvanced === 'true',
+      );
+      const index = visibleModes.indexOf(mode);
       select(
         e.key === 'Home'
-          ? 'physical'
+          ? visibleModes[0]
           : e.key === 'End'
-            ? 'practice'
-            : modes[(index + (e.key === 'ArrowRight' ? 1 : 2)) % 3],
+            ? visibleModes.at(-1)
+            : visibleModes[
+                (index + (e.key === 'ArrowRight' ? 1 : visibleModes.length - 1)) %
+                  visibleModes.length
+              ],
         true,
       );
     });
@@ -53,7 +61,7 @@ export function createVisionRoutingWorkspace(scope) {
       d.getElementById('pr-step-1')?.focus();
     }),
   );
-  select('physical');
+  select('manual');
   return {
     manual,
     physical,

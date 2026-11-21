@@ -67,15 +67,17 @@
     };
     text(
       'amr-link-state',
-      !link.configured ? 'Setup required' : labels[link.state] || 'Status unavailable',
+      !link.configured
+        ? 'Optional recorder unavailable'
+        : labels[link.state] || 'Status unavailable',
     );
     $('amr-link-state').dataset.state = link.subscribed ? 'ready' : 'waiting';
     text(
       'amr-link-detail',
       !link.configured
         ? (link.missing || []).some((item) => /calibration/i.test(item))
-          ? 'Confirm measured AMR-01 calibration before this recorder can connect. You can enter your operator code now.'
-          : 'Complete the connection setup below before this recorder can connect. You can enter your operator code now.'
+          ? 'This optional recorder requires measured calibration. Existing commissioning telemetry and direct Wi-Fi control work independently.'
+          : 'Complete the private setup only if this optional recorder is needed. Existing forwarding is separate.'
         : link.detail || 'Waiting for connection status.',
     );
     text('amr-link-feedback', link.feedback || '');
@@ -87,7 +89,7 @@
         ? 'Connecting…'
         : link.state === 'subscribed'
           ? 'Connected to EMQX'
-          : 'Connect AMR';
+          : 'Start optional recorder';
     $('amr-link-disconnect').disabled = !authorized || !busy || link.state === 'disconnecting';
     // Code entry does not authorize a connection; the protected submit path still checks readiness.
     $('amr-access-code').disabled = busy;

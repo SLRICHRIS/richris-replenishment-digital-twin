@@ -11,8 +11,10 @@ const w = dom.window,
   d = w.document,
   timers = [];
 let now = Date.now(),
+  monotonic = 0,
   commands = 0;
 w.Date.now = () => now;
+Object.defineProperty(w.performance, 'now', { value: () => monotonic });
 w.setInterval = (fn) => {
   timers.push(fn);
   return timers.length;
@@ -46,10 +48,22 @@ d.querySelector('[data-page="database"]').addEventListener('click', () => {
 });
 el('open').click();
 assert.equal(target, 'database');
+el('tab-direct').click();
+assert.equal(nodes().length, 4);
+assert.match(el('handoff').textContent, /directly to the ESP32/);
+assert.match(el('outcome').textContent, /not proof/);
+assert.match(el('detail-role').textContent, /does not send a motor command/);
+nodes()[1].click();
+let manualNavigation = 0;
+d.getElementById('vision-mode-manual').addEventListener('click', () => manualNavigation++);
+el('open').click();
+assert.equal(manualNavigation, 1, 'Direct-control explanation opens the correct submode only');
+assert.equal(commands, 0);
 el('tab-vision').click();
+assert.doesNotMatch(el('detail-role').textContent, /92 cm|425/);
 assert.match(el('detail-title').textContent, /Logitech/);
 el('next').click();
-assert.match(el('detail-role').textContent, /same webcam|Logitech webcam/);
+assert.match(el('detail-role').textContent, /browser\/WebRTC processor or Windows agent/);
 assert.match(el('detail-gate').textContent, /Windows Camera app is not required/);
 el('tab-vision').dispatchEvent(new w.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 assert.equal(d.activeElement, el('tab-power'));
@@ -62,7 +76,12 @@ assert.match(el('detail-gate').textContent, /unsigned/);
 assert.equal(el('raw-status').dataset.state, 'unknown');
 const payload = {
   mode: 'live',
-  physical_telemetry: { state: 'receiving', fresh: true, received_at: new Date(now).toISOString() },
+  physical_telemetry: {
+    state: 'receiving',
+    fresh: true,
+    age_s: 0,
+    received_at: new Date(now).toISOString(),
+  },
   robots: { amr01: { quality: 'OK', stale: false, age_s: 0, continuity_lost: false, derived: {} } },
   vision_execution: {
     authorized: true,
@@ -71,7 +90,7 @@ const payload = {
     ready: true,
     scene: {
       valid: true,
-      floor_width_mm: 425,
+      floor_width_mm: 610,
       floor_length_mm: 630,
       captured_at_ms: now,
       hardware: { ready: true, age_ms: 0 },
@@ -82,12 +101,22 @@ const render = () => d.dispatchEvent(new w.CustomEvent('python-twin:render', { d
 render();
 for (const id of ['raw-status', 'model-status', 'route-status'])
   assert.equal(el(id).dataset.state, 'good');
+now += 3600000;
+timers[0]();
+assert.equal(
+  el('raw-status').dataset.state,
+  'good',
+  'Local wall-clock edits cannot invalidate fresh server-aged readings',
+);
+assert.equal(el('model-status').dataset.state, 'good');
+now -= 3600000;
 assert.match(
   el('detail-title').textContent,
   /Calibrated input/,
   'Live updates preserve the selected journey',
 );
 now += 1000;
+monotonic += 1000;
 timers[0]();
 assert.equal(
   el('route-status').dataset.state,
@@ -95,6 +124,7 @@ assert.equal(
   'Old scenes cannot keep a readiness badge',
 );
 now += 2000;
+monotonic += 2000;
 timers[0]();
 assert.equal(
   el('model-status').dataset.state,
@@ -102,6 +132,7 @@ assert.equal(
   'Model evidence expires without a new report',
 );
 now += 3000;
+monotonic += 3000;
 timers[0]();
 assert.equal(
   el('raw-status').dataset.state,
@@ -121,6 +152,7 @@ render();
 for (const id of ['raw-status', 'model-status', 'route-status'])
   assert.notEqual(el(id).dataset.state, 'good');
 now += 6000;
+monotonic += 6000;
 timers[0]();
 for (const id of ['raw-status', 'model-status', 'route-status'])
   assert.equal(el(id).dataset.state, 'pending', 'Known blockers survive memoized server reports');

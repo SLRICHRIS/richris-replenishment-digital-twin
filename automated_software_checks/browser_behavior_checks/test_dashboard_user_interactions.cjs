@@ -453,8 +453,25 @@ assert.equal(
   'vision',
   'camera setup remains available in the sensor workspace',
 );
-assert.equal(get('source-badge').textContent, 'Human review');
-assert.equal(get('page-mode').textContent, 'Guided physical workflow');
+run("document.getElementById('vision-routing-shell').dataset.mode='manual'; updateSourceUI();");
+assert.equal(get('source-badge').textContent, 'Direct Wi-Fi drive');
+assert.equal(get('page-mode').textContent, 'Attended local control');
+assert.equal(get('page-title').textContent, 'Drive & review');
+assert.match(get('rail-detail').textContent, /do not send motor commands/);
+assert.equal(doc.querySelector('.metrics').hidden, true);
+assert.equal(doc.querySelector('.session-action').hidden, true);
+assert.equal(get('sync').hidden, true);
+run("document.getElementById('vision-routing-shell').dataset.mode='physical'; updateSourceUI();");
+assert.equal(get('page-title').textContent, 'Camera routes');
+assert.equal(get('page-mode').textContent, 'Camera-guided workflow');
+run("document.getElementById('vision-routing-shell').dataset.mode='practice'; updateSourceUI();");
+assert.equal(get('page-mode').textContent, 'Practice only');
+assert.equal(get('page-mode').dataset.kind, 'simulation');
+assert.equal(
+  doc.querySelector('.metrics').hidden,
+  true,
+  'Camera practice cannot display warehouse stock simulation KPIs',
+);
 get('tab-vision').handlers.keydown({ key: 'ArrowDown', preventDefault() {} });
 assert.equal(
   doc.body.dataset.view,

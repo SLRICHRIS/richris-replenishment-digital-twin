@@ -41,6 +41,20 @@ async function check() {
   };
   Object.defineProperty(w, 'parent', { value: parent });
   w.requestAnimationFrame = (fn) => frames.push(fn);
+  let monotonic = 0,
+    nextTimer = 0;
+  const timers = new Map();
+  Object.defineProperty(w.performance, 'now', { value: () => monotonic });
+  w.setInterval = (fn) => {
+    const id = ++nextTimer;
+    timers.set(id, fn);
+    return id;
+  };
+  w.clearInterval = (id) => timers.delete(id);
+  const tick = (milliseconds) => {
+    monotonic += milliseconds;
+    for (const fn of timers.values()) fn();
+  };
   const style = doc.createElement('style');
   style.textContent = scrollCSS;
   doc.head.append(style);
@@ -182,8 +196,334 @@ async function check() {
     'ordinary refreshes and appearance updates must preserve scroll position',
   );
 
+  // Load the real display and decision listeners to verify expiry reaches every
+  // visible consumer, rather than merely testing a helper's return value.
+  for (const filename of [
+    'python_sensor_twin_readouts.js',
+    'amr_connection_panel.js',
+    'human_review_panel.js',
+  ])
+    vm.runInContext(
+      fs.readFileSync(
+        path.join(app, 'browser_modules/streamlit_frame_connection', filename),
+        'utf8',
+      ),
+      dom.getInternalVMContext(),
+    );
+  doc.dispatchEvent(new w.Event('DOMContentLoaded'));
+  const rendered = [];
+  doc.addEventListener('python-twin:render', (e) => rendered.push(e.detail));
+  const receive = (payload) =>
+    w.dispatchEvent(
+      new w.MessageEvent('message', {
+        source: parent,
+        origin,
+        data: { type: 'streamlit:render', args: { python_twin: payload } },
+      }),
+    );
+  const freeze = (value) => {
+    if (value && typeof value === 'object') {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  const insight = {
+    scope: 'physical_observation',
+    ready: true,
+    source: 'Live physical observations',
+    metrics: [],
+    recommendations: [
+      { code: 'monitor', title: 'Continue attended monitoring', detail: 'Watch the robot.' },
+    ],
+  };
+  const raw = {
+    robot_id: 'amr01',
+    boot_id: 'boot-a',
+    seq: 1,
+    sample_time_s: 10,
+    battery_voltage_v: 7.2,
+    battery_current_a: 0.1,
+    gyro_z_rad_s: 0,
+    left_pulse_hz: 0,
+    right_pulse_hz: 0,
+  };
+  const physical = {
+    fresh: true,
+    state: 'receiving',
+    label: 'Receiving physical telemetry',
+    age_s: 0.2,
+    received_at: '2026-11-22T00:00:00Z',
+    boot_id: 'boot-a',
+    seq: 1,
+    measurements: raw,
+    history: [raw],
+    wheel_estimates: {},
+    gyro_estimates: {},
+    energy_observation: { state: 'ready', net_wh: 0.4 },
+    recommendations: ['Watch the robot.'],
+  };
+  const review = {
+    eligible: true,
+    observation_only: true,
+    authorized: true,
+    owns_review: true,
+    can_review: true,
+    can_unlock: true,
+    commands_enabled: false,
+    missing: [],
+    review: {
+      review_id: 'a'.repeat(32),
+      state: 'pending',
+      expires_at: Date.now() / 1000 + 30,
+      evidence: {
+        source: 'live',
+        scope: 'physical_observation',
+        seq: 1,
+        recommendations: insight.recommendations,
+      },
+      events: [],
+    },
+  };
+  const link = {
+    configured: true,
+    state: 'subscribed',
+    subscribed: true,
+    running: true,
+    authorized: true,
+    sample_source: 'physical_observation',
+    sample_fresh: true,
+    sample_age_s: 0.2,
+    sample_identity: ['physical_observation', 'boot-a', 1],
+    insights: insight,
+    stages: [
+      {
+        id: 'telemetry',
+        label: 'ESP32 telemetry',
+        state: 'ready',
+        detail: 'Current packet stored',
+      },
+      { id: 'broker', label: 'EMQX recorder', state: 'ready', detail: 'Subscription verified' },
+      { id: 'insights', label: 'Live guidance', state: 'ready', detail: 'Observation checks' },
+    ],
+  };
+  const live = freeze({
+    mode: 'live',
+    robots: {},
+    physical_telemetry: physical,
+    insights: insight,
+    human_review: review,
+    amr_connection: link,
+    manual_control: { transport: 'direct_wifi' },
+  });
+  const saved = JSON.stringify(live);
+  receive(live);
+  doc.getElementById('human-review-reason').value = 'Attended monitoring';
+  doc.getElementById('human-review-reason').dispatchEvent(new w.Event('input'));
+  const approve = doc.querySelector('#human-review-form button[value="approve"]');
+  assert.equal(approve.disabled, false);
+  assert.equal(doc.getElementById('physical-voltage').textContent, '7.200 V');
+  assert.match(doc.getElementById('amr-model-recommendations').textContent, /Continue attended/);
+  const nativeFrame = doc.createElement('iframe');
+  nativeFrame.id = 'mc-controller-frame';
+  doc.body.append(nativeFrame);
+  tick(5100);
+  assert.equal(rendered.at(-1).physical_telemetry.fresh, false);
+  assert.equal(rendered.at(-1).physical_telemetry.seq, 1);
+  assert.equal(rendered.at(-1).physical_telemetry.received_at, physical.received_at);
+  assert.equal(doc.getElementById('physical-voltage').textContent, '—');
+  assert.match(doc.getElementById('python-amr01-battery-input').textContent, /Unavailable/);
+  assert.match(doc.getElementById('amr-model-recommendations').textContent, /Readings out of date/);
+  assert.match(doc.getElementById('amr-live-recommendations').textContent, /Readings out of date/);
+  assert.equal(approve.disabled, true, 'Frozen host disables decisions after evidence expires');
+  assert.equal(
+    rendered.at(-1).human_review.review,
+    review.review,
+    'Captured audit evidence is unchanged',
+  );
+  assert.equal(rendered.at(-1).amr_connection.stages[0].state, 'waiting');
+  const pausedLink = rendered.at(-1).amr_connection;
+  assert.equal(pausedLink.state, 'unknown');
+  assert.equal(
+    pausedLink.subscribed,
+    false,
+    'Frozen subscription display cannot retain a ready badge',
+  );
+  assert.equal(
+    pausedLink.running,
+    true,
+    'Keep the last running state so explicit disconnect is available',
+  );
+  assert.equal(pausedLink.authorized, true);
+  assert.equal(pausedLink.stages.find((stage) => stage.id === 'broker').state, 'waiting');
+  assert.match(pausedLink.detail, /Last known subscription.*updates paused/);
+  assert.equal(doc.getElementById('amr-link-disconnect').disabled, false);
+  assert.equal(doc.getElementById('amr-link-state').textContent, 'Status unavailable');
+  assert.equal(doc.getElementById('amr-link-state').dataset.state, 'waiting');
+
+  assert.equal(nativeFrame.isConnected, true, 'Data expiry must not remove direct local controls');
+  assert.equal(
+    JSON.stringify(live),
+    saved,
+    'The source snapshot and historical samples are never mutated',
+  );
+  doc.dispatchEvent(new w.CustomEvent('python-twin:ready'));
+  assert.equal(
+    rendered.at(-1).physical_telemetry.fresh,
+    false,
+    'Late listener replay cannot refresh old data',
+  );
+  receive(live);
+  assert.equal(
+    rendered.at(-1).physical_telemetry.fresh,
+    false,
+    'Repeated cached host arguments cannot make a sample younger',
+  );
+  const updated = JSON.parse(saved);
+  updated.physical_telemetry.seq = 2;
+  updated.physical_telemetry.measurements.seq = 2;
+  updated.physical_telemetry.received_at = '2026-11-22T00:00:01Z';
+  updated.amr_connection.sample_identity[2] = 2;
+  receive(updated);
+  assert.equal(
+    rendered.at(-1).physical_telemetry.fresh,
+    true,
+    'A genuinely new sample restores current values',
+  );
+  assert.equal(doc.getElementById('physical-voltage').textContent, '7.200 V');
+
+  const routeReport = freeze({
+    ...updated,
+    vision_execution: {
+      ready: true,
+      physical_mode: true,
+      authorized: true,
+      available: true,
+      scene: {
+        valid: true,
+        seq: 1,
+        captured_at_ms: Date.now(),
+        hardware: { ready: true, age_ms: 50 },
+      },
+      transport: {
+        connected: true,
+        receiver: {
+          protocol: 'H1',
+          boot_id: 'route-boot',
+          epoch_id: 'epoch',
+          seq: 1,
+          issued_at_ms: Date.now(),
+          fresh: true,
+          ready: true,
+          age_ms: 50,
+          battery_voltage_v: 7.2,
+        },
+      },
+    },
+  });
+  const originalRoute = JSON.stringify(routeReport.vision_execution);
+  receive(routeReport);
+  assert.equal(rendered.at(-1).vision_execution.ready, true);
+  const actionCount = messages.filter(
+    (x) => x.message.type === 'streamlit:setComponentValue',
+  ).length;
+  tick(600);
+  assert.equal(rendered.at(-1).vision_execution.ready, false);
+  assert.equal(rendered.at(-1).vision_execution.scene.valid, false);
+  assert.equal(rendered.at(-1).vision_execution.scene.hardware.ready, false);
+  assert.equal(
+    rendered.at(-1).vision_execution.transport.receiver.fresh,
+    false,
+    'Frozen receiver heartbeat cannot retain a ready badge',
+  );
+  assert.equal(rendered.at(-1).vision_execution.transport.receiver.ready, false);
+  assert.equal(
+    messages.filter((x) => x.message.type === 'streamlit:setComponentValue').length,
+    actionCount,
+    'Display expiry does not issue route or motor commands',
+  );
+  receive(routeReport);
+  assert.equal(
+    rendered.at(-1).vision_execution.transport.receiver.fresh,
+    false,
+    'Cached signed heartbeat identity cannot refresh the display age',
+  );
+  const newRoute = JSON.parse(JSON.stringify(routeReport));
+  newRoute.vision_execution.scene.seq = 2;
+  newRoute.vision_execution.scene.captured_at_ms = Date.now();
+  newRoute.vision_execution.transport.receiver.seq = 2;
+  newRoute.vision_execution.transport.receiver.issued_at_ms = Date.now();
+  receive(newRoute);
+  assert.equal(
+    rendered.at(-1).vision_execution.ready,
+    true,
+    'New camera and receiver evidence restore the displayed state',
+  );
+  assert.equal(
+    JSON.stringify(routeReport.vision_execution),
+    originalRoute,
+    'Route reports remain immutable',
+  );
+
+  const model = {
+    quality: 'OK',
+    quality_label: 'Current readings',
+    age_s: 0.1,
+    stale: false,
+    continuity_lost: false,
+    soc: 0.8,
+    raw: { ...raw, seq: 8 },
+    derived: { residual_valid: true },
+    pose: [0, 0, 0],
+    forecast_pose: [1, 0, 0],
+    runtime_hours: 2,
+  };
+  receive({
+    mode: 'live',
+    robots: { amr01: model },
+    physical_telemetry: { ...physical, fresh: false, age_s: 99 },
+    insights: { ready: true, recommendations: [{ title: 'Model guidance' }] },
+    human_review: { ...review, observation_only: false },
+  });
+  assert.equal(
+    rendered.at(-1).robots.amr01.stale,
+    false,
+    'Stale commissioning data cannot invalidate a fresh calibrated source',
+  );
+  assert.equal(rendered.at(-1).human_review.eligible, true);
+  tick(2000);
+  assert.equal(
+    rendered.at(-1).robots.amr01.stale,
+    true,
+    'Calibrated evidence expires at two seconds',
+  );
+  assert.equal(rendered.at(-1).robots.amr01.forecast_pose, null);
+  assert.equal(rendered.at(-1).human_review.eligible, false);
+  const demo = {
+    mode: 'demo',
+    robots: { amr01: model },
+    insights: { ready: true, recommendations: [{ title: 'Demo guidance' }] },
+    human_review: { demo: true },
+    amr_connection: { ...link, sample_identity: ['physical_observation', 'boot-a', 99] },
+  };
+  receive(demo);
+  tick(10000);
+  assert.equal(rendered.at(-1).mode, 'demo');
+  assert.equal(
+    rendered.at(-1).robots.amr01,
+    model,
+    'Fixed demo results do not age into a physical source',
+  );
+  assert.equal(rendered.at(-1).insights.recommendations[0].title, 'Demo guidance');
+  assert.equal(
+    rendered.at(-1).amr_connection.sample_fresh,
+    false,
+    'The separate live connection drawer still expires while viewing demo data',
+  );
+
   w.dispatchEvent(new w.PageTransitionEvent('pagehide', { persisted: false }));
   assert.equal(parentEvents.size, 0);
+  assert.equal(timers.size, 0, 'Page teardown releases freshness and decision timers');
   doc.body.dataset.view = 'activity';
   await Promise.resolve();
   assert.equal(main.scrollTop, 640, 'unloaded workspace must release its observer');

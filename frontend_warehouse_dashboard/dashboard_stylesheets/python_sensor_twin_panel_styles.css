@@ -31,7 +31,7 @@ html[data-theme='bright'] #physical-telemetry {
 }
 #physical-telemetry p {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--pt-muted);
 }
@@ -66,7 +66,7 @@ html[data-theme='bright'] #physical-telemetry {
 }
 #physical-telemetry .twin-card-kicker {
   color: var(--pt-subtle);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.13em;
 }
 #physical-telemetry h2 {
@@ -84,7 +84,7 @@ html[data-theme='bright'] #physical-telemetry {
   border: 1px solid var(--pt-border);
   border-radius: 5px;
   color: var(--pt-muted);
-  font: 10px var(--font-numeric);
+  font: 12px var(--font-numeric);
 }
 #physical-telemetry .physical-header-actions {
   flex-wrap: wrap;
@@ -99,7 +99,7 @@ html[data-theme='bright'] #physical-telemetry {
   padding: 7px 10px;
   background: var(--pt-inset);
   color: var(--pt-muted);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
 }
 #physical-telemetry #physical-status::before {
@@ -124,13 +124,13 @@ html[data-theme='bright'] #physical-telemetry {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 35px;
+  min-height: 44px;
   padding: 8px 11px;
   border: 1px solid var(--pt-border);
   border-radius: 8px;
   background: var(--pt-panel);
   color: var(--pt-text);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   box-shadow: 0 1px 2px var(--pt-shadow);
@@ -161,18 +161,18 @@ html[data-theme='bright'] #physical-telemetry {
   gap: 4px;
 }
 #physical-telemetry .physical-snapshot-bar dt {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--pt-subtle);
 }
 #physical-telemetry .physical-snapshot-bar dd {
   margin: 0;
   color: var(--pt-text);
-  font: 11px var(--font-numeric);
+  font: 13px var(--font-numeric);
 }
 #physical-telemetry .physical-provenance {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--pt-subtle);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 #physical-telemetry .physical-provenance span {
   margin: 0 6px;
@@ -202,12 +202,12 @@ html[data-theme='bright'] #physical-telemetry {
 #physical-telemetry #physical-freshness-title {
   display: block;
   color: var(--pt-text);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 #physical-telemetry #physical-freshness-detail {
   margin-top: 3px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
 }
 #physical-telemetry .physical-sensors {
@@ -257,13 +257,13 @@ html[data-theme='bright'] #physical-telemetry {
 }
 #physical-telemetry .physical-sensor-heading p {
   margin-top: 3px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
 }
 #physical-telemetry .physical-module-tag {
   margin-left: auto;
   color: var(--pt-subtle);
-  font: 9px var(--font-numeric);
+  font: 11px var(--font-numeric);
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
@@ -282,7 +282,7 @@ html[data-theme='bright'] #physical-telemetry {
   align-items: center;
   gap: 8px;
   color: var(--pt-text);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 #physical-telemetry .physical-channel-letter {
@@ -293,7 +293,7 @@ html[data-theme='bright'] #physical-telemetry {
   border: 1px solid var(--pt-border);
   border-radius: 5px;
   color: var(--pt-subtle);
-  font: 9px var(--font-numeric);
+  font: 11px var(--font-numeric);
 }
 #physical-telemetry .physical-rate-reading {
   display: flex;
@@ -309,7 +309,7 @@ html[data-theme='bright'] #physical-telemetry {
 #physical-telemetry .physical-rate-unit,
 #physical-telemetry .physical-rate-caption {
   color: var(--pt-subtle);
-  font-size: 10px;
+  font-size: 12px;
 }
 #physical-telemetry .physical-value {
   color: var(--pt-text);
@@ -338,16 +338,16 @@ html[data-theme='bright'] #physical-telemetry {
 #physical-telemetry .physical-wheel-channel dt {
   margin: 0;
   color: var(--pt-muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
 }
 #physical-telemetry .physical-wheel-channel dt small {
   color: var(--pt-subtle);
-  font-size: 9px;
+  font-size: 11px;
 }
 #physical-telemetry .physical-wheel-channel dd {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
 }
 #physical-telemetry .physical-inertial-values,
 #physical-telemetry .physical-battery-values {
@@ -372,13 +372,13 @@ html[data-theme='bright'] #physical-telemetry {
 #physical-telemetry .physical-battery-values dt {
   min-height: 30px;
   color: var(--pt-muted);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 #physical-telemetry .physical-inertial-values dt span,
 #physical-telemetry .physical-battery-values dt span {
   display: block;
-  font-size: 9px;
+  font-size: 11px;
   color: var(--pt-subtle);
 }
 #physical-telemetry .physical-inertial-values dd,
@@ -390,7 +390,7 @@ html[data-theme='bright'] #physical-telemetry {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--pt-border);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--pt-subtle);
 }
@@ -406,7 +406,7 @@ html[data-theme='bright'] #physical-telemetry {
   gap: 12px;
   padding: 16px 24px;
   color: var(--pt-muted);
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
   list-style: none;
 }
@@ -442,7 +442,7 @@ html[data-theme='bright'] #physical-telemetry {
 #physical-telemetry #physical-model-state {
   margin-left: auto;
   color: var(--pt-subtle);
-  font-size: 10px;
+  font-size: 12px;
 }
 #physical-telemetry .physical-check-count {
   padding: 2px 6px;
@@ -450,7 +450,7 @@ html[data-theme='bright'] #physical-telemetry {
   border-radius: 5px;
   background: var(--pt-inset);
   color: var(--pt-muted);
-  font: 9px var(--font-numeric);
+  font: 11px var(--font-numeric);
 }
 #physical-telemetry .physical-guidance-content {
   display: grid;
@@ -458,13 +458,13 @@ html[data-theme='bright'] #physical-telemetry {
   gap: 24px;
   padding: 0 24px 20px;
   color: var(--pt-muted);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
 }
 #physical-telemetry .physical-guidance-content h4 {
   margin: 0 0 8px;
   color: var(--pt-text);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 #physical-telemetry .physical-guidance-content ul {
@@ -476,7 +476,7 @@ html[data-theme='bright'] #physical-telemetry {
 }
 #physical-telemetry .physical-guidance-content p {
   margin-top: 8px;
-  font-size: 11px;
+  font-size: 13px;
 }
 #physical-telemetry .physical-source-notes {
   border-left: 1px solid var(--pt-border);
@@ -505,7 +505,7 @@ html[data-theme='bright'] #physical-telemetry {
     gap: 12px 20px;
   }
   #physical-telemetry .physical-provenance {
-    display: none;
+    width: 100%;
   }
   #physical-telemetry .physical-freshness-note {
     margin: 0 18px 16px;
@@ -567,26 +567,39 @@ html[data-theme='bright'] #physical-telemetry {
     margin: 0;
   }
 }
-/* Hide only the hosted shell while the first authoritative payload is loading. */
+/* Keep navigation usable while waiting for the first authoritative payload. */
 .twin-initializing {
   display: none;
 }
 html:not([data-python-twin='true']) .python-database-nav {
   display: none !important;
 }
-html[data-host='streamlit']:not([data-python-twin='true']) .app-main,
-html[data-host='streamlit']:not([data-python-twin='true']) .navigation-rail {
-  visibility: hidden;
-}
 html[data-host='streamlit']:not([data-python-twin='true']) .twin-initializing {
   display: flex;
+  flex: none;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  position: fixed;
-  inset: 72px 0 0;
+  flex-wrap: wrap;
+  gap: 10px;
+  order: 1;
+  margin-left: var(--rail);
+  padding: 12px 24px;
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--line);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
+}
+html[data-host='streamlit'] .app-main {
+  order: 2;
+}
+html[data-host='streamlit']:not([data-python-twin='true']) #hardware > .hardware-intro,
+html[data-host='streamlit']:not([data-python-twin='true']) #hardware > .hardware-grid,
+html[data-host='streamlit']:not([data-python-twin='true']) #hardware > .hardware-setup-grid,
+html[data-host='streamlit']:not([data-python-twin='true']) #hardware > .hardware-boundary,
+html[data-standalone='true'] #hardware > .hardware-intro,
+html[data-standalone='true'] #hardware > .hardware-grid,
+html[data-standalone='true'] #hardware > .hardware-setup-grid,
+html[data-standalone='true'] #hardware > .hardware-boundary {
+  display: none !important;
 }
 /* Replenish sensor workspace. The standalone simulation keeps its own layout. */
 #python-sensor-panel,
@@ -1684,5 +1697,155 @@ html[data-python-twin='true'] [hidden] {
 @media (max-width: 360px) {
   html[data-python-twin='true'] .motion-toggle {
     display: none;
+  }
+}
+
+/* Read the stale explanation before interpreting any retained history. */
+#physical-telemetry[data-state='stale'] .physical-freshness-note,
+#physical-telemetry[data-state='clock_skew'] .physical-freshness-note {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+}
+#physical-telemetry[data-state='stale'] #physical-freshness-title,
+#physical-telemetry[data-state='clock_skew'] #physical-freshness-title {
+  color: var(--warning-text);
+}
+@media (max-width: 440px) {
+  #physical-telemetry .physical-wheel-channels {
+    grid-template-columns: 1fr;
+  }
+  #physical-telemetry .physical-wheel-channel + .physical-wheel-channel {
+    border-left: 0;
+    border-top: 1px solid var(--pt-border);
+    padding: 16px 0 0;
+  }
+}
+
+/* One compact operational summary precedes readings and control. */
+#operator-overview {
+  display: none;
+  order: 1;
+  margin-bottom: 20px;
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+body[data-view='hardware'] #operator-overview,
+body[data-view='vision'] #operator-overview {
+  display: block;
+}
+.operator-overview-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+.operator-overview-top h2 {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+#operator-source {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.operator-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.operator-status-grid > article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--panel-alt);
+}
+.operator-status-grid .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.operator-status-grid strong {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--text);
+}
+.operator-status-grid p,
+.operator-status-grid small {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.operator-status-grid button {
+  min-height: 44px;
+  margin-top: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.operator-status-grid [data-state='live'] {
+  border-left-color: var(--success-accent);
+}
+.operator-status-grid [data-state='stale'] {
+  border-left-color: var(--warning-accent);
+}
+.operator-status-grid [data-state='stale'] strong {
+  color: var(--warning-text);
+}
+.operator-status-grid [data-state='demo'] {
+  border-left-color: var(--blue);
+}
+#operator-host-note {
+  display: none;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+}
+html[data-standalone='true'] #operator-host-note {
+  display: block;
+}
+#operator-host-note p {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+#operator-host-note a,
+.twin-initializing a {
+  color: var(--blue);
+  text-underline-offset: 4px;
+}
+@media (max-width: 900px) {
+  .operator-status-grid {
+    grid-template-columns: 1fr;
+  }
+  .operator-status-grid > article {
+    gap: 7px;
+  }
+}
+@media (max-width: 720px) {
+  html[data-host='streamlit']:not([data-python-twin='true']) .twin-initializing {
+    margin-left: 0;
+    padding: 12px 16px;
+  }
+  #operator-overview {
+    padding: 14px;
+  }
+  .operator-status-grid button {
+    width: 100%;
   }
 }

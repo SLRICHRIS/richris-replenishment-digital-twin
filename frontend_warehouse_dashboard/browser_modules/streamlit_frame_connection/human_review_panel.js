@@ -100,6 +100,8 @@
     );
     actionHelp();
     if (expired()) {
+      recommendations();
+      resultChecks();
       text('human-review-state', 'Review timed out');
       text(
         'human-review-summary-detail',
@@ -237,7 +239,7 @@
       return [
         'Choose your response',
         current.observation_only && current.eligible
-          ? 'Keep monitoring, inspect the AMR or check/recharge its battery. This records a choice without moving the vehicle.'
+          ? 'Choose the response supported by the readings and record your reason. Apply physical changes through Drive control or an attended inspection.'
           : current.eligible
             ? 'Keep operation unchanged, request a speed reduction or request a controlled pause.'
             : 'Fresh readings are unavailable. You can reject or defer; approval waits for valid evidence.',
@@ -254,7 +256,9 @@
     if (!current.demo && !current.authorized && current.can_unlock)
       return [
         'Enable operator review',
-        'Your alias labels this decision. The private code protects physical control.',
+        current.observation_only
+          ? 'Your alias labels the decision. The private code protects decision recording; local driving uses the ESP32 controller.'
+          : 'Your alias labels this decision. The private code protects physical control.',
       ];
     if (!current.demo && !current.can_unlock)
       return [
@@ -275,7 +279,20 @@
   }
   function recommendations() {
     const row = current.review,
-      items = row?.evidence?.recommendations || current.recommendations || [];
+      pending = row?.state === 'pending' && !expired(),
+      items = pending
+        ? row.evidence?.recommendations || []
+        : !current.demo && !current.eligible
+          ? [
+              {
+                title: 'Fresh evidence unavailable',
+                detail:
+                  'Restore the live sensor feed before starting a new review. Earlier captured findings are in the history below.',
+              },
+            ]
+          : current.recommendations || [];
+    const heading = $('human-review-recommendation-card').querySelector('h3');
+    if (heading) heading.textContent = pending ? 'Recommendation to review' : 'Current guidance';
     $('human-review-recommendation-card').hidden = !items.length;
     const signature = JSON.stringify(items),
       list = $('human-review-recommendations');
@@ -295,14 +312,47 @@
     }
     text(
       'human-review-captured-note',
-      row
+      pending
         ? 'Captured recommendation for this review. New readings do not silently replace it.'
-        : 'This is the current guidance. Starting a review captures its sensor context.',
+        : current.eligible
+          ? 'Current guidance from the latest evidence. Start a new review to capture it.'
+          : 'Previous review findings are historical and do not describe the current robot state.',
     );
+    let history = $('human-review-captured-history');
+    if (!history) {
+      history = document.createElement('details');
+      history.id = 'human-review-captured-history';
+      $('human-review-technical').append(history);
+    }
+    history.hidden = !row || pending;
+    const historySignature = JSON.stringify([
+      row?.review_id,
+      row?.evidence?.recommendations,
+      row?.created_at,
+    ]);
+    if (!history.hidden && history.dataset.signature !== historySignature) {
+      history.dataset.signature = historySignature;
+      const summary = document.createElement('summary'),
+        stamp = document.createElement('p');
+      summary.textContent = 'Captured recommendation · history';
+      const when = Number.isFinite(row.created_at)
+        ? new Date(row.created_at * 1000).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) +
+          ' IST'
+        : 'Capture time unavailable';
+      stamp.textContent = `${when} · ${row.evidence?.source === 'demo' ? 'Generated evidence' : 'Physical evidence'} · sample ${row.evidence?.seq ?? 'unknown'}. Historical evidence, not a current recommendation.`;
+      history.replaceChildren(summary, stamp);
+      for (const item of row.evidence?.recommendations || []) {
+        const title = document.createElement('strong'),
+          detail = document.createElement('p');
+        title.textContent = item.title;
+        detail.textContent = item.detail || '';
+        history.append(title, detail);
+      }
+    }
   }
   function resultChecks() {
     const r = current.review;
-    $('human-review-result').hidden = !r || r.state === 'pending';
+    $('human-review-result').hidden = !r || (r.state === 'pending' && !expired());
     if (!r) return;
     const noRequest = !r.command,
       verified = r.state === 'verified',
@@ -374,7 +424,13 @@
   function observationResult(row) {
     const point = [...(row.events || [])].reverse().find((e) => e.observation)?.observation;
     if (!point)
-      return 'Waiting for readings after this decision. Inspection and charging are performed by the operator.';
+      return row.state === 'observing'
+        ? 'Waiting for readings after this decision. Apply the response with the direct controller or complete the physical task.'
+        : row.state === 'expired' || expired()
+          ? 'This review expired. No completed sensor follow-up is available; start a new review from fresh evidence.'
+          : row.state === 'rejected' || row.state === 'deferred'
+            ? 'The choice was recorded without a motor command or sensor follow-up.'
+            : 'No completed sensor follow-up is available for this review. Check the recorded history before starting a new review.';
     const before = row.evidence.measurements?.battery_voltage_v,
       after = point.measurements?.battery_voltage_v,
       battery = Number.isFinite(after)
@@ -386,9 +442,9 @@
       guidance = (point.recommendations || []).map((r) => r.title).join('; ');
     return (
       battery +
-      'Latest guidance: ' +
+      'Guidance at recorded follow-up: ' +
       guidance +
-      '. These readings do not confirm that inspection or charging occurred.'
+      '. These recorded follow-up readings do not confirm that the physical task occurred.'
     );
   }
   function render(value) {

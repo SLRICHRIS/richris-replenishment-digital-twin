@@ -19,7 +19,7 @@ streamlit run streamlit_app.py
 
 The dashboard opens on **Floor**, a single-AMR warehouse simulation. **Connect AMR** provides the operator-protected, on-demand EMQX recorder. **Sensor models** shows six Python models with Demo data or Stored sensor data, their equations, sources and recommendations. **Detailed readings and export** opens packet values and charts. **Database** browses saved records, attributes and storage status. Display reads use a private SELECT-only account; the optional recorder uses a separate limited writer. Physical data collection and measured calibration require independent commissioning.
 
-For attended manual driving, open **Live AMR mission → Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry or firmware upload is needed. Allow local-network access if Chrome asks. Commands travel directly over local Wi-Fi; EMQX continues carrying sensor data. See the [direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
+For attended manual driving, open **Drive & review → Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry or firmware upload is needed. Allow local-network access if Chrome asks. Commands travel directly over local Wi-Fi; EMQX continues carrying sensor data. See the [direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
 
 ## Reproducible demonstration
 
@@ -32,6 +32,8 @@ python -m project_maintenance_scripts.replay_generated_trial amr01_disagreement_
 ```
 
 The verifier rejects altered outputs and mismatched source files. It checks software reproducibility, not physical validity or signed origin. See the [demonstration and evidence guide](project_documentation/demonstration_and_evidence_guide.md) for the walkthrough, expected outcomes and evidence boundaries.
+
+See the [operator workspace audit](project_documentation/operator_workspace_audit.md) for the current flow, freshness rules and UI improvements.
 
 ## Human review and action
 

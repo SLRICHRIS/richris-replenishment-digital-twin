@@ -1,6 +1,6 @@
 # Direct Wi-Fi control for AMR-01
 
-The digital twin's **Live AMR mission → Direct Wi-Fi drive** panel embeds the
+The digital twin's **Drive & review → Direct Wi-Fi drive** panel embeds the
 ESP32's existing local control page at **http://10.15.213.112/**. The address
 is fixed in the dashboard; no typing or new firmware upload is required.
 Movement commands travel directly from the browser to the ESP32 over the
@@ -9,7 +9,7 @@ local network. EMQX continues to carry sensor telemetry.
 ## Open the controller inside the dashboard
 
 1. Connect the laptop and ESP32 to the same Wi-Fi network or phone hotspot.
-2. Open **Live AMR mission → Direct Wi-Fi drive → Connect controller**.
+2. Open **Drive & review → Direct Wi-Fi drive → Connect controller**.
 3. If Chrome asks for local-network access, allow it for this dashboard.
 4. Confirm **Wi-Fi connected** and updating readings inside the embedded
    ESP32 page. Use its direction buttons, Stop and motor-speed slider.

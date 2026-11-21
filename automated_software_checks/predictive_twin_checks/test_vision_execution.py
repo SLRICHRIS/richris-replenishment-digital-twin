@@ -88,6 +88,9 @@ def test_colocated_browser_uses_only_the_receiver_link_and_audited_owner(monkeyp
     assert service.public_transport()['receiver'] is None
     heartbeat(3, protocol='H2')
     assert service.public_transport()['receiver']['protocol'] == 'H2' and service.route_hardware() is None
+    public_receiver=service.public_transport()['receiver']
+    assert (public_receiver['boot_id'],public_receiver['epoch_id'],public_receiver['seq'],public_receiver['issued_at_ms']) == (BOOT,EPOCH,3,clock[0])
+    assert set(public_receiver)=={'protocol','ready','state','battery_voltage_v','boot_id','epoch_id','seq','issued_at_ms','fresh','age_ms'}
     with pytest.raises(ValueError, match='commissioning'):
         service.attach_camera(config, owner)
     heartbeat(4, mv=4890)

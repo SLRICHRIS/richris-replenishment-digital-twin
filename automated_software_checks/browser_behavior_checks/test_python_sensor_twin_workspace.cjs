@@ -574,7 +574,7 @@ payload.amr_connection = {
 };
 deliver(parent, w.location.origin);
 assert.equal(doc.getElementById('amr-link-connect').disabled, true);
-assert.equal(doc.getElementById('amr-link-state').textContent, 'Setup required');
+assert.equal(doc.getElementById('amr-link-state').textContent, 'Optional recorder unavailable');
 assert.equal(doc.getElementById('amr-insights-empty').hidden, false);
 assert.match(doc.getElementById('amr-live-recommendations').textContent, /Measured calibration/);
 const codeField = doc.getElementById('amr-access-code');
@@ -587,7 +587,7 @@ deliver(parent, w.location.origin);
 assert.equal(codeField.disabled, false);
 assert.equal(codeField.value, 'private-fixture-draft', 'Polling preserves the typed code');
 assert.equal(doc.activeElement, codeField, 'Polling preserves code-entry focus');
-assert.match(doc.getElementById('amr-link-detail').textContent, /calibration.*You can enter/);
+assert.match(doc.getElementById('amr-link-detail').textContent, /calibration.*commissioning telemetry.*independently/);
 const blockedConnectCount = sent.length;
 doc.getElementById('amr-link-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 assert.equal(sent.length, blockedConnectCount, 'Editable code cannot bypass setup readiness');

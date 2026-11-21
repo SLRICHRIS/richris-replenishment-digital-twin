@@ -1363,10 +1363,10 @@ const pages = {
     summary: 'Explore the sensor, vision, approval and power pipelines for AMR-01.',
   },
   vision: {
-    title: 'Live AMR mission',
-    context: 'Five-point paper warehouse',
+    title: 'Drive & review',
+    context: 'Direct Wi-Fi control',
     summary:
-      'Select racks A–D, track the overhead camera, and review physical route decisions. Battery station E is a separate target.',
+      'Drive AMR-01 over local Wi-Fi, inspect fresh sensor evidence, and record your decisions.',
   },
   connection: {
     title: 'Connect AMR',
@@ -1642,10 +1642,13 @@ document.querySelectorAll('[data-page]').forEach((button) => {
   button.addEventListener('keydown', (e) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
-    const tabs = [...document.querySelectorAll('[data-page]')].filter((tab) =>
-        document.documentElement.dataset.pythonTwin === 'true'
-          ? !tab.hasAttribute('data-slide-outside')
-          : !['database', 'connection'].includes(tab.dataset.page),
+    const tabs = [...document.querySelectorAll('[data-page]')].filter(
+        (tab) =>
+          !tab.hidden &&
+          (advancedVisible || !optionalPages.has(tab.dataset.page)) &&
+          (document.documentElement.dataset.pythonTwin === 'true'
+            ? !tab.hasAttribute('data-slide-outside')
+            : !['database', 'connection'].includes(tab.dataset.page)),
       ),
       i = tabs.indexOf(button),
       next =
@@ -1676,6 +1679,9 @@ function applySlideWorkspaceScope(event) {
   else updateSourceUI();
 }
 document.addEventListener('python-twin:render', applySlideWorkspaceScope);
+document.addEventListener('vision-routing:mode', () => {
+  if (activePage === 'vision') updateSourceUI();
+});
 
 $('views').onclick = (e) => {
   const b = e.target.closest('[data-view]');
@@ -1907,6 +1913,20 @@ function sceneState() {
 }
 function updateSourceUI() {
   const live = isLiveFloor();
+  const physicalWorkspace = [
+    'vision',
+    'hardware',
+    'database',
+    'connection',
+    'architecture',
+  ].includes(activePage);
+  for (const node of [
+    document.querySelector('.metrics'),
+    document.querySelector('.session-action'),
+    $('sync'),
+  ]) {
+    if (node) node.hidden = physicalWorkspace || live;
+  }
   document.body.dataset.source = live ? 'hardware' : 'simulation';
   const physical = activePage === 'hardware' || live,
     advisory = activePage === 'engineering' || activePage === 'routes';
@@ -1970,11 +1990,49 @@ function updateSourceUI() {
     $('page-mode').textContent = 'Operator-controlled sensor link';
   }
   if (activePage === 'vision') {
-    $('source-badge').textContent = 'Human review';
-    $('page-mode').textContent = 'Guided physical workflow';
-    $('page-mode').dataset.kind = 'advisory';
-    $('rail-mode').textContent = 'Guarded route control';
-    $('rail-detail').textContent = 'Verify physical setup before approving movement';
+    const mode = document.getElementById('vision-routing-shell')?.dataset.mode || 'manual';
+    document.body.dataset.visionMode = mode;
+    const content =
+      mode === 'manual'
+        ? [
+            'Drive & review',
+            'Direct Wi-Fi control',
+            'Attended local control',
+            'Direct Wi-Fi drive',
+            'Drive AMR-01 over local Wi-Fi. Review sensor recommendations here; record decisions in Sensor models.',
+            'You control movement',
+            'Saved decisions do not send motor commands.',
+          ]
+        : mode === 'practice'
+          ? [
+              'Practice a camera route',
+              'Generated route rehearsal',
+              'Practice only',
+              'Simulation',
+              'Rehearse route planning with hypothetical inputs. This mode does not command the physical robot.',
+              'Practice only',
+              'Generated inputs · no physical commands',
+            ]
+          : [
+              'Camera routes',
+              'Camera-guided physical workflow',
+              'Camera-guided workflow',
+              'Camera route control',
+              'Complete camera and motor setup, check tracking, then plan and review a route to racks A–D or station E.',
+              'Guarded route control',
+              'Check setup and current tracking before approving a route.',
+            ];
+    [
+      $('page-title').textContent,
+      $('page-context').textContent,
+      $('page-mode').textContent,
+      $('source-badge').textContent,
+      $('page-summary').textContent,
+      $('rail-mode').textContent,
+      $('rail-detail').textContent,
+    ] = content;
+    $('page-mode').dataset.kind = mode === 'practice' ? 'simulation' : 'advisory';
+    document.title = 'AMR-01 | ' + content[0];
   }
   if (activePage === 'architecture') {
     $('source-badge').textContent = 'System guide';
@@ -2184,7 +2242,14 @@ function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
   routeMap?.tick(now);
-  if (running && !document.hidden && !isLiveFloor() && activePage !== 'hardware')
+  if (
+    running &&
+    !document.hidden &&
+    !isLiveFloor() &&
+    ['environment', 'routes', 'missions', 'telemetry', 'engineering', 'activity'].includes(
+      activePage,
+    )
+  )
     step(dt * +$('speed').value);
   if (
     !document.hidden &&
@@ -2206,16 +2271,27 @@ function frame(now) {
 }
 reset();
 // Physical mission is the default. Virtual warehouse tools remain accessible on demand.
-const optionalPages = new Set(['environment', 'routes', 'missions', 'telemetry', 'engineering', 'activity']);
+const optionalPages = new Set([
+  'environment',
+  'routes',
+  'missions',
+  'telemetry',
+  'engineering',
+  'activity',
+]);
 const advancedToggle = document.getElementById('amr-advanced-toggle');
 let advancedVisible = false;
 function setAdvanced(visible) {
   advancedVisible = visible;
   document.documentElement.dataset.amrAdvanced = String(visible);
   advancedToggle?.setAttribute('aria-pressed', String(visible));
-  if (advancedToggle) advancedToggle.querySelector('span').textContent =
-    visible ? 'Hide simulation tools' : 'Show simulation tools';
+  if (advancedToggle)
+    advancedToggle.querySelector('span').textContent = visible
+      ? 'Hide simulation tools'
+      : 'Show simulation tools';
   if (!visible && optionalPages.has(activePage)) activatePage('vision');
+  if (!visible && $('vision-routing-shell')?.dataset.mode === 'practice')
+    $('vision-mode-manual')?.click();
 }
 advancedToggle?.addEventListener('click', () => setAdvanced(!advancedVisible));
 const requestedPage = location.hash.slice(1);

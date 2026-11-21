@@ -213,6 +213,16 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
     $ = (id) => doc.getElementById(id);
   ui.flush();
   await ui.settle();
+  const pausedSimulation = run('elapsed');
+  run('last=100; frame(200)');
+  assert.equal(
+    run('elapsed'),
+    pausedSimulation,
+    'Physical workspace never advances the virtual stock trial',
+  );
+  run("setAdvanced(true); activatePage('environment'); last=200; frame(300)");
+  assert(run('elapsed') > pausedSimulation, 'Virtual simulation still advances on its own page');
+  run("activatePage('vision')");
   const initialRows = [...$('tasks').children],
     bins = [...$('bins').children];
   const log = $('log').firstElementChild;
@@ -471,9 +481,13 @@ function workspace({ savedMotion = null, osReduced = false, animationsSupported 
   );
   assert.equal(
     doc.body.dataset.view,
-    'vision',
-    'keyboard navigation returns to the live AMR mission without a separate connection tab',
+    'hardware',
+    'keyboard navigation skips the hidden connection tab',
   );
+  $('tab-hardware').dispatchEvent(
+    new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
+  );
+  assert.equal(doc.body.dataset.view, 'vision');
   $('tab-vision').dispatchEvent(
     new ui.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }),
   );
