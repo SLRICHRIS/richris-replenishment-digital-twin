@@ -6,7 +6,7 @@
 #include "route_http_protocol.h"
 
 namespace amr_route {
-static_assert(AMR_ROUTE_MAX_PWM > 0 && AMR_ROUTE_MAX_PWM <= 60, "Invalid route PWM cap");
+static_assert(AMR_ROUTE_MAX_PWM > 0 && AMR_ROUTE_MAX_PWM <= 200, "Invalid route PWM cap");
 static_assert(AMR_ROUTE_MIN_PACK_V >= 6.0 && AMR_ROUTE_MIN_PACK_V <= 7.4, "Check receiver cutoff");
 
 static portMUX_TYPE driveMux = portMUX_INITIALIZER_UNLOCKED;

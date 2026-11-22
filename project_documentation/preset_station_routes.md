@@ -2,20 +2,15 @@
 
 Open **AMR01_PresetRoutes.exe**, paste the same private `AMR_ROUTE_KEY`, and keep the console open. Close LocalTwin and other motor controller pages first. Open the local page at `http://127.0.0.1:8765` and select **Connect ESP32**. No camera calibration is needed for this mode. The current receiver address is `10.55.54.112`; use `--device-ip` if the hotspot assigns a different address.
 
-## Update for HTTP 409 near the end of a pulse
+## Install 200 PWM with the existing 6.0 V cutoff
 
-If Local Routes r3 with the 6.0 V cutoff is already installed, replace only the Windows application for this update. Close the old executable and controller tab, extract the new download, and run its `AMR01_PresetRoutes.exe` with the same private key. No new ESP32 upload or changed cutoff is needed. Connect and repeat one attended **Forward · 1 second** trial. A successful pulse ends with **One-second pulse finished**; measure the actual movement before saving it.
-
-The application now stops renewing once an accepted command covers the intended end of a movement. It waits for signed feedback acknowledging that final command's expiry and zero applied outputs. Previously, unnecessary shorter renewals could arrive after expiry and receive HTTP 409. Stop, loss of attendance, stale feedback and readiness failures still cancel the job. Other causes of HTTP 409 remain possible and are not ignored or automatically retried.
-
-## Install the requested 6.0 V cutoff
-
-This release uses a **6.0 V** pack cutoff in the preset application and the supplied **Local Routes r3** receiver settings. Updating the application alone does not change the firmware already installed on the ESP32.
+The preset trial now defaults to **200 PWM**, and the application and supplied **Local Routes r4** receiver support values up to 200. The **6.0 V** pack cutoff remains. Updating the application alone cannot raise the cap in the ESP32's existing firmware.
 
 1. Extract the Windows download. It includes `AMR01_PresetRoutes.exe` and an `AMR01_Local_Routes` sketch folder.
-2. Copy your existing `private_amr_settings.h` into that new sketch folder. Keep your Wi-Fi, telemetry and route key values. Change its cutoff line to `#define AMR_ROUTE_MIN_PACK_V 6.0`. For a new installation, copy `example_private_amr_settings.h` to that filename and supply your private settings.
-3. Open `AMR01_Local_Routes.ino` in Arduino IDE and upload to the ESP32. Serial Monitor at 115200 should report **Local Routes r3** and **Route pack cutoff: 6.00 V**. Keep the robot still during startup calibration.
-4. Run the new preset executable using the same key, then connect. The feedback line shows **Cutoff 6.00 V**. Start with one attended forward trial before calibrating the routes.
+2. Copy your existing `private_amr_settings.h` into that new sketch folder. Keep your Wi-Fi, telemetry and route key values. Set `#define AMR_ROUTE_MAX_PWM 200` and `#define AMR_ROUTE_MIN_PACK_V 6.0`. For a new installation, copy `example_private_amr_settings.h` to that filename and supply your private settings.
+3. Open `AMR01_Local_Routes.ino` in Arduino IDE and upload the complete sketch to the ESP32. Serial Monitor at 115200 should report **Local Routes r4** and **Route pack cutoff: 6.00 V; maximum PWM: 200**. Keep the robot still during startup calibration.
+4. Close the old app and controller tab. Run the new preset executable using the same key, then connect. Check **App PWM limit 200**, **Cutoff 6.00 V**, and **Trial PWM 200**. Start with one attended forward trial on a larger clear floor.
+5. Repeat and save forward, left and right measurements at 200 before using routes. Old timing values are not scaled to the higher PWM. Each route step uses the PWM recorded with its own measurement.
 
 The firmware stops at or below 6.0 V. Higher voltage alone does not override invalid sensor data, lost feedback, Stop or the existing motor interlocks. This is a total-pack setting; it does not add individual-cell monitoring or battery protection hardware.
 
@@ -43,7 +38,7 @@ These are geometric instructions calculated from measured coordinates, not motor
 
 ## Three short measurements, once per physical setup
 
-Use a larger clear floor with the same surface, battery, wheels and load. Keep the robot in view. Choose a test PWM within the installed receiver's unchanged **60 PWM** cap. These tests use opposed wheel outputs for turns; the old manual controller's one-wheel turns are not equivalent measurements.
+Use a larger clear floor with the same surface, battery, wheels and load. Keep the robot in view. The requested test setting is **200 PWM**, also the preset maximum. Lower values remain available. These tests use opposed wheel outputs for turns; the old manual controller's one-wheel turns are not equivalent measurements.
 
 1. Mark the body-centre position and check the clear-area box. Select **Forward · 1 second**. After signed zero-output feedback, measure the centre's total travel in cm and its extra roll after motor cut-off. Enter both and confirm that it moved forward without slipping. Save. The software subtracts roll from the one-second speed sample and reserves it before the route endpoint.
 2. Mark the robot's initial heading with tape. Select **Turn left · 1 second**, measure the actual angle using a protractor, confirm the direction, and save.
@@ -63,7 +58,9 @@ The nominal route checks the complete body's circular swept footprint plus 20 mm
 
 ## Receiver and connection behaviour
 
-The application uses the existing authenticated `/api/route/hardware` and `/api/route/command` endpoints. It retains private key authentication, boot/epoch checks, replay rejection, fresh feedback, applied-output checks, 60 PWM cap, firmware reversal interlock and voltage protections. The laptop refuses motion below 6.0 V; the receiver must also report ready. Every command has a maximum 500 ms receiver lease, shortened to the current attendance and motion deadlines. An interrupted control loop, Wi-Fi failure, changed device identity, unexpected motor output or stale feedback cancels the job. No camera measurements or fake observations are sent to bypass the camera controller.
+The application uses the existing authenticated `/api/route/hardware` and `/api/route/command` endpoints. It retains private key authentication, boot/epoch checks, replay rejection, fresh feedback, applied-output checks, firmware reversal interlock and voltage protections. Preset output is bounded to 200 PWM. The separate camera controller retains its 60 PWM application limit. The laptop refuses motion below 6.0 V; the receiver must also report ready. Every command has a maximum 500 ms receiver lease, shortened to the current attendance and motion deadlines. An interrupted control loop, Wi-Fi failure, changed device identity, unexpected motor output or stale feedback cancels the job. No camera measurements or fake observations are sent to bypass the camera controller.
+
+The final-command expiry fix is included. Once an accepted command covers the intended end, the application waits for signed feedback acknowledging that command's expiry and zero applied outputs. It avoids unnecessary shorter renewals that can arrive expired and receive HTTP 409. Other rejection causes are not ignored or automatically retried. H1 does not advertise the installed firmware cap, so the app's displayed limit is its own configuration; verify the ESP32's configured maximum in Serial Monitor.
 
 Command timestamps use the last authenticated receiver timestamp plus elapsed laptop time since receipt. This handles a small clock difference that could otherwise allow fresh feedback while rejecting the first arm request with HTTP 409. Reply transit shortens the command lease; it does not extend attendance or motion deadlines. Original signed feedback timestamps still have to pass the existing freshness checks. A 409 can also mean a changed receiver state, so this correction alone does not identify every rejection.
 

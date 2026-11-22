@@ -1,6 +1,6 @@
 """Three measured-layout timed routes; no camera, automatic obstacle or pose claim.
 
-Commands use the existing signed V1/H1 receiver and its unchanged 60 PWM cap.
+Commands use the signed V1/H1 receiver with an explicit 200 PWM preset cap.
 Each packet expires by both the attended-input deadline and segment deadline.
 Timing is empirical and approximate; only the operator can confirm arrival.
 """
@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .contracts import fresh, identifier, numeric
 from .local_session import ProcessLock, read_route_key
-from .local_transport import DeviceHTTPTransport, DEVICE_IP, receiver_ip
+from .local_transport import DeviceHTTPTransport, DEVICE_IP, PRESET_PWM_CAP, receiver_ip
 
 HOST, PORT = "127.0.0.1", 8765
 PRESENCE_MS = 700
@@ -68,8 +68,8 @@ def valid_measurements(raw):
     for direction, s in raw.get("samples", {}).items():
         if direction not in DUTIES or not isinstance(s, dict):
             raise ValueError("Invalid movement sample")
-        if type(s.get("pwm")) is not int or not 1 <= s["pwm"] <= 60:
-            raise ValueError("Measured PWM must be from 1 to 60")
+        if type(s.get("pwm")) is not int or not 1 <= s["pwm"] <= PRESET_PWM_CAP:
+            raise ValueError(f"Measured PWM must be from 1 to {PRESET_PWM_CAP}")
         sample = {"pwm": s["pwm"], "rate": numeric(s.get("rate"), 1, 300, "measured rate"),
                   "voltage_v": numeric(s.get("voltage_v"), MIN_VOLTAGE, 8.5, "sample voltage"),
                   "at_ms": numeric(s.get("at_ms"), 0, 10**14, "sample date")}
@@ -181,7 +181,7 @@ class PresetController:
             return dict(state=self.state, message=message,
                         connected=self.connected, ready=self.ready(zero=True), hardware=h,
                         controller_ip=self.transport.device_ip, busy=bool(self.job),
-                        min_voltage_v=MIN_VOLTAGE,
+                        min_voltage_v=MIN_VOLTAGE, max_pwm=PRESET_PWM_CAP,
                         measurements=copy.deepcopy(self.measurements), last_test=copy.deepcopy(self.last_test),
                         last_stop=copy.deepcopy(self.last_stop),
                         routes=[layout(r) for r in PAIRS], stations=copy.deepcopy(STATIONS),
@@ -205,8 +205,8 @@ class PresetController:
             raise ValueError("Keep this page visible and wait for fresh ready ESP32 feedback with zero outputs")
         if trial:
             direction, pwm = payload.get("motion"), payload.get("pwm")
-            if direction not in DUTIES or type(pwm) is not int or not 1 <= pwm <= 60:
-                raise ValueError("Choose a trial direction and PWM from 1 to 60")
+            if direction not in DUTIES or type(pwm) is not int or not 1 <= pwm <= PRESET_PWM_CAP:
+                raise ValueError(f"Choose a trial direction and PWM from 1 to {PRESET_PWM_CAP}")
             steps = [dict(motion=direction, pwm=pwm, duration_ms=1000)]
             plan = None
         else:
@@ -539,7 +539,8 @@ def main(argv=None):
     directory = Path(args.state_dir).expanduser().resolve()
     directory.mkdir(parents=True, exist_ok=True)
     with ProcessLock(directory / "controller.lock"):
-        controller = PresetController(DeviceHTTPTransport(secret, device_ip=args.device_ip), directory)
+        controller = PresetController(DeviceHTTPTransport(secret, device_ip=args.device_ip,
+                                                         max_pwm=PRESET_PWM_CAP), directory)
         server = ThreadingHTTPServer((HOST, PORT), handler_for(controller))
         server.daemon_threads = True
         worker = threading.Thread(target=controller.run, daemon=True)

@@ -106,6 +106,33 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
         NoRedirect().redirect_request(None, None, 302, "", {}, "http://elsewhere")
 
 
+def test_explicit_preset_transport_allows_signed_200_pwm_but_rejects_201():
+    opener = Opener()
+    transport = DeviceHTTPTransport(SECRET, opener=opener, clock=lambda:10000, max_pwm=200)
+    assert not opener.calls
+    opener.body = heartbeat(duty=200)
+    hw = transport.poll()
+    assert hw["left_duty"] == 200 and hw["max_pwm"] == 200
+    opener.body = '{"ok":true}'
+    transport.send(hw, "e"*32, 1, "drive", 200, -200, 10000)
+    command = verified(opener.calls[-1][0].data, SECRET, 10)
+    assert command[5:8] == ["drive", "200", "-200"]
+    assert int(command[9])-int(command[8]) == 500
+    count = len(opener.calls)
+    with pytest.raises(ValueError, match="limit"):
+        transport.send(hw, "e"*32, 2, "drive", 201, 200, 10000)
+    assert len(opener.calls) == count
+    opener.body = heartbeat(seq=2, duty=201)
+    with pytest.raises(ValueError, match="invalid"):
+        transport.poll()
+
+
+@pytest.mark.parametrize("cap", [0, 201, 255, True, 200.0])
+def test_local_transport_rejects_invalid_configured_caps(cap):
+    with pytest.raises(ValueError, match="PWM cap"):
+        DeviceHTTPTransport(SECRET, max_pwm=cap)
+
+
 @pytest.mark.parametrize("clock_ahead_ms", [-80, 0, 220, 450])
 @pytest.mark.parametrize("lease_ms", [80, 500])
 def test_command_clock_uses_authenticated_receiver_without_extending_caller_deadline(clock_ahead_ms, lease_ms):

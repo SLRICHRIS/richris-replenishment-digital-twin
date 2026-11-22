@@ -315,9 +315,11 @@
       <div class="row">
         <label for="pwm">
           Trial PWM
-          <input id="pwm" type="number" min="1" max="60" value="60" />
+          <input id="pwm" type="number" min="1" max="200" value="200" />
         </label>
-        <span class="muted">Maximum 60, matching installed firmware</span>
+        <span class="muted">
+          Maximum 200. Upload Local Routes r4 with its PWM limit set to 200.
+        </span>
       </div>
       <label>
         <input id="test-clear" type="checkbox" />
@@ -347,8 +349,9 @@
       </div>
       <p id="saved" class="muted">Forward: needed · Left: needed · Right: needed</p>
       <p class="muted">
-        If a test produces no movement, do not enter a made-up value. The current receiver limits
-        route output to 60 PWM.
+        Repeat all three measurements at your chosen PWM before running a route. Routes use each
+        saved measurement's PWM. If a test produces no movement, do not save it as a valid
+        measurement.
       </p>
     </details>
     <button id="stop">STOP ROBOT</button>
@@ -401,7 +404,7 @@
           $('status').textContent = state.message;
           const hw = state.hardware;
           $('feedback').textContent = hw
-            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old · Receiver ${hw.ready ? 'ready' : 'not ready'} · Cutoff ${state.min_voltage_v.toFixed(2)} V`
+            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old · Receiver ${hw.ready ? 'ready' : 'not ready'} · Cutoff ${state.min_voltage_v.toFixed(2)} V · App PWM limit ${state.max_pwm}`
             : 'No controller sample';
           const stopped = state.last_stop?.hardware;
           $('stop-detail').hidden = !stopped;

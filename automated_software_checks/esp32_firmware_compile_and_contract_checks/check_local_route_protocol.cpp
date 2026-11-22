@@ -68,7 +68,8 @@ void authenticationAndParsing() {
       packet("arm", 0, 0, 0, UTC, UTC + 500),
       packet("arm", 1, 1, 0, UTC, UTC + 500),
       packet("stop", 1, 0, 1, UTC, UTC + 500),
-      packet("drive", 1, 81, 0, UTC, UTC + 500),
+      packet("drive", 1, 256, 0, UTC, UTC + 500),
+      packet("drive", 1, -256, 0, UTC, UTC + 500),
       packet("launch", 1, 0, 0, UTC, UTC + 500),
       packet("arm", 1, 0, 0, UTC, UTC + 500, "invalid-route"),
       signedBody(std::string("V1|") + BOOT + "|" + EPOCH + "|" + ROUTE + "|4294967296|arm|0|0|1700000000000|1700000000500"),
@@ -158,11 +159,11 @@ int main() {
   amr_vision::Guard guard;
   guard.connection(BOOT, EPOCH);
   const auto command = decoded(wire);
-  assert(guard.accept(command, UTC, 0, true, 60));
+  assert(guard.accept(command, UTC, 0, true, 200));
   char status[470];
   assert(amr_route_wire::hardware(status, sizeof(status), guard, 1, 0, 0, 7400, true, UTC, sign) > 0);
   std::cout << status << '\n';
-  assert(guard.accept(decoded(packet("drive", 2, 30, -20, UTC + 100, UTC + 600)), UTC + 100, 100000, true, 60));
+  assert(guard.accept(decoded(packet("drive", 2, 200, -200, UTC + 100, UTC + 600)), UTC + 100, 100000, true, 200));
   guard.tick(100000, true);
   assert(amr_route_wire::hardware(status, sizeof(status), guard, 2, guard.left, guard.right, 7390, true, UTC + 100, sign) > 0);
   std::cout << status << '\n';

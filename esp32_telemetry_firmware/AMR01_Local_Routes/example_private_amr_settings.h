@@ -14,5 +14,5 @@ static const char BROKER_ROOT_CA[] = "";  // Trusted PEM root for the telemetry 
 #define AMR_ROUTE_KEY ""
 #define AMR_CONTROL_KEY ""
 // Match the preset controller's operator-requested 6.0 V pack cutoff.
-#define AMR_ROUTE_MAX_PWM 60
+#define AMR_ROUTE_MAX_PWM 200
 #define AMR_ROUTE_MIN_PACK_V 6.0

@@ -107,7 +107,7 @@ inline int mbedtls_md_hmac(const EVP_MD* info,const unsigned char* key,size_t ke
                 build += ['--config-file', config_file]
             subprocess.run(build, check=True)
             print('PASS: actual Local Routes ESP32 build with test-only network and signing settings.')
-    packets = [hardware(line, key, now + 100, max_pwm=60) for line in run.stdout.splitlines()]
+    packets = [hardware(line, key, now + 100, max_pwm=200) for line in run.stdout.splitlines()]
     assert len(packets) == 2
     first, second = packets
     assert first['protocol'] == 'H1' and first['state'] == 'armed'
@@ -115,11 +115,11 @@ inline int mbedtls_md_hmac(const EVP_MD* info,const unsigned char* key,size_t ke
     assert first['ready'] and first['left_duty'] == first['right_duty'] == 0
     assert first['command_seq'] == 1 and first['age_ms'] == 100
     assert second['protocol'] == 'H1' and second['state'] == 'moving'
-    assert second['ready'] and second['left_duty'] == 30 and second['right_duty'] == -20
+    assert second['ready'] and second['left_duty'] == 200 and second['right_duty'] == -200
     assert second['seq'] == second['command_seq'] == 2 and second['age_ms'] == 0
     assert second['battery_voltage_v'] == 7.39
     print('PASS: production V1/H1 HMAC compatibility, malformed/NUL/auth rejection, '
-          '500 ms deadline, stale/replay/boot/epoch checks, 60 PWM cap, read-only '
+          '500 ms deadline, stale/replay/boot/epoch checks, configured PWM caps, read-only '
           'heartbeat, route cancellation, readiness loss and reversal interlock.')
 
     # Regression checks on the transport integration complement the executable
@@ -141,7 +141,7 @@ inline int mbedtls_md_hmac(const EVP_MD* info,const unsigned char* key,size_t ke
     assert 'WiFi.status() == WL_CONNECTED' in readiness and 'utcMs()' in readiness
     assert 'mqtt' not in readiness.lower()
     assert 'guard.stop("local_stop")' in receiver
-    assert 'AMR_ROUTE_MAX_PWM <= 60' in receiver
+    assert 'AMR_ROUTE_MAX_PWM <= 200' in receiver
     assert 'Cache-Control' in receiver and 'no-store' in receiver
     print('PASS: LAN route endpoints, awake Wi-Fi startup, MQTT actuator removal, independent clock setup '
           'and preserved local stop integration checks.')

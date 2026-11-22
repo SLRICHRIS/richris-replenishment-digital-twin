@@ -29,6 +29,7 @@ let state = {
   hardware: null,
   controller_ip: '10.55.54.112',
   min_voltage_v: 6.0,
+  max_pwm: 200,
   busy: false,
   measurements: { version: 1, samples: {} },
   last_test: null,
@@ -106,7 +107,8 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
   await flush();
   const trial = calls.find((c) => c.path === '/api/trial');
   assert.equal(trial.body.motion, 'left');
-  assert.equal(trial.body.pwm, 60);
+  assert.equal(trial.body.pwm, 200);
+  assert.equal($('pwm').max, '200');
   assert.equal(trial.body.confirmed, true);
   assert.equal($('test-clear').checked, false);
   assert($('start').disabled);
@@ -127,9 +129,9 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
   assert.equal(result.stopping_mm, 5);
   state.last_test = null;
   state.measurements.samples = {
-    forward: { rate: 20, pwm: 60 },
-    left: { rate: 30, pwm: 60 },
-    right: { rate: 30, pwm: 60 },
+    forward: { rate: 20, pwm: 200 },
+    left: { rate: 30, pwm: 200 },
+    right: { rate: 30, pwm: 200 },
   };
   await intervals.get(300)();
   await flush();
@@ -190,6 +192,7 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
   assert.match($('status').textContent, /ESP32 reported not ready/);
   assert.match($('feedback').textContent, /7.65 V.*100 ms old.*Receiver ready/);
   assert.match($('feedback').textContent, /Cutoff 6.00 V/);
+  assert.match($('feedback').textContent, /App PWM limit 200/);
   assert.equal($('stop-detail').hidden, false);
   assert.match(
     $('stop-detail').textContent,

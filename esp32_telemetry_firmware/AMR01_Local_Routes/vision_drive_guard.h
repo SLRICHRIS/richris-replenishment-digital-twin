@@ -13,7 +13,7 @@ inline bool number(const char* s,uint64_t& v) {
   for(;*s;++s) { if(*s<'0'||*s>'9'||v>(UINT64_MAX-9)/10) return false; v=v*10+uint64_t(*s-'0'); }
   return true;
 }
-inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>80) return false; v=neg?-int(n):int(n); return true; }
+inline bool duty(const char* s,int& v) { bool neg=*s=='-'; uint64_t n=0; if(!number(s+(neg?1:0),n)||n>255) return false; v=neg?-int(n):int(n); return true; }
 // Pass only the authenticated portion, after constant-time HMAC validation.
 inline bool parse(char* body,Command& c) {
   char* f[10]; int n=0; f[n++]=body;

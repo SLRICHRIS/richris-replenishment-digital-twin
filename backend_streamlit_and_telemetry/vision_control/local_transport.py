@@ -14,6 +14,7 @@ from .protocol import drive, hardware
 
 DEVICE_IP = "10.55.54.112"
 ROUTE_PWM_CAP = 60
+PRESET_PWM_CAP = 200
 
 
 def receiver_ip(value):
@@ -43,9 +44,13 @@ class DeviceHTTPTransport:
     signed heartbeat's route ID and command sequence before claiming execution.
     """
 
-    def __init__(self, secret, *, device_ip=DEVICE_IP, timeout=0.25, opener=None, clock=None):
+    def __init__(self, secret, *, device_ip=DEVICE_IP, timeout=0.25, opener=None, clock=None,
+                 max_pwm=ROUTE_PWM_CAP):
         key(secret)
         self.device_ip = receiver_ip(device_ip)
+        if type(max_pwm) is not int or not 1 <= max_pwm <= PRESET_PWM_CAP:
+            raise ValueError("Local receiver PWM cap must be from 1 to 200")
+        self.max_pwm = max_pwm
         if not 0 < timeout <= 0.25:
             raise ValueError("Receiver timeout must be at most 250 milliseconds")
         # Measured hotspot TCP handshakes exceeded 150 ms while complete H1
@@ -98,7 +103,7 @@ class DeviceHTTPTransport:
         with self.lock:
             raw = self._request("/api/route/hardware")
             received_at = self.clock()
-            value = hardware(raw, self._secret, received_at, max_pwm=ROUTE_PWM_CAP)
+            value = hardware(raw, self._secret, received_at, max_pwm=self.max_pwm)
             identity = value["boot_id"], value["epoch_id"]
             if identity in self.retired:
                 raise ValueError("A retired controller epoch cannot be reused")
@@ -108,8 +113,9 @@ class DeviceHTTPTransport:
                     raise ValueError("Repeated or out-of-order controller heartbeat")
                 if identity != old:
                     self.retired.add(old)
-            # H1 has no advertised cap; this route-only firmware is limited to 60.
-            value["max_pwm"] = ROUTE_PWM_CAP
+            # H1 has no advertised cap. This is the caller's configured limit,
+            # not proof of the firmware setting; firmware enforces its own cap.
+            value["max_pwm"] = self.max_pwm
             self.latest = value
             self.received_at_ms = received_at
             return copy.deepcopy(value)
@@ -134,7 +140,7 @@ class DeviceHTTPTransport:
             receiver_now = current["issued_at_ms"] + (now - self.received_at_ms)
             wire = drive(current["boot_id"], current["epoch_id"], route, seq,
                          operation, left, right, receiver_now, self._secret,
-                         max_pwm=ROUTE_PWM_CAP, lease_ms=lease_ms)
+                         max_pwm=self.max_pwm, lease_ms=lease_ms)
             raw = self._request("/api/route/command", wire)
             try:
                 accepted = json.loads(raw)

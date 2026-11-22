@@ -19,7 +19,7 @@ using portMUX_TYPE = int;
 #define portEXIT_CRITICAL(x) (void)(x)
 #define AMR_ROUTE_KEY "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 #define AMR_CONTROL_KEY "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-#define AMR_ROUTE_MAX_PWM 60
+#define AMR_ROUTE_MAX_PWM 200
 #define AMR_ROUTE_MIN_PACK_V 6.0
 constexpr int HIGH=1, LOW=0, WL_CONNECTED=3, pdPASS=1;
 constexpr int PWMA=25, PWMB=14, AIN1=26, AIN2=27, BIN1=32, BIN2=33, STBY=13;
@@ -213,22 +213,22 @@ int main() {
   const std::string boot=amr_route::guard.boot;
   amr_route::handleHardware();
   assert(webServer.code==200 && webServer.type=="text/plain" && webServer.body.rfind("H1|",0)==0);
-  post(packet("arm",1),200); post(packet("drive",2,60,60),200); amr_route::motorTick();
-  assert(amr_route::actualLeft==60 && amr_route::actualRight==60);
+  post(packet("arm",1),200); post(packet("drive",2,200,200),200); amr_route::motorTick();
+  assert(amr_route::actualLeft==200 && amr_route::actualRight==200);
   assert(pins[STBY]==HIGH && pins[AIN1]==LOW && pins[AIN2]==HIGH);
   const auto before=amr_route::guard.seq;
-  post(packet("drive",3,61,60),409); assert(amr_route::guard.seq==before);
+  post(packet("drive",3,201,200),409); assert(amr_route::guard.seq==before);
   std::string bad=packet("drive",3,20,20); bad.back()=bad.back()=='a'?'b':'a';
   post(bad,401); assert(amr_route::guard.seq==before);
   post("bad",400); assert(amr_route::guard.seq==before);
   // Polling status cannot renew the 400ms command lease.
   fresh(399000); amr_route::handleHardware(); amr_route::motorTick();
-  assert(amr_route::actualLeft==60);
+  assert(amr_route::actualLeft==200);
   fresh(1001); amr_route::motorTick(); assert(amr_route::actualLeft==0 && !amr_route::guard.active);
   fresh(151000); amr_route::motorTick(); post(packet("arm",3),409);
   const char* second="dddddddddddddddddddddddddddddddd";
-  post(packet("arm",3,0,0,second),200); post(packet("drive",4,40,40,second),200);
-  amr_route::motorTick(); assert(amr_route::actualLeft==40);
+  post(packet("arm",3,0,0,second),200); post(packet("drive",4,200,200,second),200);
+  amr_route::motorTick(); assert(amr_route::actualLeft==200);
   assert(!amr_route::localCommand('F') && !amr_route::localSpeed(30));
   assert(amr_route::localCommand('S')); amr_route::motorTick();
   assert(!amr_route::guard.active && amr_route::actualLeft==0);

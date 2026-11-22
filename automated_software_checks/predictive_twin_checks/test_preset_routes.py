@@ -23,7 +23,7 @@ class Receiver:
 
     def send(self, observed, route, seq, operation, left, right, now, *, lease_ms=500):
         assert 1 <= lease_ms <= 500
-        assert max(abs(left), abs(right)) <= 60
+        assert max(abs(left), abs(right)) <= 200
         self.calls.append(dict(route=route, seq=seq, operation=operation, left=left,
                                right=right, now=now, lease=lease_ms))
         self.h.update(route_id=route, command_seq=seq, left_duty=left, right_duty=right,
@@ -64,8 +64,8 @@ def pulse(app, receiver, clock, n=1, attended=True):
         app.tick(receiver.poll())
 
 
-def start_trial(app, direction="forward", id="a"*32):
-    app.action("trial", dict(request_id=id, motion=direction, pwm=50, confirmed=True))
+def start_trial(app, direction="forward", id="a"*32, pwm=50):
+    app.action("trial", dict(request_id=id, motion=direction, pwm=pwm, confirmed=True))
 
 
 def test_layout_has_only_three_correct_front_reference_routes():
@@ -203,6 +203,41 @@ def test_calibration_saved_only_after_completed_acknowledged_trial(tmp_path):
     assert restored.measurements == saved
     with pytest.raises(ValueError):
         app.action("measurement",dict(trial_id="a"*32,amount=20,verified=True,stopping_mm=5))
+
+
+def test_200_pwm_measurements_are_used_for_each_route_step_without_scaling_old_rates(tmp_path):
+    app, receiver, clock = rig(tmp_path)
+    assert app.status()["max_pwm"] == 200 and app.status()["min_voltage_v"] == 6.0
+    for direction, identity in zip(("forward", "left", "right"), ("a", "b", "c")):
+        start_trial(app, direction, id=identity*32, pwm=200)
+        pulse(app, receiver, clock, 20)
+        assert app.state == "trial_complete"
+        app.action("measurement", dict(trial_id=identity*32, amount=25 if direction == "forward" else 30,
+                                       stopping_mm=5, verified=True))
+    restored = PresetController(receiver, tmp_path, clock=lambda:clock[0])
+    assert all(s["pwm"] == 200 for s in restored.measurements["samples"].values())
+    app.action("start", dict(request_id="d"*32, route="E-A", confirmed=True))
+    for _ in range(650):
+        pulse(app, receiver, clock)
+        if not app.job:
+            break
+    assert app.state == "sequence_complete", app.message
+    assert {(c["left"], c["right"]) for c in receiver.calls if c["operation"] == "drive"} == {
+        (200, 200), (-200, 200), (200, -200)}
+    assert receiver.h["left_duty"] == receiver.h["right_duty"] == 0
+    assert all(step["pwm"] == 50 for step in timed_plan("E-A", measurements(), 7.3)["steps"])
+
+
+@pytest.mark.parametrize("pwm", [0, 201, 255, True])
+def test_preset_rejects_trial_and_saved_rates_outside_200_pwm_limit(tmp_path, pwm):
+    app, receiver, clock = rig(tmp_path)
+    with pytest.raises(ValueError, match="PWM"):
+        start_trial(app, pwm=pwm)
+    m = measurements()
+    m["samples"]["forward"]["pwm"] = pwm
+    with pytest.raises(ValueError, match="PWM"):
+        timed_plan("E-A", m, 7.3)
+    assert not receiver.calls
 
 
 @pytest.mark.parametrize("route",["E-A","A-B","B-E"])
