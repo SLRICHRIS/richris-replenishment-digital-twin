@@ -171,6 +171,32 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
   await flush();
   assert(calls.filter((c) => c.path === '/api/stop').length >= 2);
+  state.message = 'Stopped: ESP32 reported not ready (receiver state: unavailable)';
+  state.last_stop = {
+    hardware: { battery_voltage_v: 7.64, age_ms: 261, ready: false, state: 'unavailable' },
+  };
+  state.hardware = {
+    battery_voltage_v: 7.65,
+    age_ms: 100,
+    ready: true,
+    state: 'stopped',
+    left_duty: 0,
+    right_duty: 0,
+  };
+  const movementCalls = calls.filter((c) => ['/api/start', '/api/trial'].includes(c.path)).length;
+  await intervals.get(300)();
+  await flush();
+  assert.match($('status').textContent, /ESP32 reported not ready/);
+  assert.match($('feedback').textContent, /7.65 V.*100 ms old.*Receiver ready/);
+  assert.equal($('stop-detail').hidden, false);
+  assert.match(
+    $('stop-detail').textContent,
+    /At the stop: 7.64 V.*261 ms old.*Receiver not ready.*unavailable/,
+  );
+  assert.equal(
+    calls.filter((c) => ['/api/start', '/api/trial'].includes(c.path)).length,
+    movementCalls,
+  );
   assert(!html.includes('getUserMedia'));
   dom.window.close();
   console.log(

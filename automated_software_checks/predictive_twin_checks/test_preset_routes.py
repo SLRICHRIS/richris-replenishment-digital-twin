@@ -133,6 +133,50 @@ def test_idle_banner_tracks_receiver_readiness_without_changing_completed_outcom
     assert not receiver.calls
 
 
+@pytest.mark.parametrize("failure, expected", [
+    ("receiver", "ESP32 reported not ready"),
+    ("voltage", "6.18 V, below the 6.70 V"),
+    ("missing_battery", "battery reading is unavailable"),
+    ("stale", "age 501 ms"),
+])
+def test_stop_preserves_exact_failing_feedback_after_live_readings_recover(tmp_path, failure, expected):
+    app, receiver, clock = rig(tmp_path)
+    start_trial(app)
+    pulse(app, receiver, clock, 3)
+    failed = receiver.poll()
+    if failure == "receiver":
+        failed.update(ready=False, state="unavailable")
+    elif failure == "voltage":
+        failed.update(battery_voltage_v=6.18, ready=False)
+    elif failure == "missing_battery":
+        failed.update(battery_voltage_v=0, ready=False)
+    else:
+        failed["issued_at_ms"] -= 501
+    app.tick(failed)
+    assert app.state == "stopped" and not app.job and app.last_test is None
+    assert expected in app.status()["message"]
+    captured = app.status()["last_stop"]
+    assert captured["hardware"]["issued_at_ms"] == failed["issued_at_ms"]
+    assert captured["hardware"]["battery_voltage_v"] == failed["battery_voltage_v"]
+    assert captured["hardware"]["ready"] == failed["ready"]
+    assert captured["phase"] == "moving"
+    count = len(receiver.calls)
+    pulse(app, receiver, clock, 10)
+    assert app.status()["ready"] and len(receiver.calls) == count
+    assert app.status()["last_stop"] == captured
+    assert expected in app.status()["message"]
+    app.hardware_error = "A later connection error"
+    assert expected in app.status()["message"]
+    app.hardware_error = ""
+    events = [json.loads(line) for line in (tmp_path/"preset_audit.jsonl").read_text().splitlines()]
+    assert events[-1]["stop_details"] == captured
+    public = app.status()
+    public["last_stop"]["hardware"]["ready"] = "changed by caller"
+    assert app.status()["last_stop"] == captured
+    start_trial(app, id="d"*32)
+    assert app.status()["last_stop"] is None
+
+
 def test_calibration_saved_only_after_completed_acknowledged_trial(tmp_path):
     app,receiver,clock=rig(tmp_path)
     with pytest.raises(ValueError,match="fresh one-second"):

@@ -183,6 +183,7 @@
     <p class="muted">Three fixed routes on your 76 × 56 cm floor. Camera-free, measured timing.</p>
     <div class="panel" id="status" role="status">Connect ESP32 to begin.</div>
     <p id="feedback" class="muted">No controller sample</p>
+    <p id="stop-detail" class="muted" hidden></p>
     <p id="error" role="alert"></p>
     <div class="grid">
       <section class="panel">
@@ -400,8 +401,13 @@
           $('status').textContent = state.message;
           const hw = state.hardware;
           $('feedback').textContent = hw
-            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old`
+            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old · Receiver ${hw.ready ? 'ready' : 'not ready'}`
             : 'No controller sample';
+          const stopped = state.last_stop?.hardware;
+          $('stop-detail').hidden = !stopped;
+          $('stop-detail').textContent = stopped
+            ? `At the stop: ${stopped.battery_voltage_v.toFixed(2)} V · feedback ${stopped.age_ms} ms old · Receiver ${stopped.ready ? 'ready' : 'not ready'} · state ${stopped.state}. These are the recorded values, not the current readings.`
+            : '';
           const samples = state.measurements.samples;
           $('saved').textContent = ['forward', 'left', 'right']
             .map(

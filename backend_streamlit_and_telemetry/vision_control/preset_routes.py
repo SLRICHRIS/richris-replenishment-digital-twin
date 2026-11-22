@@ -120,6 +120,7 @@ class PresetController:
         self.closed = threading.Event()
         self.job = None
         self.last_test = None
+        self.last_stop = None
         self.state = "idle"
         self.message = "Connect ESP32. The camera is not used."
         self.used_requests = set()
@@ -131,18 +132,37 @@ class PresetController:
             except (ValueError, TypeError, OSError, KeyError):
                 self.message = "Saved movement measurements are invalid; repeat the three trials"
 
-    def ready(self, zero=False):
+    def readiness_problem(self, zero=False):
         h = self.hardware
-        return bool(self.connected and not self.hardware_error and h and fresh(h["issued_at_ms"], self.clock())
-                    and h["ready"] and h["battery_voltage_v"] >= MIN_VOLTAGE
-                    and (not zero or not (h["left_duty"] or h["right_duty"])))
+        if not self.connected:
+            return "ESP32 connection is not enabled"
+        if self.hardware_error:
+            return self.hardware_error
+        if not h:
+            return "No authenticated ESP32 feedback"
+        now = self.clock()
+        age = now - h["issued_at_ms"]
+        if not fresh(h["issued_at_ms"], now):
+            return f"ESP32 feedback timestamp is outside its allowed window (age {age} ms)"
+        if h["battery_voltage_v"] == 0:
+            return "ESP32 battery reading is unavailable"
+        if not h["battery_voltage_v"] >= MIN_VOLTAGE:
+            return f"ESP32 battery was {h['battery_voltage_v']:.2f} V, below the {MIN_VOLTAGE:.2f} V movement minimum"
+        if not h["ready"]:
+            return f"ESP32 reported not ready (receiver state: {h['state']})"
+        if zero and (h["left_duty"] or h["right_duty"]):
+            return "ESP32 motor outputs are not zero"
+        return ""
+
+    def ready(self, zero=False):
+        return not self.readiness_problem(zero=zero)
 
     def status(self):
         with self.lock:
             h = copy.deepcopy(self.hardware)
             if h:
                 h["age_ms"] = max(0, self.clock()-h["issued_at_ms"])
-            message = self.hardware_error or self.message
+            message = self.message if self.last_stop and self.state == "stopped" else self.hardware_error or self.message
             if self.connected and self.state == "idle" and not self.hardware_error:
                 if not h:
                     message = "Waiting for the first authenticated ESP32 response"
@@ -162,6 +182,7 @@ class PresetController:
                         connected=self.connected, ready=self.ready(zero=True), hardware=h,
                         controller_ip=self.transport.device_ip, busy=bool(self.job),
                         measurements=copy.deepcopy(self.measurements), last_test=copy.deepcopy(self.last_test),
+                        last_stop=copy.deepcopy(self.last_stop),
                         routes=[layout(r) for r in PAIRS], stations=copy.deepcopy(STATIONS),
                         job=copy.deepcopy(self.job), camera_required=False,
                         arrival_verification="operator", automatic_obstacle_detection=False)
@@ -192,6 +213,7 @@ class PresetController:
             steps = copy.deepcopy(plan["steps"])
         self.used_requests.add(payload["request_id"])
         self.last_test = None
+        self.last_stop = None
         self.cancel.clear()
         self.job = dict(request_id=payload["request_id"], kind="trial" if trial else "route",
                         plan=plan, steps=steps, index=0, segment=None, created_at=self.clock(),
@@ -272,12 +294,20 @@ class PresetController:
         self.state, self.message = "stopped", reason
         if job:
             segment = job.get("segment")
+            # Capture the failing sample before Stop/network I/O. Later healthy
+            # polls must not replace the evidence that ended this movement.
+            observed = copy.deepcopy(self.hardware)
+            at = self.clock()
+            if observed:
+                observed["age_ms"] = at-observed["issued_at_ms"]
+            self.last_stop = dict(at_ms=at, reason=reason, hardware=observed,
+                                  step=job["index"]+1, phase=(segment or {}).get("phase", "before_arm"))
             if segment and self.hardware and all(job[k] == self.hardware[k] for k in ("boot_id", "epoch_id")):
                 try:
                     self._send(segment, "stop")
                 except Exception:
                     pass  # Every outstanding MCU command expires within 500 ms.
-            self._event("stopped", reason=reason, request_id=job["request_id"])
+            self._event("stopped", reason=reason, request_id=job["request_id"], stop_details=self.last_stop)
 
     def _finish_segment(self, now):
         job = self.job
@@ -312,8 +342,9 @@ class PresetController:
                     raise ValueError("Stopped: operator left the page or requested Stop")
                 if any(job[k] != hardware[k] for k in ("boot_id", "epoch_id")):
                     raise ValueError("Controller restarted or reconnected; reposition before starting again")
-                if not self.ready():
-                    raise ValueError("Stopped: feedback expired, receiver is not ready, or battery is low")
+                problem = self.readiness_problem()
+                if problem:
+                    raise ValueError("Stopped: " + problem)
                 if now-job["created_at"] > 75000:
                     raise ValueError("Timed route exceeded its overall limit")
                 if now < job["last_tick"] or now-job["last_tick"] > 500:
@@ -399,7 +430,7 @@ class PresetController:
                 with self.lock:
                     self.hardware_error = str(error)[:180]
                     if self.job:
-                        self._abort("Wi-Fi or authenticated feedback failed; reposition before restarting")
+                        self._abort("Stopped: " + self.hardware_error)
                 self.closed.wait(.25)
 
     def close(self):

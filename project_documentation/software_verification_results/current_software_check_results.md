@@ -1,5 +1,11 @@
 # Software verification record
 
+## Preserved preset stop evidence: 23 November 2026
+
+The preset controller now reports the specific failed readiness condition instead of combining expired feedback, receiver readiness and low voltage into one message. Interrupted movements preserve the feedback available at the stop, including voltage, ready flag, state, age, sequence and segment phase, in the status response and audit record. The page shows this evidence separately from current readings. A recovered sample or subsequent connection error cannot replace the recorded reason or resume movement. Zero voltage is identified as unavailable battery feedback. Controller limits, leases and firmware are unchanged.
+
+Verification: 545 predictive/integration Python tests passed, with 5 skips. The browser behavior test passed with a recovered live sample alongside a preserved not-ready stop sample. Tests cover each readiness failure, retained audit evidence, independent status copies, no automatic resumption and clearing the previous evidence only on a new explicit movement. Source HTTP startup, repository/download consistency and whitespace checks passed. This diagnostic change does not establish which internal ESP32 interlock caused the previously reported stop.
+
 ## Local receiver command clock: 23 November 2026
 
 Fresh H1 feedback can pass its existing age check while a command stamped with a laptop clock 220 ms ahead fails the receiver's 100 ms future-time check. The HTTP transport now derives command time from the last authenticated receiver timestamp and elapsed laptop time since receipt. Reply transit and lock delay shorten the usable command window; the caller's attendance/segment deadline is not renewed. Original feedback timestamps, replay/identity checks, 500 ms maximum lease and receiver protections remain unchanged. No firmware change is required.
