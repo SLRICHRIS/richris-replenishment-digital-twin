@@ -27,7 +27,7 @@ def workflow():
         for stamp in (9400, 9700, 10000):
             clock[0] = stamp
             coordinator.observe(contracts.seal('scene', frame(stamp, voltage, stamp), KEY))
-        coordinator.capture(OWNER, 'operator', [210, 450], battery_consent=consent,
+        coordinator.capture(OWNER, 'operator', [210, 430], battery_consent=consent,
                             battery_consent_voltage=consent_voltage)
         rid = coordinator.row['review_id']
         coordinator.decide(OWNER, rid, 'approve', 'Measured clear floor')
@@ -368,7 +368,7 @@ def test_explicit_battery_destination_consent_is_only_for_that_route(workflow):
         clock[0] += delta
         current = frame(clock[0], 6.9, clock[0], w['rid'], 'stopped', a.seq)
         c.observe(contracts.seal('scene', current, KEY))
-    c.capture(OWNER, 'operator', [210, 450])
+    c.capture(OWNER, 'operator', [210, 430])
     w['rid'] = c.row['review_id']
     c.decide(OWNER, w['rid'], 'approve', 'New leg without battery continuation consent')
     a.scene = c.current

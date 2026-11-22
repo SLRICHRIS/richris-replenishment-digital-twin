@@ -32,7 +32,7 @@ def fixture(tmp_path,rotations=None,floor_edge=30):
     base=np.full((960,1280,3),255,np.uint8)
     for i,(x,y) in REFS.items():marker(base,i,x,y,0,floor_edge,(rotations or {}).get(str(i),0))
     path=tmp_path/'empty.png';cv2.imwrite(str(path),base)
-    p=dict(checks={c:True for c in CHECKS},geometry=G,camera_matrix=k.tolist(),distortion_coefficients=[0]*5,resolution=[1280,960],camera_height_mm=920,floor_width_mm=610,floor_length_mm=630,floor_reference_positions_mm={str(i):list(pos) for i,pos in REFS.items()},marker_edge_mm=30,marker_height_mm=50,marker_center_to_robot_center_mm=[0,0],marker_forward_offset_rad=0,max_obstacle_height_mm=40)
+    p=dict(checks={c:True for c in CHECKS},geometry=G,camera_matrix=k.tolist(),distortion_coefficients=[0]*5,resolution=[1280,960],camera_height_mm=920,floor_width_mm=760,floor_length_mm=560,floor_reference_positions_mm={str(i):list(pos) for i,pos in REFS.items()},marker_edge_mm=30,marker_height_mm=50,marker_center_to_robot_center_mm=[0,0],marker_forward_offset_rad=0,max_obstacle_height_mm=40)
     if rotations is not None:p['floor_reference_rotations_deg']=rotations
     if floor_edge!=30:p['floor_reference_marker_edge_mm']=floor_edge
     frame=base.copy()
@@ -126,12 +126,20 @@ def test_example_never_claims_commissioned():
     with pytest.raises(ValueError,match='commissioning'):load_config(example)
 
 
+@pytest.mark.parametrize('size', [(610, 630), (560, 760), (841, 1189)])
+def test_old_or_transposed_floor_profile_is_rejected(tmp_path, size):
+    profile, *_ = fixture(tmp_path)
+    profile['floor_width_mm'], profile['floor_length_mm'] = size
+    with pytest.raises(ValueError, match='previous floor calibration'):
+        load_config(profile)
+
+
 def test_reported_height_is_not_verified_calibration(tmp_path):
     import json
     from pathlib import Path
     path=Path(__file__).resolve().parents[2]/'backend_streamlit_and_telemetry/vision_control/example_camera_config.json'
     p=json.loads(path.read_text())
-    assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(610,630,1310)
+    assert (p['floor_width_mm'],p['floor_length_mm'],p['camera_height_mm'])==(760,560,1300)
     assert (p['geometry']['robot_length_mm'],p['geometry']['robot_width_mm'],p['geometry']['robot_height_mm'])==(170,155,150)
     assert p.get('reported_body_outline_robot_frame_mm') is None
     assert p['marker_height_mm']==150
@@ -145,4 +153,4 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     assert not any(p['checks'].values())
     p['checks']={c:True for c in CHECKS};p['floor_width_mm']=841
     old=tmp_path/'old.json';old.write_text(json.dumps(p))
-    with pytest.raises(ValueError,match='previous A0'):load_config(old)
+    with pytest.raises(ValueError,match='previous floor'):load_config(old)

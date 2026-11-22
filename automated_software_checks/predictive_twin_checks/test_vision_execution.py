@@ -114,7 +114,7 @@ def test_colocated_browser_uses_only_the_receiver_link_and_audited_owner(monkeyp
             heartbeat(seq)
             frame(seq)
         c = service.coordinator
-        c.capture(owner, 'tester', [210, 450])
+        c.capture(owner, 'tester', [210, 430])
         rid = c.row['review_id']
         service.client.publish.assert_not_called()
         c.decide(owner, rid, 'approve', 'Clear fixture floor')
@@ -209,18 +209,19 @@ def test_safe_exact_goal_uses_visible_neighbour_when_rounded_node_is_unsafe():
 
 
 def test_measured_floor_rejects_legacy_scenes_and_keeps_clearance():
-    assert (WIDTH,HEIGHT)==(610,630)
+    assert (WIDTH,HEIGHT)==(760,560)
     legacy=sample();legacy['version']=1
     with pytest.raises(ValueError,match='Unsupported'):scene(legacy)
-    legacy=sample();legacy['floor_width_mm']=841;legacy['floor_length_mm']=1189
-    with pytest.raises(ValueError,match='does not match'):scene(legacy)
+    for width,height in ((610,630),(560,760),(841,1189)):
+        legacy=sample();legacy['floor_width_mm']=width;legacy['floor_length_mm']=height
+        with pytest.raises(ValueError,match='does not match'):scene(legacy)
     too_large=sample();too_large['geometry']=dict(G,robot_length_mm=600,robot_width_mm=600,max_speed_mm_s=20,left_pwm_per_mm_s=2,right_pwm_per_mm_s=2)
     assert radius(too_large['geometry'])>WIDTH/2
-    with pytest.raises(ValueError,match='clearance'):plan(too_large,[210,450])
+    with pytest.raises(ValueError,match='clearance'):plan(too_large,[210,430])
 
 
 def test_approve_durable_before_dispatch_and_no_duplicate_or_retained():
-    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,450]);rid=c.row['review_id']
+    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,430]);rid=c.row['review_id']
     assert not out
     c.decide('1'*32,rid,'approve','Clear floor inspected')
     with c.engine.connect() as db: assert db.execute(select(reviews.c.state)).scalar_one()=='sent'
@@ -234,15 +235,15 @@ def test_approve_durable_before_dispatch_and_no_duplicate_or_retained():
 
 
 def test_owner_map_change_stale_and_transport_failure():
-    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,450]);rid=c.row['review_id']
+    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,430]);rid=c.row['review_id']
     with pytest.raises(ValueError):c.decide('2'*32,rid,'approve','No ownership')
     changed=sample(10001,10001);changed['obstacles']=[dict(x=330,y=500,width=20,height=20)]
     clock[0]=10001;c.observe(seal('scene',changed,SECRET))
     with pytest.raises(ValueError):c.decide('1'*32,rid,'approve','map changed')
     assert not out
-    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,450]);clock[0]=11000
+    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,430]);clock[0]=11000
     with pytest.raises(ValueError):c.decide('1'*32,c.row['review_id'],'approve','stale')
-    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,450])
+    c,clock,out=coordinator();c.capture('1'*32,'operator',[210,430])
     def fail(_):raise RuntimeError('private transport')
     c.publish=fail
     with pytest.raises(ValueError,match='no automatic retry'):c.decide('1'*32,c.row['review_id'],'approve','Clear floor')
@@ -250,18 +251,18 @@ def test_owner_map_change_stale_and_transport_failure():
 
 
 def test_leave_page_stops_grants_and_recovery_never_replays():
-    c,clock,out=coordinator();owner='1'*32;c.capture(owner,'operator',[210,450]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
+    c,clock,out=coordinator();owner='1'*32;c.capture(owner,'operator',[210,430]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
     clock[0]+=100;c.tick();assert unseal('request',out[-1],SECRET)['operation']=='lease'
     c.cancel(owner);assert c.row['state']=='cancelled';n=len(out);c.tick();assert len(out)==n
     assert unseal('request',out[-1],SECRET)['operation']=='cancel'
-    c,clock,out=coordinator();c.capture(owner,'operator',[210,450]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
+    c,clock,out=coordinator();c.capture(owner,'operator',[210,430]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
     recovery=Coordinator(c.engine,SECRET,out.append,lambda:clock[0]);assert recovery.row is None
     with c.engine.connect() as db:assert db.execute(select(reviews.c.state)).scalar_one()=='uncertain'
 
 
 def test_closed_loop_motion_and_camera_verified_arrival():
     # Numerical robot only: exercise real approval/lease/agent and PWM conversion.
-    c,clock,queue=coordinator();owner='1'*32;c.capture(owner,'operator',[210,450]);c.decide(owner,c.row['review_id'],'approve','Simulated test floor')
+    c,clock,queue=coordinator();owner='1'*32;c.capture(owner,'operator',[210,430]);c.decide(owner,c.row['review_id'],'approve','Simulated test floor')
     commands=[];agent=Agent(SECRET,lambda *args:commands.append(args));agent.scene=c.current
     agent.request(queue.pop(0),clock[0]);hw=dict(c.current['hardware']);x,y,heading=210.,180.,math.pi/2
     for i in range(1,1000):
@@ -278,12 +279,12 @@ def test_closed_loop_motion_and_camera_verified_arrival():
         queue.clear();agent.tick(s,t);c.status(agent.status(t))
         if c.row['state']=='verified':break
     assert c.row['state']=='verified',(c.row,agent.state,agent.reason,x,y)
-    assert math.dist((x,y),(210,450))<=15
+    assert math.dist((x,y),(210,430))<=15
     assert hw['left_duty']==hw['right_duty']==0
 
 
 def test_ack_without_camera_never_verifies_and_camera_loss_stops():
-    c,clock,out=coordinator();owner='1'*32;c.capture(owner,'operator',[210,450]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
+    c,clock,out=coordinator();owner='1'*32;c.capture(owner,'operator',[210,430]);c.decide(owner,c.row['review_id'],'approve','Clear floor')
     rid=c.row['review_id']
     c.status(seal('status',dict(review_id=rid,agent_boot_id=c.current['agent_boot_id'],state='verified',reason='unproven',seq=1,issued_at_ms=clock[0]),SECRET))
     assert c.row['state']=='sent'

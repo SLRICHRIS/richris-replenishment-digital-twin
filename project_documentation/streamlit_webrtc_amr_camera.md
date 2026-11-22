@@ -21,8 +21,8 @@ motor, network-delay or emergency-stop validation.
    leaving reference IDs 1–4 visible. Press **Capture empty floor**. Reposition
    robot ID 0 after confirmation.
 7. Use **Download physical commissioning template**, record the actual X/Y
-   centre of each reference marker relative to the 610 × 630 mm floor origin,
-   verify the forward marker axis, camera height (1310 mm), marker height,
+   centre of each reference marker relative to the 760 × 560 mm floor origin,
+   verify the forward marker axis, camera height (1300 mm), marker height,
    floor measurements, motor PWM/speed/polarity, physical stopping distance
    and obstacle envelope. Set individual check flags true **only after
    physical tests**. Do not include any private MQTT credentials in the file.

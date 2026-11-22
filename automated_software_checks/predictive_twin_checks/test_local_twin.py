@@ -514,7 +514,7 @@ def test_loopback_http_origin_csrf_and_host_guards_without_camera_or_device_io(t
         assert b"__AMR_SESSION" not in body
         html = body.decode("utf-8")
         assert "AMR-01 · Local camera mission" in html
-        assert "610 × 630 mm" in html
+        assert "760 × 560 mm" in html
         assert "Â" not in html and "â€" not in html
         assert ("Content-Type", "text/html; charset=utf-8") in headers
         assert not any(k.lower() == "access-control-allow-origin" for k, _ in headers)

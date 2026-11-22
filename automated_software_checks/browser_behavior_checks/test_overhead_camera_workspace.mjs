@@ -36,13 +36,13 @@ assert.equal(el('robot-width').value, '155');
 assert.equal(el('robot-height').value, '150');
 assert.equal(el('marker-height').value, '150');
 assert.equal(el('marker-size').value, '40');
-assert.equal(el('camera-height').value, '131');
+assert.equal(el('camera-height').value, '130');
 assert.equal(el('approve').disabled, true);
-el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 610, height: 630 });
+el('map').getBoundingClientRect = () => ({ left: 0, top: 0, width: 760, height: 560 });
 el('map').dispatchEvent(
   new w.MouseEvent('pointerdown', { button: 0, clientX: 400, clientY: 30, bubbles: true }),
 );
-assert.deepEqual(workspace.snapshot().start, { x: 400, y: 600 });
+assert.deepEqual(workspace.snapshot().start, { x: 400, y: 530 });
 input('robot-length', '');
 el('plan').click();
 assert.match(el('feedback').textContent, /full robot length and width/);
@@ -51,7 +51,7 @@ input('robot-width', '60');
 input('start-x', '100');
 input('start-y', '100');
 input('goal-x', '320');
-input('goal-y', '520');
+input('goal-y', '480');
 el('plan').click();
 assert.equal(el('approve').disabled, false);
 assert.equal(el('review-state').textContent, 'Awaiting review');
@@ -81,14 +81,14 @@ assert.match(el('feedback').textContent, /between 0 and 200/);
 input('clearance', '20');
 el('settings-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 const saved = JSON.parse(w.localStorage.getItem('amr01.visionSetup.v2'));
-assert.equal(saved.settings.cameraHeightCm, 131);
+assert.equal(saved.settings.cameraHeightCm, 130);
 assert.deepEqual(saved.reportedMarkerOffset, {
   reference: 'robot-body-center',
   forwardMm: 0,
   leftMm: 0,
   source: 'operator-confirmed',
 });
-assert.deepEqual(saved.arena, { widthMm: 610, heightMm: 630, gridMm: 10 });
+assert.deepEqual(saved.arena, { widthMm: 760, heightMm: 560, gridMm: 10 });
 assert.equal(saved.version, 2);
 assert.equal(saved.plan, undefined);
 assert.equal(saved.decision, undefined);

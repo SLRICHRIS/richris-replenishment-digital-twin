@@ -1,4 +1,4 @@
-"""Local A–E mission intent; every changed route still needs a new human approval."""
+"""Local A/B/E mission intent; every changed route still needs a new human approval."""
 
 import copy
 import json
@@ -9,7 +9,7 @@ from sqlalchemy import BigInteger, Column, MetaData, String, Table, Text, select
 
 from .contracts import HEIGHT, WIDTH, OPERATOR_PRESENCE_MS, angle, canonical, map_digest, radius, ready, stopped_for_route
 
-STATIONS = tuple("ABCDE")
+STATIONS = tuple("ABE")
 MISSION_METADATA = MetaData()
 MISSIONS = Table("amr_local_missions", MISSION_METADATA,
     Column("mission_id", String(32), primary_key=True),
@@ -65,7 +65,7 @@ class Mission:
 
     def _coordinates(self, data):
         if not isinstance(data, dict) or set(data) != set(STATIONS):
-            raise ValueError("Measure all station centres A, B, C, D and E in floor millimetres")
+            raise ValueError("Measure station centres A, B and charging stop E in floor millimetres")
         if not self.twin.config or not self.twin.config_id:
             raise ValueError("Load the measured camera profile before verifying stations")
         margin = radius(self.twin.config["geometry"])
@@ -110,7 +110,7 @@ class Mission:
         if self.twin.agent.state in ("arming", "running", "battery_review", "stopping"):
             raise ValueError("Stop the route before changing station measurements")
         if payload.get("verified") is not True:
-            raise ValueError("Confirm that all five station centres were physically measured")
+            raise ValueError("Confirm that all three station centres were physically measured")
         coordinates = self._coordinates(payload.get("stations"))
         self.twin.stop("Station measurements changed; preview a new mission")
         data = dict(verified=True, stations=coordinates, config_id=self.twin.config_id)
@@ -122,7 +122,7 @@ class Mission:
     def _station(self, label):
         configured = self.stations()
         if label not in STATIONS or not configured["verified"]:
-            raise ValueError("Verified measured stations A–E are required")
+            raise ValueError("Verified measured stations A, B and E are required")
         return dict(configured["stations"][label], label=label)
 
     def _retire_pending(self, reason):

@@ -405,7 +405,7 @@ Generated catalog of the current source tree. Historical names and removed evide
 | --- | --- |
 | `amr01_local_twin.py` | Launch the laptop camera, local route-review workspace and authenticated direct Wi-Fi transport without starting movement. |
 | `backend_streamlit_and_telemetry/vision_control/local_twin.py` | Serve the laptop ArUco workspace, retain local approval audit and connect the existing camera/follower contracts to the LAN receiver. |
-| `backend_streamlit_and_telemetry/vision_control/mission.py` | Retain immutable A–E mission intent and measured stations; propose obstacle detours, return-to-start and battery-station routes without granting movement. |
+| `backend_streamlit_and_telemetry/vision_control/mission.py` | Retain immutable A, B and E mission intent and measured stations; propose obstacle detours, return-to-start and battery-station routes without granting movement. |
 | `backend_streamlit_and_telemetry/vision_control/local_transport.py` | Exchange signed, expiring route commands and fresh controller feedback with the fixed ESP32 address without proxies, redirects or MQTT. |
 | `backend_streamlit_and_telemetry/vision_control/local_twin.html` | Present local camera calibration, route preview, explicit human decisions and camera-verified execution status. |
 | `esp32_telemetry_firmware/AMR01_Local_Routes/AMR01_Local_Routes.ino` | Build the ESP32 firmware variant with local signed route control and separate sensor telemetry publication. |
@@ -428,5 +428,5 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `project_documentation/local_station_missions.md` | Explain station setup, mission decisions, obstacle stops, battery thresholds, return behavior and verified outcomes. |
 | `automated_software_checks/predictive_twin_checks/test_mission_agent_safety.py` | Exercise mission voltage boundaries, review-scoped consent, battery sag recovery and obstacle stop classification with simulated evidence. |
 | `automated_software_checks/predictive_twin_checks/test_local_station_missions.py` | Exercise measured-station missions, obstacle replanning, rejection, return, battery diversion and interruption using mocked camera/controller observations. |
-| `automated_software_checks/browser_behavior_checks/test_local_station_mission_ui.cjs` | Verify A–E selection, active targets, replanning and explicit battery decisions in the local interface without hardware. |
+| `automated_software_checks/browser_behavior_checks/test_local_station_mission_ui.cjs` | Verify A, B and E selection, active targets, replanning and explicit battery decisions in the local interface without hardware. |
 | `automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py` | Launch the packaged executable or source entry point with synthetic settings and verify UTF-8 HTTP content plus disconnected startup using loopback GET requests only. |

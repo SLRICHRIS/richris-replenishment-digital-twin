@@ -1999,7 +1999,7 @@ function updateSourceUI() {
             'ArUco + direct Wi-Fi',
             'Human-approved local routes',
             'Camera-guided AMR',
-            'Choose A–E start and destination in the laptop workspace. Review and approve each route, including obstacle detours and battery-station visits. Fresh camera observations verify arrival.',
+            'Choose A, B and E start and destination in the laptop workspace. Review and approve each route, including obstacle detours and battery-station visits. Fresh camera observations verify arrival.',
             'Human approval required',
             'EMQX carries telemetry. The laptop sends route commands directly over Wi-Fi.',
           ]

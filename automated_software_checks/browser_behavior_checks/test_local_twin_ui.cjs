@@ -48,8 +48,6 @@ let state = {
     stations: {
       A: { x: 140, y: 140 },
       B: { x: 401, y: 402 },
-      C: { x: 140, y: 400 },
-      D: { x: 400, y: 140 },
       E: { x: 300, y: 300 },
     },
     config_id: 'measured',

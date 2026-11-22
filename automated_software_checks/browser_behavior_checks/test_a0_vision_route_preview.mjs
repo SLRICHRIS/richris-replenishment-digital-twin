@@ -12,7 +12,7 @@ import {
 
 const settings = { robotLengthMm: 80, robotWidthMm: 60, clearanceMm: 20 };
 const radius = clearanceRadius(settings);
-assert.deepEqual(ARENA, { widthMm: 610, heightMm: 630, gridMm: 10 });
+assert.deepEqual(ARENA, { widthMm: 760, heightMm: 560, gridMm: 10 });
 assert.equal(normalizeSettings().robotWidthMm, null, 'Never infer full width from wheel spacing');
 assert.throws(() => normalizeSettings(null));
 assert.throws(
@@ -24,9 +24,9 @@ assert.throws(() => normalizeSettings({ clearanceMm: -1 }));
 assert.throws(() => normalizeSettings({ robotLengthMm: 2001 }));
 assert.throws(() => normalizeSettings({ markerId: 50 }));
 assert.throws(() => normalizeObstacles(Array(26).fill({ x: 10, y: 10, width: 10, height: 10 })));
-assert.throws(() => normalizeObstacles([{ x: 605, y: 0, width: 20, height: 20 }]));
+assert.throws(() => normalizeObstacles([{ x: 755, y: 0, width: 20, height: 20 }]));
 assert.throws(() => normalizePoint({ x: Infinity, y: 10 }));
-assert.deepEqual(normalizePoint({ x: 425, y: 630 }), { x: 430, y: 630 });
+assert.deepEqual(normalizePoint({ x: 425, y: 560 }), { x: 430, y: 560 });
 assert.equal(normalizeSettings({ executionEnabled: true }).executionEnabled, undefined);
 assert.throws(() => normalizePoint({ x: 841, y: 1189 }), /inside the measured floor/);
 assert(Math.abs(radius - (Math.hypot(40, 30) + 20)) < 1e-9);
@@ -40,12 +40,12 @@ assert.equal(direct.source, 'manual-rehearsal');
 assert.equal(planRoute({ settings, start, goal: start }).lengthMm, 0);
 assert.throws(() => planRoute({ settings, start: { x: 50, y: 100 }, goal }), /start is too close/);
 assert.throws(
-  () => planRoute({ settings, start, goal: { x: 400, y: 600 } }),
+  () => planRoute({ settings, start, goal: { x: 400, y: 550 } }),
   /destination is too close/,
 );
 assert.throws(() => planRoute({ settings, start, goal: null }), /Set the robot start/);
 
-const end = { x: 320, y: 520 },
+const end = { x: 320, y: 480 },
   obstacles = [{ x: 180, y: 280, width: 40, height: 40 }];
 const detour = planRoute({ settings, start, goal: end, obstacles });
 assert(detour.points.length > 2);
@@ -59,7 +59,7 @@ const blocked = planRoute({
   settings,
   start,
   goal: end,
-  obstacles: [{ x: 0, y: 400, width: 610, height: 10 }],
+  obstacles: [{ x: 0, y: 300, width: 760, height: 10 }],
 });
 assert.deepEqual(blocked.points, []);
 assert.equal(blocked.lengthMm, null);

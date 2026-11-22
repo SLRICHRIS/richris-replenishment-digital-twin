@@ -6,7 +6,7 @@ import {
   normalizePoint,
   normalizeSettings,
   planRoute,
-} from './a0_route_preview.js';
+} from './a0_route_preview.js?v=abe-floor-20261122';
 
 // This workspace deliberately has no MQTT, fetch, command or production-review bridge.
 export function createVisionWorkspace(scope) {
@@ -23,7 +23,7 @@ export function createVisionWorkspace(scope) {
     robotHeightMm: 150,
     markerHeightMm: 150,
     markerSizeMm: 40,
-    cameraHeightCm: 131,
+    cameraHeightCm: 130,
   };
   const reportedMarkerOffset = {
     reference: 'robot-body-center',
@@ -471,7 +471,7 @@ export function createVisionWorkspace(scope) {
     const url = scope.URL.createObjectURL(file),
       a = d.createElement('a');
     a.href = url;
-    a.download = 'AMR01_610x630_Camera_Setup_and_Rehearsal.json';
+    a.download = 'AMR01_760x560_Camera_Setup_and_Rehearsal.json';
     d.body.append(a);
     a.click();
     a.remove();

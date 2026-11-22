@@ -59,8 +59,8 @@ export function createPhysicalRoutePanel(scope) {
     '<div class="pr-next-action"><span class="pr-next-dot"></span><div><strong id="pr-next-title">Start with the robot measurements</strong><p id="pr-next-copy">Record the full body size, then commission the camera and receiver.</p></div></div>',
     '<div id="pr-body" class="pr-body">',
     '<section id="pr-map-card" class="panel pr-map-card" aria-labelledby="pr-map-title" hidden>',
-    '<div class="pr-card-heading"><div><span class="twin-card-kicker">TRUSTED CAMERA SCENE</span><h2 id="pr-map-title">Working floor</h2></div><span class="vision-chip">610 × 630 mm</span></div>',
-    '<div class="pr-map-wrap"><svg id="pr-map" viewBox="0 0 610 630" role="img" aria-label="Trusted live camera map and server-approved route"><defs><pattern id="pr-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect x="0" y="0" width="610" height="630" class="vision-floor"/><rect width="610" height="630" fill="url(#pr-grid)" class="vision-grid"/><g id="pr-map-content" transform="translate(0 630) scale(1 -1)"></g></svg><div id="pr-map-empty" class="pr-map-empty"><span class="pr-camera-symbol" aria-hidden="true">⌖</span><strong>Waiting for the camera controller</strong><span>A live, calibrated scene is required before a physical route can be captured.</span></div></div>',
+    '<div class="pr-card-heading"><div><span class="twin-card-kicker">TRUSTED CAMERA SCENE</span><h2 id="pr-map-title">Working floor</h2></div><span class="vision-chip">760 × 560 mm</span></div>',
+    '<div class="pr-map-wrap"><svg id="pr-map" viewBox="0 0 760 560" role="img" aria-label="Trusted live camera map and server-approved route"><defs><pattern id="pr-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect x="0" y="0" width="760" height="560" class="vision-floor"/><rect width="760" height="560" fill="url(#pr-grid)" class="vision-grid"/><g id="pr-map-content" transform="translate(0 560) scale(1 -1)"></g></svg><div id="pr-map-empty" class="pr-map-empty"><span class="pr-camera-symbol" aria-hidden="true">⌖</span><strong>Waiting for the camera controller</strong><span>A live, calibrated scene is required before a physical route can be captured.</span></div></div>',
     '<div class="pr-map-legend"><span><i class="pr-key-robot"></i>AMR position</span><span><i class="pr-key-goal"></i>Destination</span><span><i class="pr-key-obstacle"></i>Obstacle</span><span><i class="pr-key-route"></i>Reviewed route</span></div>',
     '<p id="pr-scene" class="pr-scene-status">No trusted camera frame received</p></section>',
     '<div class="pr-stage-content">',
@@ -74,7 +74,7 @@ export function createPhysicalRoutePanel(scope) {
       GUIDE +
       '" target="_blank" rel="noopener">Controller and broker setup ↗</a></details><button id="pr-to-plan" type="button" class="primary" disabled>Continue to route planning →</button></section>',
     '<section class="panel pr-action-card"><span class="twin-card-kicker">OPERATOR SESSION</span><h2>Enable physical review</h2><p class="pr-description">The operator code protects motor control. Approval records are saved automatically in the background.</p><p id="pr-access-wait" class="pr-inline-note">Operator access becomes available after the private connection and commissioning are configured.</p><form id="pr-login" hidden><label>Operator alias<input id="pr-operator" maxlength="40" autocomplete="username" placeholder="Your operator alias" required></label><label>Private operator code<input id="pr-code" type="password" maxlength="256" autocomplete="current-password" required></label><button type="submit" id="pr-unlock" class="primary" disabled>Enable this operator session</button></form><div id="pr-session" hidden><span class="pr-session-check">Operator session enabled</span><button id="pr-lock" type="button">End session & stop</button></div><div class="pr-setup-note">Use the physical source, then enable your session. Stay on this page during movement.</div></section></div></section>',
-    '<section id="pr-step-panel-3" role="tabpanel" aria-labelledby="pr-step-3" hidden class="panel pr-action-card"><span class="twin-card-kicker">PLAN A JOURNEY</span><h2>Choose the destination</h2><p class="pr-description">The start comes from the camera. Select the destination on the live floor or enter its coordinates.</p><div class="vision-fields"><label>Starting rack<select id="pr-rack-start"><option value="">Choose start</option><option>A</option><option>B</option><option>C</option><option>D</option><option value="CURRENT">Current camera location (for detours)</option></select></label><label>Destination rack<select id="pr-rack-destination"><option value="">Choose destination</option><option>A</option><option>B</option><option>C</option><option>D</option><option value="E">E · Battery point</option></select></label></div><p id="pr-rack-status" class="pr-inline-note">Rack coordinates must be measured in the camera floor frame. Configure them below before selecting a rack.</p><details><summary>Measured rack stopping coordinates (mm)</summary><div id="pr-rack-coordinates" class="vision-fields"></div></details><div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="610" step="10" value="210"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="630" step="10" value="450"></label></div><div class="pr-coordinate-note">Origin: bottom-left. X increases right; Y increases upward. The route uses a 10 mm grid.</div><button id="pr-capture" type="button" class="primary" disabled>Calculate physical route</button><p id="pr-plan-help" class="pr-inline-note">Complete the connection step before calculating a physical route.</p><button id="pr-back-connect" type="button" class="pr-text-button">← Check connection</button></section>',
+    '<section id="pr-step-panel-3" role="tabpanel" aria-labelledby="pr-step-3" hidden class="panel pr-action-card"><span class="twin-card-kicker">PLAN A JOURNEY</span><h2>Choose the destination</h2><p class="pr-description">The start comes from the camera. Select the destination on the live floor or enter its coordinates.</p><div class="vision-fields"><label>Starting rack<select id="pr-rack-start"><option value="">Choose start</option><option>A</option><option>B</option><option value="E">E · Charging stop</option><option value="CURRENT">Current camera location (for detours)</option></select></label><label>Destination rack<select id="pr-rack-destination"><option value="">Choose destination</option><option>A</option><option>B</option><option value="E">E · Charging stop</option></select></label></div><p id="pr-rack-status" class="pr-inline-note">Rack coordinates must be measured in the camera floor frame. Configure them below before selecting a rack.</p><details><summary>Measured rack stopping coordinates (mm)</summary><div id="pr-rack-coordinates" class="vision-fields"></div></details><div class="vision-fields"><label>Destination X · mm<input id="pr-goal-x" type="number" min="0" max="760" step="10" value="210"></label><label>Destination Y · mm<input id="pr-goal-y" type="number" min="0" max="560" step="10" value="450"></label></div><div class="pr-coordinate-note">Origin: bottom-left. X increases right; Y increases upward. The route uses a 10 mm grid.</div><button id="pr-capture" type="button" class="primary" disabled>Calculate physical route</button><p id="pr-plan-help" class="pr-inline-note">Complete the connection step before calculating a physical route.</p><button id="pr-back-connect" type="button" class="pr-text-button">← Check connection</button></section>',
     '<section id="pr-step-panel-4" role="tabpanel" aria-labelledby="pr-step-4" hidden class="panel pr-action-card"><span class="twin-card-kicker">HUMAN DECISION</span><h2>Review before movement</h2><p id="pr-route" class="pr-description">Calculate a physical route to review it here.</p><div id="pr-review-metrics" class="pr-metrics"></div><p id="pr-review-clock" class="pr-inline-note">No current proposal</p><label>Decision reason<textarea id="pr-reason" maxlength="240" rows="3" placeholder="Record why you approve, reject or hold this route." disabled></textarea></label><div class="pr-decision-actions"><button id="pr-approve" type="button" class="primary" disabled>Approve & run</button><button id="pr-reject" type="button" disabled>Reject</button><button id="pr-hold" type="button" disabled>Hold</button></div><p class="pr-coordinate-note">Approval applies to this route and this scene. A changed scene needs a new proposal.</p><button id="pr-replan" type="button" class="pr-text-button">← Change destination or calculate again</button></section>',
     '<section id="pr-step-panel-5" role="tabpanel" aria-labelledby="pr-step-5" hidden class="panel pr-action-card"><span class="twin-card-kicker">EXECUTION & EVIDENCE</span><h2 id="pr-run-title">Watch the approved journey</h2><p id="pr-outcome" role="status" aria-live="polite">No physical route has been approved.</p><div id="pr-run-observations" class="pr-run-observations"></div><section id="pr-battery-review" class="pr-guide-card" hidden><h3>Low battery: your decision</h3><p id="pr-battery-detail" role="status">Motors are holding at zero PWM. Choose how to proceed.</p><label>Decision reason<textarea id="pr-battery-reason" maxlength="240" rows="2" placeholder="Why continue to the destination or divert to battery point E?"></textarea></label><div class="pr-decision-actions"><button id="pr-battery-continue" type="button" disabled>Decline diversion · continue original destination</button><button id="pr-battery-divert" class="primary" type="button" disabled>Approve diversion · stop and plan E</button></div><p class="pr-coordinate-note">If you do not respond the motors remain held. Critical voltage always causes a mandatory stop, regardless of either decision. Diverting to E requires a new safe path and separate route approval.</p></section><div class="pr-setup-note">An accepted command is not a verified arrival. Fresh camera frames and zero reported motor output confirm the stopped destination.</div><p class="pr-coordinate-note">Route limit: 60 seconds. Camera, controller or approval loss ends the journey. Keep access to the robot power switch.</p><button id="pr-new-route" type="button">Plan another route</button></section>',
     '</div></div><p id="pr-feedback" class="pr-feedback" role="status" aria-live="polite"></p></div>',
@@ -241,14 +241,14 @@ export function createPhysicalRoutePanel(scope) {
   // Station positions are operator-entered stopping coordinates, not invented rack centres.
   const rackCoordinates = el('rack-coordinates');
   const stationInputs = {};
-  for (const rack of ['A', 'B', 'C', 'D', 'E']) {
+  for (const rack of ['A', 'B', 'E']) {
     const label = d.createElement('label');
-    label.textContent = rack === 'E' ? 'Battery station E (x, y)' : 'Rack ' + rack + ' (x, y)';
+    label.textContent = rack === 'E' ? 'Charging stop E (x, y)' : 'Rack ' + rack + ' (x, y)';
     const x = d.createElement('input'), y = d.createElement('input');
     for (const input of [x, y]) {
       input.type = 'number';
       input.min = '0';
-      input.max = input === x ? '610' : '630';
+      input.max = input === x ? '760' : '560';
       input.step = '1';
       input.placeholder = input === x ? 'X mm' : 'Y mm';
       label.append(input);
@@ -267,7 +267,7 @@ export function createPhysicalRoutePanel(scope) {
     const inputs = stationInputs[rack];
     if (!inputs || inputs.some((input) => input.value.trim() === '')) return null;
     const point = inputs.map((input) => Number(input.value));
-    if (!point.every(Number.isFinite) || point[0] < 0 || point[0] > 610 || point[1] < 0 || point[1] > 630) return null;
+    if (!point.every(Number.isFinite) || point[0] < 0 || point[0] > 760 || point[1] < 0 || point[1] > 560) return null;
     return point;
   }
   function rackSelectionChanged() {
@@ -327,10 +327,10 @@ export function createPhysicalRoutePanel(scope) {
       y = el('goal-y').value;
     if (x === '' || y === '' || !Number.isFinite(Number(x)) || !Number.isFinite(Number(y)))
       return null;
-    if (Number(x) < 0 || Number(x) > 610 || Number(y) < 0 || Number(y) > 630) return null;
+    if (Number(x) < 0 || Number(x) > 760 || Number(y) < 0 || Number(y) > 560) return null;
     return [
-      Math.min(610, Math.round(Number(x) / 10) * 10),
-      Math.min(630, Math.round(Number(y) / 10) * 10),
+      Math.min(760, Math.round(Number(x) / 10) * 10),
+      Math.min(560, Math.round(Number(y) / 10) * 10),
     ];
   }
   function goalChanged() {
@@ -353,15 +353,15 @@ export function createPhysicalRoutePanel(scope) {
     point.x = e.clientX;
     point.y = e.clientY;
     const local = point.matrixTransform(matrix.inverse());
-    el('goal-x').value = String(Math.max(0, Math.min(610, Math.round(local.x / 10) * 10)));
-    el('goal-y').value = String(Math.max(0, Math.min(630, Math.round((630 - local.y) / 10) * 10)));
+    el('goal-x').value = String(Math.max(0, Math.min(760, Math.round(local.x / 10) * 10)));
+    el('goal-y').value = String(Math.max(0, Math.min(560, Math.round((560 - local.y) / 10) * 10)));
     if (payload) render(payload, false);
   });
   function freshCamera(s) {
     return !!(
       s?.valid &&
-      s.floor_width_mm === 610 &&
-      s.floor_length_mm === 630 &&
+      s.floor_width_mm === 760 &&
+      s.floor_length_mm === 560 &&
       typeof s.captured_at_ms === 'number' &&
       Date.now() - s.captured_at_ms <= 500 &&
       Date.now() >= s.captured_at_ms - 100

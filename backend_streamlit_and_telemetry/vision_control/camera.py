@@ -1,6 +1,6 @@
 """Measured overhead ArUco pose and conservative empty-floor foreground obstacles.
 
-Controlled 610 x 630 mm laboratory floor only. Occlusion, lighting, calibration and stopping
+Controlled 760 x 560 mm laboratory floor only. Occlusion, lighting, calibration and stopping
 clearance must be commissioned in person; this is not a safety-rated sensor.
 """
 import math
@@ -37,7 +37,7 @@ def load_config(path):
     if any(p.get('checks',{}).get(k) is not True for k in CHECKS):
         raise ValueError('Complete and verify every physical commissioning check in the private config')
     if p.get('floor_width_mm') != WIDTH or p.get('floor_length_mm') != HEIGHT:
-        raise ValueError('Measure and configure the current 610 x 630 mm floor; previous A0 calibration is invalid')
+        raise ValueError('Measure and configure the current 760 x 560 mm floor; previous floor calibration is invalid')
     # Physical marker centres must be measured, never silently assumed from
     # an image or the nominal 40 mm example inset.
     raw_refs=p.get('floor_reference_positions_mm')

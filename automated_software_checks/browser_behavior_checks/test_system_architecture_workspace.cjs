@@ -90,8 +90,8 @@ const payload = {
     ready: true,
     scene: {
       valid: true,
-      floor_width_mm: 610,
-      floor_length_mm: 630,
+      floor_width_mm: 760,
+      floor_length_mm: 560,
       captured_at_ms: now,
       hardware: { ready: true, age_ms: 0 },
     },

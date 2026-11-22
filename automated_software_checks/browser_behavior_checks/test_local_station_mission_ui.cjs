@@ -9,9 +9,7 @@ const html = fs.readFileSync(
 );
 const STATIONS = {
   A: { x: 140, y: 140 },
-  B: { x: 450, y: 450 },
-  C: { x: 140, y: 450 },
-  D: { x: 450, y: 140 },
+  B: { x: 450, y: 430 },
   E: { x: 300, y: 140 },
 };
 const clone = (value) => structuredClone(value);
@@ -64,7 +62,7 @@ function harness() {
       verified: false,
       stations: {},
       config_id: null,
-      reason: 'Measure stations A–E before planning.',
+      reason: 'Measure stations A, B and E before planning.',
     },
     battery: null,
     agent: { state: 'idle', reason: '' },
@@ -295,6 +293,14 @@ async function main() {
   try {
     await h.start();
     assert.equal(h.requests.filter((r) => r.options.method === 'POST').length, 0);
+    for (const field of ['mission-start', 'mission-destination']) {
+      assert.deepEqual(
+        Array.from(h.el(field).options, (option) => option.value),
+        ['', 'A', 'B', 'E'],
+      );
+    }
+    assert.equal(h.w.document.getElementById('station-C-x'), null);
+    assert.equal(h.w.document.getElementById('station-D-x'), null);
     for (const name of Object.keys(STATIONS)) {
       assert.equal(h.el(`station-${name}-x`).value, '', `${name} X must start unmeasured`);
       assert.equal(h.el(`station-${name}-y`).value, '', `${name} Y must start unmeasured`);
@@ -304,12 +310,12 @@ async function main() {
     await h.click('connect');
     Object.assign(h.state.stations, {
       required_clearance_mm: 125.5,
-      usable_bounds: { x_min: 125.5, x_max: 484.5, y_min: 125.5, y_max: 504.5 },
+      usable_bounds: { x_min: 125.5, x_max: 634.5, y_min: 125.5, y_max: 434.5 },
     });
     await h.tick(250);
     assert.equal(h.state.stations.verified, false);
     assert.match(h.el('station-detail').textContent, /Required edge clearance: 125\.5 mm/);
-    assert.match(h.el('station-detail').textContent, /X 125\.5–484\.5 mm, Y 125\.5–504\.5 mm/);
+    assert.match(h.el('station-detail').textContent, /X 125\.5–634\.5 mm, Y 125\.5–434\.5 mm/);
     assert.equal(
       h.el('station-A-x').value,
       '',
@@ -333,7 +339,7 @@ async function main() {
     });
 
     const cameraPose = h.el('map-pose').innerHTML;
-    h.set('mission-start', 'C');
+    h.set('mission-start', 'E');
     h.set('mission-destination', 'B');
     assert.equal(
       h.el('map-pose').innerHTML,
@@ -392,7 +398,11 @@ async function main() {
       [[140, 140], [450]],
       [
         [140, 140],
-        [611, 450],
+        [761, 430],
+      ],
+      [
+        [140, 140],
+        [450, 561],
       ],
     ]) {
       h.state.review.route.points = points;
@@ -576,7 +586,7 @@ async function main() {
     assert.equal(h.count('/api/stop'), stops + 1);
     assert.equal(h.el('plan').disabled, true);
     console.log(
-      'Station mission UI checks passed: measured A–E, observed start, immutable mission, reviewed detour/return/E and fresh battery choices (mock only).',
+      'Station mission UI checks passed: measured A/B/E, observed start, immutable mission, reviewed detour/return/E and fresh battery choices (mock only).',
     );
   } finally {
     await h.close();

@@ -1,6 +1,6 @@
 # Overhead USB camera provision
 
-Open **Live AMR mission** in the published Streamlit dashboard. The physical floor is **610 × 630 mm**, with origin at the bottom-left, X right and Y up. The Logitech camera is **131 cm** vertically above the floor. The full AMR-01 body is **170 × 155 × 150 mm** (L × W × H). ArUco marker **ID 0** is reported at the body centre; its directional alignment still needs verification. The robot's black-square marker edge is nominally **40 mm** at a reported surface height of **150 mm**.
+Open **Live AMR mission** in the published Streamlit dashboard. The physical floor is **760 × 560 mm**, with origin at the bottom-left, X right and Y up. The Logitech camera is **130 cm** vertically above the floor. The full AMR-01 body is **170 × 155 × 150 mm** (L × W × H). ArUco marker **ID 0** must be visible on top of the robot; measure its body-centre offset and directional alignment. The robot's black-square marker edge is nominally **40 mm** at a reported surface height of **150 mm**.
 
 **Observed physical floor marker arrangement (20 November 2026 image):**
 

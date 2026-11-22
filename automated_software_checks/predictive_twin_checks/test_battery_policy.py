@@ -54,7 +54,7 @@ def running_workflow():
     for t in (9400,9700,10000):
         clock[0]=t
         c.observe(seal("scene",frame(now=t,seq=t),KEY))
-    c.capture(OWNER,"operator",[210,450])
+    c.capture(OWNER,"operator",[210,430])
     rid=c.row["review_id"]
     c.decide(OWNER,rid,"approve","Measured clear floor")
     commands=[]

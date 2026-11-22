@@ -12,8 +12,7 @@ from backend_streamlit_and_telemetry.vision_control.mission import MISSIONS
 from backend_streamlit_and_telemetry.vision_control.contracts import segment_clear, radius
 from test_local_twin import BOOT, EPOCH, FakeTransport, G
 
-STATIONS = dict(A=dict(x=210, y=180), B=dict(x=210, y=430),
-                C=dict(x=400, y=430), D=dict(x=400, y=180), E=dict(x=300, y=300))
+STATIONS = dict(A=dict(x=210, y=180), B=dict(x=210, y=430), E=dict(x=300, y=300))
 OBSTACLE = [dict(x=520, y=520, width=20, height=20)]
 
 
@@ -90,7 +89,7 @@ def test_measured_start_validation_and_station_clearance(mission_rig):
     assert twin.status()["stations"]["verified"]
     assert twin.status()["stations"]["required_clearance_mm"] > 100
     with pytest.raises(ValueError, match="15 mm"):
-        twin.mutate("mission", dict(start="D", destination="B"))
+        twin.mutate("mission", dict(start="E", destination="B"))
     bad = copy.deepcopy(STATIONS); bad["A"]["x"] = 40
     with pytest.raises(ValueError, match="clearance"):
         twin.mutate("stations", dict(verified=True, stations=bad))
@@ -103,6 +102,34 @@ def test_measured_start_validation_and_station_clearance(mission_rig):
     assert result["review"]["state"] == "pending" and not transport.sent
     twin.config_id = "e" * 64
     assert not twin.mission.stations()["verified"]
+
+
+@pytest.mark.parametrize("change", ["missing_E", "extra_C", "extra_D"])
+def test_only_measured_a_b_e_stations_are_accepted(mission_rig, change):
+    twin, clock, transport, frame = mission_rig
+    previous = copy.deepcopy(twin.mission.station_data)
+    proposed = copy.deepcopy(STATIONS)
+    if change == "missing_E":
+        proposed.pop("E")
+    else:
+        proposed[change[-1]] = dict(x=400, y=400)
+    with pytest.raises(ValueError, match="A, B and charging stop E"):
+        twin.mutate("stations", dict(verified=True, stations=proposed))
+    assert twin.mission.station_data == previous
+    assert set(twin.status()["stations"]["stations"]) == {"A", "B", "E"}
+    assert not transport.sent
+
+
+def test_old_five_station_map_needs_new_measurements(mission_rig):
+    twin, clock, transport, frame = mission_rig
+    twin.mission.station_data["stations"].update(C=dict(x=400, y=430), D=dict(x=400, y=180))
+    value = twin.mission.stations()
+    assert not value["verified"]
+    assert set(value["stations"]) == {"A", "B", "E"}
+    for label in ("C", "D"):
+        with pytest.raises(ValueError, match="Verified measured stations"):
+            twin.mutate("mission", dict(start="A", destination=label))
+    assert not transport.sent
 
 
 def test_obstacle_pause_requires_stopped_ack_and_three_new_stable_observations(mission_rig):
@@ -169,7 +196,7 @@ def test_non_obstacle_fault_never_creates_automatic_recovery(mission_rig, fault)
 def test_no_safe_detour_stays_stopped_and_does_not_repeat_same_map(mission_rig):
     twin, clock, transport, frame = mission_rig
     running(twin, frame)
-    barrier = [dict(x=0, y=320, width=610, height=10)]
+    barrier = [dict(x=0, y=320, width=760, height=10)]
     frame(10200, obstacles=barrier, state="moving", left=20, right=20)
     value = settle(frame, 10200, obstacles=barrier)
     assert value["mission"]["state"] == "blocked"
@@ -183,7 +210,7 @@ def test_no_safe_detour_stays_stopped_and_does_not_repeat_same_map(mission_rig):
 def test_on_path_obstacle_proposes_a_different_collision_checked_route(mission_rig):
     twin, clock, transport, frame = mission_rig
     measured = copy.deepcopy(STATIONS)
-    measured.update(A=dict(x=210, y=140), B=dict(x=210, y=490))
+    measured.update(A=dict(x=210, y=140), B=dict(x=210, y=430))
     twin.mutate("stations", dict(verified=True, stations=measured))
     twin.coordinator.history.clear()
     for stamp in (11000, 11300, 11600):
@@ -193,7 +220,7 @@ def test_on_path_obstacle_proposes_a_different_collision_checked_route(mission_r
     approve(twin)
     frame(11650, y=140, state="armed")
     frame(11700, y=140, state="moving")
-    obstacle = [dict(x=200, y=300, width=20, height=20)]
+    obstacle = [dict(x=200, y=270, width=20, height=20)]
     frame(11800, y=140, obstacles=obstacle, state="moving", left=20, right=20)
     value = settle(frame, 11800, y=140, obstacles=obstacle)
     route = value["review"]["route"]
@@ -201,7 +228,7 @@ def test_on_path_obstacle_proposes_a_different_collision_checked_route(mission_r
     margin = radius(G)
     assert not all(segment_clear(a, b, obstacle, margin) for a, b in zip(original["points"], original["points"][1:]))
     assert all(segment_clear(a, b, obstacle, margin) for a, b in zip(route["points"], route["points"][1:]))
-    assert route["goal"] == [210, 490] and transport.sent[-1][3] == "stop"
+    assert route["goal"] == [210, 430] and transport.sent[-1][3] == "stop"
 
 
 def test_previously_seen_map_can_be_proposed_again_after_a_different_map(mission_rig):

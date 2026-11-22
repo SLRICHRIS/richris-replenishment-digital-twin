@@ -169,7 +169,7 @@
           icon: 'i-check',
           brief: 'Proposes a route and asks the operator to decide.',
           input:
-            'Measured A–E stations, a trusted current scene, selected start/destination and an attended operator session.',
+            'Measured A, B and E stations, a trusted current scene, selected start/destination and an attended operator session.',
           output: 'An approved, rejected or held route with an audit record and expiry.',
           role: 'The laptop checks the selected start against ArUco and plans with full-body clearance. Obstacle changes stop movement and propose a new path to the active target. Return to start and battery station E each require a new reviewed route.',
           gate: 'At 6.7–7.0 V the operator decides whether to continue or preview a route to E. Below 6.7 V the mission stops. Changed evidence and expired reviews invalidate approval; practice decisions cannot move the robot.',

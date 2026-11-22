@@ -8,7 +8,7 @@ The manual direction pad remains a fallback. Opening the workspace, receiving te
 
 - Connect the Windows laptop and ESP32 to the same Wi-Fi/hotspot. The app already knows the current address `10.55.54.112`, so normal startup needs no IP entry. A hotspot may assign a different subnet after restart; compare the app's displayed **Target** with the firmware's **AMR WIFI** line. A router reservation can avoid address changes.
 - Plug the overhead Logitech camera into the laptop. Close Windows Camera, the old camera agent and the dashboard's cloud/WebRTC camera preview. Only the local workspace should own this camera.
-- Keep the camera, floor markers and floor fixed during a run. The configured floor is **610 × 630 mm**, with reported lens height **1310 mm** and AMR body **170 × 155 × 150 mm**. These dimensions do not replace camera calibration or motor measurements.
+- Keep the camera, floor markers and floor fixed during a run. The configured floor is **760 × 560 mm**, with reported lens height **1300 mm** and AMR body **170 × 155 × 150 mm**. These dimensions do not replace camera calibration or motor measurements.
 
 ## 2. Upload the local route receiver once
 
@@ -97,7 +97,7 @@ The supplied camera layout has these identities and labels:
 | Lower right | 3 | A |
 | Right side, between upper and lower markers | No extra floor marker | E |
 
-Robot marker **0** is separate from the four floor references. The printed A–E labels do not automatically supply robot-centre stopping coordinates.
+Robot marker **0** is separate from the four floor references. The printed A, B and E labels do not automatically supply robot-centre stopping coordinates.
 
 The current template includes `floor_reference_rotations_deg` with **−90** for each floor ID, matching the decoded marker orientation in the supplied camera image. Angles are counterclockwise in the floor frame (+X right, +Y up). Measure `floor_reference_marker_edge_mm` across the black square; the template's **30 mm** is nominal. Floor tag orientation is separate from `marker_forward_offset_rad`, which establishes the robot's forward direction. Existing profiles without these new fields retain the old 0° / 30 mm assumptions; update and verify them if using this layout.
 
@@ -118,8 +118,8 @@ The small floor and the robot's required clearance can make a target unreachable
 ## 5. Configure stations and run a mission
 
 1. Restore the robot to the floor, keep all markers visible and wait for fresh camera and receiver readiness.
-2. Enter the physically measured **robot-centre stopping coordinates** for stations A, B, C, D and E in the local station setup. Keep their centres more than 30 mm apart so arrival zones do not overlap. Confirm the measurements and save them. The map belongs to the current camera calibration. Printed label centres near the paper edges are not automatically reachable stopping points.
-3. Select **Start** and **Destination** from A–E. The selected start must match the observed robot position within 15 mm. This selection never sets the camera pose or moves the robot.
+2. Enter the physically measured **robot-centre stopping coordinates** for stations A, B and E in the local station setup. Keep their centres more than 30 mm apart so arrival zones do not overlap. Confirm the measurements and save them. The map belongs to the current camera calibration. Printed label centres near the paper edges are not automatically reachable stopping points.
+3. Select **Start** and **Destination** from A, B and E. The selected start must match the observed robot position within 15 mm. This selection never sets the camera pose or moves the robot.
 4. Preview the mission. Check the path, current robot position, obstacles, destination and battery recommendation. Enter a decision reason, then approve the displayed route.
 5. Keep the local workspace visible during movement. The robot follows the approved path over direct Wi-Fi. Arrival is confirmed using fresh ArUco observations and stopped motor feedback.
 

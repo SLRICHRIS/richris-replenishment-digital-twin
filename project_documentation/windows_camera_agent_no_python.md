@@ -15,7 +15,7 @@ If the workflow has not produced a successful Windows build, the executables are
 - Close **Windows Camera** and click **Stop preview** on the Streamlit dashboard. The USB camera cannot reliably be shared by the browser and the controller.
 - Power down the robot's motor driver while commissioning the camera.
 - Keep the camera and four printed floor markers in fixed positions.
-- Current measured floor **610 × 630 mm**, Logitech lens **1310 mm** above the floor, AMR body **170 × 155 × 150 mm**; robot marker ID 0 is nominally at the body centre.
+- Current measured floor **760 × 560 mm**, Logitech lens **1300 mm** above the floor, AMR body **170 × 155 × 150 mm**; robot marker ID 0 must be mounted visibly and its offset to the body centre measured.
 - Camera reference IDs observed: **1 top-left; 2 bottom-left; 3 bottom-right; 4 top-right**. Each marker's X/Y centre must be measured physically from the floor origin. **The example's 40 mm insets are provisional and do not count as verified.**
 
 ### 1. Capture the empty-floor image
@@ -42,7 +42,7 @@ The tool refuses RMS reprojection error greater than 1 pixel. Confirm ruler dist
 
 Copy `example_camera_config.json` to `camera_private_config.json`. Insert the measured `camera_matrix`, `distortion_coefficients` and `resolution` from `camera_intrinsics.json` and complete the individually measured **physical geometry and motor configuration**. Verify marker height, printed-axis-to-robot-forward orientation, the four floor marker centres, wheel polarity, PWM-to-speed gains, maximum obstacle height, stopping distance, power limits and obstacle detection.
 
-**Never set a check to true without its real measurement and test.** The agent will refuse to start with unset values, stale floor measurements or checks still false. The executable does not bypass any of these safeguards. The 610 × 630 mm lab floor is small compared with the robot and its reserved safety radius; a proposed rack mission may correctly report **no safe route** until layout and clearance are validated.
+**Never set a check to true without its real measurement and test.** The agent will refuse to start with unset values, stale floor measurements or checks still false. The executable does not bypass any of these safeguards. The 760 × 560 mm lab floor is small compared with the robot and its reserved safety radius; a proposed rack mission may correctly report **no safe route** until layout and clearance are validated.
 
 ### 4. Run the existing secure wireless controller
 

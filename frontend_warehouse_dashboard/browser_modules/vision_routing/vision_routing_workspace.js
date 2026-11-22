@@ -1,7 +1,7 @@
-import { createLocalArUcoPanel } from './local_aruco_control.js?v=hotspot-address-20261122';
-import { createManualMotorPanel } from './manual_motor_control.js?v=hotspot-address-20261122';
-import { createPhysicalRoutePanel } from './physical_route_execution.js';
-import { createVisionWorkspace } from './overhead_camera_workspace.js';
+import { createLocalArUcoPanel } from './local_aruco_control.js?v=abe-floor-20261122';
+import { createManualMotorPanel } from './manual_motor_control.js?v=abe-floor-20261122';
+import { createPhysicalRoutePanel } from './physical_route_execution.js?v=abe-floor-20261122';
+import { createVisionWorkspace } from './overhead_camera_workspace.js?v=abe-floor-20261122';
 
 // Direct driving, commissioned camera routes and command-free practice stay distinct.
 export function createVisionRoutingWorkspace(scope) {

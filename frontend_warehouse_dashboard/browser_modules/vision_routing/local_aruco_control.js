@@ -8,8 +8,8 @@ export function createLocalArUcoPanel(scope) {
   if (!root) return null;
   root.innerHTML = `
     <section class="panel pr-action-card">
-      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · ARUCO + DIRECT WI-FI</span><h2>Choose A–E. Review. Approve. Arrive.</h2></div><span>ESP32 · 10.55.54.112</span></div>
-      <p>Select a measured start and destination from A–E. Your laptop tracks the robot with the camera, previews a path and sends approved movement directly to the ESP32. Obstacles and low battery bring the next decision back to you.</p>
+      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · ARUCO + DIRECT WI-FI</span><h2>Choose A, B and E. Review. Approve. Arrive.</h2></div><span>ESP32 · 10.55.54.112</span></div>
+      <p>Select a measured start and destination from A, B and E. Your laptop tracks the robot with the camera, previews a path and sends approved movement directly to the ESP32. Obstacles and low battery bring the next decision back to you.</p>
       <div class="manual-direct-actions">
         <button id="lc-open" class="primary" type="button">Open camera workspace here</button>
         <button id="lc-close" type="button" disabled>Close workspace</button>

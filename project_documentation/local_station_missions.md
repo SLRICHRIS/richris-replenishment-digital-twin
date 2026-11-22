@@ -2,14 +2,18 @@
 
 A mission records the selected start station, the camera-observed starting pose, and the selected destination. Its original start and destination remain fixed while individual approved routes can change. The active target is shown separately when returning to the start or visiting battery station E.
 
+The reported inside red-tape floor is **760 mm across × 560 mm bottom to top**, with camera lens height **1300 mm**. The coordinate origin is the bottom-left inner tape corner, X right and Y up.
+
+The current installation uses work stations **A and B**, plus **E as the charging reference stop**. The operator connects the charger manually after the robot stops; this installation has no automatic charging contacts. C and D are not configured or selectable. All four floor reference markers (IDs 1–4) and robot marker 0 are still required. Replacing the floor or camera setup requires new measurements and calibration; the old 610 × 630 mm template does not measure the new taped floor. Old five-station maps must be measured and saved again.
+
 ## Before movement
 
 - Calibrate the camera, marker geometry, wheel response and stopping envelope.
-- Measure the robot-centre stopping coordinates of A–E, separated by more than 30 mm so their 15 mm arrival zones do not overlap. The saved station map is bound to the current camera configuration; changing that configuration requires verification again.
+- Measure the robot-centre stopping coordinates of A, B and E, separated by more than 30 mm so their 15 mm arrival zones do not overlap. The saved station map is bound to the current camera configuration; changing that configuration requires verification again.
 - Select a start station that agrees with the live ArUco position within 15 mm, and a destination station.
 - Preview the route, inspect current evidence and record an approval reason.
 
-Selecting a station does not create a pose observation. Camera observations are the only source of the physical start and progress. The planner checks the measured full-body clearance; a label near a wall can need a stopping point farther inside the floor. Station setup displays the usable robot-centre bounds. The 610 × 630 mm floor may not leave enough clearance for a detour around every object; a larger physical workspace may be necessary.
+Selecting a station does not create a pose observation. Camera observations are the only source of the physical start and progress. The planner checks the measured full-body clearance; a label near a wall can need a stopping point farther inside the floor. Station setup displays the usable robot-centre bounds. The 760 × 560 mm floor may not leave enough clearance for a detour around every object; a larger physical workspace may be necessary.
 
 ## Decision rules
 

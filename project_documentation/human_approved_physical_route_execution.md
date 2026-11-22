@@ -48,8 +48,8 @@ its pulse settings; use 20 only after checking actual counted falling edges.
 
 ## 1. Prepare the measured camera scene
 
-Use a fixed overhead USB camera and a flat **610 × 630 mm** floor.
-The reported overhead Logitech camera height is **1310 mm (131 cm)**.
+Use a fixed overhead USB camera and a flat **760 × 560 mm** floor.
+The reported overhead Logitech camera height is **1300 mm (130 cm)**.
 On 19 November 2026 the operator supplied the full robot dimensions:
 **187 mm length × 150 mm width × 150 mm height**, including its platform and
 protrusions. The corrected length follows the subsequent axle-to-outline measurements:
@@ -311,9 +311,9 @@ normal use.
 
 ## Measured-floor revision: 20 November 2026
 
-The operator reported a **610 × 630 mm** floor, **1310 mm** lens-to-floor distance and an **170 × 155 × 150 mm** AMR body. Robot ArUco marker ID 0 is confirmed centred on the robot body. Printed marker IDs **1, 2, 3, 4** appear at the **top-left, bottom-left, bottom-right, top-right**, respectively, and all five IDs were recognized in the supplied Logitech screenshot using OpenCV `DICT_4X4_50`.
+The operator reported a new **760 × 560 mm** inside red-tape floor and **1300 mm** lens-to-floor distance on 22 November 2026. The previously reported AMR body is **170 × 155 × 150 mm** and must be checked against this setup. OpenCV `DICT_4X4_50` detected floor marker IDs **1, 2, 3, 4** at the **top-left, bottom-left, bottom-right, top-right**, respectively, in the new photo. Robot marker **0 was not detected** in that photo: mount it visibly, then measure its height, body-centre offset and forward alignment. Work stations are A and B; E is a reference stop where the operator connects the charger manually.
 
-**Do not use the old 425 × 630 mm, 92 cm camera, or 187 mm robot measurements.** The sample config records the updated dimensions but leaves physical commissioning checks false. The backend floor marker mapping now matches the observed ID order. The provisional 40 mm corner-centre insets are **not measurements**: record each marker centre's X/Y distance in millimetres relative to the floor origin and verify its printed size before commissioning. Camera intrinsics, marker orientation, empty-floor background and the motor's stopping performance must be independently verified. This one-time setup remains valid until the camera, floor markers, resolution/focus, or robot hardware geometry changes.
+**Do not reuse the old 610 × 630 mm or 425 × 630 mm floor profiles, 92 cm camera height, or 187 mm robot measurements.** The sample config records the updated dimensions but leaves physical commissioning checks false. The backend floor marker mapping now matches the observed ID order. The provisional 40 mm corner-centre insets are **not measurements**: record each marker centre's X/Y distance in millimetres relative to the floor origin and verify its printed size before commissioning. Camera intrinsics, marker orientation, empty-floor background and the motor's stopping performance must be independently verified. This one-time setup remains valid until the camera, floor markers, resolution/focus, or robot hardware geometry changes.
 
 The browser's **Physical AMR → Setup → Show Logitech camera** is a video-only preview for the same laptop. Press **Stop preview** before starting the trusted desktop camera agent; simultaneous webcam consumers can conflict. A browser preview, MQTT telemetry packet or a successful offline test is not authorization to move the physical robot.
 

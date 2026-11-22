@@ -77,7 +77,7 @@ def verify(command):
                 assert headers.get_content_type() == "text/html", "Expected the actual HTML workspace"
                 assert headers.get_content_charset() == "utf-8", "HTML must declare UTF-8"
                 html = body.decode("utf-8", errors="strict")
-                for expected in ("AMR-01 · Local camera mission", "610 × 630 mm", '<strong id="battery-value">—</strong>'):
+                for expected in ("AMR-01 · Local camera mission", "760 × 560 mm", '<strong id="battery-value">—</strong>'):
                     assert expected in html, "Packaged HTML lost an intended Unicode label or placeholder"
                 assert "__AMR_SESSION_TOKEN__" not in html, "The live page was not rendered by LocalTwin"
 

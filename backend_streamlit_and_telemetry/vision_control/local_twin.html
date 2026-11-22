@@ -715,7 +715,7 @@
         <div>
           <span class="kicker">AMR-01 · DIRECT LOCAL CONTROL</span>
           <h1>See. Decide. Move. Verify.</h1>
-          <p>Camera-tracked missions on the measured 610 × 630 mm floor.</p>
+          <p>Camera-tracked missions on the measured 760 × 560 mm floor.</p>
           <p>Keep other robot controller pages closed while using this session.</p>
         </div>
         <div class="tools">
@@ -871,11 +871,13 @@
 
           <section class="panel" aria-labelledby="stations-title">
             <details id="stations-setup">
-              <summary id="stations-title">Measured stations A–E</summary>
+              <summary id="stations-title">Measured stations A, B and E</summary>
               <div class="panel-body">
                 <p>
                   Enter measured robot-centre positions on the calibrated floor. Printed station
-                  labels do not determine reachable coordinates. E is the battery station.
+                  labels do not determine reachable coordinates. A and B are work stations. E is the
+                  charging stop. Connect the charger manually after the robot has stopped at E.
+                  Measure X from the left inner tape edge and Y from the bottom inner tape edge.
                 </p>
                 <form id="stations-form">
                   <div class="station-row">
@@ -886,7 +888,7 @@
                         id="station-A-x"
                         type="number"
                         min="0"
-                        max="610"
+                        max="760"
                         step="0.1"
                         required
                         placeholder="Measured X"
@@ -898,7 +900,7 @@
                         id="station-A-y"
                         type="number"
                         min="0"
-                        max="630"
+                        max="560"
                         step="0.1"
                         required
                         placeholder="Measured Y"
@@ -913,7 +915,7 @@
                         id="station-B-x"
                         type="number"
                         min="0"
-                        max="610"
+                        max="760"
                         step="0.1"
                         required
                         placeholder="Measured X"
@@ -925,7 +927,7 @@
                         id="station-B-y"
                         type="number"
                         min="0"
-                        max="630"
+                        max="560"
                         step="0.1"
                         required
                         placeholder="Measured Y"
@@ -933,68 +935,14 @@
                     </label>
                   </div>
                   <div class="station-row">
-                    <strong>C</strong>
-                    <label class="field">
-                      <span>C X (mm)</span>
-                      <input
-                        id="station-C-x"
-                        type="number"
-                        min="0"
-                        max="610"
-                        step="0.1"
-                        required
-                        placeholder="Measured X"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>C Y (mm)</span>
-                      <input
-                        id="station-C-y"
-                        type="number"
-                        min="0"
-                        max="630"
-                        step="0.1"
-                        required
-                        placeholder="Measured Y"
-                      />
-                    </label>
-                  </div>
-                  <div class="station-row">
-                    <strong>D</strong>
-                    <label class="field">
-                      <span>D X (mm)</span>
-                      <input
-                        id="station-D-x"
-                        type="number"
-                        min="0"
-                        max="610"
-                        step="0.1"
-                        required
-                        placeholder="Measured X"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>D Y (mm)</span>
-                      <input
-                        id="station-D-y"
-                        type="number"
-                        min="0"
-                        max="630"
-                        step="0.1"
-                        required
-                        placeholder="Measured Y"
-                      />
-                    </label>
-                  </div>
-                  <div class="station-row">
-                    <strong>E · battery</strong>
+                    <strong>E · charging</strong>
                     <label class="field">
                       <span>E X (mm)</span>
                       <input
                         id="station-E-x"
                         type="number"
                         min="0"
-                        max="610"
+                        max="760"
                         step="0.1"
                         required
                         placeholder="Measured X"
@@ -1006,7 +954,7 @@
                         id="station-E-y"
                         type="number"
                         min="0"
-                        max="630"
+                        max="560"
                         step="0.1"
                         required
                         placeholder="Measured Y"
@@ -1015,7 +963,7 @@
                   </div>
                   <label class="station-check">
                     <input id="station-verified" type="checkbox" required />
-                    <span>I measured these five robot-centre positions in this camera setup.</span>
+                    <span>I measured these three robot-centre positions in this camera setup.</span>
                   </label>
                   <div class="actions">
                     <button id="station-save" type="submit" class="primary" disabled>
@@ -1040,7 +988,7 @@
             <div class="map-container">
               <svg
                 id="floor-map"
-                viewBox="0 0 610 630"
+                viewBox="0 0 760 560"
                 role="img"
                 aria-labelledby="map-svg-title map-svg-description"
               >
@@ -1060,7 +1008,7 @@
                     />
                   </pattern>
                 </defs>
-                <rect width="610" height="630" fill="url(#grid)" />
+                <rect width="760" height="560" fill="url(#grid)" />
                 <g id="map-clearance"></g>
                 <g id="map-stations"></g>
                 <g id="map-obstacles"></g>
@@ -1068,8 +1016,8 @@
                 <g id="map-references"></g>
                 <g id="map-pose"></g>
                 <g id="map-target"></g>
-                <text x="12" y="612">0, 0</text>
-                <text x="475" y="24">610 × 630 mm</text>
+                <text x="12" y="542">0, 0</text>
+                <text x="625" y="24">760 × 560 mm</text>
               </svg>
               <div class="map-legend">
                 <span id="route-map-label">Fresh camera pose / captured route</span>
@@ -1089,9 +1037,7 @@
                       <option value="">Choose station</option>
                       <option value="A">A</option>
                       <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                      <option value="E">E · battery station</option>
+                      <option value="E">E · charging stop</option>
                     </select>
                   </label>
                   <label class="field">
@@ -1100,9 +1046,7 @@
                       <option value="">Choose station</option>
                       <option value="A">A</option>
                       <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                      <option value="E">E · battery station</option>
+                      <option value="E">E · charging stop</option>
                     </select>
                   </label>
                   <button id="plan" type="submit" disabled>Preview mission</button>
@@ -1231,7 +1175,7 @@
         'use strict';
         const $ = (id) => document.getElementById(id),
           token = document.querySelector('meta[name="amr-session"]').content;
-        const STATIONS = ['A', 'B', 'C', 'D', 'E'];
+        const STATIONS = ['A', 'B', 'E'];
         const ACTIVE = new Set([
           'sent',
           'approved',
@@ -1408,9 +1352,9 @@
             finite(+$('goal-x').value) &&
             finite(+$('goal-y').value) &&
             +$('goal-x').value >= 0 &&
-            +$('goal-x').value <= 610 &&
+            +$('goal-x').value <= 760 &&
             +$('goal-y').value >= 0 &&
-            +$('goal-y').value <= 630
+            +$('goal-y').value <= 560
           );
         }
         function stationPoint(label) {
@@ -1443,7 +1387,7 @@
                 value !== '' &&
                 finite(+value) &&
                 +value >= 0 &&
-                +value <= (axis === 'x' ? 610 : 630)
+                +value <= (axis === 'x' ? 760 : 560)
               );
             }),
           );
@@ -1488,7 +1432,7 @@
             {
               destination: 'Original destination',
               return_start: 'Return to original start',
-              battery_station: 'Go to battery station E',
+              battery_station: 'Go to charging stop E',
             }[m?.intent] || 'No mission captured',
           );
           text(
@@ -1501,7 +1445,7 @@
           const stationMessage = config?.verified
             ? 'Measured stations saved for this camera setup.'
             : config?.reason ||
-              'Measure all five robot-centre positions before planning. Coordinates are never guessed.';
+              'Measure all three robot-centre positions before planning. Coordinates are never guessed.';
           const boundsMessage =
             bounds && [bounds.x_min, bounds.x_max, bounds.y_min, bounds.y_max].every(finite)
               ? ` Robot-centre limits: X ${bounds.x_min.toFixed(1)}–${bounds.x_max.toFixed(1)} mm, Y ${bounds.y_min.toFixed(1)}–${bounds.y_max.toFixed(1)} mm.`
@@ -1591,7 +1535,7 @@
             detail =
               'This preview starts at the current camera position. The original mission remains recorded. Approve this return route separately.';
           } else if (pending && m?.proposal_kind === 'battery_diversion') {
-            title = 'Review route to battery station E';
+            title = 'Review route to charging stop E';
             detail =
               'E is the new route goal. The original destination remains recorded; movement waits for this route approval.';
           } else if (m?.state === 'blocked') {
@@ -1602,6 +1546,7 @@
             title = `Arrival verified at ${goalName}`;
             detail =
               m.reason || 'Fresh camera and stopped-output evidence verified this route outcome.';
+            if (m.active_goal?.label === 'E') detail += ' Connect the charger manually.';
           } else if (m?.state === 'running') {
             title = `Monitoring route to ${goalName}`;
             detail =
@@ -1610,7 +1555,7 @@
             title = 'Measure stations before planning';
             detail =
               config?.reason ||
-              'Save measured robot-centre coordinates for A, B, C, D and battery station E.';
+              'Save measured robot-centre coordinates for A, B and charging stop E.';
           } else if (pending) {
             title = 'Review the mission before movement';
             detail =
@@ -1685,9 +1630,9 @@
                 p.length === 2 &&
                 p.every(finite) &&
                 p[0] >= 0 &&
-                p[0] <= 610 &&
+                p[0] <= 760 &&
                 p[1] >= 0 &&
-                p[1] <= 630,
+                p[1] <= 560,
             ) &&
             goalMatchesReview()
           );
@@ -2009,7 +1954,7 @@
             title = 'Measure stations before planning';
             detail =
               current?.stations?.reason ||
-              'Save measured robot-centre positions for A–E in this calibrated camera setup.';
+              'Save measured robot-centre positions for A, B and E in this calibrated camera setup.';
           } else if (usable()) {
             title = 'Ready to plan';
             detail =
@@ -2068,7 +2013,7 @@
               'rect',
               {
                 x: bounds.x_min,
-                y: 630 - bounds.y_max,
+                y: 560 - bounds.y_max,
                 width: bounds.x_max - bounds.x_min,
                 height: bounds.y_max - bounds.y_min,
                 fill: 'none',
@@ -2087,7 +2032,7 @@
                 'circle',
                 {
                   cx: p.x,
-                  cy: 630 - p.y,
+                  cy: 560 - p.y,
                   r: 7,
                   fill: 'var(--inset)',
                   stroke: 'var(--green)',
@@ -2097,10 +2042,10 @@
               );
               const name = svg(
                 'text',
-                { x: p.x + 12, y: 630 - p.y - 10, fill: 'var(--green)', 'font-weight': '700' },
+                { x: p.x + 12, y: 560 - p.y - 10, fill: 'var(--green)', 'font-weight': '700' },
                 $('map-stations'),
               );
-              name.textContent = label === 'E' ? 'E · battery' : label;
+              name.textContent = label === 'E' ? 'E · charging' : label;
             }
           if (valid) {
             for (const o of Array.isArray(scene.obstacles) ? scene.obstacles : []) {
@@ -2109,7 +2054,7 @@
                   'rect',
                   {
                     x: o.x,
-                    y: 630 - o.y - o.height,
+                    y: 560 - o.y - o.height,
                     width: o.width,
                     height: o.height,
                     rx: 2,
@@ -2124,7 +2069,7 @@
               const g = svg(
                 'g',
                 {
-                  transform: `translate(${p.x},${630 - p.y}) rotate(${(-p.heading * 180) / Math.PI})`,
+                  transform: `translate(${p.x},${560 - p.y}) rotate(${(-p.heading * 180) / Math.PI})`,
                 },
                 $('map-pose'),
               );
@@ -2189,7 +2134,7 @@
             svg(
               'polyline',
               {
-                points: pts.map((p) => p[0] + ',' + (630 - p[1])).join(' '),
+                points: pts.map((p) => p[0] + ',' + (560 - p[1])).join(' '),
                 fill: 'none',
                 stroke: 'var(--blue)',
                 'stroke-width': 3,
@@ -2201,7 +2146,7 @@
           }
           if (validGoal()) {
             const x = +$('goal-x').value,
-              y = 630 - +$('goal-y').value;
+              y = 560 - +$('goal-y').value;
             svg(
               'circle',
               { cx: x, cy: y, r: 11, fill: 'none', stroke: '#e6a749', 'stroke-width': 3 },

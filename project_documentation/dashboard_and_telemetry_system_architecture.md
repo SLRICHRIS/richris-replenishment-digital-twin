@@ -43,7 +43,7 @@ The laptop vision processor validates camera intrinsics, floor references, marke
 
 The route follower checks matching approval, current scene/hardware evidence and the approved path. The ESP32 drive receiver enforces authenticated bounded requests and a short lease. Stop, lost operator presence, stale evidence, changed obstacles or path departure end the movement grant. Arrival needs distinct fresh camera observations and stopped-state evidence; an MQTT publish or an acknowledgement alone is not arrival. Local protection and a physical cutoff remain necessary.
 
-The laptop must stay powered, connected to the webcam and network. See [complete commissioning and route workflow](human_approved_physical_route_execution.md). Camera pose applies to the measured 425 × 630 mm floor, separately from the illustrative 3D warehouse.
+The laptop must stay powered, connected to the webcam and network. See [complete commissioning and route workflow](human_approved_physical_route_execution.md). Camera pose applies to the reported 760 × 560 mm floor, separately from the illustrative 3D warehouse.
 
 ## Calibrated models and recommendation review
 
@@ -86,7 +86,7 @@ All modules share common ground. INA219 observes the motor branch; the buck/ESP3
 | IMU axes and stationary bias | X forward, Y left, Z up; Z bias +0.02°/s = +0.000349066 rad/s |
 | Robot marker | ArUco 4×4/50 ID 0, 40 mm black edge, 150 mm above floor |
 | Marker position | 100 mm forward of wheel-axle midpoint, 0 mm sideways; printed-frame alignment still requires verification |
-| Overhead webcam and working floor | Logitech USB, reported 920 mm height; 425 × 630 mm floor |
+| Overhead webcam and working floor | Logitech USB, reported 1300 mm lens height; 760 × 560 mm floor |
 | Battery | Reported 2,200 mAh pack and 100% trial starting charge; measured usable capacity/current charge not established by that report |
 
 ## Separate simulation and operating boundaries

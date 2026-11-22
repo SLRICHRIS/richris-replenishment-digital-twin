@@ -16,7 +16,7 @@
     1280,
     720
   ],
-  "camera_height_mm": 1310,
+  "camera_height_mm": 1300,
   "marker_edge_mm": 40,
   "marker_height_mm": 150,
   "reported_marker_offset_robot_frame_mm": {
@@ -51,9 +51,9 @@
     "min_pack_voltage_v": 6.6,
     "battery_advisory_voltage_v": 7.0
   },
-  "floor_width_mm": 610,
-  "floor_length_mm": 630,
-  "reported_measurements_note": "Reported floor 610 mm wide x 630 mm long, Logitech lens height 1310 mm, AMR body 170 x 155 x 150 mm. Camera image inspected 22 November 2026: DICT_4X4_50 robot ID 0 and floor IDs 1 top-left, 2 bottom-left, 3 bottom-right, 4 top-right detected. All four floor tags have their decoded axes rotated -90 degrees relative to the floor frame; confirm this against the current live layout. Robot tag black edge is nominally 40 mm and floor tags nominally 30 mm; physically measure them. The robot tag appears offset from the chassis centre, so the former zero-offset assumption is removed. Measure tag height, tag-to-tracked-centre offset and forward alignment, floor marker centres, wheel geometry, motor response and stopping distance. This template does not establish calibration or route readiness.",
+  "floor_width_mm": 760,
+  "floor_length_mm": 560,
+  "reported_measurements_note": "New installation reported 22 November 2026: inside red-tape floor width 760 mm left to right, length 560 mm bottom to top, camera lens height 1300 mm. Origin is the bottom-left inner tape corner, X right and Y up. Work stations A and B; E is a reference stop for manual charging. The new photo detects DICT_4X4_50 floor IDs 1 top-left, 2 bottom-left, 3 bottom-right and 4 top-right; robot ID 0 was not detected. Attach robot marker 0 flat and clear of wires, then measure its height, offset to the tracked body centre and forward alignment. Previously reported AMR body 170 x 155 x 150 mm and nominal tag black edges (robot 40 mm, floor 30 mm) need verification against this setup. Measure all floor marker centres, station stopping centres, wheel geometry, motor response and stopping distance. Previous floor profiles must be replaced. This template does not establish calibration or route readiness.",
   "floor_reference_marker_edge_mm": 30,
   "floor_reference_rotations_deg": {
     "1": -90,
