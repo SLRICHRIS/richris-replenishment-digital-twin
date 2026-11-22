@@ -1,6 +1,7 @@
 """Authenticated, bounded HTTP transport to the local route-only ESP32 receiver."""
 
 import copy
+import errno
 import json
 import threading
 import time
@@ -50,13 +51,27 @@ class DeviceHTTPTransport:
         try:
             with self.opener.open(request, timeout=self.timeout) as response:
                 if response.status != 200:
-                    raise ValueError("Local receiver rejected the request")
+                    raise ValueError(f"ESP32 returned HTTP {response.status}; check the local receiver")
                 data = response.read(1025)
                 if len(data) > 1024:
                     raise ValueError("Oversized receiver response")
                 return data
+        except urllib.error.HTTPError as error:
+            # The endpoint is reachable; do not misreport an HTTP rejection as
+            # a Wi-Fi outage or expose the response body in the operator UI.
+            error.close()
+            raise ValueError(f"ESP32 returned HTTP {error.code}; check the local receiver") from error
         except (OSError, urllib.error.URLError) as error:
-            raise ValueError("Local ESP32 connection failed; approve a new route") from error
+            reason = error.reason if isinstance(error, urllib.error.URLError) else error
+            code = getattr(reason, "winerror", None) or getattr(reason, "errno", None)
+            if isinstance(reason, TimeoutError) or code in (errno.ETIMEDOUT, 10060):
+                message = (f"ESP32 request timed out ({self.timeout * 1000:g} ms socket limit). "
+                           "Close other robot controller pages and check Wi-Fi.")
+            elif isinstance(reason, PermissionError) or code in (errno.EACCES, errno.EPERM, 10013):
+                message = "Windows or local security software denied the ESP32 connection; check this app's network access."
+            else:
+                message = f"Cannot connect to ESP32 at {DEVICE_IP}:80; check its power and Wi-Fi."
+            raise ValueError(message) from error
 
     def poll(self):
         with self.lock:

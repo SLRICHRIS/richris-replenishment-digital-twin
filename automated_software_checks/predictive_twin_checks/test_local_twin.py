@@ -1,9 +1,11 @@
 """Offline local-route tests: fake camera/ESP32, never real motor requests."""
 
 import http.client
+import io
 import json
 import math
 import threading
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -47,6 +49,8 @@ class Opener:
 
     def open(self, request, timeout):
         self.calls.append((request, timeout))
+        if isinstance(self.body, Exception):
+            raise self.body
         return Reply(self.body)
 
 
@@ -101,6 +105,39 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
         NoRedirect().redirect_request(None, None, 302, "", {}, "http://elsewhere")
 
 
+@pytest.mark.parametrize("failure, expected", [
+    (TimeoutError("private detail"), "timed out.*150 ms"),
+    (urllib.error.URLError(TimeoutError("private detail")), "timed out.*150 ms"),
+    (urllib.error.URLError(PermissionError("private detail")), "denied"),
+    (urllib.error.URLError(ConnectionRefusedError("private detail")), "Cannot connect.*10.15.213.112:80"),
+])
+def test_transport_explains_network_fault_without_retrying_or_claiming_route_approval(failure, expected):
+    opener = Opener()
+    transport = DeviceHTTPTransport(SECRET, opener=opener, clock=lambda: 10000)
+    opener.body = heartbeat()
+    hw = transport.poll()
+    opener.body = failure
+    with pytest.raises(ValueError, match=expected) as result:
+        transport.send(hw, "e" * 32, 1, "drive", 20, 20, 10000)
+    assert len(opener.calls) == 2  # Exactly one send; an uncertain command is never retried.
+    assert "private detail" not in str(result.value)
+    assert "approve" not in str(result.value)
+    assert transport.latest["command_seq"] == 0
+
+
+def test_transport_distinguishes_http_rejection_and_closes_its_response_body():
+    opener = Opener()
+    transport = DeviceHTTPTransport(SECRET, opener=opener)
+    body = io.BytesIO(b"private receiver detail")
+    opener.body = urllib.error.HTTPError("http://10.15.213.112/api/route/hardware",
+        503, "Unavailable", {}, body)
+    with pytest.raises(ValueError, match="HTTP 503") as result:
+        transport.poll()
+    assert body.closed and len(opener.calls) == 1
+    assert "private receiver detail" not in str(result.value)
+    assert transport.latest is None
+
+
 class FakeTransport:
     def __init__(self):
         self.sent = []
@@ -145,6 +182,44 @@ def approve(twin, goal=(210, 190)):
     rid = result["review"]["review_id"]
     twin.mutate("decision", dict(review_id=rid, decision="approve", reason="Checked the clear measured route"))
     return rid
+
+
+def test_failed_polls_back_off_after_stopping_and_recovery_never_resumes_motion(rig, monkeypatch):
+    twin, clock, transport, observe = rig
+    approve(twin, (210, 250))
+    outcomes = [False] * 5 + [True, False, True]
+    waits, states = [], []
+    polls = iter(outcomes)
+
+    def poll():
+        if not next(polls):
+            raise ValueError("ESP32 request timed out")
+        return dict(twin.hardware, seq=clock[0], issued_at_ms=clock[0])
+
+    class ControlledWait:
+        def is_set(self):
+            return len(waits) == len(outcomes)
+
+        def wait(self, delay):
+            waits.append(delay)
+            states.append((twin.hardware_ok, twin.agent.state, len(transport.sent)))
+            clock[0] += round(delay * 1000)
+            return self.is_set()
+
+    monkeypatch.setattr(transport, "poll", poll, raising=False)
+    monkeypatch.setattr(twin, "stop_event", ControlledWait())
+    twin._hardware_loop()
+
+    assert states[0] == (False, "blocked", 2)  # Stop is attempted before the first retry wait.
+    assert all(.25 <= delay <= 2 for delay in waits[:5])
+    assert waits[:5] == sorted(waits[:5]) and sum(waits[:5]) >= 5
+    assert waits[5] == waits[7] == .08  # Successful observations restore the existing cadence.
+    assert waits[6] == waits[0]  # A recovered connection resets its retry pause.
+    assert [state[0] for state in states] == outcomes
+    assert all(state[1] == "blocked" for state in states)
+    assert [call[3] for call in transport.sent] == ["arm", "stop"]
+    assert twin.agent.lease_until == 0 and not twin.pending_acks
+    assert not twin.status()["ready"]  # The camera evidence has independently expired.
 
 
 def test_local_review_arms_only_after_explicit_approval_and_stops_on_presence_loss(rig):

@@ -272,16 +272,24 @@ class LocalTwin:
                     self.camera_status.update(valid=False, pose=None, reason=str(error)[:160])
 
     def _hardware_loop(self):
+        retry_delay = 0.25
         while not self.stop_event.is_set():
+            delay = 0.08
             try:
                 self.accept_hardware(self.transport.poll())
+                retry_delay = 0.25
             except Exception as error:
                 with self.lock:
                     self.hardware_ok = False
                     self.reason = str(error)[:160]
                     if self.agent.state in RUNNING:
                         self._halt("Direct ESP32 connection failed; approve a new route")
-            self.stop_event.wait(0.08)
+                # Retire an active approval before waiting. Let the single-client
+                # receiver recover instead of opening connections every 80 ms
+                # during an outage. This retries observation, never motion.
+                delay = retry_delay
+                retry_delay = min(2.0, retry_delay * 2)
+            self.stop_event.wait(delay)
 
     def _watchdog_loop(self):
         while not self.stop_event.wait(0.05):
