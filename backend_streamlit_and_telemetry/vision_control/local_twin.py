@@ -13,6 +13,7 @@ import hmac
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import threading
 import time
@@ -580,6 +581,39 @@ class ProcessLock:
         self.file.close()
 
 
+def normalize_route_key(value):
+    """Accept the firmware line or its quoted value without changing key bytes."""
+    if not isinstance(value, str):
+        key(value)
+    value = value.strip()
+    match = re.fullmatch(r'(?:#define[ \t]+AMR_ROUTE_KEY[ \t]+)?"([0-9a-f]{64})"(?:[ \t]*//[^\r\n]*)?', value)
+    if match:
+        value = match.group(1)
+    key(value)  # Never lowercase, remove internal characters or weaken authentication.
+    return value
+
+
+def read_route_key():
+    configured = os.environ.get("AMR_DRIVE_KEY")
+    if configured:
+        try:
+            return normalize_route_key(configured)
+        except ValueError:
+            raise ValueError("AMR_DRIVE_KEY must contain the 64-character lowercase hexadecimal route key; clear it to use the hidden prompt") from None
+    while True:
+        try:
+            value = getpass.getpass("Private AMR_ROUTE_KEY from the local-route firmware (hidden; paste then press Enter): ")
+        except (EOFError, KeyboardInterrupt):
+            print("\nKey entry cancelled. No camera or controller connection was started.")
+            return None
+        try:
+            return normalize_route_key(value)
+        except ValueError:
+            # No input, substring or fingerprint is echoed into console logs.
+            print("Key format not recognised. Copy all 64 characters from AMR_ROUTE_KEY in private_amr_settings.h. "
+                  "The full #define AMR_ROUTE_KEY line is also accepted. Try again, or press Ctrl+C to cancel.")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--camera", type=int, default=0)
@@ -590,12 +624,16 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if bool(args.config) != bool(args.background):
         parser.error("Supply both --config and --background")
-    secret = os.environ.get("AMR_DRIVE_KEY") or getpass.getpass("Private AMR_ROUTE_KEY from the local-route firmware (hidden): ")
-    key(secret.strip())
+    try:
+        secret = read_route_key()
+    except ValueError as error:
+        parser.error(str(error))
+    if secret is None:
+        return
     directory = Path(args.state_dir).expanduser().resolve()
     directory.mkdir(parents=True, exist_ok=True)
     with ProcessLock(directory / "controller.lock"):
-        twin = LocalTwin(DeviceHTTPTransport(secret.strip()), directory, camera_index=args.camera)
+        twin = LocalTwin(DeviceHTTPTransport(secret), directory, camera_index=args.camera)
         profile_path = Path(args.config) if args.config else directory / "camera_profile.json"
         background_path = Path(args.background) if args.background else directory / "empty_floor.png"
         if args.config or profile_path.exists() or background_path.exists():

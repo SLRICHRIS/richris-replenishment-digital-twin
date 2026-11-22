@@ -12,7 +12,7 @@ import pytest
 
 from backend_streamlit_and_telemetry.vision_control.browser_camera import Observation
 from backend_streamlit_and_telemetry.vision_control.local_transport import DeviceHTTPTransport, NoRedirect
-from backend_streamlit_and_telemetry.vision_control.local_twin import LocalTwin, ProcessLock, handler_for
+from backend_streamlit_and_telemetry.vision_control.local_twin import LocalTwin, ProcessLock, handler_for, normalize_route_key, read_route_key
 from backend_streamlit_and_telemetry.vision_control.protocol import signed, verified
 from http.server import ThreadingHTTPServer
 
@@ -517,6 +517,75 @@ def test_single_local_owner_lock(tmp_path):
         with pytest.raises(ValueError, match="already owns"):
             with ProcessLock(tmp_path / "owner.lock"):
                 pass
+
+
+@pytest.mark.parametrize("value", [
+    SECRET, " \t" + SECRET + "\r\n", '"' + SECRET + '"',
+    '#define AMR_ROUTE_KEY "' + SECRET + '"',
+    '\t#define\tAMR_ROUTE_KEY\t"' + SECRET + '" // private firmware setting\r\n',
+])
+def test_route_key_paste_accepts_only_documented_wrappers_without_changing_bytes(value):
+    assert normalize_route_key(value) == SECRET
+
+
+@pytest.mark.parametrize("value", [
+    None, "", "a" * 63, "a" * 65, "A" * 64, "g" * 64, "a" * 32 + " " + "a" * 32,
+    '#define AMR_CONTROL_KEY "' + SECRET + '"',
+    '#define AMR_ROUTE_KEY "' + SECRET + '"\n#define ANOTHER_SETTING 1',
+])
+def test_route_key_paste_rejects_invalid_or_unrelated_content(value):
+    with pytest.raises(ValueError, match="64-character"):
+        normalize_route_key(value)
+
+
+def test_invalid_hidden_key_reprompts_without_printing_pasted_content(monkeypatch, capsys):
+    from backend_streamlit_and_telemetry.vision_control import local_twin as module
+
+    monkeypatch.delenv("AMR_DRIVE_KEY", raising=False)
+    pasted = iter(["private-invalid-paste", '#define AMR_ROUTE_KEY "' + SECRET + '"'])
+    prompts = []
+
+    def prompt(message):
+        prompts.append(message)
+        return next(pasted)
+
+    monkeypatch.setattr(module.getpass, "getpass", prompt)
+    assert read_route_key() == SECRET
+    output = capsys.readouterr()
+    assert len(prompts) == 2 and "Try again" in output.out
+    assert "private-invalid-paste" not in output.out + output.err
+    assert SECRET not in output.out + output.err
+
+
+@pytest.mark.parametrize("error", [EOFError, KeyboardInterrupt])
+def test_cancelled_key_entry_does_not_start_hardware_or_create_state(tmp_path, monkeypatch, capsys, error):
+    from backend_streamlit_and_telemetry.vision_control import local_twin as module
+
+    monkeypatch.delenv("AMR_DRIVE_KEY", raising=False)
+
+    def prompt(_message):
+        raise error
+
+    monkeypatch.setattr(module.getpass, "getpass", prompt)
+    monkeypatch.setattr(module, "DeviceHTTPTransport", lambda *_a, **_kw: pytest.fail("Unexpected hardware construction"))
+    directory = tmp_path / "not-created"
+    module.main(["--state-dir", str(directory), "--no-browser"])
+    assert not directory.exists()
+    assert "cancelled" in capsys.readouterr().out
+
+
+def test_invalid_environment_key_reports_actionable_error_without_prompt_or_secret(monkeypatch, capsys):
+    from backend_streamlit_and_telemetry.vision_control import local_twin as module
+
+    monkeypatch.setenv("AMR_DRIVE_KEY", "private-invalid-environment-value")
+    monkeypatch.setattr(module.getpass, "getpass", lambda *_a: pytest.fail("Unexpected interactive fallback"))
+    monkeypatch.setattr(module, "DeviceHTTPTransport", lambda *_a, **_kw: pytest.fail("Unexpected hardware construction"))
+    with pytest.raises(SystemExit) as result:
+        module.main(["--no-browser"])
+    assert result.value.code == 2
+    output = capsys.readouterr()
+    assert "AMR_DRIVE_KEY must contain" in output.err
+    assert "private-invalid-environment-value" not in output.out + output.err
 
 
 def test_cli_restores_saved_profile_without_connecting_or_arming(tmp_path, monkeypatch):

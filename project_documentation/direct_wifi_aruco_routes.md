@@ -46,7 +46,7 @@ Run from PowerShell in the extracted folder:
 .\AMR01_LocalTwin.exe
 ```
 
-Enter the route key in the console's hidden prompt. It must match the ESP32's `AMR_ROUTE_KEY`. The optional environment variable is named `AMR_DRIVE_KEY`; a command-line key argument is deliberately not provided. Keep the console open while using the workspace.
+Enter the route key in the console's hidden prompt. It must match the ESP32's `AMR_ROUTE_KEY`. The prompt accepts the 64-character value, the value in double quotes, or the complete `#define AMR_ROUTE_KEY "..."` line. An invalid paste shows a brief explanation and asks again; it does not close the app or print the pasted text. Press Ctrl+C to cancel before connecting anything. Uppercase or altered key characters are rejected rather than silently changed. The optional environment variable is named `AMR_DRIVE_KEY`; an invalid configured value reports a clean startup error. A command-line key argument is deliberately not provided. Keep the console open while using the workspace.
 
 The local page opens at `http://127.0.0.1:8765/`. In the digital twin, open **Drive & review → Camera routes** to use it inside the dashboard. Allow local-network access if the browser requests it. If embedding is blocked, use the local page in its own tab on the same laptop.
 
