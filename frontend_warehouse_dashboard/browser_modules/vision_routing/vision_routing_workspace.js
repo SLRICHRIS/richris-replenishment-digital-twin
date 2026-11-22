@@ -1,5 +1,5 @@
-import { createLocalArUcoPanel } from './local_aruco_control.js';
-import { createManualMotorPanel } from './manual_motor_control.js?v=operator-audit-20261122';
+import { createLocalArUcoPanel } from './local_aruco_control.js?v=hotspot-address-20261122';
+import { createManualMotorPanel } from './manual_motor_control.js?v=hotspot-address-20261122';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
 

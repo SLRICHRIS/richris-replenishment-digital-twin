@@ -76,7 +76,7 @@
       label: 'Direct control',
       title: 'From a human decision to local Wi-Fi control',
       description:
-        'The installed ESP32 page is embedded in the dashboard at 10.15.213.112. The operator applies movement and power changes on the same Wi-Fi network.',
+        'The installed ESP32 page is embedded in the dashboard at 10.55.54.112. The operator applies movement and power changes on the same Wi-Fi network.',
       handoff:
         'Your browser talks directly to the ESP32 over local Wi-Fi. EMQX carries sensor telemetry separately; the cloud server does not relay local motor requests.',
       outcome:
@@ -100,7 +100,7 @@
           icon: 'i-wifi',
           brief: 'Loads the ESP32 controls after Connect controller.',
           input: 'Your explicit direction hold, Stop or motor-power selection.',
-          output: 'Local requests to the ESP32 at 10.15.213.112.',
+          output: 'Local requests to the ESP32 at 10.55.54.112.',
           role: 'The embedded native page owns its local requests. The laptop and ESP32 must share a Wi-Fi network; a separate-tab fallback uses the same saved address.',
           gate: 'An iframe loading is not a controller acknowledgement. Read the status inside the native page. This architecture guide sends no requests.',
           page: 'vision',
@@ -137,7 +137,7 @@
       description:
         'The laptop captures the Logitech camera, calculates the measured robot pose and follows an approved route directly over local Wi-Fi. The camera workspace opens inside the dashboard.',
       handoff:
-        'AMR01_LocalTwin sends signed, short-lived HTTP requests to AMR01_Local_Routes at 10.15.213.112. EMQX remains the sensor telemetry path.',
+        'AMR01_LocalTwin sends signed, short-lived HTTP requests to AMR01_Local_Routes at 10.55.54.112. EMQX remains the sensor telemetry path.',
       outcome:
         'When commissioned, route verification requires distinct fresh camera observations and stopped-state evidence. A sent command or controller reply alone is not arrival.',
       nodes: [

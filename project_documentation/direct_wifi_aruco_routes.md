@@ -1,12 +1,12 @@
 # AMR-01: ArUco routes through direct Wi-Fi
 
-This workflow connects the overhead camera to physical AMR movement: **live ArUco pose → route preview → human approval → direct Wi-Fi wheel commands → camera-verified arrival**. The dashboard embeds a workspace served by the laptop at `http://127.0.0.1:8765/`. The laptop processes the USB camera and sends authenticated commands to the fixed ESP32 address `10.15.213.112`. EMQX continues carrying sensor telemetry; route commands do not use the broker.
+This workflow connects the overhead camera to physical AMR movement: **live ArUco pose → route preview → human approval → direct Wi-Fi wheel commands → camera-verified arrival**. The dashboard embeds a workspace served by the laptop at `http://127.0.0.1:8765/`. The laptop processes the USB camera and sends authenticated commands to the ESP32; its default address is `10.55.54.112`, confirmed by the receiver's Serial output and a successful laptop HTTP request. EMQX continues carrying sensor telemetry; route commands do not use the broker.
 
 The manual direction pad remains a fallback. Opening the workspace, receiving telemetry or recording a sensor recommendation does not approve a route. Movement requires a current camera scene, fresh receiver feedback, verified measurements and an explicit route approval.
 
 ## 1. Prepare the laptop and robot
 
-- Connect the Windows laptop and ESP32 to the same Wi-Fi/hotspot. Keep the ESP32 assigned to `10.15.213.112`; a router reservation avoids address changes. The app already knows this address.
+- Connect the Windows laptop and ESP32 to the same Wi-Fi/hotspot. The app already knows the current address `10.55.54.112`, so normal startup needs no IP entry. A hotspot may assign a different subnet after restart; compare the app's displayed **Target** with the firmware's **AMR WIFI** line. A router reservation can avoid address changes.
 - Plug the overhead Logitech camera into the laptop. Close Windows Camera, the old camera agent and the dashboard's cloud/WebRTC camera preview. Only the local workspace should own this camera.
 - Keep the camera, floor markers and floor fixed during a run. The configured floor is **610 × 630 mm**, with reported lens height **1310 mm** and AMR body **170 × 155 × 150 mm**. These dimensions do not replace camera calibration or motor measurements.
 
@@ -52,6 +52,8 @@ Run from PowerShell in the extracted folder:
 .\AMR01_LocalTwin.exe
 ```
 
+The console and **ESP32 feedback** card display the configured target. If a future hotspot change assigns another address, this executable accepts `--device-ip` followed by the private IPv4 address from Serial Monitor, without a rebuild. Both signed feedback requests and commands use that address, and the local workspace's manual-control link follows it. The separate cloud dashboard's embedded manual controller retains its documented default address. Address selection never connects or authorizes movement by itself; there is no subnet scan or automatic command retry.
+
 Enter the route key in the console's hidden prompt. It must match the ESP32's `AMR_ROUTE_KEY`. The prompt accepts the 64-character value, the value in double quotes, or the complete `#define AMR_ROUTE_KEY "..."` line. An invalid paste shows a brief explanation and asks again; it does not close the app or print the pasted text. Press Ctrl+C to cancel before connecting anything. Uppercase or altered key characters are rejected rather than silently changed. The optional environment variable is named `AMR_DRIVE_KEY`; an invalid configured value reports a clean startup error. A command-line key argument is deliberately not provided. Keep the console open while using the workspace.
 
 The local page opens at `http://127.0.0.1:8765/`. In the digital twin, open **Drive & review → Camera routes** to use it inside the dashboard. Allow local-network access if the browser requests it. If embedding is blocked, use the local page in its own tab on the same laptop.
@@ -69,7 +71,7 @@ python -m pip install -r backend_streamlit_and_telemetry/vision_control/requirem
 python amr01_local_twin.py
 ```
 
-Optional startup arguments are `--camera`, `--config`, `--background`, `--state-dir` and `--no-browser`. For an existing measured camera profile:
+Optional startup arguments are `--device-ip`, `--camera`, `--config`, `--background`, `--state-dir` and `--no-browser`. For an existing measured camera profile:
 
 ```powershell
 .\AMR01_LocalTwin.exe --camera 0 --config camera_private_config.json --background empty_floor.png
@@ -129,7 +131,7 @@ A battery choice cannot approve an obstructed route. Approval of an E route incl
 
 See [station missions and decision rules](local_station_missions.md) for the transition table and execution evidence. The local SQLite audit retains mission and route decisions.
 
-For manual recovery, stop the route first, then use the embedded direct Wi-Fi controller or `http://10.15.213.112/`. A manual stop cancels route ownership; resuming route motion requires another approval.
+For manual recovery, stop the route first, then use the embedded direct Wi-Fi controller or `http://10.55.54.112/`. A manual stop cancels route ownership; resuming route motion requires another approval.
 
 ## If movement remains disabled
 

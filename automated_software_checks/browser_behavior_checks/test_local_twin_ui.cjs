@@ -193,7 +193,17 @@ async function main() {
     );
     assert.notEqual(el('camera-value').textContent, 'Pose tracked');
   }
-  assert.equal(el('manual').href, 'http://10.15.213.112/');
+  assert.equal(el('manual').href, 'http://10.55.54.112/');
+  assert.equal(el('hardware-address').textContent, 'Target: 10.55.54.112');
+  state.controller_ip = '192.168.4.112';
+  await tick(250);
+  assert.equal(el('manual').href, 'http://192.168.4.112/');
+  assert.equal(el('hardware-address').textContent, 'Target: 192.168.4.112');
+  state.controller_ip = '10.55.54.112@elsewhere';
+  await tick(250);
+  assert.equal(el('manual').hasAttribute('href'), false);
+  state.controller_ip = '10.55.54.112';
+  await tick(250);
   el('connect').click();
   await flush();
   assert.deepEqual(

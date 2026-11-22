@@ -55,7 +55,7 @@ or approves it automatically. A change in recommendation category, priority,
 suggested action, boot, commissioning settings or screening policy requires a
 new review. Small numeric variation within the same category does not.
 
-**Open Drive control** opens the native ESP32 page at `10.15.213.112` and carries
+**Open Drive control** opens the native ESP32 page at `10.55.54.112` and carries
 the saved response's instructions into the drive view. The operator applies it
 using the local controls or performs the physical task. This installed receiver
 does not expose a dashboard approval/acknowledgement API. Recording an observation

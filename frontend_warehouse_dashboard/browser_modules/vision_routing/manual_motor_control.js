@@ -1,6 +1,6 @@
 import { createLiveSensorRecommendations } from './live_sensor_recommendations.js?v=live-guidance-20261122';
 // Embed the installed ESP32 page; its own code remains the only LAN command sender.
-export const DIRECT_CONTROLLER_URL = 'http://10.15.213.112/';
+export const DIRECT_CONTROLLER_URL = 'http://10.55.54.112/';
 
 export function createManualMotorPanel(scope) {
   const d = scope.document,
@@ -8,7 +8,7 @@ export function createManualMotorPanel(scope) {
   if (!root) return null;
   root.innerHTML = `
     <section class="panel pr-action-card manual-drive-panel">
-      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · DIRECT WI-FI</span><h2>Drive AMR-01 here.</h2></div><span>10.15.213.112</span></div>
+      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · DIRECT WI-FI</span><h2>Drive AMR-01 here.</h2></div><span>10.55.54.112</span></div>
       <p>Connect this device to the robot's Wi-Fi or hotspot. The ESP32 controller appears below; sensor readings continue through EMQX.</p>
       <div class="manual-direct-actions">
         <button id="mc-connect" class="primary" type="button">Connect controller</button>
@@ -19,7 +19,7 @@ export function createManualMotorPanel(scope) {
       <div id="mc-reviewed-response" class="manual-reviewed-response" hidden><strong id="mc-reviewed-title"></strong><p id="mc-reviewed-detail"></p><p>Apply the response using the controls below or complete the physical check. Opening this page does not execute the saved decision.</p></div>
       <div id="mc-controller-frame-host" class="manual-controller-frame-host" hidden></div>
       <div id="mc-live-guidance"></div>
-      <details class="manual-direct-help"><summary>If the controller does not appear</summary><p>Allow local-network access for this dashboard in Chrome, then select Connect controller again. If your browser cannot embed the page, use Open separately. The laptop and ESP32 must be on the same hotspot, and the robot must still have address 10.15.213.112.</p></details>
+      <details class="manual-direct-help"><summary>If the controller does not appear</summary><p>Allow local-network access for this dashboard in Chrome, then select Connect controller again. If your browser cannot embed the page, use Open separately. The laptop and ESP32 must be on the same hotspot, and the robot must still have address 10.55.54.112.</p></details>
       <p id="mc-sensor-feed" role="status"></p>
       <a href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/manual_motor_control_setup.md" target="_blank" rel="noopener noreferrer">Direct Wi-Fi setup</a>
     </section>`;

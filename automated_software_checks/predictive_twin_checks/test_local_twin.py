@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from backend_streamlit_and_telemetry.vision_control.browser_camera import Observation
-from backend_streamlit_and_telemetry.vision_control.local_transport import DeviceHTTPTransport, NoRedirect
+from backend_streamlit_and_telemetry.vision_control.local_transport import DEVICE_IP, DeviceHTTPTransport, NoRedirect
 from backend_streamlit_and_telemetry.vision_control.local_twin import LocalTwin, ProcessLock, handler_for, normalize_route_key, read_route_key
 from backend_streamlit_and_telemetry.vision_control.protocol import signed, verified
 from http.server import ThreadingHTTPServer
@@ -68,7 +68,7 @@ def test_transport_has_no_startup_io_and_rejects_replay_wrong_key_and_unsafe_cap
     opener.body = heartbeat()
     hw = transport.poll()
     assert hw["max_pwm"] == 60 and hw["battery_voltage_v"] == 7.4
-    assert opener.calls[0][0].full_url == "http://10.15.213.112/api/route/hardware"
+    assert opener.calls[0][0].full_url == "http://10.55.54.112/api/route/hardware"
     assert opener.calls[0][1] <= .25
     with pytest.raises(ValueError, match="Repeated"):
         transport.poll()
@@ -104,6 +104,31 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
     transport.send(hw, "e" * 32, 4, "stop", 0, 0, 10501)
     with pytest.raises(ValueError, match="redirect"):
         NoRedirect().redirect_request(None, None, 302, "", {}, "http://elsewhere")
+
+
+def test_explicit_private_receiver_address_is_used_for_both_feedback_and_commands(tmp_path):
+    opener = Opener()
+    transport = DeviceHTTPTransport(SECRET, device_ip="192.168.4.112", opener=opener, clock=lambda: 10000)
+    assert not opener.calls
+    twin = LocalTwin(transport, tmp_path)
+    assert twin.status()["controller_ip"] == "192.168.4.112" and not opener.calls
+    opener.body = heartbeat()
+    hw = transport.poll()
+    opener.body = '{"ok":true}'
+    transport.send(hw, "e" * 32, 1, "arm", 0, 0, 10000)
+    assert [call[0].full_url for call in opener.calls] == [
+        "http://192.168.4.112/api/route/hardware", "http://192.168.4.112/api/route/command"
+    ]
+
+
+@pytest.mark.parametrize("address", [None, "", "127.0.0.1", "169.254.169.254", "8.8.8.8",
+    "172.15.1.1", "172.32.1.1", "http://10.55.54.112/", "10.55.54.112:80",
+    "10.55.54.112@elsewhere", "robot.local", "::1", "10.55.54.999"])
+def test_receiver_address_rejects_non_lan_literals_before_network_access(address):
+    opener = Opener()
+    with pytest.raises(ValueError, match="private IPv4"):
+        DeviceHTTPTransport(SECRET, device_ip=address, opener=opener)
+    assert not opener.calls
 
 
 @pytest.mark.parametrize("connect_s, first_byte_s, total_s", [
@@ -157,7 +182,7 @@ def test_larger_socket_budget_still_rejects_expired_heartbeats_and_unbounded_tim
     (TimeoutError("private detail"), "timed out.*250 ms"),
     (urllib.error.URLError(TimeoutError("private detail")), "timed out.*250 ms"),
     (urllib.error.URLError(PermissionError("private detail")), "denied"),
-    (urllib.error.URLError(ConnectionRefusedError("private detail")), "Cannot connect.*10.15.213.112:80"),
+    (urllib.error.URLError(ConnectionRefusedError("private detail")), "Cannot connect.*10.55.54.112:80"),
 ])
 def test_transport_explains_network_fault_without_retrying_or_claiming_route_approval(failure, expected):
     opener = Opener()
@@ -177,7 +202,7 @@ def test_transport_distinguishes_http_rejection_and_closes_its_response_body():
     opener = Opener()
     transport = DeviceHTTPTransport(SECRET, opener=opener)
     body = io.BytesIO(b"private receiver detail")
-    opener.body = urllib.error.HTTPError("http://10.15.213.112/api/route/hardware",
+    opener.body = urllib.error.HTTPError("http://10.55.54.112/api/route/hardware",
         503, "Unavailable", {}, body)
     with pytest.raises(ValueError, match="HTTP 503") as result:
         transport.poll()
@@ -588,7 +613,8 @@ def test_invalid_environment_key_reports_actionable_error_without_prompt_or_secr
     assert "private-invalid-environment-value" not in output.out + output.err
 
 
-def test_cli_restores_saved_profile_without_connecting_or_arming(tmp_path, monkeypatch):
+@pytest.mark.parametrize("arguments, expected_ip", [([], DEVICE_IP), (["--device-ip", "172.16.5.112"], "172.16.5.112")])
+def test_cli_restores_saved_profile_without_connecting_or_arming(tmp_path, monkeypatch, arguments, expected_ip):
     from backend_streamlit_and_telemetry.vision_control import local_twin as module
 
     (tmp_path / "camera_profile.json").write_text("{}")
@@ -598,6 +624,7 @@ def test_cli_restores_saved_profile_without_connecting_or_arming(tmp_path, monke
     class Twin:
         def __init__(self, transport, directory, **kwargs):
             assert transport.latest is None
+            assert transport.device_ip == expected_ip
             self.closed = False
 
         def restore_profile(self, config, background):
@@ -619,5 +646,5 @@ def test_cli_restores_saved_profile_without_connecting_or_arming(tmp_path, monke
     monkeypatch.setenv("AMR_DRIVE_KEY", SECRET)
     monkeypatch.setattr(module, "LocalTwin", Twin)
     monkeypatch.setattr(module, "ThreadingHTTPServer", Server)
-    module.main(["--state-dir", str(tmp_path), "--no-browser"])
+    module.main(["--state-dir", str(tmp_path), "--no-browser", *arguments])
     assert restored == [(tmp_path / "camera_profile.json", tmp_path / "empty_floor.png")]

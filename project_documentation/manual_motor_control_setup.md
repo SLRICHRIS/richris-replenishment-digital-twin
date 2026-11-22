@@ -1,7 +1,7 @@
 # Direct Wi-Fi control for AMR-01
 
 The digital twin's **Drive & review → Direct Wi-Fi drive** panel embeds the
-ESP32's existing local control page at **http://10.15.213.112/**. The address
+ESP32's existing local control page at **http://10.55.54.112/**. The address
 is fixed in the dashboard; no typing or new firmware upload is required.
 Movement commands travel directly from the browser to the ESP32 over the
 local network. EMQX continues to carry sensor telemetry.
@@ -14,7 +14,7 @@ local network. EMQX continues to carry sensor telemetry.
 4. Confirm **Wi-Fi connected** and updating readings inside the embedded
    ESP32 page. Use its direction buttons, Stop and motor-speed slider.
 
-The installed `AMR01-Wireless-H1-r3` firmware serves this page. The dashboard
+The installed `AMR01_Local_Routes` firmware serves this page. The dashboard
 loads it only after selecting Connect controller. A frame loading does not
 prove a successful connection; the status inside the ESP32 page is authoritative.
 The parent dashboard does not read cross-origin device responses or send

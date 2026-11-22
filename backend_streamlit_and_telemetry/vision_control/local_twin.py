@@ -32,7 +32,7 @@ from .camera import CHECKS, load_config
 from .contracts import (HEIGHT, WIDTH, OPERATOR_PRESENCE_MS, SCENE_FRESH_MS,
                         SCENE_VERSION, key, scene, seal)
 from .coordinator import ACTIVE, Coordinator, metadata
-from .local_transport import DeviceHTTPTransport, ROUTE_PWM_CAP
+from .local_transport import DeviceHTTPTransport, DEVICE_IP, ROUTE_PWM_CAP, receiver_ip
 from .mission import Mission
 
 HOST, PORT = "127.0.0.1", 8765
@@ -350,6 +350,7 @@ class LocalTwin:
                     reason = "Keep the robot still while fresh camera and controller evidence is collected"
             public.update(connected=self.connected, issued_at_ms=now, camera=camera,
                 hardware=hw if self.hardware else None,
+                controller_ip=getattr(self.transport, "device_ip", DEVICE_IP),
                 controller_feedback=dict(ready=hw["ready"], reason=feedback_reason),
                 reason=reason, camera_index=self.camera_index,
                 agent=dict(state=self.agent.state, reason=self.agent.reason),
@@ -617,6 +618,8 @@ def read_route_key():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--camera", type=int, default=0)
+    parser.add_argument("--device-ip", type=receiver_ip, default=DEVICE_IP,
+                        help="Private ESP32 IPv4 address; the current hotspot address is prefilled")
     parser.add_argument("--config")
     parser.add_argument("--background")
     parser.add_argument("--state-dir", default=str(Path.home() / ".amr-local-twin"))
@@ -633,7 +636,7 @@ def main(argv=None):
     directory = Path(args.state_dir).expanduser().resolve()
     directory.mkdir(parents=True, exist_ok=True)
     with ProcessLock(directory / "controller.lock"):
-        twin = LocalTwin(DeviceHTTPTransport(secret), directory, camera_index=args.camera)
+        twin = LocalTwin(DeviceHTTPTransport(secret, device_ip=args.device_ip), directory, camera_index=args.camera)
         profile_path = Path(args.config) if args.config else directory / "camera_profile.json"
         background_path = Path(args.background) if args.background else directory / "empty_floor.png"
         if args.config or profile_path.exists() or background_path.exists():
@@ -646,6 +649,7 @@ def main(argv=None):
         server = ThreadingHTTPServer((HOST, PORT), handler_for(twin))
         server.daemon_threads = True
         print("Local AMR twin: http://127.0.0.1:8765 — press Connect in the page to begin.")
+        print(f"ESP32 target: http://{args.device_ip}/ — compare with the firmware's AMR WIFI line.")
         if not args.no_browser:
             webbrowser.open("http://127.0.0.1:8765")
         try:

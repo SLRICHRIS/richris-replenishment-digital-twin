@@ -2,6 +2,7 @@
 
 import copy
 import errno
+import ipaddress
 import json
 import threading
 import time
@@ -11,8 +12,23 @@ import urllib.request
 from .contracts import key, fresh
 from .protocol import drive, hardware
 
-DEVICE_IP = "10.15.213.112"
+DEVICE_IP = "10.55.54.112"
 ROUTE_PWM_CAP = 60
+
+
+def receiver_ip(value):
+    """Only a literal RFC1918 IPv4 address can select the local receiver."""
+    try:
+        if not isinstance(value, str):
+            raise ValueError
+        address = ipaddress.IPv4Address(value.strip())
+        if not any(address in ipaddress.IPv4Network(network) for network in (
+            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"
+        )):
+            raise ValueError
+    except ValueError:
+        raise ValueError("Use a private IPv4 address from the ESP32's AMR WIFI line") from None
+    return str(address)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -27,8 +43,9 @@ class DeviceHTTPTransport:
     signed heartbeat's route ID and command sequence before claiming execution.
     """
 
-    def __init__(self, secret, *, timeout=0.25, opener=None, clock=None):
+    def __init__(self, secret, *, device_ip=DEVICE_IP, timeout=0.25, opener=None, clock=None):
         key(secret)
+        self.device_ip = receiver_ip(device_ip)
         if not 0 < timeout <= 0.25:
             raise ValueError("Receiver timeout must be at most 250 milliseconds")
         # Measured hotspot TCP handshakes exceeded 150 ms while complete H1
@@ -46,7 +63,7 @@ class DeviceHTTPTransport:
 
     def _request(self, path, body=None):
         request = urllib.request.Request(
-            "http://" + DEVICE_IP + path,
+            "http://" + self.device_ip + path,
             data=body.encode("ascii") if body is not None else None,
             headers={"Content-Type": "text/plain", "Cache-Control": "no-store"},
             method="POST" if body is not None else "GET",
@@ -68,12 +85,12 @@ class DeviceHTTPTransport:
             reason = error.reason if isinstance(error, urllib.error.URLError) else error
             code = getattr(reason, "winerror", None) or getattr(reason, "errno", None)
             if isinstance(reason, TimeoutError) or code in (errno.ETIMEDOUT, 10060):
-                message = (f"ESP32 request timed out ({self.timeout * 1000:g} ms socket limit). "
-                           "Close other robot controller pages and check Wi-Fi.")
+                message = (f"ESP32 at {self.device_ip} timed out ({self.timeout * 1000:g} ms socket limit). "
+                           "Check its current IP and the laptop's hotspot connection.")
             elif isinstance(reason, PermissionError) or code in (errno.EACCES, errno.EPERM, 10013):
                 message = "Windows or local security software denied the ESP32 connection; check this app's network access."
             else:
-                message = f"Cannot connect to ESP32 at {DEVICE_IP}:80; check its power and Wi-Fi."
+                message = f"Cannot connect to ESP32 at {self.device_ip}:80; check its power and Wi-Fi."
             raise ValueError(message) from error
 
     def poll(self):

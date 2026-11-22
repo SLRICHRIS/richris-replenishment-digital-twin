@@ -5,7 +5,7 @@ import {
   DIRECT_CONTROLLER_URL,
 } from '../../frontend_warehouse_dashboard/browser_modules/vision_routing/manual_motor_control.js';
 
-assert.equal(DIRECT_CONTROLLER_URL, 'http://10.15.213.112/');
+assert.equal(DIRECT_CONTROLLER_URL, 'http://10.55.54.112/');
 const dom = new JSDOM(
   '<body data-view="vision"><div id="vision-routing-shell" data-mode="manual"><div id="manual-motor-control"></div></div></body>',
   { url: 'https://example.test', pretendToBeVisual: true },
