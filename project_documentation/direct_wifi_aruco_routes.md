@@ -36,6 +36,12 @@ The receiver uses `POST /api/route/command` for signed V1 commands and `GET /api
 
 The receiver disables Wi-Fi modem sleep with `WiFi.setSleep(false)` before connecting, to reduce hotspot packet delays. This increases radio power consumption; use new current measurements when estimating runtime. Installing this change requires uploading the updated sketch while retaining the existing private settings and route key. The laptop application, feedback freshness checks and motor-command deadlines are unchanged. Keep other robot controller pages closed and measure response timing after the upload; successful compilation alone does not establish a reliable physical link.
 
+**Local Routes r2** also repairs HTTP recovery after a Wi-Fi interruption. The previous firmware set a `webServerStarted` flag once and never rebuilt the receiver after reconnection. The replacement waits for an IP address, closes the previous client and listener on disconnect/lost-IP/station-stop events, and opens a new listener after reconnection, including when the IP stays the same. A failed listen is retried once per second. Event callbacks only record state; the main loop owns HTTP and the motor task owns motor outputs. This follows [Espressif's socket recovery guidance](https://docs.espressif.com/projects/esp-idf/en/release-v5.5/esp32/api-guides/wifi.html#wifi-event-sta-disconnected). It is a confirmed recovery gap in the code, not proof that it caused every observed laptop timeout.
+
+To update an existing installation, replace `amr_wireless_app.h` and `amr_route_control.h` in the current sketch folder with the copies from the updated kit, retain `private_amr_settings.h`, and upload `AMR01_Local_Routes.ino`. Serial Monitor at **115200** identifies **Local Routes r2**. Its `AMR WIFI` line reports the current IP, signal strength, disconnect count/reason and HTTP listener state; the `AMR NET` line reports actual H1 replies. Reconnection retires the previous route identity even if both Wi-Fi events occur between motor ticks. It never resumes a route or changes the existing freshness, command lease, PWM or battery limits.
+
+Verify on the actual board with LocalTwin and other controller pages closed: confirm repeated HTTP 200 responses, briefly interrupt and restore the hotspot while the robot is stationary, then confirm the new HTTP-start count and successful requests at the current IP. A successful native test or ESP32 build does not replace this physical reconnect check. The same ESP32 HTTP receiver serves the manual page and camera-route endpoints; there is no extra cloud command server.
+
 ## 3. Start the laptop workspace
 
 For a Windows executable, open this repository's **Actions → Build Windows AMR camera toolkit**, choose a successful build of the current source, download **AMR01-Windows-Camera-Toolkit** and extract it. The artifact contains `AMR01_LocalTwin.exe`, the camera setup utility and the older MQTT camera agent. Use **AMR01_LocalTwin.exe** for this workflow. An executable is available only after its Windows build succeeds.
@@ -131,6 +137,7 @@ For manual recovery, stop the route first, then use the embedded direct Wi-Fi co
 | --- | --- |
 | Dashboard cannot open the local workspace | Keep `AMR01_LocalTwin.exe` running on this laptop; open `http://127.0.0.1:8765/` directly and check local-network browser permission. |
 | Manual page works, route endpoint is missing | Upload `AMR01_Local_Routes`; the old manual-only HTTP interface is insufficient. |
+| ESP32 appears on the hotspot but HTTP requests time out | Check the laptop's network and current robot IP, then inspect `AMR WIFI` and `AMR NET` in Serial Monitor. Firmware r2 rebuilds the HTTP receiver after a Wi-Fi interruption; a hotspot device listing alone does not prove HTTP reachability. |
 | Receiver authentication fails | The laptop's drive key must exactly match the new firmware's `AMR_ROUTE_KEY`. |
 | Receiver never becomes ready | Read the reported reason; check startup stillness, sensors, valid clock, battery and local/manual ownership. |
 | Camera unavailable | Close other camera applications and select the correct `--camera` index. |

@@ -12,12 +12,14 @@ static_assert(AMR_ROUTE_MIN_PACK_V >= 6.6 && AMR_ROUTE_MIN_PACK_V <= 7.4, "Check
 static portMUX_TYPE driveMux = portMUX_INITIALIZER_UNLOCKED;
 static amr_vision::Guard guard;
 static bool linked = false, ready = false, motorOnline = false;
+static uint32_t linkedGeneration = 0;
 static bool routeKeyReady = false;
 static char receiverBoot[33]{};
 static uint64_t utcMs();
 static void identity(char* dst);
 static bool networkReady() {
-  return routeKeyReady && WiFi.status() == WL_CONNECTED && utcMs() >= 1700000000000ULL;
+  return routeKeyReady && amr_wifi::snapshot().hasIP &&
+      WiFi.status() == WL_CONNECTED && utcMs() >= 1700000000000ULL;
 }
 static uint64_t neutralUntil = 0;
 static int actualLeft = 0, actualRight = 0;
@@ -132,16 +134,22 @@ static void motorTick() {
       && amr_ir::freshAt(seconds, sensors.batteryTimeS, .5)
       && sensors.packV > AMR_ROUTE_MIN_PACK_V;
   // Route readiness is LAN/time based. A broker outage has no authority here.
+  const uint32_t generation = amr_wifi::snapshot().generation;
   const bool online = networkReady();
+  const bool linkChanged = online != linked || generation != linkedGeneration;
   char nextEpoch[33]{};
-  if (online && !linked) identity(nextEpoch);
+  if (online && linkChanged) identity(nextEpoch);
   int left = 0, right = 0, previousLeft, previousRight;
   Motion request;
   portENTER_CRITICAL(&driveMux);
-  if (online != linked) {
+  if (linkChanged) {
+    // A disconnect/reconnect may occur between two motor ticks. Its recorded
+    // generation still cancels motion and retires the old route identity.
+    controller.stop();
     if (online) guard.connection(receiverBoot, nextEpoch);
     else guard.stop("unavailable");
     linked = online;
+    linkedGeneration = generation;
     ready = false;
   }
   controller.expire(now);
@@ -235,6 +243,10 @@ static void printStatus() {
   Serial.printf("AMR NET | telemetry writes=%lu age_s=%ld | H1 HTTP replies=%lu age_s=%ld | Wi-Fi=%s (-1 age means no write yet)\n",
       (unsigned long)sensor.packets, ageSeconds(sensor), (unsigned long)h1.packets,
       ageSeconds(h1), WiFi.status() == WL_CONNECTED ? "connected" : "offline");
+  const auto network = amr_wifi::snapshot();
+  Serial.printf("AMR WIFI | IP=%s | RSSI=%d dBm | disconnects=%lu | last_reason=%u | HTTP=%s | starts=%lu\n",
+      WiFi.localIP().toString().c_str(), int(WiFi.RSSI()), (unsigned long)network.disconnects,
+      network.lastReason, amr_wifi::http.started ? "listening" : "waiting", (unsigned long)amr_wifi::http.starts);
 }
 
 static void reportConnectFailure(const char* channel, PubSubClient& client, WiFiClientSecure& socket) {

@@ -36,6 +36,8 @@ def verify(arduino_cli=None, config_file=None):
         app = (SKETCH / 'amr_wireless_app.h').read_text()
         behaviors = app.split('// ===== WHEEL SENSORS AND LOCAL DRIVE =====', 1)[1].split('// ===== ESP32 APPLICATION =====', 1)[0]
         (Path(temporary) / 'local_route_test_behaviors.h').write_text(behaviors)
+        wifi = app.split('// ===== WI-FI CONNECTION RECOVERY =====', 1)[1].split('// ===== END WI-FI CONNECTION RECOVERY =====', 1)[0]
+        (Path(temporary) / 'local_wifi_test_behaviors.h').write_text(wifi)
         stub = Path(temporary) / 'mbedtls'
         stub.mkdir()
         (stub / 'md.h').write_text('''#pragma once
@@ -98,7 +100,10 @@ inline int mbedtls_md_hmac(const EVP_MD* info,const unsigned char* key,size_t ke
     network = app.split('void networkTask(void*) {', 1)[1].split('void setup()', 1)[0]
     assert network.index('configTime(') < network.index('if (mqttConfigured)')
     assert network.index('WiFi.mode(WIFI_STA)') < network.index('WiFi.setSleep(false)') < network.index('WiFi.begin(')
+    assert network.index('WiFi.onEvent(amr_wifi::onEvent)') < network.index('WiFi.begin(')
     assert 'WiFi.setSleep(true)' not in app
+    assert 'amr_wifi::service(webServer);' in app.split('void loop() {', 1)[1]
+    assert 'webServerStarted' not in app
     readiness = receiver.split('static bool networkReady() {', 1)[1].split('}', 1)[0]
     assert 'WiFi.status() == WL_CONNECTED' in readiness and 'utcMs()' in readiness
     assert 'mqtt' not in readiness.lower()

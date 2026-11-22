@@ -35,7 +35,24 @@ int fakeGettimeofday(timeval* tv,void*) {
   tv->tv_sec=utc/1000; tv->tv_usec=(utc%1000)*1000; return 0;
 }
 #define gettimeofday fakeGettimeofday
-struct FakeWiFi { int connected=WL_CONNECTED; int status() { return connected; } } WiFi;
+struct FakeIP {
+  uint32_t value=112;
+  operator uint32_t() const { return value; }
+  std::string toString() const { return std::to_string(value); }
+};
+struct FakeWiFi {
+  int connected=WL_CONNECTED;
+  FakeIP address;
+  int status() { return connected; }
+  FakeIP localIP() { return address; }
+  int RSSI() { return -45; }
+} WiFi;
+enum arduino_event_id_t {
+  ARDUINO_EVENT_WIFI_STA_START, ARDUINO_EVENT_WIFI_STA_STOP,
+  ARDUINO_EVENT_WIFI_STA_GOT_IP, ARDUINO_EVENT_WIFI_STA_LOST_IP,
+  ARDUINO_EVENT_WIFI_STA_DISCONNECTED
+};
+struct arduino_event_info_t { struct { unsigned reason=0; } wifi_sta_disconnected; };
 std::map<int,int> pins, duties;
 void digitalWrite(int pin,int value) { pins[pin]=value; }
 bool writeMotorPwm(int pin,uint32_t duty) { duties[pin]=int(duty); return true; }
@@ -43,15 +60,37 @@ struct FakeSerial {
   void println(const char*) {}
   template <typename... T> void printf(const char*,T...) {}
 } Serial;
-struct FakeWebServer {
+struct FakeListener {
+  bool active=false;
+  operator bool() const { return active; }
+};
+struct FakeClient {
+  bool active=false;
+  int stops=0;
+  void stop() { active=false; ++stops; }
+};
+class WebServer {
+ protected:
+  FakeListener _server;
+ public:
+  explicit WebServer(int) {}
   std::string input,body,type,cache;
   bool hasBody=true;
   int code=0;
+  int begins=0,closes=0,handles=0;
+  bool beginAllowed=true;
+  FakeClient current;
+  FakeClient& client() { return current; }
+  void begin() { close(); ++begins; _server.active=beginAllowed; }
+  void close() { ++closes; _server.active=false; }
+  void handleClient() { assert(_server.active); ++handles; }
   bool hasArg(const char*) { return hasBody; }
   String arg(const char*) { return input; }
   void sendHeader(const char*,const char* value) { cache=value; }
   void send(int status,const char* mime,const char* value) { code=status;type=mime;body=value; }
-} webServer;
+};
+#include "local_wifi_test_behaviors.h"
+amr_wifi::Receiver webServer(80);
 constexpr int MQTT_CONNECTION_TIMEOUT=-4, MQTT_CONNECT_FAILED=-2, MQTT_MAX_HEADER_SIZE=5;
 struct PubSubClient {
   int state() { return MQTT_CONNECT_FAILED; }
@@ -95,7 +134,80 @@ void post(const std::string& value,int expected) {
   webServer.input=value; amr_route::handleCommand(); assert(webServer.code==expected);
   assert(webServer.cache=="no-store");
 }
+
+void checkHttpRecovery() {
+  arduino_event_info_t info;
+  info.wifi_sta_disconnected.reason=200;
+  WiFi.connected=0;
+  amr_wifi::service(webServer);
+  assert(webServer.begins==0 && webServer.handles==0);
+  // Association alone is insufficient; wait for a usable IP event.
+  WiFi.connected=WL_CONNECTED;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_START,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==0);
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==1 && amr_wifi::http.started && webServer.handles==1);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==1 && webServer.handles==2);
+
+  webServer.current.active=true;
+  const int closes=webServer.closes;
+  WiFi.connected=0;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_DISCONNECTED,info);
+  assert(webServer.closes==closes && webServer.current.active); // callback never touches sockets
+  amr_wifi::service(webServer);
+  assert(!webServer.current.active && !amr_wifi::http.started && !webServer.listening());
+  amr_wifi::service(webServer);
+  assert(webServer.handles==2 && webServer.begins==1);
+  WiFi.connected=WL_CONNECTED;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==2 && amr_wifi::http.address==112);
+
+  // Both events can arrive between loop calls, even with the same address.
+  webServer.current.active=true;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_DISCONNECTED,info);
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==3 && !webServer.current.active);
+  assert(amr_wifi::snapshot().disconnects==2 && amr_wifi::snapshot().lastReason==200);
+  WiFi.address.value=113;
+  amr_wifi::service(webServer);
+  assert(webServer.begins==4 && amr_wifi::http.address==113);
+
+  // A failed listen must not be labelled started or retried in a tight loop.
+  webServer.beginAllowed=false;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,info);
+  const int handled=webServer.handles;
+  amr_wifi::service(webServer);
+  assert(webServer.begins==5 && !amr_wifi::http.started);
+  nowUs+=999000; amr_wifi::service(webServer);
+  assert(webServer.begins==5 && webServer.handles==handled);
+  nowUs+=1000; amr_wifi::service(webServer);
+  assert(webServer.begins==6 && !amr_wifi::http.started);
+  webServer.beginAllowed=true;
+  nowUs+=1000000; amr_wifi::service(webServer);
+  assert(webServer.begins==7 && amr_wifi::http.started);
+  webServer.close(); amr_wifi::service(webServer);
+  assert(webServer.begins==8 && amr_wifi::http.started);
+
+  // Lost IP and station stop must close HTTP even before status/IP polling changes.
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_LOST_IP,info);
+  amr_wifi::service(webServer);
+  assert(!amr_wifi::http.started && !webServer.listening());
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_STOP,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==8);
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,info);
+  amr_wifi::service(webServer);
+  assert(webServer.begins==9 && amr_wifi::http.started);
+  puts("PASS: production HTTP lifecycle: IP readiness, same-IP/fast reconnect, client cleanup, IP change, lost IP and bounded listen retry");
+}
+
 int main() {
+  checkHttpRecovery();
   fresh(); amr_route::setupReceiver(); amr_route::motorTick();
   assert(amr_route::ready && amr_route::linked); // MQTT is permanently unavailable above.
   const std::string boot=amr_route::guard.boot;
@@ -135,6 +247,15 @@ int main() {
   WiFi.connected=WL_CONNECTED; fresh(151000); amr_route::motorTick();
   assert(amr_route::ready && boot==amr_route::guard.boot && epoch!=amr_route::guard.epoch);
   post(delayed,409);
+  post(packet("arm",1),200); post(packet("drive",2,30,30),200); amr_route::motorTick();
+  const std::string quickDelayed=packet("drive",3,30,30), quickEpoch=amr_route::guard.epoch;
+  arduino_event_info_t reconnect;
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_DISCONNECTED,reconnect);
+  amr_wifi::onEvent(ARDUINO_EVENT_WIFI_STA_GOT_IP,reconnect);
+  amr_route::motorTick();
+  assert(amr_route::actualLeft==0 && !amr_route::guard.active && quickEpoch!=amr_route::guard.epoch);
+  post(quickDelayed,409);
+  fresh(151000); amr_route::motorTick();
   post(packet("arm",1),200); post(packet("drive",2,30,30),200); amr_route::motorTick();
   utcBase=0; amr_route::motorTick();
   assert(!amr_route::ready && !amr_route::guard.active && amr_route::actualLeft==0);

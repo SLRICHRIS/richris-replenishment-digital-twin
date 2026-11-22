@@ -216,7 +216,7 @@ inline int encodeDiagnostic(char* buffer, size_t size, const char* bootId,
   }
   const int length = std::snprintf(buffer, size,
       "{\"schema_version\":1,\"message_type\":\"mh_ir_commissioning\","
-      "\"firmware_revision\":\"AMR01-Local-Routes-r1\",\"robot_id\":\"amr01\",\"boot_id\":\"%s\",\"seq\":%lu,"
+      "\"firmware_revision\":\"AMR01-Local-Routes-r2\",\"robot_id\":\"amr01\",\"boot_id\":\"%s\",\"seq\":%lu,"
       "\"sample_time_s\":%.6f,\"interval_s\":%.6f,"
       "\"left_encoder_count\":%lld,\"right_encoder_count\":%lld,"
       "\"left_encoder_count_signed\":%lld,\"right_encoder_count_signed\":%lld,"
@@ -393,8 +393,89 @@ bool imuInitialized = false, batteryInitialized = false;
 Adafruit_INA219 ina219(INA219_ADDRESS_VALUE);
 amr_mqtt::Socket tls;
 PubSubClient mqtt(tls);
-WebServer webServer(80);
-bool webServerStarted = false;
+// ===== WI-FI CONNECTION RECOVERY =====
+namespace amr_wifi {
+struct Link {
+  uint32_t generation = 0, disconnects = 0;
+  unsigned lastReason = 0;
+  bool hasIP = false;
+};
+static portMUX_TYPE linkMux = portMUX_INITIALIZER_UNLOCKED;
+static Link link;
+
+static Link snapshot() {
+  portENTER_CRITICAL(&linkMux);
+  const Link result = link;
+  portEXIT_CRITICAL(&linkMux);
+  return result;
+}
+
+// Arduino invokes this on another task. Record events only: HTTP sockets are
+// owned by loop(), and motor outputs remain owned by the existing motor task.
+static void onEvent(arduino_event_id_t event, arduino_event_info_t info) {
+  if (event != ARDUINO_EVENT_WIFI_STA_GOT_IP && event != ARDUINO_EVENT_WIFI_STA_DISCONNECTED &&
+      event != ARDUINO_EVENT_WIFI_STA_LOST_IP && event != ARDUINO_EVENT_WIFI_STA_STOP) return;
+  portENTER_CRITICAL(&linkMux);
+  ++link.generation;
+  link.hasIP = event == ARDUINO_EVENT_WIFI_STA_GOT_IP;
+  if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
+    ++link.disconnects;
+    link.lastReason = info.wifi_sta_disconnected.reason;
+  }
+  portEXIT_CRITICAL(&linkMux);
+}
+
+class Receiver : public WebServer {
+ public:
+  explicit Receiver(int port) : WebServer(port) {}
+  bool listening() { return bool(_server); }
+};
+
+struct HttpState {
+  uint32_t generation = 0, address = 0, lastAttempt = 0, starts = 0;
+  bool started = false, attempted = false;
+};
+static HttpState http;
+
+static void service(Receiver& server) {
+  const Link current = snapshot();
+  const auto address = WiFi.localIP();
+  const uint32_t ip = uint32_t(address), now = millis();
+  const bool connected = current.hasIP && WiFi.status() == WL_CONNECTED && ip != 0;
+  const bool changed = current.generation != http.generation ||
+      (http.started && (!connected || ip != http.address || !server.listening()));
+  if (changed) {
+    // Wi-Fi reconnecting with the same IP still invalidates existing sockets.
+    // Also discard a half-read client before rebuilding the listening socket.
+    server.client().stop();
+    server.close();
+    http.started = http.attempted = false;
+    http.address = 0;
+    http.generation = current.generation;
+    Serial.printf("AMR HTTP reconnect | Wi-Fi=%s | disconnects=%lu | last_reason=%u\n",
+        connected ? "connected" : "offline", (unsigned long)current.disconnects, current.lastReason);
+  }
+  if (!connected) return;
+  if (!http.started && (!http.attempted || uint32_t(now - http.lastAttempt) >= 1000)) {
+    http.attempted = true;
+    http.lastAttempt = now;
+    server.begin();
+    http.started = server.listening();
+    if (http.started) {
+      http.address = ip;
+      ++http.starts;
+      Serial.printf("AMR-01 dashboard: http://%s/ | HTTP starts=%lu | RSSI=%d dBm\n",
+          address.toString().c_str(), (unsigned long)http.starts, int(WiFi.RSSI()));
+    } else {
+      Serial.println("AMR HTTP listen failed; retrying in one second.");
+    }
+  }
+  if (http.started) server.handleClient();
+}
+}  // namespace amr_wifi
+// ===== END WI-FI CONNECTION RECOVERY =====
+
+amr_wifi::Receiver webServer(80);
 char bootId[24];
 static const char TOPIC[] = "robot/amr01/commissioning";
 static_assert(LOCAL_COMMAND_TIMEOUT_US == 0 || LOCAL_COMMAND_TIMEOUT_US > DIRECTION_INTERLOCK_US,"Enabled timeout must exceed interlock");
@@ -651,6 +732,7 @@ void networkTask(void*) {
   const bool mqttConfigured = *MQTT_HOST && *MQTT_USERNAME &&
       strcmp(MQTT_PASSWORD, "YOUR_NEW_EMQX_PUBLISHER_PASSWORD") != 0;
   Serial.println("Connecting to Wi-Fi. Keep the 2.4 GHz hotspot and its internet connection on.");
+  WiFi.onEvent(amr_wifi::onEvent);
   WiFi.mode(WIFI_STA);
   // Route feedback needs prompt reception. Modem sleep can defer packets to
   // the hotspot's DTIM interval; keep the radio awake instead of extending
@@ -746,7 +828,7 @@ void setup() {
   initializeSensors();
   configureDashboard();
   snprintf(bootId,sizeof bootId,"%08lx%08lx",static_cast<unsigned long>(esp_random()),static_cast<unsigned long>(esp_random()));
-  Serial.println("AMR-01 Local Routes r1. HTTP manual/route controls are independent of MQTT. Serial 115200.");
+  Serial.println("AMR-01 Local Routes r2. Wi-Fi receiver reconnect recovery. Serial 115200.");
   Serial.println("F/B: both wheels. L: right wheel forward only. R: left wheel forward only. Dashboard: open the printed ESP32 IP address.");
   Serial.println("Encoder signed direction is inferred from motor commands; RPM needs confirmed PPR.");
   if (!pwmReady) Serial.println("PWM setup failed: motors remain disabled");
@@ -767,12 +849,7 @@ void loop() {
   const double timeS = now/1000000.0;
   const bool sensorsFresh = amr_ir::finiteImu(sensors) && amr_ir::finiteBattery(sensors) &&
       amr_ir::freshAt(timeS,sensors.imuTimeS,.1) && amr_ir::freshAt(timeS,sensors.batteryTimeS,.5);
-  if (!webServerStarted && WiFi.status() == WL_CONNECTED) {
-    webServer.begin();
-    webServerStarted = true;
-    Serial.printf("AMR-01 dashboard: http://%s/\n", WiFi.localIP().toString().c_str());
-  }
-  if (webServerStarted) webServer.handleClient();
+  amr_wifi::service(webServer);
   for (int n = 0; n < 32 && Serial.available() > 0; ++n) {
     const char command = char(Serial.read());
     if (command == 'Z' || command == 'z') {
