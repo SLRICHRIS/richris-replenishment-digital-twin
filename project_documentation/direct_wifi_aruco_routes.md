@@ -101,17 +101,21 @@ To use a different verified profile and background, override them together:
 
 The small floor and the robot's required clearance can make a target unreachable. A **no safe route** result is a planning outcome, not a reason to remove clearance or freshness checks.
 
-## 5. Review and run a route
+## 5. Configure stations and run a mission
 
 1. Restore the robot to the floor, keep all markers visible and wait for fresh camera and receiver readiness.
-2. Select a reachable destination on the map, or enter its X/Y coordinates in millimetres, then choose **Preview route**. Inspect the path, start pose, obstacles and destination.
-3. Enter your decision reason, then select **Approve & run** for the displayed route. Use **Reject** or **Hold** if the scene or path is unsuitable.
-4. Keep the workspace open and the robot in view. The local follower commands the wheels using live camera feedback. **STOP AMR** cancels the active run.
-5. Accept completion only when the workspace reports camera-verified arrival. A delivered command or motor acknowledgement alone is not arrival.
+2. Enter the physically measured **robot-centre stopping coordinates** for stations A, B, C, D and E in the local station setup. Keep their centres more than 30 mm apart so arrival zones do not overlap. Confirm the measurements and save them. The map belongs to the current camera calibration. Printed label centres near the paper edges are not automatically reachable stopping points.
+3. Select **Start** and **Destination** from A–E. The selected start must match the observed robot position within 15 mm. This selection never sets the camera pose or moves the robot.
+4. Preview the mission. Check the path, current robot position, obstacles, destination and battery recommendation. Enter a decision reason, then approve the displayed route.
+5. Keep the local workspace visible during movement. The robot follows the approved path over direct Wi-Fi. Arrival is confirmed using fresh ArUco observations and stopped motor feedback.
 
-Camera loss, stale receiver data, changed geometry/obstacles, expired approval, route deviation, critical battery voltage or lost operator presence stop the route. A new run needs a new review. The program records approvals and state changes in a local SQLite audit; it does not replay unfinished commands after restart.
+If a new obstacle appears, the current route stops. Once the camera scene is valid and stable and signed motor feedback confirms the stop, the service proposes a fresh route to the same active destination. **Approve** authorizes that detour. **Reject / Stop** leaves the robot stationary. **Return to start** previews a new path to the actual position captured at the start of the mission; approve that path before movement. Return does not reverse the old wheel commands or assume the earlier path is still clear.
 
-The low-battery choice appears only when the measured profile includes a validated `geometry.battery_advisory_voltage_v` above its critical cutoff. The example profile does not assume this threshold. If that advisory pauses a route, review the evidence before choosing **Continue this route** or **Preview battery-station route**. Diversion stops the current route; select the physically measured coordinates of station E, preview the new path and approve it separately. The controller does not assume E's location or automatically plan a destination. The critical battery cutoff always applies and cannot be overridden by either choice.
+At **6.7–7.0 V inclusive**, the mission pauses for a battery decision. **Continue to the active target** authorizes continuation only with current safe evidence. **Go to battery station E** produces a new route preview to the measured E stopping point; movement requires approval. **Stop** leaves the robot stationary. Below **6.7 V**, no mission continuation or return is permitted. The configured hardware cutoff remains active and a stricter cutoff always wins. These are voltage policy thresholds, not a claim about state of charge or remaining runtime.
+
+A battery choice cannot approve an obstructed route. Approval of an E route includes the displayed battery decision for that route; it cannot override the lower voltage stop. Losing the camera, receiver, operator session or calibrated geometry requires fresh setup and review. Reconnecting or restarting never resumes an earlier mission automatically.
+
+See [station missions and decision rules](local_station_missions.md) for the transition table and execution evidence. The local SQLite audit retains mission and route decisions.
 
 For manual recovery, stop the route first, then use the embedded direct Wi-Fi controller or `http://10.15.213.112/`. A manual stop cancels route ownership; resuming route motion requires another approval.
 

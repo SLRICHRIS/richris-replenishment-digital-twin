@@ -173,6 +173,48 @@ def ready(s, now):
                 and s['hardware']['battery_voltage_v'] >= s['geometry']['min_pack_voltage_v'])
 
 
+def scene_stop_cause(reference, current, now):
+    """Classify changed evidence; only a pure, usable obstacle change may replan.
+
+    The reference is the approved scene. A concurrent clock, sensor, identity or
+    calibration failure must never be presented as an obstacle-only update.
+    """
+    if not current:
+        return 'camera_unavailable'
+    if reference:
+        if current['agent_boot_id'] != reference['agent_boot_id']:
+            return 'camera_restarted'
+        if any(current['hardware'][k] != reference['hardware'][k] for k in ('boot_id', 'epoch_id')):
+            return 'controller_changed'
+        if any(current[k] != reference[k] for k in ('config_id', 'geometry', 'floor_width_mm', 'floor_length_mm')):
+            return 'calibration_changed'
+    if not fresh(current['captured_at_ms'], now):
+        return 'camera_stale'
+    if not current['valid'] or not current.get('pose'):
+        return 'camera_invalid'
+    hardware = current['hardware']
+    if not hardware['ready'] or not 0 <= hardware['age_ms'] <= SCENE_FRESH_MS:
+        return 'controller_unavailable'
+    # Hardware receive age was measured when this scene was formed. Its stored
+    # ready flag cannot remain current merely because the camera was current.
+    if hardware['age_ms'] + max(0, now-current['captured_at_ms']) > SCENE_FRESH_MS:
+        return 'controller_stale'
+    if reference and current['obstacles'] != reference['obstacles']:
+        return 'obstacle_changed'
+    return None
+
+
+def stopped_for_route(s, now, route_id, command_seq):
+    """Fresh signed acknowledgement of the requested stop, never zero PWM alone."""
+    if (not ready(s, now) or scene_stop_cause(None, s, now) is not None or
+            type(command_seq) is not int or command_seq <= 0):
+        return False
+    h = s['hardware']
+    return bool(h.get('route_id') == route_id and h.get('state') == 'stopped'
+                and type(h.get('command_seq')) is int and h['command_seq'] >= command_seq
+                and not (h['left_duty'] or h['right_duty']))
+
+
 def segment_clear(a,b,rects,r):
     if any(not (r <= p[0] <= WIDTH-r and r <= p[1] <= HEIGHT-r) for p in (a,b)):
         return False
@@ -196,11 +238,25 @@ def segment_clear(a,b,rects,r):
 def plan(s, goal):
     if not isinstance(goal,(list,tuple)) or len(goal)!=2:
         raise ValueError('Choose a destination on the measured floor')
-    goal=(round(numeric(goal[0],0,WIDTH)/GRID)*GRID,round(numeric(goal[1],0,HEIGHT)/GRID)*GRID)
+    # Measured station coordinates are authoritative. The grid supplies only
+    # intermediate nodes; rounding must never change clearance or arrival.
+    goal=(numeric(goal[0],0,WIDTH),numeric(goal[1],0,HEIGHT))
     actual=(s['pose']['x'],s['pose']['y'])
     start=tuple(round(v/GRID)*GRID for v in actual)
     r=radius(s['geometry']); rects=s['obstacles']
-    if not segment_clear(actual,start,rects,r) or not segment_clear(goal,goal,rects,r):
+    if not segment_clear(actual,actual,rects,r) or not segment_clear(goal,goal,rects,r):
+        raise ValueError('Start or destination lacks footprint, reaction and stopping clearance')
+
+    def result(points):
+        if len(points)>300:
+            raise ValueError('Route exceeds the bounded floor job size')
+        return dict(points=[list(p) for p in points],goal=list(goal),
+                    length_mm=sum(math.dist(a,b) for a,b in zip(points,points[1:])),
+                    clearance_radius_mm=r,goal_tolerance_mm=15,grid_mm=GRID)
+
+    if start==tuple(round(v/GRID)*GRID for v in goal) and segment_clear(actual,goal,rects,r):
+        return result([actual] if actual==goal else [actual,goal])
+    if not segment_clear(actual,start,rects,r):
         raise ValueError('Start or destination lacks footprint, reaction and stopping clearance')
     opened=[(math.dist(start,goal),0.,start)]; costs={start:0.}; previous={}; visited=set()
     while opened:
@@ -210,21 +266,21 @@ def plan(s, goal):
             points=[p]
             while p!=start: p=previous[p]; points.append(p)
             points.reverse()
-            if math.dist(actual,start)>.001: points.insert(0,actual)
-            if len(points)>300:
-                raise ValueError('Route exceeds the bounded floor job size')
-            return dict(points=[list(p) for p in points],goal=list(goal),length_mm=cost+math.dist(actual,start),
-                        clearance_radius_mm=r,goal_tolerance_mm=15,grid_mm=GRID)
+            if actual!=start: points.insert(0,actual)
+            return result(points)
         visited.add(p)
-        for dx in (-GRID,0,GRID):
-            for dy in (-GRID,0,GRID):
-                if dx==dy==0: continue
-                q=(p[0]+dx,p[1]+dy)
-                if q in visited or not segment_clear(p,q,rects,r): continue
-                next_cost=cost+math.dist(p,q)
-                if next_cost>=costs.get(q,math.inf): continue
-                costs[q]=next_cost; previous[q]=p
-                heapq.heappush(opened,(next_cost+math.dist(q,goal),next_cost,q))
+        neighbours=[(p[0]+dx,p[1]+dy) for dx in (-GRID,0,GRID) for dy in (-GRID,0,GRID) if dx or dy]
+        # A visible neighbouring grid node can reach the exact goal even when
+        # its nearest rounded node is blocked. This edge receives the same
+        # continuous swept-clearance check and contributes its full length.
+        if math.dist(p,goal)<=math.sqrt(2)*GRID:
+            neighbours.append(goal)
+        for q in neighbours:
+            if q in visited or not segment_clear(p,q,rects,r): continue
+            next_cost=cost+math.dist(p,q)
+            if next_cost>=costs.get(q,math.inf): continue
+            costs[q]=next_cost; previous[q]=p
+            heapq.heappush(opened,(next_cost+math.dist(q,goal),next_cost,q))
     raise ValueError('No route fits this robot and the required stopping clearance')
 
 

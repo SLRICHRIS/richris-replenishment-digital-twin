@@ -21,6 +21,8 @@ The dashboard opens on **Virtual warehouse**, a single-AMR simulation. **Connect
 
 For the physical ArUco workflow, open **Drive & review → Camera routes**. The laptop's `AMR01_LocalTwin` workspace runs at `127.0.0.1:8765` inside the dashboard: camera pose → route preview → human approval → direct Wi-Fi wheel commands to `10.15.213.112` → camera-verified arrival. It requires the new local-route receiver upload, measured camera/motor configuration and the laptop program running. EMQX continues carrying sensor telemetry. Follow the [direct Wi-Fi ArUco route guide](project_documentation/direct_wifi_aruco_routes.md).
 
+The local mission workspace supports measured stations **A–E**. Select start and destination, verify the observed start, preview the path and approve. A newly detected obstacle stops the robot and proposes a fresh path to the same active destination. Reject keeps it stopped; Return to start previews a path to the original camera-observed start. At **6.7–7.0 V**, the operator chooses whether to continue to the active target or preview a route to battery station E. Every replacement path needs its own approval. See the [mission decision rules](project_documentation/local_station_missions.md).
+
 For attended manual recovery, use **Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry is needed. Allow local-network access if the browser asks. See the [manual direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
 
 ## Reproducible demonstration
@@ -91,7 +93,7 @@ npm ci
 npm run test:browser
 ```
 
-Software tests verify equations, units, isolation, sequence/freshness handling and synthetic stock invariants. Hardware calibration, slip tests, battery capacity tests and anomaly thresholds still require measured trials. The supplied models do not implement an EKF, absolute localisation, obstacle avoidance, fleet coordination or battery remaining useful life.
+Software tests verify equations, units, isolation, sequence/freshness handling and synthetic stock invariants. Hardware calibration, slip tests, battery capacity tests and anomaly thresholds still require measured trials. The six sensor models do not implement an EKF, absolute localisation, fleet coordination or battery remaining useful life. The separate camera mission service supplies ArUco localisation and collision-checked route proposals; its obstacle detection and stopping envelope require physical validation.
 
 © 2026 S. L. Richris. See [ownership and external software licences](project_ownership_and_external_software_licenses.txt).
 

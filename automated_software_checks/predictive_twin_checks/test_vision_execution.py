@@ -150,6 +150,64 @@ def test_continuous_collision_and_detour():
     assert all(segment_clear(a,b,s['obstacles'],radius(s['geometry'])) for a,b in zip(r['points'],r['points'][1:]))
 
 
+def test_exact_measured_goal_connector_length_and_agent_replanning():
+    c,clock,out=coordinator()
+    destination=[334.9,300.3]
+    c.capture('1'*32,'operator',destination)
+    route=c.row['route']
+    assert route['goal']==destination and route['points'][-1]==destination
+    assert route==plan(c.current,route['goal'])
+    assert route['length_mm']==pytest.approx(sum(math.dist(a,b) for a,b in zip(route['points'],route['points'][1:])))
+    assert all(segment_clear(a,b,c.current['obstacles'],route['clearance_radius_mm'])
+               for a,b in zip(route['points'],route['points'][1:]))
+    c.decide('1'*32,c.row['review_id'],'approve','Exact measured destination')
+    commands=[]; agent=Agent(SECRET,lambda *args:commands.append(args)); agent.scene=c.current
+    agent.request(out[0],clock[0])
+    assert agent.job['route']['goal']==destination and commands[-1][3:6]==('arm',0,0)
+
+
+def test_arrival_uses_measured_destination_not_nearby_rounded_grid_point():
+    s=sample(x=319.8,y=300,heading=0)
+    route=plan(s,[334.9,300])
+    assert math.dist((319.8,300),(330,300))<15
+    assert math.dist((319.8,300),route['goal'])>15
+    assert Follower(route,s['geometry'],10000).update(s,10000)[2] is False
+
+
+def test_offgrid_start_and_goal_in_same_cell_use_the_checked_exact_segment():
+    s=sample(x=301.1,y=300.2)
+    destination=[304.4,303.9]
+    route=plan(s,destination)
+    assert route['points']==[[301.1,300.2],destination]
+    assert route['length_mm']==pytest.approx(math.dist(route['points'][0],destination))
+    assert plan(s,[301.1,300.2])['points']==[[301.1,300.2]]
+    assert plan(s,[301.1,300.2])['length_mm']==0
+
+
+def test_unsafe_exact_goal_cannot_be_replaced_by_safe_rounded_goal():
+    s=sample(x=100,y=180)
+    s['geometry']=dict(G,robot_length_mm=40,robot_width_mm=30,tracking_tolerance_mm=3,max_speed_mm_s=5,max_pwm=20)
+    s['obstacles']=[dict(x=396,y=250,width=10,height=40)]
+    r=radius(s['geometry'])
+    assert segment_clear((330,300),(330,300),s['obstacles'],r)
+    assert not segment_clear((334.9,300),(334.9,300),s['obstacles'],r)
+    with pytest.raises(ValueError,match='clearance'): plan(s,[334.9,300])
+
+
+def test_safe_exact_goal_uses_visible_neighbour_when_rounded_node_is_unsafe():
+    s=sample(x=100.1,y=180.2)
+    s['geometry']=dict(G,robot_length_mm=40,robot_width_mm=30,tracking_tolerance_mm=3,max_speed_mm_s=5,max_pwm=20)
+    assert radius(s['geometry'])==64
+    destination=[65,300.4]
+    assert not segment_clear((60,300),(60,300),[],64)
+    route=plan(s,destination)
+    assert route['points'][0]==[100.1,180.2]
+    assert route['goal']==route['points'][-1]==destination
+    assert all(segment_clear(a,b,[],64) for a,b in zip(route['points'],route['points'][1:]))
+    assert route['length_mm']==pytest.approx(sum(math.dist(a,b) for a,b in zip(route['points'],route['points'][1:])))
+    assert plan(s,route['goal'])==route
+
+
 def test_measured_floor_rejects_legacy_scenes_and_keeps_clearance():
     assert (WIDTH,HEIGHT)==(610,630)
     legacy=sample();legacy['version']=1

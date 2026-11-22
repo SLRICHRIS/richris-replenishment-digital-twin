@@ -32,6 +32,7 @@ from .contracts import (HEIGHT, WIDTH, OPERATOR_PRESENCE_MS, SCENE_FRESH_MS,
                         SCENE_VERSION, key, scene, seal)
 from .coordinator import ACTIVE, Coordinator, metadata
 from .local_transport import DeviceHTTPTransport, ROUTE_PWM_CAP
+from .mission import Mission
 
 HOST, PORT = "127.0.0.1", 8765
 ALLOWED_HOSTS = {"127.0.0.1:8765", "localhost:8765"}
@@ -61,8 +62,8 @@ class LocalTwin:
             connect_args={"check_same_thread": False},
         )
         metadata.create_all(self.engine)
-        self.agent = Agent(self._approval_key, self._send)
-        self.coordinator = Coordinator(self.engine, self._approval_key, self._publish, self.clock)
+        self.agent = Agent(self._approval_key, self._send, battery_mode="mission")
+        self.coordinator = Coordinator(self.engine, self._approval_key, self._publish, self.clock, battery_mode="mission")
         self.connected = False
         self.reason = "Connect the laptop camera and local ESP32 to begin"
         self.hardware = None
@@ -78,6 +79,7 @@ class LocalTwin:
         self.scene_seq = 0
         self.pending_acks = deque()
         self.threads = []
+        self.mission = Mission(self)
 
     def _publish(self, packet):
         try:
@@ -94,18 +96,20 @@ class LocalTwin:
         self.transport.send(hardware, route, seq, operation, left, right, now)
         self.pending_acks.append((seq, now))
 
-    def _halt(self, reason):
+    def _halt(self, reason, cause="system_fault"):
         """Always retire approval, including when even the stop request fails."""
         try:
-            self.agent.halt(reason, self.clock())
+            self.agent.halt(reason, self.clock(), cause=cause)
         except Exception:
             pass  # The ESP32's expiring lease remains the final local stop.
         finally:
             self.agent.state = "blocked"
             self.agent.reason = reason
+            self.agent.stop_cause = cause
             self.agent.lease_until = 0
             self.pending_acks.clear()
             self.coordinator.status(self.agent.status(self.clock()))
+            self.mission.cancel(reason)
 
     def connect(self, camera=None):
         with self.lock:
@@ -134,7 +138,7 @@ class LocalTwin:
 
     def stop(self, reason="Operator requested stop"):
         with self.lock:
-            self._halt(reason)
+            self._halt(reason, cause="explicit_stop")
             self.coordinator.cancel(self.owner)
             if self.coordinator.row and self.coordinator.row["state"] == "pending":
                 self.coordinator.row.update(state="cancelled", reason=reason)
@@ -149,6 +153,8 @@ class LocalTwin:
         value["age_ms"] = min(600000, max(0, now - value["issued_at_ms"]))
         value["ready"] = bool(value["ready"] and self.hardware_ok and value["age_ms"] <= SCENE_FRESH_MS)
         if self.config and value["battery_voltage_v"] <= self.config["geometry"]["min_pack_voltage_v"]:
+            value["ready"] = False
+        if value["battery_voltage_v"] < 6.7:
             value["ready"] = False
         return value
 
@@ -187,6 +193,7 @@ class LocalTwin:
             except Exception:
                 self._halt("Local route processing failed; approve a new route")
             self.coordinator.status(self.agent.status(now))
+            self.mission.tick()
 
     def supervise(self):
         """Never acquire the camera/feed lock: stalled capture cannot stall stopping."""
@@ -212,6 +219,7 @@ class LocalTwin:
             if row and row["state"] == "pending" and now >= row["expires_at_ms"]:
                 row["state"], row["reason"] = "expired", "Review expired; capture a fresh route"
                 self.coordinator.save()
+            self.mission.tick()
 
     def _capture_loop(self):
         try:
@@ -295,7 +303,8 @@ class LocalTwin:
             if public["battery"] and self.hardware:
                 battery = public["battery"]
                 battery["voltage_v"] = self.hardware["battery_voltage_v"]
-                battery["action"] = battery_action(battery["voltage_v"], battery["critical_v"], battery["advisory_v"])
+                advisory = self.config["geometry"].get("battery_advisory_voltage_v") if self.config else None
+                battery["action"] = battery_action(battery["voltage_v"], battery["critical_v"], advisory, mode="mission")
             public["ready"] = bool(public["ready"] and camera["valid"] and not self.calibrating
                                    and self._hardware_value(now)["ready"])
             reason = self.reason
@@ -320,6 +329,7 @@ class LocalTwin:
                 agent=dict(state=self.agent.state, reason=self.agent.reason),
                 calibration_ready=bool(self.config and not self.calibrating),
                 freshness=dict(camera_ms=SCENE_FRESH_MS, hardware_ms=SCENE_FRESH_MS))
+            public.update(mission=self.mission.public(), stations=self.mission.stations())
             return public
 
     def profile(self):
@@ -337,6 +347,7 @@ class LocalTwin:
                 raise ValueError("Another camera calibration action is still running")
             if self.agent.state in RUNNING or (self.coordinator.row and self.coordinator.row["state"] in ACTIVE):
                 raise ValueError("Stop the active route before changing camera calibration")
+            self.mission.cancel("Camera calibration changed; select and preview a fresh mission")
             if self.coordinator.row and self.coordinator.row["state"] == "pending":
                 self.coordinator.row.update(state="cancelled", reason="Calibration changed; capture a fresh route")
                 self.coordinator.save()
@@ -396,9 +407,18 @@ class LocalTwin:
                     self.presence(payload.get("active", True))
                 elif path == "stop":
                     self.stop()
+                elif path == "stations":
+                    self.mission.configure(payload)
+                elif path == "mission":
+                    self.mission.start(payload.get("start"), payload.get("destination"))
+                elif path == "return-start":
+                    self.mission.return_start(payload.get("reason"))
                 elif path == "plan":
                     if self.calibrating or not self.status()["ready"]:
                         raise ValueError("Fresh calibrated camera and stationary ESP32 evidence are required")
+                    if self.coordinator.row and self.coordinator.row["state"] in ACTIVE:
+                        raise ValueError("Stop the active route before previewing another")
+                    self.mission.cancel("A manual coordinate route was selected")
                     if self.coordinator.row and self.coordinator.row["state"] == "pending":
                         self.coordinator.row.update(state="cancelled", reason="Replaced by a new route preview")
                         self.coordinator.save()
@@ -407,10 +427,18 @@ class LocalTwin:
                     if path == "decision":
                         if payload.get("decision") == "approve" and not self.status()["ready"]:
                             raise ValueError("Fresh calibrated stationary evidence is required for approval")
-                        self.coordinator.decide(self.owner, payload.get("review_id"), payload.get("decision"), payload.get("reason"))
+                        if not self.mission.decision(payload.get("review_id"), payload.get("decision"), payload.get("reason")):
+                            self.coordinator.decide(self.owner, payload.get("review_id"), payload.get("decision"), payload.get("reason"))
                     else:
-                        self.coordinator.battery_decide(self.owner, payload.get("review_id"), payload.get("choice"), payload.get("reason"))
+                        if self.mission.row and payload.get("choice") == "divert":
+                            self.mission._station("E")
+                        baseline = self.coordinator.row.get("battery_warning_voltage_v") if self.coordinator.row else None
+                        self.coordinator.battery_decide(self.owner, payload.get("review_id"), payload.get("choice"), payload.get("reason"),
+                            battery_review_seq=payload.get("battery_review_seq"))
+                        if payload.get("choice") == "divert":
+                            self.mission.battery_diversion(payload.get("reason"), baseline)
                     self.coordinator.status(self.agent.status(self.clock()))
+                    self.mission.tick()
                 else:
                     raise ValueError("Unknown local controller action")
         return self.status()
@@ -471,6 +499,10 @@ def handler_for(twin):
                 self.reply(200 if jpeg else 204, jpeg or b"", "image/jpeg")
             elif self.path == "/api/camera-profile":
                 self.reply(200, twin.profile())
+            elif self.path == "/api/stations":
+                with twin.lock:
+                    stations = twin.mission.stations()
+                self.reply(200, stations)
             else:
                 self.reply(404, {"error": "Unknown local endpoint"})
 

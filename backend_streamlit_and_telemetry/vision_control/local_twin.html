@@ -559,6 +559,65 @@
         white-space: nowrap;
         border: 0;
       }
+
+      .mission-record {
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--blue);
+        border-radius: 9px;
+        padding: 14px;
+        margin-top: 16px;
+        background: var(--inset);
+      }
+      .mission-record h3 {
+        margin-bottom: 4px;
+      }
+      .mission-record .summary {
+        margin-bottom: 0;
+      }
+      .recommendation {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--inset);
+        margin-bottom: 14px;
+      }
+      .recommendation[data-tone='warning'] {
+        border-color: var(--amber);
+        background: var(--warning);
+      }
+      .recommendation strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .station-row {
+        display: grid;
+        grid-template-columns: 60px 1fr 1fr;
+        align-items: end;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .station-row > strong {
+        padding-bottom: 11px;
+      }
+      .station-check {
+        display: flex;
+        align-items: start;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .station-check input {
+        width: 20px;
+        min-height: 20px;
+        margin: 2px 0 0;
+        flex: none;
+      }
+      #station-detail,
+      #selected-station-detail {
+        margin-top: 10px;
+      }
+      #floor-map {
+        cursor: default;
+      }
       @media (max-width: 900px) {
         .workspace {
           grid-template-columns: 1fr;
@@ -806,11 +865,173 @@
               </div>
             </details>
           </section>
+
+          <section class="panel" aria-labelledby="stations-title">
+            <details id="stations-setup">
+              <summary id="stations-title">Measured stations A–E</summary>
+              <div class="panel-body">
+                <p>
+                  Enter measured robot-centre positions on the calibrated floor. Printed station
+                  labels do not determine reachable coordinates. E is the battery station.
+                </p>
+                <form id="stations-form">
+                  <div class="station-row">
+                    <strong>A</strong>
+                    <label class="field">
+                      <span>A X (mm)</span>
+                      <input
+                        id="station-A-x"
+                        type="number"
+                        min="0"
+                        max="610"
+                        step="0.1"
+                        required
+                        placeholder="Measured X"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>A Y (mm)</span>
+                      <input
+                        id="station-A-y"
+                        type="number"
+                        min="0"
+                        max="630"
+                        step="0.1"
+                        required
+                        placeholder="Measured Y"
+                      />
+                    </label>
+                  </div>
+                  <div class="station-row">
+                    <strong>B</strong>
+                    <label class="field">
+                      <span>B X (mm)</span>
+                      <input
+                        id="station-B-x"
+                        type="number"
+                        min="0"
+                        max="610"
+                        step="0.1"
+                        required
+                        placeholder="Measured X"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>B Y (mm)</span>
+                      <input
+                        id="station-B-y"
+                        type="number"
+                        min="0"
+                        max="630"
+                        step="0.1"
+                        required
+                        placeholder="Measured Y"
+                      />
+                    </label>
+                  </div>
+                  <div class="station-row">
+                    <strong>C</strong>
+                    <label class="field">
+                      <span>C X (mm)</span>
+                      <input
+                        id="station-C-x"
+                        type="number"
+                        min="0"
+                        max="610"
+                        step="0.1"
+                        required
+                        placeholder="Measured X"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>C Y (mm)</span>
+                      <input
+                        id="station-C-y"
+                        type="number"
+                        min="0"
+                        max="630"
+                        step="0.1"
+                        required
+                        placeholder="Measured Y"
+                      />
+                    </label>
+                  </div>
+                  <div class="station-row">
+                    <strong>D</strong>
+                    <label class="field">
+                      <span>D X (mm)</span>
+                      <input
+                        id="station-D-x"
+                        type="number"
+                        min="0"
+                        max="610"
+                        step="0.1"
+                        required
+                        placeholder="Measured X"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>D Y (mm)</span>
+                      <input
+                        id="station-D-y"
+                        type="number"
+                        min="0"
+                        max="630"
+                        step="0.1"
+                        required
+                        placeholder="Measured Y"
+                      />
+                    </label>
+                  </div>
+                  <div class="station-row">
+                    <strong>E · battery</strong>
+                    <label class="field">
+                      <span>E X (mm)</span>
+                      <input
+                        id="station-E-x"
+                        type="number"
+                        min="0"
+                        max="610"
+                        step="0.1"
+                        required
+                        placeholder="Measured X"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>E Y (mm)</span>
+                      <input
+                        id="station-E-y"
+                        type="number"
+                        min="0"
+                        max="630"
+                        step="0.1"
+                        required
+                        placeholder="Measured Y"
+                      />
+                    </label>
+                  </div>
+                  <label class="station-check">
+                    <input id="station-verified" type="checkbox" required />
+                    <span>I measured these five robot-centre positions in this camera setup.</span>
+                  </label>
+                  <div class="actions">
+                    <button id="station-save" type="submit" class="primary" disabled>
+                      Save measured stations
+                    </button>
+                    <button id="station-reload" type="button">Reload saved measurements</button>
+                  </div>
+                </form>
+                <p id="station-detail">
+                  No station positions have been supplied. Coordinates are never guessed.
+                </p>
+              </div>
+            </details>
+          </section>
         </div>
         <div class="stack">
           <section class="panel" aria-labelledby="map-title">
             <div class="panel-head">
-              <h2 id="map-title">Plan a destination</h2>
+              <h2 id="map-title">Plan a station mission</h2>
               <small>Millimetres · origin lower left</small>
             </div>
             <div class="map-container">
@@ -822,8 +1043,9 @@
               >
                 <title id="map-svg-title">Measured floor and camera pose</title>
                 <desc id="map-svg-description">
-                  Select a destination with the coordinate fields or by clicking the map. No robot
-                  position is drawn without valid, fresh camera evidence.
+                  Select measured start and destination stations. The server checks the actual start
+                  from camera evidence. No robot position is drawn without valid, fresh camera
+                  evidence.
                 </desc>
                 <defs>
                   <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
@@ -836,6 +1058,8 @@
                   </pattern>
                 </defs>
                 <rect width="610" height="630" fill="url(#grid)" />
+                <g id="map-clearance"></g>
+                <g id="map-stations"></g>
                 <g id="map-obstacles"></g>
                 <g id="map-route"></g>
                 <g id="map-references"></g>
@@ -857,44 +1081,66 @@
               <form id="plan-form">
                 <div class="form-row">
                   <label class="field">
-                    <span>Destination X (mm)</span>
-                    <input
-                      id="goal-x"
-                      type="number"
-                      min="0"
-                      max="610"
-                      step="1"
-                      required
-                      placeholder="X"
-                    />
+                    <span>Start station</span>
+                    <select id="mission-start" required>
+                      <option value="">Choose station</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                      <option value="E">E · battery station</option>
+                    </select>
                   </label>
                   <label class="field">
-                    <span>Destination Y (mm)</span>
-                    <input
-                      id="goal-y"
-                      type="number"
-                      min="0"
-                      max="630"
-                      step="1"
-                      required
-                      placeholder="Y"
-                    />
+                    <span>Destination station</span>
+                    <select id="mission-destination" required>
+                      <option value="">Choose station</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                      <option value="E">E · battery station</option>
+                    </select>
                   </label>
-                  <button id="plan" type="submit">Preview route</button>
+                  <button id="plan" type="submit" disabled>Preview mission</button>
                 </div>
+                <input id="goal-x" type="hidden" />
+                <input id="goal-y" type="hidden" />
               </form>
+              <p id="selected-station-detail">Select a measured start and destination.</p>
               <p id="plan-help">
-                Choose a target. The local planner checks footprint, obstacles and stopping
-                clearance before creating a review.
+                The camera must locate the stationary robot at the selected start. Preview checks
+                footprint, obstacles and clearance; it never moves the robot.
               </p>
+              <div class="mission-record" aria-labelledby="mission-title">
+                <h3 id="mission-title">Recorded mission</h3>
+                <p>The original start and destination stay fixed for this mission.</p>
+                <dl class="summary">
+                  <dt>Original start</dt>
+                  <dd id="mission-original-start">—</dd>
+                  <dt>Original destination</dt>
+                  <dd id="mission-original-destination">—</dd>
+                  <dt>Current route goal</dt>
+                  <dd id="mission-active-goal">—</dd>
+                  <dt>Route purpose</dt>
+                  <dd id="mission-intent">No mission captured</dd>
+                </dl>
+              </div>
             </div>
           </section>
           <section class="panel" aria-labelledby="review-title">
             <div class="panel-head">
-              <h2 id="review-title">Your decision</h2>
+              <h2 id="review-title">Review &amp; live guidance</h2>
               <small id="review-age">No route captured</small>
             </div>
             <div class="panel-body">
+              <div id="recommendation" class="recommendation" role="status">
+                <strong id="recommendation-title">Waiting for fresh evidence</strong>
+                <p id="recommendation-detail">
+                  Live route and battery guidance uses current camera observations and authenticated
+                  controller feedback.
+                </p>
+              </div>
               <p id="review-detail">
                 Preview a route, inspect it on the map, then decide whether it should run.
               </p>
@@ -928,22 +1174,33 @@
                     Approve &amp; run
                   </button>
                   <button id="reject" type="submit" name="decision" value="reject" disabled>
-                    Reject
+                    Reject &amp; stop
                   </button>
                   <button id="hold" type="submit" name="decision" value="hold" disabled>
                     Hold
                   </button>
                 </div>
               </form>
+              <div class="actions">
+                <button id="return-start" type="button" disabled>
+                  Preview return to original start
+                </button>
+              </div>
+              <p class="muted" style="margin-top: 8px">
+                Returning to the original start is a different route from going to battery station
+                E. Both require a new preview and approval.
+              </p>
               <div id="battery-choice" class="battery-choice" hidden>
-                <h3>Battery decision required</h3>
+                <h3>Battery warning · human decision</h3>
                 <p id="battery-prompt"></p>
                 <p>
-                  Record a reason above, then choose a response to the reported battery condition.
+                  Record a reason above. Continue keeps the current destination. Going to E creates
+                  a new route preview; approve that route separately.
                 </p>
                 <div class="actions">
-                  <button id="battery-continue" type="button">Continue this route</button>
-                  <button id="battery-divert" type="button">Preview battery-station route</button>
+                  <button id="battery-continue" type="button">Continue destination</button>
+                  <button id="battery-divert" type="button">Preview route to E</button>
+                  <button id="battery-stop" type="button">Stop</button>
                 </div>
               </div>
               <p class="review-note">
@@ -971,6 +1228,7 @@
         'use strict';
         const $ = (id) => document.getElementById(id),
           token = document.querySelector('meta[name="amr-session"]').content;
+        const STATIONS = ['A', 'B', 'C', 'D', 'E'];
         const ACTIVE = new Set([
           'sent',
           'approved',
@@ -1006,6 +1264,11 @@
           generation = 0,
           lastReview = null,
           lastReviewState = null,
+          lastBatteryPrompt = null,
+          lastMissionId = null,
+          stationDraftDirty = false,
+          stationFingerprint = null,
+          lastError = '',
           lastFrame = null,
           frameAt = 0,
           frameBaseAge = Infinity,
@@ -1021,6 +1284,7 @@
           $(id).textContent = String(v ?? '');
         };
         function failure(message) {
+          lastError = String(message || '');
           text('action-error', message);
           $('action-error').hidden = !message;
         }
@@ -1062,6 +1326,16 @@
           }
           current = data;
           receivedAt = now;
+          syncStations(data.stations);
+          const missionId = data.mission?.mission_id || null;
+          if (missionId && missionId !== lastMissionId) {
+            $('mission-start').value = data.mission.start_station || '';
+            $('mission-destination').value = data.mission.destination_station || '';
+          }
+          lastMissionId = missionId;
+          const batteryPrompt = data.review?.battery_review_seq ?? null;
+          if (batteryPrompt !== lastBatteryPrompt) $('reason').value = '';
+          lastBatteryPrompt = batteryPrompt;
           const rid = data.review?.review_id || null;
           if (data.review?.state === 'battery_review' && lastReviewState !== 'battery_review')
             $('reason').value = '';
@@ -1095,20 +1369,26 @@
             : 'No current sample';
         }
         function routeActive() {
-          return ACTIVE.has(current?.review?.state) || ACTIVE.has(current?.agent?.state);
+          return (
+            ACTIVE.has(current?.review?.state) ||
+            ACTIVE.has(current?.agent?.state) ||
+            current?.mission?.state === 'waiting_stop'
+          );
         }
-        function usable() {
+        function attendedEvidence() {
           return (
             owned &&
             !document.hidden &&
             !stopped &&
-            current?.ready === true &&
             fresh('camera') &&
             fresh('scene') &&
             fresh('hardware') &&
             current?.scene?.valid === true &&
             current?.camera?.valid === true
           );
+        }
+        function usable() {
+          return attendedEvidence() && current?.ready === true && !batteryCritical();
         }
         function expired() {
           return (
@@ -1127,15 +1407,283 @@
             +$('goal-y').value <= 630
           );
         }
+        function stationPoint(label) {
+          const p = current?.stations?.stations?.[label];
+          return p && finite(p.x) && finite(p.y) ? p : null;
+        }
+        function pointLabel(label, point) {
+          return point && finite(point.x) && finite(point.y)
+            ? `${label || point.label || 'Goal'} · ${point.x.toFixed(1)}, ${point.y.toFixed(1)} mm`
+            : '—';
+        }
+        function syncStations(config, force = false) {
+          if (!config || (stationDraftDirty && !force)) return;
+          const fingerprint = JSON.stringify(config);
+          if (!force && stationFingerprint === fingerprint) return;
+          for (const label of STATIONS)
+            for (const axis of ['x', 'y']) {
+              const value = config.stations?.[label]?.[axis];
+              $('station-' + label + '-' + axis).value = finite(value) ? String(value) : '';
+            }
+          $('station-verified').checked = config.verified === true;
+          stationFingerprint = fingerprint;
+          stationDraftDirty = false;
+        }
+        function validStationDraft() {
+          return STATIONS.every((label) =>
+            ['x', 'y'].every((axis) => {
+              const value = $('station-' + label + '-' + axis).value;
+              return (
+                value !== '' &&
+                finite(+value) &&
+                +value >= 0 &&
+                +value <= (axis === 'x' ? 610 : 630)
+              );
+            }),
+          );
+        }
+        function validMissionSelection() {
+          const start = $('mission-start').value,
+            destination = $('mission-destination').value;
+          return (
+            current?.stations?.verified === true &&
+            STATIONS.includes(start) &&
+            STATIONS.includes(destination) &&
+            start !== destination &&
+            !!stationPoint(start) &&
+            !!stationPoint(destination)
+          );
+        }
+        function selectMissionGoal() {
+          const goal = stationPoint($('mission-destination').value);
+          $('goal-x').value = goal ? String(goal.x) : '';
+          $('goal-y').value = goal ? String(goal.y) : '';
+        }
+        function batteryCritical() {
+          const voltage = current?.hardware?.battery_voltage_v;
+          return (
+            current?.battery?.action === 'critical_stop' ||
+            (fresh('hardware') && finite(voltage) && voltage < 6.7)
+          );
+        }
+        function renderMission(readyEvidence, pending, active) {
+          const m = current?.mission,
+            config = current?.stations,
+            r = current?.review;
+          const goalName = m?.active_goal?.label || 'current goal';
+          text('mission-original-start', pointLabel(m?.start_station, m?.original_start));
+          text(
+            'mission-original-destination',
+            pointLabel(m?.destination_station, m?.original_destination),
+          );
+          text('mission-active-goal', pointLabel(goalName, m?.active_goal));
+          text(
+            'mission-intent',
+            {
+              destination: 'Original destination',
+              return_start: 'Return to original start',
+              battery_station: 'Go to battery station E',
+            }[m?.intent] || 'No mission captured',
+          );
+          text(
+            'selected-station-detail',
+            validMissionSelection()
+              ? `Selected: ${pointLabel($('mission-start').value, stationPoint($('mission-start').value))} → ${pointLabel($('mission-destination').value, stationPoint($('mission-destination').value))}. Camera checks the actual start.`
+              : 'Select two different measured stations. The start selection never changes the observed robot position.',
+          );
+          const bounds = config?.usable_bounds;
+          const stationMessage = config?.verified
+            ? 'Measured stations saved for this camera setup.'
+            : config?.reason ||
+              'Measure all five robot-centre positions before planning. Coordinates are never guessed.';
+          const boundsMessage =
+            bounds && [bounds.x_min, bounds.x_max, bounds.y_min, bounds.y_max].every(finite)
+              ? ` Robot-centre limits: X ${bounds.x_min.toFixed(1)}–${bounds.x_max.toFixed(1)} mm, Y ${bounds.y_min.toFixed(1)}–${bounds.y_max.toFixed(1)} mm.`
+              : '';
+          const clearanceMessage = finite(config?.required_clearance_mm)
+            ? ` Required edge clearance: ${config.required_clearance_mm.toFixed(1)} mm.`
+            : '';
+          text('station-detail', stationMessage + clearanceMessage + boundsMessage);
+          $('station-save').disabled =
+            busy ||
+            !owned ||
+            !current?.calibration_ready ||
+            active ||
+            pending ||
+            !validStationDraft() ||
+            !$('station-verified').checked;
+          for (const label of STATIONS)
+            for (const axis of ['x', 'y'])
+              $('station-' + label + '-' + axis).disabled = active || pending;
+          $('station-verified').disabled = active || pending;
+          for (const id of ['mission-start', 'mission-destination']) {
+            $(id).disabled = active || pending;
+            for (const option of $(id).options)
+              if (option.value)
+                option.disabled = !stationPoint(option.value) || config?.verified !== true;
+          }
+          text(
+            'approve',
+            singlePointTarget()
+              ? 'Approve stopped-position verification'
+              : m?.proposal_kind === 'obstacle_replan'
+                ? 'Approve detour'
+                : m?.proposal_kind === 'return_start'
+                  ? `Approve return to ${m.start_station}`
+                  : m?.proposal_kind === 'battery_diversion'
+                    ? 'Approve route to E'
+                    : 'Approve & run',
+          );
+          text(
+            'return-start',
+            m?.start_station
+              ? `Preview return to original start ${m.start_station}`
+              : 'Preview return to original start',
+          );
+          $('return-start').disabled =
+            busy ||
+            !attendedEvidence() ||
+            !m ||
+            m.state === 'waiting_stop' ||
+            !['review', 'running', 'battery_review', 'blocked', 'stopped', 'verified'].includes(
+              m.state,
+            ) ||
+            !$('reason').value.trim() ||
+            batteryCritical();
+          text('battery-continue', `Continue to ${goalName}`);
+          text('battery-divert', 'Preview route to E');
+          let title = 'Waiting for fresh evidence',
+            detail =
+              'Live route and battery guidance uses fresh camera observations and authenticated controller feedback.',
+            tone = '';
+          if (!readyEvidence) {
+            detail =
+              'Recommendations are paused until camera pose and authenticated feedback are current. Recorded mission details remain visible.';
+            tone = 'warning';
+          } else if (batteryCritical()) {
+            title = 'Battery stop — movement unavailable';
+            detail = `Measured battery ${current.hardware.battery_voltage_v.toFixed(2)} V. Below 6.70 V, this mission policy blocks movement. Stop and inspect the battery.`;
+            tone = 'warning';
+          } else if (m?.state === 'battery_review' || r?.state === 'battery_review') {
+            title = 'Battery warning — choose the next step';
+            detail = `${current.hardware.battery_voltage_v.toFixed(2)} V measured. The 6.70–7.00 V warning requires a decision: continue to ${goalName}, preview a route to E, or Stop. Voltage alone does not establish remaining runtime.`;
+            tone = 'warning';
+          } else if (m?.state === 'waiting_stop') {
+            title = 'Waiting for a confirmed stop';
+            detail =
+              m.reason ||
+              'A new preview requires fresh stationary camera observations and acknowledged zero motor output.';
+            tone = 'warning';
+          } else if (pending && m?.proposal_kind === 'obstacle_replan') {
+            title = 'Obstacle changed — review a detour';
+            detail =
+              m.reason ||
+              `The route stopped. This new path keeps goal ${goalName}; approve the detour, reject and stop, or preview a return to original start ${m.start_station}.`;
+            tone = 'warning';
+          } else if (pending && m?.proposal_kind === 'return_start') {
+            title = `Review return to original start ${m.start_station}`;
+            detail =
+              'This preview starts at the current camera position. The original mission remains recorded. Approve this return route separately.';
+          } else if (pending && m?.proposal_kind === 'battery_diversion') {
+            title = 'Review route to battery station E';
+            detail =
+              'E is the new route goal. The original destination remains recorded; movement waits for this route approval.';
+          } else if (m?.state === 'blocked') {
+            title = 'Route blocked — inspect the reported cause';
+            detail = m.reason || current?.agent?.reason || 'No feasible route is available.';
+            tone = 'warning';
+          } else if (m?.state === 'verified') {
+            title = `Arrival verified at ${goalName}`;
+            detail =
+              m.reason || 'Fresh camera and stopped-output evidence verified this route outcome.';
+          } else if (m?.state === 'running') {
+            title = `Monitoring route to ${goalName}`;
+            detail =
+              'Camera obstacles and measured voltage are checked continuously. A new route proposal always waits for your approval.';
+          } else if (config?.verified !== true) {
+            title = 'Measure stations before planning';
+            detail =
+              config?.reason ||
+              'Save measured robot-centre coordinates for A, B, C, D and battery station E.';
+          } else if (pending) {
+            title = 'Review the mission before movement';
+            detail =
+              'Check the actual camera pose, measured destination and proposed path. Record a reason to approve, reject or hold.';
+          } else {
+            title = 'Fresh evidence available';
+            detail =
+              'Select a measured start and destination to request a route preview. The server verifies the camera-observed start.';
+          }
+          text('recommendation-title', title);
+          text('recommendation-detail', detail);
+          $('recommendation').dataset.tone = tone;
+        }
         function goalMatchesReview() {
           const goal = current?.review?.route?.goal;
           return (
             validGoal() &&
+            (!current?.mission ||
+              ($('mission-start').value === current.mission.start_station &&
+                $('mission-destination').value === current.mission.destination_station)) &&
             Array.isArray(goal) &&
             goal.length === 2 &&
             goal.every(finite) &&
             +$('goal-x').value === goal[0] &&
             +$('goal-y').value === goal[1]
+          );
+        }
+        function singlePointTarget() {
+          const r = current?.review,
+            point = r?.route?.points?.[0],
+            goal = r?.route?.goal;
+          return (
+            Array.isArray(r?.route?.points) &&
+            r.route.points.length === 1 &&
+            Array.isArray(point) &&
+            point.length === 2 &&
+            point.every(finite) &&
+            Array.isArray(goal) &&
+            goal.length === 2 &&
+            goal.every(finite) &&
+            point[0] === goal[0] &&
+            point[1] === goal[1]
+          );
+        }
+        function alreadyAtTarget() {
+          const p = current?.scene?.pose,
+            goal = current?.review?.route?.goal,
+            tolerance = current?.review?.route?.goal_tolerance_mm;
+          return (
+            singlePointTarget() &&
+            fresh('scene') &&
+            current?.scene?.valid === true &&
+            p &&
+            [p.x, p.y].every(finite) &&
+            Math.hypot(p.x - goal[0], p.y - goal[1]) <=
+              (finite(tolerance) && tolerance >= 0 ? tolerance : 0)
+          );
+        }
+        function proposalReady() {
+          const m = current?.mission,
+            r = current?.review,
+            points = r?.route?.points;
+          return (
+            m?.state === 'review' &&
+            m.review_id === r?.review_id &&
+            Array.isArray(points) &&
+            points.length >= 1 &&
+            (points.length > 1 || singlePointTarget()) &&
+            points.every(
+              (p) =>
+                Array.isArray(p) &&
+                p.length === 2 &&
+                p.every(finite) &&
+                p[0] >= 0 &&
+                p[0] <= 610 &&
+                p[1] >= 0 &&
+                p[1] <= 630,
+            ) &&
+            goalMatchesReview()
           );
         }
         async function request(path, body, { keepalive = false, apply = true } = {}) {
@@ -1307,8 +1855,8 @@
                 ? 'Enable attended session'
                 : 'Connect local session',
           );
-          $('plan').disabled = busy || !usable() || active || !validGoal();
-          $('approve').disabled = busy || !usable() || !pending || !reason || !goalMatchesReview();
+          $('plan').disabled = busy || !usable() || active || pending || !validMissionSelection();
+          $('approve').disabled = busy || !usable() || !pending || !reason || !proposalReady();
           for (const id of ['goal-x', 'goal-y']) $(id).disabled = active;
           $('reject').disabled = busy || !owned || !pending || !reason;
           $('hold').disabled = busy || !owned || !pending || !reason;
@@ -1316,27 +1864,36 @@
             r?.state !== 'battery_review' && current?.agent?.state !== 'battery_review';
           text(
             'battery-prompt',
-            r?.battery_prompt ||
-              'The controller paused for a battery review. Inspect the measured voltage and choose a response.',
+            hf && finite(voltage)
+              ? `${voltage.toFixed(2)} V measured. Current route goal: ${current?.mission?.active_goal?.label || 'the approved destination'}. Continue keeps that goal; a route to E needs a separate approval.`
+              : 'Waiting for fresh measured voltage and controller feedback before a battery decision.',
           );
           $('battery-continue').disabled =
             busy ||
-            !owned ||
-            !hf ||
-            !cf ||
-            !sf ||
+            !usable() ||
             !reason ||
-            current?.battery?.action === 'critical_stop';
+            batteryCritical() ||
+            !Number.isInteger(r?.battery_review_seq);
           $('battery-divert').disabled =
             busy ||
-            !owned ||
-            !hf ||
-            !cf ||
-            !sf ||
+            !usable() ||
             !reason ||
-            current?.battery?.action === 'critical_stop';
+            batteryCritical() ||
+            !Number.isInteger(r?.battery_review_seq);
           for (const id of ['checkerboard', 'intrinsics', 'background', 'save-profile'])
             $(id).disabled = busy || !owned || !current?.connected || active;
+          renderMission(
+            owned &&
+              !stopped &&
+              !document.hidden &&
+              cf &&
+              sf &&
+              hf &&
+              current?.camera?.valid === true &&
+              current?.scene?.valid === true,
+            pending,
+            active,
+          );
           const state = r?.state || current?.agent?.state || 'idle';
           text(
             'review-age',
@@ -1350,8 +1907,12 @@
             'review-detail',
             pending && !goalMatchesReview()
               ? 'Destination changed. Preview a new route before approving.'
-              : r?.reason ||
-                  'Preview a route, inspect it on the map, then decide whether it should run.',
+              : pending && alreadyAtTarget()
+                ? 'Already at target; approve stopped-position verification. No travel path is proposed.'
+                : pending && singlePointTarget()
+                  ? 'Single-point target: approve a stopped-position check. Arrival still requires fresh camera and stopped-output verification.'
+                  : r?.reason ||
+                    'Preview a route, inspect it on the map, then decide whether it should run.',
           );
           const goal = r?.route?.goal;
           text(
@@ -1416,12 +1977,22 @@
             title = 'Review the planned route';
             detail =
               'The route is a preview. Read its target and clearance, give a reason, then approve, reject or hold.';
+          } else if (usable() && current?.stations?.verified !== true) {
+            title = 'Measure stations before planning';
+            detail =
+              current?.stations?.reason ||
+              'Save measured robot-centre positions for A–E in this calibrated camera setup.';
           } else if (usable()) {
             title = 'Ready to plan';
             detail =
-              'Select a target on the map or enter its coordinates. Planning does not start the robot.';
+              'Select measured start and destination stations. Planning verifies the observed start and does not move the robot.';
           } else if (current?.reason) {
             detail = current.reason;
+          }
+          if (lastError) {
+            title = 'Latest request needs attention';
+            detail = lastError;
+            tone = 'warning';
           }
           text('status-title', title);
           text('status-detail', detail);
@@ -1452,10 +2023,57 @@
             'map-pose',
             'map-target',
             'map-references',
+            'map-stations',
+            'map-clearance',
           ])
             $(id).replaceChildren();
           const scene = current?.scene,
             r = current?.review;
+          const bounds = current?.stations?.usable_bounds;
+          if (
+            bounds &&
+            [bounds.x_min, bounds.x_max, bounds.y_min, bounds.y_max].every(finite) &&
+            bounds.x_max > bounds.x_min &&
+            bounds.y_max > bounds.y_min
+          ) {
+            svg(
+              'rect',
+              {
+                x: bounds.x_min,
+                y: 630 - bounds.y_max,
+                width: bounds.x_max - bounds.x_min,
+                height: bounds.y_max - bounds.y_min,
+                fill: 'none',
+                stroke: 'var(--muted)',
+                'stroke-dasharray': '4 6',
+                opacity: 0.6,
+              },
+              $('map-clearance'),
+            );
+          }
+          if (current?.stations?.verified === true)
+            for (const label of STATIONS) {
+              const p = stationPoint(label);
+              if (!p) continue;
+              svg(
+                'circle',
+                {
+                  cx: p.x,
+                  cy: 630 - p.y,
+                  r: 7,
+                  fill: 'var(--inset)',
+                  stroke: 'var(--green)',
+                  'stroke-width': 2,
+                },
+                $('map-stations'),
+              );
+              const name = svg(
+                'text',
+                { x: p.x + 12, y: 630 - p.y - 10, fill: 'var(--green)', 'font-weight': '700' },
+                $('map-stations'),
+              );
+              name.textContent = label === 'E' ? 'E · battery' : label;
+            }
           if (valid) {
             for (const o of Array.isArray(scene.obstacles) ? scene.obstacles : []) {
               if ([o.x, o.y, o.width, o.height].every(finite))
@@ -1520,6 +2138,20 @@
               'pose-detail',
               'Robot pose is unavailable or out of date. No current position is drawn.',
             );
+          const routeState = r?.state,
+            routeCurrent =
+              (routeState === 'pending' && current?.mission?.state === 'review') ||
+              ACTIVE.has(routeState);
+          text(
+            'route-map-label',
+            routeState === 'pending' && current?.mission?.state === 'review'
+              ? 'Proposed path · awaiting approval'
+              : ACTIVE.has(routeState)
+                ? 'Approved route · camera pose'
+                : routeState === 'verified'
+                  ? 'Recorded completed path'
+                  : 'Previous path · not active',
+          );
           const pts = r?.route?.points;
           if (
             Array.isArray(pts) &&
@@ -1533,8 +2165,8 @@
                 fill: 'none',
                 stroke: 'var(--blue)',
                 'stroke-width': 3,
-                'stroke-dasharray': r.state === 'pending' ? '9 6' : 'none',
-                opacity: valid ? 1 : 0.35,
+                'stroke-dasharray': r.state === 'pending' ? '9 6' : routeCurrent ? 'none' : '4 6',
+                opacity: valid && routeCurrent ? 1 : 0.35,
               },
               $('map-route'),
             );
@@ -1661,27 +2293,80 @@
           text('theme', bright ? 'Dark mode' : 'Bright mode');
         });
         for (const id of ['goal-x', 'goal-y', 'reason']) $(id).addEventListener('input', render);
-        $('floor-map').addEventListener('click', (e) => {
-          if (routeActive()) return;
-          const b = e.currentTarget.getBoundingClientRect();
-          if (!b.width || !b.height) return;
-          const scale = Math.min(b.width / 610, b.height / 630),
-            x = (e.clientX - b.left - (b.width - 610 * scale) / 2) / scale,
-            y = 630 - (e.clientY - b.top - (b.height - 630 * scale) / 2) / scale;
-          if (x < 0 || x > 610 || y < 0 || y > 630) return;
-          $('goal-x').value = String(Math.round(x));
-          $('goal-y').value = String(Math.round(y));
-          render();
-        });
+        for (const id of ['mission-start', 'mission-destination'])
+          $(id).addEventListener('change', () => {
+            selectMissionGoal();
+            render();
+          });
         $('plan-form').addEventListener('submit', (e) => {
           e.preventDefault();
-          if (!usable() || busy || routeActive() || !validGoal()) return;
-          act('/api/plan', {
-            x: +$('goal-x').value,
-            y: +$('goal-y').value,
-            operator: 'local_operator',
+          if (
+            !usable() ||
+            busy ||
+            routeActive() ||
+            (current?.review?.state === 'pending' && !expired()) ||
+            !validMissionSelection()
+          )
+            return;
+          act('/api/mission', {
+            start: $('mission-start').value,
+            destination: $('mission-destination').value,
           });
         });
+        for (const label of STATIONS)
+          for (const axis of ['x', 'y'])
+            $('station-' + label + '-' + axis).addEventListener('input', () => {
+              stationDraftDirty = true;
+              $('station-verified').checked = false;
+              render();
+            });
+        $('station-verified').addEventListener('change', render);
+        $('stations-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (
+            busy ||
+            !owned ||
+            !current?.calibration_ready ||
+            routeActive() ||
+            (current?.review?.state === 'pending' && !expired()) ||
+            !validStationDraft() ||
+            !$('station-verified').checked
+          )
+            return;
+          const stations = Object.fromEntries(
+            STATIONS.map((label) => [
+              label,
+              { x: +$('station-' + label + '-x').value, y: +$('station-' + label + '-y').value },
+            ]),
+          );
+          await act('/api/stations', { stations, verified: true });
+        });
+        $('station-reload').addEventListener('click', async () => {
+          try {
+            const config = await request('/api/stations', undefined, { apply: false });
+            syncStations(config, true);
+            render();
+          } catch (error) {
+            failure(error.message);
+          }
+        });
+        $('return-start').addEventListener('click', () => {
+          const m = current?.mission,
+            reason = $('reason').value.trim();
+          if (
+            !attendedEvidence() ||
+            busy ||
+            !m ||
+            !reason ||
+            batteryCritical() ||
+            !['review', 'running', 'battery_review', 'blocked', 'stopped', 'verified'].includes(
+              m.state,
+            )
+          )
+            return;
+          act('/api/return-start', { reason });
+        });
+        $('battery-stop').addEventListener('click', stop);
         $('decision-form').addEventListener('submit', (e) => {
           e.preventDefault();
           const decision = e.submitter?.value,
@@ -1694,7 +2379,7 @@
             !reason ||
             r?.state !== 'pending' ||
             expired() ||
-            (decision === 'approve' && (!usable() || !goalMatchesReview()))
+            (decision === 'approve' && (!usable() || !proposalReady()))
           )
             return;
           act('/api/decision', { review_id: r.review_id, decision, reason });
@@ -1704,16 +2389,19 @@
             const r = current?.review,
               reason = $('reason').value.trim();
             if (
-              !owned ||
-              !fresh('hardware') ||
-              !fresh('camera') ||
-              !fresh('scene') ||
+              !usable() ||
               !reason ||
-              current?.battery?.action === 'critical_stop' ||
+              batteryCritical() ||
+              !Number.isInteger(r?.battery_review_seq) ||
               (r?.state !== 'battery_review' && current?.agent?.state !== 'battery_review')
             )
               return;
-            act('/api/battery-decision', { review_id: r.review_id, choice, reason });
+            act('/api/battery-decision', {
+              review_id: r.review_id,
+              battery_review_seq: r.battery_review_seq,
+              choice,
+              reason,
+            });
           });
         for (const name of ['checkerboard', 'intrinsics', 'background'])
           $(name).addEventListener('click', () => {

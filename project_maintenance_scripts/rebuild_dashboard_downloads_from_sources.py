@@ -23,7 +23,7 @@ KIT_SOURCES = {
     "AMR01_Local_Routes.zip": tuple(
         "esp32_telemetry_firmware/AMR01_Local_Routes/" + name
         for name in ("AMR01_Local_Routes.ino", "amr_wireless_app.h", "amr_route_control.h", "amr_mqtt_transport.h", "route_http_protocol.h", "vision_drive_guard.h", "example_private_amr_settings.h")
-    ) + ("project_documentation/direct_wifi_aruco_routes.md",),
+    ) + ("project_documentation/direct_wifi_aruco_routes.md", "project_documentation/local_station_missions.md"),
     "esp32_robot_telemetry_starter_kit.zip": (
         "esp32_telemetry_firmware/publish_esp32_robot_telemetry/publish_esp32_robot_telemetry.ino",
         "esp32_telemetry_firmware/publish_esp32_robot_telemetry/robot_telemetry_packet_serializer.h",

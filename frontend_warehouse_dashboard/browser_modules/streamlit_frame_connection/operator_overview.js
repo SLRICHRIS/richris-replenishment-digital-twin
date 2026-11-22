@@ -105,7 +105,7 @@
       open ? 'Camera workspace open' : 'ArUco camera routes',
       open
         ? 'Check camera, receiver and approval readiness inside the workspace. Opening it does not authorize motion.'
-        : 'Start AMR01_LocalTwin on the laptop. Preview a route, approve it, then verify arrival.',
+        : 'Start AMR01_LocalTwin on the laptop. Choose A–E start and destination, review the route and approve movement.',
       'neutral',
     );
   }

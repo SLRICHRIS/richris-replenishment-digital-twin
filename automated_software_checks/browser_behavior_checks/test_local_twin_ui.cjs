@@ -43,6 +43,18 @@ let state = {
   hardware: null,
   review: null,
   battery: null,
+  stations: {
+    verified: true,
+    stations: {
+      A: { x: 140, y: 140 },
+      B: { x: 401, y: 402 },
+      C: { x: 140, y: 400 },
+      D: { x: 400, y: 140 },
+      E: { x: 300, y: 300 },
+    },
+    config_id: 'measured',
+  },
+  mission: null,
   agent: { state: 'idle', reason: '' },
 };
 function refresh({ camera = true, scene = true, hardware = true } = {}) {
@@ -95,13 +107,14 @@ w.fetch = async (path, options = {}) => {
     state.connected = true;
     refresh();
   }
-  if (path === '/api/plan') {
+  if (path === '/api/mission') {
+    const goal = state.stations.stations[body.destination];
     state.review = {
       review_id: 'review-' + ++reviewNumber,
       state: 'pending',
       expires_at_ms: w.Date.now() + 60000,
       route: {
-        goal: [Math.round(body.x / 10) * 10, Math.round(body.y / 10) * 10],
+        goal: [Math.round(goal.x / 10) * 10, Math.round(goal.y / 10) * 10],
         points: [
           [140, 140],
           [200, 400],
@@ -111,6 +124,22 @@ w.fetch = async (path, options = {}) => {
       },
     };
   }
+  if (path === '/api/mission')
+    state.mission = {
+      mission_id: 'mission-' + reviewNumber,
+      review_id: state.review.review_id,
+      state: 'review',
+      start_station: body.start,
+      destination_station: body.destination,
+      original_start: { ...state.stations.stations[body.start], heading: 0 },
+      original_destination: {
+        ...state.stations.stations[body.destination],
+        label: body.destination,
+      },
+      active_goal: { ...state.stations.stations[body.destination], label: body.destination },
+      intent: 'destination',
+      proposal_kind: 'initial',
+    };
   if (path === '/api/decision') {
     state.review.state = body.decision === 'approve' ? 'sent' : body.decision;
     state.agent.state = body.decision === 'approve' ? 'arming' : 'idle';
@@ -164,8 +193,9 @@ async function main() {
   assert.equal(el('battery-value').textContent, '7.40 V');
   assert.ok(el('map-pose').children.length > 0);
   assert.equal(el('camera-media').dataset.fresh, 'true');
-  set('goal-x', '401');
-  set('goal-y', '402');
+  el('mission-start').value = 'A';
+  el('mission-destination').value = 'B';
+  el('mission-destination').dispatchEvent(new w.Event('change'));
   assert.equal(el('plan').disabled, false);
   submit('plan-form', 'plan');
   await flush();

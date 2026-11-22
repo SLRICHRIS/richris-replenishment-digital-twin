@@ -8,8 +8,8 @@ export function createLocalArUcoPanel(scope) {
   if (!root) return null;
   root.innerHTML = `
     <section class="panel pr-action-card">
-      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · ARUCO + DIRECT WI-FI</span><h2>See, plan, approve, verify.</h2></div><span>ESP32 · 10.15.213.112</span></div>
-      <p>Your laptop tracks the robot with the Logitech camera and sends approved routes directly to the ESP32. EMQX carries sensor telemetry.</p>
+      <div class="pr-topline"><div><span class="twin-card-kicker">AMR-01 · ARUCO + DIRECT WI-FI</span><h2>Choose A–E. Review. Approve. Arrive.</h2></div><span>ESP32 · 10.15.213.112</span></div>
+      <p>Select a measured start and destination from A–E. Your laptop tracks the robot with the camera, previews a path and sends approved movement directly to the ESP32. Obstacles and low battery bring the next decision back to you.</p>
       <div class="manual-direct-actions">
         <button id="lc-open" class="primary" type="button">Open camera workspace here</button>
         <button id="lc-close" type="button" disabled>Close workspace</button>
@@ -17,7 +17,7 @@ export function createLocalArUcoPanel(scope) {
       </div>
       <p id="lc-status" role="status">Start AMR01_LocalTwin on this laptop, then open the workspace. Camera connection and route approval are separate steps.</p>
       <div id="lc-frame-host" hidden></div>
-      <details class="manual-direct-help"><summary>First-time setup or workspace not loading</summary><p>Upload AMR01_Local_Routes once and start AMR01_LocalTwin on the laptop connected to the same hotspot. If the browser blocks embedding, use Open on laptop. The workspace contains camera calibration, route preview, human approval, Stop and camera-verified arrival.</p><a href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/direct_wifi_aruco_routes.md" target="_blank" rel="noopener noreferrer">Camera and ESP32 setup guide ↗</a></details>
+      <details class="manual-direct-help"><summary>First-time setup or workspace not loading</summary><p>Upload AMR01_Local_Routes once and start AMR01_LocalTwin on the laptop connected to the same hotspot. If the browser blocks embedding, use Open on laptop. The workspace contains station setup, camera calibration, route preview, obstacle replanning, battery decisions, Return to start, Stop and camera-verified arrival.</p><a href="https://github.com/SLRICHRIS/richris-replenishment-digital-twin/blob/main/project_documentation/direct_wifi_aruco_routes.md" target="_blank" rel="noopener noreferrer">Camera and ESP32 setup guide ↗</a></details>
     </section>`;
   const el = (id) => d.getElementById('lc-' + id),
     listeners = [];

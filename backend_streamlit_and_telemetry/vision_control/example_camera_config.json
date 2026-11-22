@@ -48,7 +48,8 @@
     "minimum_drive_pwm": null,
     "left_polarity": null,
     "right_polarity": null,
-    "min_pack_voltage_v": 6.6
+    "min_pack_voltage_v": 6.6,
+    "battery_advisory_voltage_v": 7.0
   },
   "floor_width_mm": 610,
   "floor_length_mm": 630,
