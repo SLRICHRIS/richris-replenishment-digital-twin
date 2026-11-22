@@ -1,5 +1,11 @@
 # Software verification record
 
+## Operator-requested 6.0 V preset cutoff: 23 November 2026
+
+Changed the preset application's pack threshold to 6.0 V and the Local Routes receiver's supported minimum and example setting to 6.0 V. Firmware revision r3 prints its configured cutoff at startup, while the preset page displays its own threshold. The Windows preset bundle now includes the matching firmware source without private credentials. Existing installations must retain their private settings, set `AMR_ROUTE_MIN_PACK_V` to `6.0`, and upload r3; replacing the Windows application alone does not change the running ESP32. Camera mission voltage policies remain separate.
+
+Verification: 547 predictive/integration Python tests passed, with 5 skips. Preset trials complete in the fake-receiver tests at 6.21 V and 6.01 V, while 5.99 V records a low-voltage stop. The compiled production ESP32 runtime accepts active drive at 6.21 V and 6.01 V and cancels it at the 6.0 V boundary. Protocol/runtime checks, preset browser behavior, source HTTP startup, repository/generated-download checks and whitespace checks passed. Authentication, feedback age, 500 ms command leases, 60 PWM cap and all other interlocks remain in force. These checks do not validate the condition or balance of the physical battery cells or establish successful route travel.
+
 ## Preserved preset stop evidence: 23 November 2026
 
 The preset controller now reports the specific failed readiness condition instead of combining expired feedback, receiver readiness and low voltage into one message. Interrupted movements preserve the feedback available at the stop, including voltage, ready flag, state, age, sequence and segment phase, in the status response and audit record. The page shows this evidence separately from current readings. A recovered sample or subsequent connection error cannot replace the recorded reason or resume movement. Zero voltage is identified as unavailable battery feedback. Controller limits, leases and firmware are unchanged.

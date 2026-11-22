@@ -11,6 +11,7 @@ on:
       - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
+      - 'esp32_telemetry_firmware/AMR01_Local_Routes/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
       - 'project_documentation/preset_station_routes.md'
@@ -23,6 +24,7 @@ on:
       - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
+      - 'esp32_telemetry_firmware/AMR01_Local_Routes/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
       - 'project_documentation/preset_station_routes.md'
@@ -58,6 +60,10 @@ jobs:
           New-Item -ItemType Directory -Force -Path preset-toolkit | Out-Null
           Copy-Item .\dist\AMR01_PresetRoutes.exe preset-toolkit\
           Copy-Item .\project_documentation\preset_station_routes.md preset-toolkit\README.md
+          New-Item -ItemType Directory -Force -Path preset-toolkit\AMR01_Local_Routes | Out-Null
+          Get-ChildItem .\esp32_telemetry_firmware\AMR01_Local_Routes\ -File |
+            Where-Object { $_.Name -ne 'private_amr_settings.h' -and $_.Extension -in '.ino', '.h' } |
+            Copy-Item -Destination preset-toolkit\AMR01_Local_Routes\
       - uses: actions/upload-artifact@v4
         with:
           name: AMR01-Windows-Preset-Routes

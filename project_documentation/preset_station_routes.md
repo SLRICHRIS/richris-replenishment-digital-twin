@@ -1,6 +1,17 @@
 # AMR-01: three camera-free routes
 
-Open **AMR01_PresetRoutes.exe**, paste the same private `AMR_ROUTE_KEY`, and keep the console open. Close LocalTwin and other motor controller pages first. Open the local page at `http://127.0.0.1:8765` and select **Connect ESP32**. No ESP32 upload or camera calibration is needed for this mode. The current receiver address is `10.55.54.112`; use `--device-ip` if the hotspot assigns a different address.
+Open **AMR01_PresetRoutes.exe**, paste the same private `AMR_ROUTE_KEY`, and keep the console open. Close LocalTwin and other motor controller pages first. Open the local page at `http://127.0.0.1:8765` and select **Connect ESP32**. No camera calibration is needed for this mode. The current receiver address is `10.55.54.112`; use `--device-ip` if the hotspot assigns a different address.
+
+## Install the requested 6.0 V cutoff
+
+This release uses a **6.0 V** pack cutoff in the preset application and the supplied **Local Routes r3** receiver settings. Updating the application alone does not change the firmware already installed on the ESP32.
+
+1. Extract the Windows download. It includes `AMR01_PresetRoutes.exe` and an `AMR01_Local_Routes` sketch folder.
+2. Copy your existing `private_amr_settings.h` into that new sketch folder. Keep your Wi-Fi, telemetry and route key values. Change its cutoff line to `#define AMR_ROUTE_MIN_PACK_V 6.0`. For a new installation, copy `example_private_amr_settings.h` to that filename and supply your private settings.
+3. Open `AMR01_Local_Routes.ino` in Arduino IDE and upload to the ESP32. Serial Monitor at 115200 should report **Local Routes r3** and **Route pack cutoff: 6.00 V**. Keep the robot still during startup calibration.
+4. Run the new preset executable using the same key, then connect. The feedback line shows **Cutoff 6.00 V**. Start with one attended forward trial before calibrating the routes.
+
+The firmware stops at or below 6.0 V. Higher voltage alone does not override invalid sensor data, lost feedback, Stop or the existing motor interlocks. This is a total-pack setting; it does not add individual-cell monitoring or battery protection hardware.
 
 This is an attended timed-route demonstration. It does not use ArUco, encoders or gyro feedback to steer or locate the robot. It does not detect obstacles. The operator watches the clear floor, presses Stop if necessary, and checks arrival. Starting the app, connecting, selecting a route, or restoring saved measurements never starts movement.
 
@@ -46,7 +57,7 @@ The nominal route checks the complete body's circular swept footprint plus 20 mm
 
 ## Receiver and connection behaviour
 
-The application uses the existing authenticated `/api/route/hardware` and `/api/route/command` endpoints. It retains private key authentication, boot/epoch checks, replay rejection, fresh feedback, applied-output checks, 60 PWM cap, firmware reversal interlock and voltage protections. The laptop also refuses motion below 6.7 V. Every command has a maximum 500 ms receiver lease, shortened to the current attendance and motion deadlines. An interrupted control loop, Wi-Fi failure, changed device identity, unexpected motor output or stale feedback cancels the job. No camera measurements or fake observations are sent to bypass the camera controller.
+The application uses the existing authenticated `/api/route/hardware` and `/api/route/command` endpoints. It retains private key authentication, boot/epoch checks, replay rejection, fresh feedback, applied-output checks, 60 PWM cap, firmware reversal interlock and voltage protections. The laptop refuses motion below 6.0 V; the receiver must also report ready. Every command has a maximum 500 ms receiver lease, shortened to the current attendance and motion deadlines. An interrupted control loop, Wi-Fi failure, changed device identity, unexpected motor output or stale feedback cancels the job. No camera measurements or fake observations are sent to bypass the camera controller.
 
 Command timestamps use the last authenticated receiver timestamp plus elapsed laptop time since receipt. This handles a small clock difference that could otherwise allow fresh feedback while rejecting the first arm request with HTTP 409. Reply transit shortens the command lease; it does not extend attendance or motion deadlines. Original signed feedback timestamps still have to pass the existing freshness checks. A 409 can also mean a changed receiver state, so this correction alone does not identify every rejection.
 

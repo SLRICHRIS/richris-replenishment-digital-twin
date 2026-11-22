@@ -20,7 +20,7 @@ using portMUX_TYPE = int;
 #define AMR_ROUTE_KEY "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 #define AMR_CONTROL_KEY "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 #define AMR_ROUTE_MAX_PWM 60
-#define AMR_ROUTE_MIN_PACK_V 6.6
+#define AMR_ROUTE_MIN_PACK_V 6.0
 constexpr int HIGH=1, LOW=0, WL_CONNECTED=3, pdPASS=1;
 constexpr int PWMA=25, PWMB=14, AIN1=26, AIN2=27, BIN1=32, BIN2=33, STBY=13;
 constexpr uint64_t DIRECTION_INTERLOCK_US=150000;
@@ -261,6 +261,10 @@ int main() {
   assert(!amr_route::ready && !amr_route::guard.active && amr_route::actualLeft==0);
   utcBase=1700000000000ULL; fresh(151000); amr_route::motorTick();
   post(packet("arm",1),200); post(packet("drive",2,30,30),200); amr_route::motorTick();
+  currentSensors.packV=6.21; amr_route::motorTick();
+  assert(amr_route::ready && amr_route::guard.active && amr_route::actualLeft==30);
+  currentSensors.packV=6.01; amr_route::motorTick();
+  assert(amr_route::ready && amr_route::guard.active && amr_route::actualLeft==30);
   currentSensors.packV=AMR_ROUTE_MIN_PACK_V; amr_route::motorTick();
   assert(!amr_route::ready && !amr_route::guard.active && amr_route::actualLeft==0);
   fresh(151000); amr_route::motorTick();

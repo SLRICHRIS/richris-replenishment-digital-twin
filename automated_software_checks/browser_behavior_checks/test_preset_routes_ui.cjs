@@ -28,6 +28,7 @@ let state = {
   ready: false,
   hardware: null,
   controller_ip: '10.55.54.112',
+  min_voltage_v: 6.0,
   busy: false,
   measurements: { version: 1, samples: {} },
   last_test: null,
@@ -188,6 +189,7 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
   await flush();
   assert.match($('status').textContent, /ESP32 reported not ready/);
   assert.match($('feedback').textContent, /7.65 V.*100 ms old.*Receiver ready/);
+  assert.match($('feedback').textContent, /Cutoff 6.00 V/);
   assert.equal($('stop-detail').hidden, false);
   assert.match(
     $('stop-detail').textContent,

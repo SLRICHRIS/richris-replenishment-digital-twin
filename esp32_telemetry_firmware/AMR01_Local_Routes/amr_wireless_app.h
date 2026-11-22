@@ -216,7 +216,7 @@ inline int encodeDiagnostic(char* buffer, size_t size, const char* bootId,
   }
   const int length = std::snprintf(buffer, size,
       "{\"schema_version\":1,\"message_type\":\"mh_ir_commissioning\","
-      "\"firmware_revision\":\"AMR01-Local-Routes-r2\",\"robot_id\":\"amr01\",\"boot_id\":\"%s\",\"seq\":%lu,"
+      "\"firmware_revision\":\"AMR01-Local-Routes-r3\",\"robot_id\":\"amr01\",\"boot_id\":\"%s\",\"seq\":%lu,"
       "\"sample_time_s\":%.6f,\"interval_s\":%.6f,"
       "\"left_encoder_count\":%lld,\"right_encoder_count\":%lld,"
       "\"left_encoder_count_signed\":%lld,\"right_encoder_count_signed\":%lld,"
@@ -828,7 +828,8 @@ void setup() {
   initializeSensors();
   configureDashboard();
   snprintf(bootId,sizeof bootId,"%08lx%08lx",static_cast<unsigned long>(esp_random()),static_cast<unsigned long>(esp_random()));
-  Serial.println("AMR-01 Local Routes r2. Wi-Fi receiver reconnect recovery. Serial 115200.");
+  Serial.println("AMR-01 Local Routes r3. Configurable route pack cutoff. Serial 115200.");
+  Serial.printf("Route pack cutoff: %.2f V; maximum PWM: %d\n", double(AMR_ROUTE_MIN_PACK_V), int(AMR_ROUTE_MAX_PWM));
   Serial.println("F/B: both wheels. L: right wheel forward only. R: left wheel forward only. Dashboard: open the printed ESP32 IP address.");
   Serial.println("Encoder signed direction is inferred from motor commands; RPM needs confirmed PPR.");
   if (!pwmReady) Serial.println("PWM setup failed: motors remain disabled");

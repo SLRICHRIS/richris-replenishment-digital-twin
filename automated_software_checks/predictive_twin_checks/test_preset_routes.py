@@ -133,9 +133,22 @@ def test_idle_banner_tracks_receiver_readiness_without_changing_completed_outcom
     assert not receiver.calls
 
 
+@pytest.mark.parametrize("voltage", [6.21, 6.01])
+def test_requested_six_volt_cutoff_allows_acknowledged_trial_above_boundary(tmp_path, voltage):
+    app, receiver, clock = rig(tmp_path)
+    receiver.h["battery_voltage_v"] = voltage
+    app.tick(receiver.poll())
+    assert app.status()["min_voltage_v"] == 6.0 and app.status()["ready"]
+    start_trial(app)
+    pulse(app, receiver, clock, 20)
+    assert app.state == "trial_complete" and app.last_stop is None
+    app.action("measurement", dict(trial_id="a"*32, amount=20, verified=True, stopping_mm=5))
+    assert app.measurements["samples"]["forward"]["voltage_v"] == voltage
+
+
 @pytest.mark.parametrize("failure, expected", [
     ("receiver", "ESP32 reported not ready"),
-    ("voltage", "6.18 V, below the 6.70 V"),
+    ("voltage", "5.99 V, below the 6.00 V"),
     ("missing_battery", "battery reading is unavailable"),
     ("stale", "age 501 ms"),
 ])
@@ -147,7 +160,7 @@ def test_stop_preserves_exact_failing_feedback_after_live_readings_recover(tmp_p
     if failure == "receiver":
         failed.update(ready=False, state="unavailable")
     elif failure == "voltage":
-        failed.update(battery_voltage_v=6.18, ready=False)
+        failed.update(battery_voltage_v=5.99, ready=False)
     elif failure == "missing_battery":
         failed.update(battery_voltage_v=0, ready=False)
     else:
@@ -216,7 +229,7 @@ def test_failures_stop_and_never_resume(tmp_path,failure):
     elif failure=="presence": app.presence_at=clock[0]-701
     elif failure=="boot": receiver.h["boot_id"]="c"*32
     elif failure=="epoch": receiver.h["epoch_id"]="d"*32
-    elif failure=="low_battery": receiver.h["battery_voltage_v"]=6.5
+    elif failure=="low_battery": receiver.h["battery_voltage_v"]=5.99
     elif failure=="expired": receiver.h.update(state="expired",left_duty=0,right_duty=0)
     elif failure=="external": receiver.h["route_id"]="c"*32
     elif failure=="bad_output": receiver.h["left_duty"]=-50

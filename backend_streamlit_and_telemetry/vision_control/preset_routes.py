@@ -24,7 +24,7 @@ from .local_transport import DeviceHTTPTransport, DEVICE_IP, receiver_ip
 
 HOST, PORT = "127.0.0.1", 8765
 PRESENCE_MS = 700
-MIN_VOLTAGE = 6.7
+MIN_VOLTAGE = 6.0
 STATIONS = {
     "A": {"front_mm": [630, 350], "heading_deg": 0, "facing": "RIGHT"},
     "B": {"front_mm": [205, 430], "heading_deg": 90, "facing": "UP"},
@@ -169,7 +169,7 @@ class PresetController:
                 elif not fresh(h["issued_at_ms"], self.clock()):
                     message = "ESP32 feedback is out of date; waiting for a fresh sample"
                 elif h["battery_voltage_v"] < MIN_VOLTAGE:
-                    message = "ESP32 connected; battery is below the 6.7 V movement minimum"
+                    message = f"ESP32 connected; battery is below the {MIN_VOLTAGE:.1f} V movement minimum"
                 elif not h["ready"]:
                     message = "ESP32 connected; controller is not ready. Keep the robot still during startup and check its interlocks."
                 elif h["left_duty"] or h["right_duty"]:
@@ -181,6 +181,7 @@ class PresetController:
             return dict(state=self.state, message=message,
                         connected=self.connected, ready=self.ready(zero=True), hardware=h,
                         controller_ip=self.transport.device_ip, busy=bool(self.job),
+                        min_voltage_v=MIN_VOLTAGE,
                         measurements=copy.deepcopy(self.measurements), last_test=copy.deepcopy(self.last_test),
                         last_stop=copy.deepcopy(self.last_stop),
                         routes=[layout(r) for r in PAIRS], stations=copy.deepcopy(STATIONS),

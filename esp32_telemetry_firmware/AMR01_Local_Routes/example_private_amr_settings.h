@@ -13,6 +13,6 @@ static const char BROKER_ROOT_CA[] = "";  // Trusted PEM root for the telemetry 
 // Never reuse an operator access code or AMR_CONTROL_KEY. Empty disables routes.
 #define AMR_ROUTE_KEY ""
 #define AMR_CONTROL_KEY ""
-// Match the local route service. Retain the recovered H1 safety limits.
+// Match the preset controller's operator-requested 6.0 V pack cutoff.
 #define AMR_ROUTE_MAX_PWM 60
-#define AMR_ROUTE_MIN_PACK_V 6.6
+#define AMR_ROUTE_MIN_PACK_V 6.0

@@ -401,7 +401,7 @@
           $('status').textContent = state.message;
           const hw = state.hardware;
           $('feedback').textContent = hw
-            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old · Receiver ${hw.ready ? 'ready' : 'not ready'}`
+            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old · Receiver ${hw.ready ? 'ready' : 'not ready'} · Cutoff ${state.min_voltage_v.toFixed(2)} V`
             : 'No controller sample';
           const stopped = state.last_stop?.hardware;
           $('stop-detail').hidden = !stopped;
