@@ -55,14 +55,16 @@ render({
 });
 assert.match(el('source').textContent, /Dashboard updates paused/);
 const frame = d.createElement('iframe');
-frame.id = 'mc-controller-frame';
+frame.id = 'lc-frame';
 d.body.append(frame);
-d.dispatchEvent(new w.CustomEvent('manual-controller:view'));
-assert.equal(el('control-title').textContent, 'Controller page open');
-assert.match(el('control-detail').textContent, /not an acknowledgement/);
+d.dispatchEvent(new w.CustomEvent('local-controller:view'));
+assert.equal(el('control-title').textContent, 'Camera workspace open');
+assert.match(el('control-detail').textContent, /does not authorize motion/);
 frame.remove();
-d.dispatchEvent(new w.CustomEvent('manual-controller:view'));
-assert.equal(el('control-title').textContent, 'Direct Wi-Fi control');
+d.dispatchEvent(new w.CustomEvent('local-controller:view'));
+assert.equal(el('control-title').textContent, 'ArUco camera routes');
+let local = 0;
+d.getElementById('vision-mode-local').addEventListener('click', () => local++);
 let drive = 0,
   readings = 0,
   review = 0;
@@ -74,6 +76,8 @@ el('readings').click();
 el('decide').click();
 el('connect').click();
 assert.equal(drive, 2);
+assert.equal(local, 1);
+assert.match(el('review-detail').textContent, /Route approval uses the local camera/);
 assert.equal(readings, 1);
 assert.equal(review, 1);
 assert.equal(d.getElementById('amr-connection-workspace').open, true);

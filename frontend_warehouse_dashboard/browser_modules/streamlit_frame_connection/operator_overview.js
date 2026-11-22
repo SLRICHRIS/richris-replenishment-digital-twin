@@ -45,7 +45,7 @@
         'Waiting for data',
         window.parent === window
           ? 'Open the full dashboard for sensor readings and protected reviews.'
-          : 'Waiting for the server. You can still open the direct Wi-Fi drive view.',
+          : 'Waiting for the server. Camera routes use the separate local laptop connection.',
         'waiting',
       );
     else if (p.mode === 'demo')
@@ -80,7 +80,7 @@
       card(
         'review',
         'Fresh evidence needed',
-        'Current recommendations and review approval wait for usable readings.',
+        'Sensor recommendations need new telemetry. Route approval uses the local camera workspace and ESP32 feedback.',
         'waiting',
       );
     else if (!review.authorized)
@@ -99,13 +99,13 @@
           : 'Review the captured evidence and permitted action before approval.',
         'live',
       );
-    const open = !!$('mc-controller-frame');
+    const open = !!$('lc-frame');
     card(
       'control',
-      open ? 'Controller page open' : 'Direct Wi-Fi control',
+      open ? 'Camera workspace open' : 'ArUco camera routes',
       open
-        ? 'Check connection and motor feedback inside the ESP32 page. Opening it is not an acknowledgement.'
-        : '10.15.213.112 · Same hotspot. Select Connect controller in the drive view.',
+        ? 'Check camera, receiver and approval readiness inside the workspace. Opening it does not authorize motion.'
+        : 'Start AMR01_LocalTwin on the laptop. Preview a route, approve it, then verify arrival.',
       'neutral',
     );
   }
@@ -117,7 +117,7 @@
     );
     $('operator-drive').addEventListener('click', () => {
       $('tab-vision')?.click();
-      $('vision-mode-manual')?.click();
+      $('vision-mode-local')?.click();
     });
     $('operator-connect').addEventListener('click', () => {
       $('tab-vision')?.click();
@@ -133,7 +133,7 @@
       }
     });
     document.addEventListener('python-twin:render', (e) => render(e.detail));
-    document.addEventListener('manual-controller:view', () => render());
+    document.addEventListener('local-controller:view', () => render());
     render();
     document.dispatchEvent(new CustomEvent('python-twin:ready'));
   }

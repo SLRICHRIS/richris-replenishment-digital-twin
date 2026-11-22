@@ -38,6 +38,7 @@ export function createLocalArUcoPanel(scope) {
     el('frame-host').replaceChildren();
     el('frame-host').hidden = true;
     frame = null;
+    d.dispatchEvent(new scope.CustomEvent('local-controller:view'));
     el('close').disabled = true;
     el('open').textContent = 'Open camera workspace here';
     el('status').textContent = message;
@@ -58,6 +59,7 @@ export function createLocalArUcoPanel(scope) {
     frame.setAttribute('allow', 'local-network; local-network-access');
     el('frame-host').hidden = false;
     el('frame-host').append(frame);
+    d.dispatchEvent(new scope.CustomEvent('local-controller:view'));
     el('close').disabled = false;
     el('open').textContent = 'Reload workspace';
     el('status').textContent =

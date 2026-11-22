@@ -85,7 +85,7 @@
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=operator-audit-20261122b"
+      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=local-routes-20261122"
     ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
@@ -488,9 +488,9 @@
           </article>
           <article id="operator-control" data-state="neutral">
             <span class="eyebrow">3 · Act and check</span>
-            <strong id="operator-control-title">Direct Wi-Fi control</strong>
+            <strong id="operator-control-title">ArUco camera routes</strong>
             <p id="operator-control-detail">Apply your response using the local controller.</p>
-            <button id="operator-drive" type="button">Open drive view</button>
+            <button id="operator-drive" type="button">Open camera routes</button>
           </article>
         </div>
       </section>
@@ -1509,7 +1509,10 @@
                 </div>
                 <div>
                   <dt>Wheels</dt>
-                  <dd>65 mm diameter · 100 mm centre spacing · 20 counted pulses per turn.</dd>
+                  <dd>
+                    Reported 65 mm diameter and 100 mm centre spacing. Verify wheel geometry and
+                    counted pulses per revolution for the installed encoder.
+                  </dd>
                 </div>
                 <div>
                   <dt>IMU</dt>
@@ -1521,9 +1524,9 @@
                 <div>
                   <dt>Robot marker</dt>
                   <dd>
-                    ArUco 4×4/50 ID 0 · 40 mm black edge · 150 mm above the floor. Centre: 100 mm
-                    forward of the wheel midpoint, 0 mm sideways. Printed-marker alignment still
-                    needs verification.
+                    ArUco 4×4/50 ID 0 · nominal 40 mm black edge. The operator confirmed the marker
+                    is centred on the robot body. Measure its height, axle offset and forward
+                    alignment before enabling route tracking.
                   </dd>
                 </div>
                 <div>
@@ -1536,8 +1539,8 @@
                 <div>
                   <dt>Battery</dt>
                   <dd>
-                    2S lithium pack · 7.4 V nominal · reported 2,200 mAh and 100% trial starting
-                    charge. Current charge and usable capacity require calibration.
+                    2S lithium pack · 7.4 V nominal · reported 2,200 mAh capacity. Current charge
+                    and usable capacity require calibration.
                   </dd>
                 </div>
               </dl>
