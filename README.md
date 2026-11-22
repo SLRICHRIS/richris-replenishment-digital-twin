@@ -17,9 +17,11 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-The dashboard opens on **Floor**, a single-AMR warehouse simulation. **Connect AMR** provides the operator-protected, on-demand EMQX recorder. **Sensor models** shows six Python models with Demo data or Stored sensor data, their equations, sources and recommendations. **Detailed readings and export** opens packet values and charts. **Database** browses saved records, attributes and storage status. Display reads use a private SELECT-only account; the optional recorder uses a separate limited writer. Physical data collection and measured calibration require independent commissioning.
+The dashboard opens on **Virtual warehouse**, a single-AMR simulation. **Connect AMR** provides the operator-protected, on-demand EMQX recorder. **Sensor models** shows six Python models with Demo data or Stored sensor data, their equations, sources and recommendations. **Detailed readings and export** opens packet values and charts. **Database** browses saved records, attributes and storage status. Display reads use a private SELECT-only account; the optional recorder uses a separate limited writer. Physical data collection and measured calibration require independent commissioning.
 
-For attended manual driving, open **Drive & review → Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry or firmware upload is needed. Allow local-network access if Chrome asks. Commands travel directly over local Wi-Fi; EMQX continues carrying sensor data. See the [direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
+For the physical ArUco workflow, open **Drive & review → Camera routes**. The laptop's `AMR01_LocalTwin` workspace runs at `127.0.0.1:8765` inside the dashboard: camera pose → route preview → human approval → direct Wi-Fi wheel commands to `10.15.213.112` → camera-verified arrival. It requires the new local-route receiver upload, measured camera/motor configuration and the laptop program running. EMQX continues carrying sensor telemetry. Follow the [direct Wi-Fi ArUco route guide](project_documentation/direct_wifi_aruco_routes.md).
+
+For attended manual recovery, use **Direct Wi-Fi drive → Connect controller**. The ESP32 controller appears inside the dashboard using the saved address `10.15.213.112`; no address entry is needed. Allow local-network access if the browser asks. See the [manual direct Wi-Fi setup](project_documentation/manual_motor_control_setup.md).
 
 ## Reproducible demonstration
 
@@ -43,6 +45,8 @@ Live recommendations cover **battery, power, wheel feedback, gyro/acceleration, 
 
 See the [live checks and action catalog](project_documentation/live_sensor_recommendations.md) and [website operator review guide](project_documentation/website_human_review_and_action.md).
 
+**Camera route approval** is a separate physical action: it binds the displayed route to fresh ArUco and controller evidence, then authorizes the local follower for a short renewable lease. The laptop records the decision in SQLite before dispatch. It checks visual arrival after stopping; an accepted motor command does not prove arrival. See the [local route workflow](project_documentation/direct_wifi_aruco_routes.md).
+
 ## Active architecture
 
 ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python sensor pipeline → PostgreSQL → read-only display. Topic: `robot/amr01/state`. Use the independent worker for unattended recording or the session-bound Connect AMR recorder for attended trials. Both reuse the same sensor engine, verified TLS subscription, transaction boundaries and exclusive PostgreSQL writer lease. Browser JavaScript does not ingest raw MQTT data or publish motor commands. Motor control remains local to the AMR.
@@ -65,7 +69,7 @@ ESP32 `amr01` → MQTT/TLS **8883** → EMQX → Python sensor pipeline → Post
 
 The **Sensor models** view follows the 17-slide presentation in six compact stages: wheel travel/speed (slides 5–6), pose (7–8), gyro bias (9–10), battery (11–12), sustained residual alert (13–14) and forecasts (15). Each model has one collapsed **How it works & source** section containing explanations, equations and paper links. **Detailed readings and export** opens sensor values, charts and exports. The larger stock/task and FIFO/urgency experiments remain in source.
 
-The hosted navigation contains **Floor, Connect AMR, Sensor models and Database**. Floor keeps the original warehouse and one virtual AMR with basic camera controls. Mission approval, stock forecasts, manager markers, route studies, activity logs and older calibration tools are outside this UI; their historical deep links return to Sensor models. Database shares the dashboard shell and shows saved physical records and their attributes without deployment settings. It supports seven allowlisted datasets, bounded 50-row reads, explicit empty/error states and JSON export. The six sensor models use a responsive three/two/one-column layout, with Dark/Bright appearance and local fonts.
+The main workspace separates **Virtual warehouse, Sensor models, Drive & review, Database and System architecture**. The virtual warehouse keeps one simulated AMR; physical camera-route approval belongs to Drive & review. Simulation routes, virtual missions and older tools are separate from physical control. Database shares the dashboard shell and shows saved physical records and their attributes without deployment settings. It supports seven allowlisted datasets, bounded 50-row reads, explicit empty/error states and JSON export. The six sensor models use a responsive three/two/one-column layout, with Dark/Bright appearance and local fonts.
 
 ## Dashboard and deployment
 
@@ -94,7 +98,7 @@ Software tests verify equations, units, isolation, sequence/freshness handling a
 The project configures **AMR-01 only**: one simulated robot, one loading/charging bay, six sensor-model cards, one calibration and one MQTT state topic. AMR-02 and AMR-03 are not instantiated, selectable or subscribed. Legacy mission examples remain in source, outside the hosted interface.
 
 
-Human-approved physical camera routes now have a guarded execution implementation. See the [physical execution setup](project_documentation/human_approved_physical_route_execution.md). Camera/motor commissioning, private topic permissions and ESP32 upload are required before movement is enabled.
+The primary physical camera-route implementation uses the [laptop ArUco workspace and direct Wi-Fi receiver](project_documentation/direct_wifi_aruco_routes.md). The older [MQTT physical execution setup](project_documentation/human_approved_physical_route_execution.md) remains an advanced reference path. A successful software build does not establish a verified physical route run.
 
 
-Vision floor measurements reported on 18 November 2026: paper **425 × 630 mm**, camera height **92 cm** (lens-to-paper interpretation unverified). These replace the earlier A0 assumption. Entering dimensions does not complete camera or motor commissioning.
+Current vision setup: measured floor **610 × 630 mm**, reported Logitech lens height **1310 mm** and AMR body **170 × 155 × 150 mm**. The earlier A0 and 425 × 630 mm profiles are obsolete. Entering dimensions does not complete camera or motor commissioning.

@@ -17,6 +17,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: python -m pip install -r requirements-dev.txt
+      - name: Check direct Wi-Fi route firmware contracts
+        run: python automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_local_routes.py
       - run: npm ci --prefix backend_streamlit_and_telemetry/commissioning_webhook
       - run: npm test --prefix backend_streamlit_and_telemetry/commissioning_webhook
       - run: npm run build --prefix backend_streamlit_and_telemetry/commissioning_webhook
@@ -53,6 +55,8 @@ jobs:
           arduino-cli compile --fqbn esp32:esp32:esp32 "$sketch"
       - name: Check and compile the supplied MH IR hardware path
         run: python3 automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_mh_ir_commissioning.py
+      - name: Check and compile direct Wi-Fi route firmware
+        run: python3 automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_local_routes.py --arduino-cli arduino-cli
 
   postgres-sensor-ingestion:
     runs-on: ubuntu-latest

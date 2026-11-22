@@ -15,8 +15,9 @@ d.addEventListener('python-twin:action', (e) => actions.push(e.detail));
 const page = createVisionRoutingWorkspace(w),
   el = (id) => d.getElementById(id);
 assert.equal(createVisionRoutingWorkspace(w), null);
-assert.equal(el('vision-routing-shell').dataset.mode, 'manual');
-assert.equal(el('vision-manual-pane').hidden, false);
+assert.equal(el('vision-routing-shell').dataset.mode, 'local');
+assert.equal(el('vision-local-pane').hidden, false);
+assert.equal(el('lc-frame'), null, 'Camera workspace does not connect on page load');
 assert.equal(
   el('mc-controller-frame'),
   null,
@@ -27,10 +28,12 @@ el('vision-mode-manual').dispatchEvent(
 );
 assert.equal(
   d.activeElement,
-  el('vision-mode-physical'),
-  'Hidden practice tab is excluded from keyboard navigation',
+  el('vision-mode-manual'),
+  'Advanced broker and practice tabs are excluded from keyboard navigation',
 );
 assert.equal(el('vision-practice-pane').hidden, true);
+d.documentElement.dataset.amrAdvanced = 'true';
+el('vision-mode-physical').click();
 assert.equal(el('pr-step-panel-1').hidden, false);
 assert.equal(el('pr-map-card').hidden, true, 'Setup does not show an empty execution map');
 assert.equal(d.querySelectorAll('#vision-settings-form').length, 1);

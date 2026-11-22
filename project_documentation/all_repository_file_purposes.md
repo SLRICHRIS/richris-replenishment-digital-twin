@@ -398,3 +398,29 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `frontend_warehouse_dashboard/browser_modules/streamlit_frame_connection/operator_overview.js` | Show an observe-decide-act workflow with separate telemetry, review and local-controller states. |
 | `automated_software_checks/browser_behavior_checks/test_operator_overview.cjs` | Check current/source status, review gates and navigation shortcuts without actuation. |
 | `project_documentation/operator_workspace_audit.md` | Record the dashboard clarity, flow, logic, stale-data and visual audit with implemented fixes and validation limits. |
+
+## Direct Wi-Fi ArUco routes
+
+| File | Purpose |
+| --- | --- |
+| `amr01_local_twin.py` | Launch the laptop camera, local route-review workspace and authenticated direct Wi-Fi transport without starting movement. |
+| `backend_streamlit_and_telemetry/vision_control/local_twin.py` | Serve the laptop ArUco workspace, retain local approval audit and connect the existing camera/follower contracts to the LAN receiver. |
+| `backend_streamlit_and_telemetry/vision_control/local_transport.py` | Exchange signed, expiring route commands and fresh controller feedback with the fixed ESP32 address without proxies, redirects or MQTT. |
+| `backend_streamlit_and_telemetry/vision_control/local_twin.html` | Present local camera calibration, route preview, explicit human decisions and camera-verified execution status. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/AMR01_Local_Routes.ino` | Build the ESP32 firmware variant with local signed route control and separate sensor telemetry publication. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/amr_wireless_app.h` | Preserve the working board wiring, sensor acquisition and manual HTTP controller while serving local route endpoints. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/amr_route_control.h` | Own bounded wheel outputs, direct route sessions, signed feedback and manual-stop precedence independently of MQTT command delivery. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/route_http_protocol.h` | Validate local HTTP route-command framing and authentication. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/vision_drive_guard.h` | Reject expired, replayed or conflicting commands and enforce route output leases on the ESP32. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/amr_mqtt_transport.h` | Support the retained EMQX telemetry publisher without making the broker the route-command transport. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/example_private_amr_settings.h` | Provide placeholder Wi-Fi, telemetry and distinct route-key settings for the locally excluded private configuration. |
+| `project_documentation/direct_wifi_aruco_routes.md` | Explain Windows startup, one-time receiver upload, local calibration, measured configuration, route decisions and verification limits. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/local_aruco_control.js` | Embed the laptop route workspace and end its session when the operator leaves or hides the dashboard view. |
+| `automated_software_checks/browser_behavior_checks/test_local_aruco_embed.mjs` | Check local-workspace embedding, explicit launch and session teardown without connecting to a robot. |
+| `frontend_warehouse_dashboard/downloadable_hardware_kits_and_guides/AMR01_Local_Routes.zip` | Reproducible local-route firmware kit containing canonical source, placeholder settings and setup guidance without private credentials. |
+| `esp32_telemetry_firmware/AMR01_Local_Routes/.gitignore` | Exclude the private Wi-Fi, telemetry and route-key header from the firmware source tree. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_local_route_protocol.cpp` | Exercise signed route-command framing, expiry and rejection boundaries without physical actuation. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_local_route_runtime.cpp` | Exercise the real local receiver runtime and motor-output safeguards with native hardware stubs. |
+| `automated_software_checks/esp32_firmware_compile_and_contract_checks/verify_local_routes.py` | Run local-route native checks and verify the firmware's direct-control source contract. |
+| `automated_software_checks/predictive_twin_checks/test_local_twin.py` | Verify local route audit, camera freshness, operator presence, calibration invalidation, HTTP guards and authenticated receiver transport using mocks. |
+| `automated_software_checks/browser_behavior_checks/test_local_twin_ui.cjs` | Verify local camera-route UI freshness, explicit actions, calibration and session teardown with mocked endpoints and no hardware actuation. |

@@ -69,7 +69,7 @@
     ></script>
     <script
       type="module"
-      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=operator-audit-20261122"
+      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=local-aruco-20261122"
     ></script>
     <script
       defer
@@ -109,6 +109,7 @@
       html:not([data-amr-advanced='true']) #tab-telemetry,
       html:not([data-amr-advanced='true']) #tab-engineering,
       html:not([data-amr-advanced='true']) #tab-activity,
+      html:not([data-amr-advanced='true']) #vision-mode-physical,
       html:not([data-amr-advanced='true']) #vision-mode-practice {
         display: none !important;
       }
@@ -1725,14 +1726,24 @@
               </section>
             </section>
           </details>
-          <div id="vision-routing-shell" data-mode="manual">
+          <div id="vision-routing-shell" data-mode="local">
             <div class="vision-page-toolbar">
               <div role="tablist" aria-label="Vision routing mode" class="vision-mode-tabs">
+                <button
+                  id="vision-mode-local"
+                  role="tab"
+                  aria-controls="vision-local-pane"
+                  aria-selected="true"
+                  type="button"
+                >
+                  Camera routes
+                </button>
                 <button
                   id="vision-mode-manual"
                   role="tab"
                   aria-controls="vision-manual-pane"
-                  aria-selected="true"
+                  aria-selected="false"
+                  tabindex="-1"
                   type="button"
                 >
                   Direct Wi-Fi drive
@@ -1745,7 +1756,7 @@
                   tabindex="-1"
                   type="button"
                 >
-                  Camera routes
+                  Broker route setup
                 </button>
                 <button
                   id="vision-mode-practice"
@@ -1769,7 +1780,15 @@
                 </span>
               </div>
             </div>
-            <div id="vision-manual-pane" role="tabpanel" aria-labelledby="vision-mode-manual">
+            <div id="vision-local-pane" role="tabpanel" aria-labelledby="vision-mode-local">
+              <div id="local-aruco-control"></div>
+            </div>
+            <div
+              id="vision-manual-pane"
+              role="tabpanel"
+              aria-labelledby="vision-mode-manual"
+              hidden
+            >
               <div id="manual-motor-control"></div>
             </div>
             <div

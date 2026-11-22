@@ -1990,38 +1990,48 @@ function updateSourceUI() {
     $('page-mode').textContent = 'Operator-controlled sensor link';
   }
   if (activePage === 'vision') {
-    const mode = document.getElementById('vision-routing-shell')?.dataset.mode || 'manual';
+    const mode = document.getElementById('vision-routing-shell')?.dataset.mode || 'local';
     document.body.dataset.visionMode = mode;
     const content =
-      mode === 'manual'
+      mode === 'local'
         ? [
-            'Drive & review',
-            'Direct Wi-Fi control',
-            'Attended local control',
-            'Direct Wi-Fi drive',
-            'Drive AMR-01 over local Wi-Fi. Review sensor recommendations here; record decisions in Sensor models.',
-            'You control movement',
-            'Saved decisions do not send motor commands.',
+            'Camera routes',
+            'ArUco + direct Wi-Fi',
+            'Human-approved local routes',
+            'Camera-guided AMR',
+            'Open the laptop workspace, check camera tracking, choose a destination and approve the route. Arrival is verified from fresh camera observations.',
+            'Human approval required',
+            'EMQX carries telemetry. The laptop sends route commands directly over Wi-Fi.',
           ]
-        : mode === 'practice'
+        : mode === 'manual'
           ? [
-              'Practice a camera route',
-              'Generated route rehearsal',
-              'Practice only',
-              'Simulation',
-              'Rehearse route planning with hypothetical inputs. This mode does not command the physical robot.',
-              'Practice only',
-              'Generated inputs · no physical commands',
+              'Drive & review',
+              'Direct Wi-Fi control',
+              'Attended local control',
+              'Direct Wi-Fi drive',
+              'Drive AMR-01 over local Wi-Fi. Review sensor recommendations here; record decisions in Sensor models.',
+              'You control movement',
+              'Saved decisions do not send motor commands.',
             ]
-          : [
-              'Camera routes',
-              'Camera-guided physical workflow',
-              'Camera-guided workflow',
-              'Camera route control',
-              'Complete camera and motor setup, check tracking, then plan and review a route to racks A–D or station E.',
-              'Guarded route control',
-              'Check setup and current tracking before approving a route.',
-            ];
+          : mode === 'practice'
+            ? [
+                'Practice a camera route',
+                'Generated route rehearsal',
+                'Practice only',
+                'Simulation',
+                'Rehearse route planning with hypothetical inputs. This mode does not command the physical robot.',
+                'Practice only',
+                'Generated inputs · no physical commands',
+              ]
+            : [
+                'Camera routes',
+                'Camera-guided physical workflow',
+                'Camera-guided workflow',
+                'Camera route control',
+                'Complete camera and motor setup, check tracking, then plan and review a route to racks A–D or station E.',
+                'Guarded route control',
+                'Check setup and current tracking before approving a route.',
+              ];
     [
       $('page-title').textContent,
       $('page-context').textContent,
@@ -2290,8 +2300,8 @@ function setAdvanced(visible) {
       ? 'Hide simulation tools'
       : 'Show simulation tools';
   if (!visible && optionalPages.has(activePage)) activatePage('vision');
-  if (!visible && $('vision-routing-shell')?.dataset.mode === 'practice')
-    $('vision-mode-manual')?.click();
+  if (!visible && ['practice', 'physical'].includes($('vision-routing-shell')?.dataset.mode))
+    $('vision-mode-local')?.click();
 }
 advancedToggle?.addEventListener('click', () => setAdvanced(!advancedVisible));
 const requestedPage = location.hash.slice(1);

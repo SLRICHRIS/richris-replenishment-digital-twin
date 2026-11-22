@@ -1,5 +1,7 @@
 # AMR-01 camera toolkit for Windows (no Python installation)
 
+For the current **direct Wi-Fi ArUco workflow**, use `AMR01_LocalTwin.exe` and the [local route guide](direct_wifi_aruco_routes.md). The instructions below document the older `AMR01_CameraAgent.exe` broker-based route path.
+
 This is the **existing calibrated Windows camera-controller architecture**, bundled into Windows executables. The toolkit is built in GitHub Actions using Python; **the operator does not need to install Python on the laptop**. The Logitech USB webcam stays connected to the Windows laptop. The ESP32 remains wireless on battery and EMQX.
 
 ## Where to obtain it

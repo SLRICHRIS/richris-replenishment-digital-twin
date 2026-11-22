@@ -1,0 +1,1794 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="amr-session" content="__AMR_SESSION_TOKEN__" />
+    <meta name="color-scheme" content="dark light" />
+    <title>AMR-01 · Local camera mission</title>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        color-scheme: dark;
+        --bg: #0b1220;
+        --panel: #131f30;
+        --inset: #0e1827;
+        --line: #31435b;
+        --text: #eff5ff;
+        --muted: #b3c5dd;
+        --blue: #79b3ff;
+        --action: #2169db;
+        --amber: #ffce82;
+        --warning: #3a2c1b;
+        --green: #81dfc2;
+        --red: #ffaaa9;
+        --danger: #e24650;
+        --shadow: #03091233;
+      }
+      html[data-theme='bright'] {
+        color-scheme: light;
+        --bg: #eef3f9;
+        --panel: #fff;
+        --inset: #f5f8fc;
+        --line: #c8d5e5;
+        --text: #132c49;
+        --muted: #4c637d;
+        --blue: #1755a6;
+        --action: #165fc8;
+        --amber: #835000;
+        --warning: #fff2dc;
+        --green: #126d54;
+        --red: #a62330;
+        --shadow: #23456b0b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.55;
+        padding-bottom: 80px;
+      }
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+      button,
+      a,
+      input,
+      textarea,
+      summary {
+        outline-offset: 4px;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid var(--blue);
+      }
+      button,
+      a.button {
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 14px;
+        font-weight: 650;
+        cursor: pointer;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+      }
+      button:hover:not(:disabled) {
+        filter: brightness(1.12);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .primary {
+        background: var(--action);
+        border-color: var(--action);
+        color: #fff;
+      }
+      .stop {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: #fff;
+        min-width: 150px;
+        font-weight: 800;
+        position: fixed;
+        bottom: 18px;
+        right: 24px;
+        z-index: 20;
+        box-shadow: 0 8px 24px #0008;
+      }
+      .quiet {
+        background: transparent;
+      }
+      p,
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+      }
+      h1 {
+        font-size: clamp(22px, 3vw, 30px);
+        line-height: 1.2;
+        letter-spacing: -0.025em;
+      }
+      h2 {
+        font-size: 18px;
+        line-height: 1.35;
+      }
+      h3 {
+        font-size: 15px;
+      }
+      p {
+        color: var(--muted);
+      }
+      small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .kicker {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--blue);
+      }
+      .wrap {
+        width: min(1360px, 100%);
+        margin: auto;
+        padding: 24px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 22px;
+      }
+      .top p {
+        margin-top: 6px;
+      }
+      .tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .steps {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        padding: 0;
+        margin: 0 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--panel);
+      }
+      .steps li {
+        padding: 12px 16px;
+        border-right: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .steps li:last-child {
+        border: 0;
+      }
+      .steps li[aria-current='step'] {
+        color: var(--text);
+        box-shadow: inset 0 -3px var(--blue);
+        background: var(--inset);
+        font-weight: 700;
+      }
+      .steps b {
+        color: var(--blue);
+        margin-right: 7px;
+      }
+      .status {
+        display: flex;
+        gap: 14px;
+        align-items: start;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--blue);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 18px;
+      }
+      .status[data-tone='warning'] {
+        border-left-color: var(--amber);
+        background: var(--warning);
+      }
+      .status[data-tone='success'] {
+        border-left-color: var(--green);
+      }
+      .status strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 16px;
+      }
+      .status p {
+        font-size: 14px;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--blue);
+        margin-top: 7px;
+        flex: none;
+      }
+      .status[data-tone='warning'] .dot {
+        background: var(--amber);
+      }
+      .status[data-tone='success'] .dot {
+        background: var(--green);
+      }
+      .signals {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .signal {
+        padding: 14px 16px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        min-width: 0;
+      }
+      .signal > span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .signal strong {
+        display: block;
+        font-size: 19px;
+        line-height: 1.4;
+        margin: 5px 0;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+      }
+      .signal small {
+        display: block;
+      }
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+      .stack {
+        display: grid;
+        gap: 18px;
+        min-width: 0;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px var(--shadow);
+        min-width: 0;
+      }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      .panel-body {
+        padding: 18px 20px;
+      }
+      .panel-head small {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .media {
+        aspect-ratio: 16/10;
+        background: #080f19;
+        position: relative;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .media img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        position: absolute;
+      }
+      .media[data-fresh='false'] img {
+        opacity: 0.3;
+      }
+      .media-note {
+        position: relative;
+        z-index: 1;
+        max-width: 80%;
+        padding: 12px 16px;
+        background: #0b1220e8;
+        color: #e4edf9;
+        border: 1px solid #435572;
+        border-radius: 9px;
+        text-align: center;
+      }
+      .frame-caption {
+        padding: 12px 20px;
+        font-size: 13px;
+        border-top: 1px solid var(--line);
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      .tag {
+        font-size: 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 4px 8px;
+        color: var(--muted);
+      }
+      .tag[data-seen='true'] {
+        color: var(--green);
+        border-color: var(--green);
+      }
+      .map-container {
+        padding: 18px;
+        background: var(--inset);
+      }
+      #floor-map {
+        display: block;
+        width: 100%;
+        max-height: 440px;
+        touch-action: manipulation;
+        background: var(--inset);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        cursor: crosshair;
+      }
+      #floor-map text {
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        fill: var(--muted);
+      }
+      .map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+      .map-legend span::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 6px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+      .map-legend .target::before {
+        background: #e6a749;
+      }
+      .map-legend .obstacle::before {
+        background: #929fb0;
+      }
+      .form-row {
+        display: flex;
+        gap: 12px;
+        align-items: end;
+        margin: 14px 0;
+      }
+      .field {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+        flex: 1;
+      }
+      .field > span,
+      label > span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        background: var(--inset);
+        min-height: 44px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      #reason {
+        margin-top: 6px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .actions .primary {
+        flex: 1;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        margin: 12px 0;
+      }
+      .summary dt,
+      .summary dd {
+        margin: 0;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .summary dt {
+        color: var(--muted);
+      }
+      .summary dd {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+      }
+      .review-note {
+        border-left: 3px solid var(--blue);
+        padding: 10px 12px;
+        background: var(--inset);
+        border-radius: 6px;
+        margin-top: 14px;
+      }
+      .battery-choice {
+        margin-top: 14px;
+        border: 1px solid var(--amber);
+        background: var(--warning);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .battery-choice h3 {
+        color: var(--amber);
+      }
+      .error {
+        margin-top: 14px;
+        color: var(--red);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .foot {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      details {
+        border-top: 1px solid var(--line);
+      }
+      summary {
+        cursor: pointer;
+        padding: 16px 20px;
+        font-weight: 650;
+        min-height: 48px;
+      }
+      details .panel-body {
+        padding-top: 0;
+      }
+      .setup-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .setup-step {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 14px;
+      }
+      .setup-step p {
+        font-size: 13px;
+        margin: 6px 0 10px;
+      }
+      .checklist {
+        padding-left: 19px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .checklist li {
+        margin: 7px 0;
+      }
+      #profile-json {
+        font:
+          12px/1.6 ui-monospace,
+          monospace;
+        min-height: 220px;
+        margin-top: 12px;
+      }
+      .profile-input {
+        max-width: 100%;
+        font-size: 13px;
+      }
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 900px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+        .signals {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .top {
+          align-items: start;
+        }
+        .tools {
+          justify-content: flex-end;
+        }
+        .wrap {
+          padding: 18px;
+        }
+        .steps li {
+          padding: 12px 9px;
+          font-size: 12px;
+        }
+        .steps b {
+          display: block;
+          margin-bottom: 2px;
+        }
+        .media {
+          aspect-ratio: 16/9;
+        }
+      }
+      @media (max-width: 540px) {
+        .wrap {
+          padding: 12px;
+        }
+        .top {
+          flex-direction: column;
+        }
+        .tools {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+        .tools .stop {
+          left: 12px;
+          right: 12px;
+          bottom: max(12px, env(safe-area-inset-bottom));
+        }
+        .signals {
+          gap: 8px;
+        }
+        .signal {
+          padding: 12px;
+        }
+        .signal strong {
+          font-size: 16px;
+        }
+        .steps li {
+          font-size: 11px;
+          padding: 10px 6px;
+        }
+        .panel-head,
+        .panel-body {
+          padding: 16px;
+        }
+        .form-row {
+          flex-wrap: wrap;
+        }
+        .form-row button {
+          width: 100%;
+        }
+        .actions button {
+          flex: 1 1 100%;
+        }
+        .setup-grid {
+          grid-template-columns: 1fr;
+        }
+        input,
+        textarea,
+        select {
+          font-size: 16px;
+        }
+        #profile-json {
+          font-size: 13px;
+        }
+        .foot {
+          font-size: 12px;
+        }
+        .map-container {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="top">
+        <div>
+          <span class="kicker">AMR-01 · DIRECT LOCAL CONTROL</span>
+          <h1>See. Decide. Move. Verify.</h1>
+          <p>Camera-tracked missions on the measured 610 × 630 mm floor.</p>
+        </div>
+        <div class="tools">
+          <button id="theme" type="button">Bright mode</button>
+          <button id="connect" class="primary" type="button">Connect local session</button>
+          <button id="stop" class="stop" type="button">■ STOP AMR</button>
+        </div>
+      </header>
+      <ol class="steps" aria-label="Mission progress">
+        <li id="step-observe" aria-current="step">
+          <b>01</b>
+          Observe
+        </li>
+        <li id="step-plan">
+          <b>02</b>
+          Plan
+        </li>
+        <li id="step-approve">
+          <b>03</b>
+          Approve
+        </li>
+        <li id="step-run">
+          <b>04</b>
+          Run
+        </li>
+        <li id="step-verify">
+          <b>05</b>
+          Verify
+        </li>
+      </ol>
+      <section id="status" class="status" role="status">
+        <span class="dot" aria-hidden="true"></span>
+        <div>
+          <strong id="status-title">Start an attended local session</strong>
+          <p id="status-detail">
+            Connect opens the laptop camera and local ESP32 link. It does not start a route.
+          </p>
+        </div>
+      </section>
+      <section class="signals" aria-label="Current evidence">
+        <article class="signal">
+          <span>Camera tracking</span>
+          <strong id="camera-value">Not connected</strong>
+          <small id="camera-age">No current frame</small>
+        </article>
+        <article class="signal">
+          <span>ESP32 feedback</span>
+          <strong id="hardware-value">Not connected</strong>
+          <small id="hardware-age">No authenticated sample</small>
+        </article>
+        <article class="signal">
+          <span>Measured battery</span>
+          <strong id="battery-value">—</strong>
+          <small id="battery-detail">Awaiting fresh controller feedback</small>
+        </article>
+        <article class="signal">
+          <span>Reported motor outputs</span>
+          <strong id="outputs-value">—</strong>
+          <small id="outputs-detail">Output reports do not prove travel</small>
+        </article>
+      </section>
+      <div class="workspace">
+        <div class="stack">
+          <section class="panel" aria-labelledby="camera-title">
+            <div class="panel-head">
+              <h2 id="camera-title">Observe the floor</h2>
+              <small id="calibration-label">Preview until calibration is verified</small>
+            </div>
+            <div id="camera-media" class="media" data-fresh="false">
+              <img id="camera-frame" alt="Local overhead camera preview" hidden />
+              <div id="frame-note" class="media-note">The camera opens after Connect.</div>
+            </div>
+            <div class="frame-caption">
+              <p id="camera-message">
+                Floor markers 1–4 define the reference frame. Marker 0 identifies the robot.
+              </p>
+              <div class="tags" aria-label="Detected markers">
+                <span class="tag" id="marker-0">Robot 0</span>
+                <span class="tag" id="marker-1">Floor 1</span>
+                <span class="tag" id="marker-2">Floor 2</span>
+                <span class="tag" id="marker-3">Floor 3</span>
+                <span class="tag" id="marker-4">Floor 4</span>
+              </div>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="setup-title">
+            <details id="setup">
+              <summary id="setup-title">Camera and measured setup</summary>
+              <div class="panel-body">
+                <p>
+                  Use an unobstructed floor and the verified camera profile for this physical
+                  arrangement. Calibration changes require a stopped route.
+                </p>
+                <div class="setup-grid">
+                  <div class="setup-step">
+                    <h3>1. Camera intrinsics</h3>
+                    <p>
+                      9 × 6 inner-corner checkerboard, 25 mm squares. Capture at least 20 distinct
+                      positions and tilts.
+                    </p>
+                    <p id="checkerboard-count">0 views captured</p>
+                    <div class="actions">
+                      <button id="checkerboard" type="button">Capture board view</button>
+                      <button id="intrinsics" type="button">Calculate intrinsics</button>
+                    </div>
+                  </div>
+                  <div class="setup-step">
+                    <h3>2. Empty floor</h3>
+                    <p>
+                      Remove the robot and objects. Keep all four fixed reference markers visible.
+                    </p>
+                    <p id="background-state">No saved background</p>
+                    <button id="background" type="button">Capture empty floor</button>
+                  </div>
+                </div>
+                <h3 style="margin-top: 18px">3. Measured profile</h3>
+                <p>
+                  Load the measured profile or edit the template. A checked setting must reflect a
+                  completed physical measurement.
+                </p>
+                <div class="actions">
+                  <button id="load-profile" type="button">Load profile / template</button>
+                  <label class="button">
+                    <span class="visually-hidden">Read profile JSON file</span>
+                    <input
+                      id="profile-file"
+                      class="profile-input"
+                      type="file"
+                      accept="application/json,.json"
+                    />
+                  </label>
+                </div>
+                <ul id="profile-checks" class="checklist"></ul>
+                <label for="profile-json" class="visually-hidden">
+                  Measured camera and robot profile JSON
+                </label>
+                <textarea
+                  id="profile-json"
+                  spellcheck="false"
+                  placeholder="Load a profile or template to review its measured settings."
+                ></textarea>
+                <button id="save-profile" class="primary" type="button" style="margin-top: 12px">
+                  Apply measured profile
+                </button>
+                <p id="setup-message" style="margin-top: 12px"></p>
+              </div>
+            </details>
+          </section>
+        </div>
+        <div class="stack">
+          <section class="panel" aria-labelledby="map-title">
+            <div class="panel-head">
+              <h2 id="map-title">Plan a destination</h2>
+              <small>Millimetres · origin lower left</small>
+            </div>
+            <div class="map-container">
+              <svg
+                id="floor-map"
+                viewBox="0 0 610 630"
+                role="img"
+                aria-labelledby="map-svg-title map-svg-description"
+              >
+                <title id="map-svg-title">Measured floor and camera pose</title>
+                <desc id="map-svg-description">
+                  Select a destination with the coordinate fields or by clicking the map. No robot
+                  position is drawn without valid, fresh camera evidence.
+                </desc>
+                <defs>
+                  <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                    <path
+                      d="M 50 0 L 0 0 0 50"
+                      fill="none"
+                      stroke="var(--line)"
+                      stroke-width=".7"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="610" height="630" fill="url(#grid)" />
+                <g id="map-obstacles"></g>
+                <g id="map-route"></g>
+                <g id="map-references"></g>
+                <g id="map-pose"></g>
+                <g id="map-target"></g>
+                <text x="12" y="612">0, 0</text>
+                <text x="475" y="24">610 × 630 mm</text>
+              </svg>
+              <div class="map-legend">
+                <span id="route-map-label">Fresh camera pose / captured route</span>
+                <span class="target">Selected destination</span>
+                <span class="obstacle">Camera obstacles</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <p id="pose-detail">
+                Robot pose is unavailable. The map is a coordinate reference only.
+              </p>
+              <form id="plan-form">
+                <div class="form-row">
+                  <label class="field">
+                    <span>Destination X (mm)</span>
+                    <input
+                      id="goal-x"
+                      type="number"
+                      min="0"
+                      max="610"
+                      step="1"
+                      required
+                      placeholder="X"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Destination Y (mm)</span>
+                    <input
+                      id="goal-y"
+                      type="number"
+                      min="0"
+                      max="630"
+                      step="1"
+                      required
+                      placeholder="Y"
+                    />
+                  </label>
+                  <button id="plan" type="submit">Preview route</button>
+                </div>
+              </form>
+              <p id="plan-help">
+                Choose a target. The local planner checks footprint, obstacles and stopping
+                clearance before creating a review.
+              </p>
+            </div>
+          </section>
+          <section class="panel" aria-labelledby="review-title">
+            <div class="panel-head">
+              <h2 id="review-title">Your decision</h2>
+              <small id="review-age">No route captured</small>
+            </div>
+            <div class="panel-body">
+              <p id="review-detail">
+                Preview a route, inspect it on the map, then decide whether it should run.
+              </p>
+              <dl class="summary">
+                <dt>Requested destination</dt>
+                <dd id="review-goal">—</dd>
+                <dt>Planned route</dt>
+                <dd id="review-length">—</dd>
+                <dt>Controller state</dt>
+                <dd id="run-state">Idle</dd>
+                <dt>Arrival verification</dt>
+                <dd id="arrival-state">Not verified</dd>
+              </dl>
+              <form id="decision-form">
+                <label for="reason"><span>Decision reason</span></label>
+                <textarea
+                  id="reason"
+                  maxlength="240"
+                  required
+                  placeholder="Record why you approve, reject or hold this route."
+                ></textarea>
+                <div class="actions">
+                  <button
+                    id="approve"
+                    type="submit"
+                    name="decision"
+                    value="approve"
+                    class="primary"
+                    disabled
+                  >
+                    Approve &amp; run
+                  </button>
+                  <button id="reject" type="submit" name="decision" value="reject" disabled>
+                    Reject
+                  </button>
+                  <button id="hold" type="submit" name="decision" value="hold" disabled>
+                    Hold
+                  </button>
+                </div>
+              </form>
+              <div id="battery-choice" class="battery-choice" hidden>
+                <h3>Battery decision required</h3>
+                <p id="battery-prompt"></p>
+                <p>
+                  Record a reason above, then choose a response to the reported battery condition.
+                </p>
+                <div class="actions">
+                  <button id="battery-continue" type="button">Continue this route</button>
+                  <button id="battery-divert" type="button">Preview battery-station route</button>
+                </div>
+              </div>
+              <p class="review-note">
+                Approval requests movement once. Arrival is shown as verified only after the local
+                controller confirms fresh camera observations and stopped position.
+              </p>
+              <p id="action-error" class="error" role="alert" hidden></p>
+            </div>
+          </section>
+        </div>
+      </div>
+      <footer class="foot">
+        <span>Local laptop camera → reviewed route → direct ESP32 Wi-Fi → observed outcome</span>
+        <a id="manual" href="http://10.15.213.112/" target="_blank" rel="noopener noreferrer">
+          Open manual controller separately ↗
+        </a>
+        <span>
+          Leaving or hiding this page ends attended presence and requests Stop. Returning does not
+          resume a route.
+        </span>
+      </footer>
+    </main>
+    <script>
+      (() => {
+        'use strict';
+        const $ = (id) => document.getElementById(id),
+          token = document.querySelector('meta[name="amr-session"]').content;
+        const ACTIVE = new Set([
+          'sent',
+          'approved',
+          'arming',
+          'running',
+          'battery_review',
+          'stopping',
+        ]);
+        const labels = {
+          idle: 'Idle',
+          pending: 'Awaiting your decision',
+          approved: 'Approval recorded',
+          sent: 'Approval sent',
+          arming: 'Checking zero output',
+          running: 'Following route',
+          battery_review: 'Waiting for battery decision',
+          stopping: 'Checking stopped position',
+          verified: 'Arrival verified',
+          blocked: 'Stopped / blocked',
+          uncertain: 'Outcome unconfirmed',
+          reject: 'Rejected',
+          rejected: 'Rejected',
+          hold: 'Held',
+          held: 'Held',
+          cancelled: 'Cancelled',
+          expired: 'Review expired',
+        };
+        let current = null,
+          receivedAt = 0,
+          owned = false,
+          busy = false,
+          stopped = false,
+          generation = 0,
+          lastReview = null,
+          lastReviewState = null,
+          lastFrame = null,
+          frameAt = 0,
+          frameBaseAge = Infinity,
+          imageURL = null,
+          disposed = false,
+          polling = false,
+          presenceBusy = false,
+          frameBusy = false;
+        const anchors = { camera: null, scene: null, hardware: null };
+        const finite = (v) => typeof v === 'number' && Number.isFinite(v),
+          clock = () => performance.now();
+        const text = (id, v) => {
+          $(id).textContent = String(v ?? '');
+        };
+        function failure(message) {
+          text('action-error', message);
+          $('action-error').hidden = !message;
+        }
+        function sampleId(kind, s) {
+          if (!s) return null;
+          if (kind === 'camera') return Number.isInteger(s.seq) ? String(s.seq) : null;
+          if (kind === 'scene')
+            return Number.isInteger(s.seq) && s.agent_boot_id
+              ? `${s.agent_boot_id}:${s.seq}`
+              : null;
+          return Number.isInteger(s.seq) && s.boot_id
+            ? `${s.boot_id}:${s.epoch_id || ''}:${s.seq}`
+            : null;
+        }
+        function receive(data, transportAge = 0) {
+          if (
+            finite(data?.issued_at_ms) &&
+            finite(current?.issued_at_ms) &&
+            data.issued_at_ms < current.issued_at_ms
+          )
+            return;
+          if (!data || typeof data !== 'object') return;
+          const now = clock();
+          for (const kind of ['camera', 'scene', 'hardware']) {
+            const s = data[kind],
+              id = sampleId(kind, s),
+              old = anchors[kind],
+              reported = finite(s?.age_ms) ? s.age_ms + Math.max(0, transportAge) : null;
+            if (id === null || !finite(reported) || reported < 0) {
+              anchors[kind] = null;
+              continue;
+            }
+            const oldAge = old ? old.age + Math.max(0, now - old.at) : 0;
+            anchors[kind] = {
+              id,
+              age: old?.id === id ? Math.max(oldAge, reported) : reported,
+              at: now,
+            };
+          }
+          current = data;
+          receivedAt = now;
+          const rid = data.review?.review_id || null;
+          if (data.review?.state === 'battery_review' && lastReviewState !== 'battery_review')
+            $('reason').value = '';
+          lastReviewState = data.review?.state || null;
+          if (rid !== lastReview) {
+            $('reason').value = '';
+            const goal = data.review?.route?.goal;
+            if (Array.isArray(goal) && goal.length === 2 && goal.every(finite)) {
+              $('goal-x').value = String(goal[0]);
+              $('goal-y').value = String(goal[1]);
+            }
+            lastReview = rid;
+          }
+          render();
+          loadFrame();
+        }
+        function age(kind) {
+          const a = anchors[kind];
+          return a ? a.age + Math.max(0, clock() - a.at) : Infinity;
+        }
+        function limit(kind) {
+          const n = current?.freshness?.[kind + '_ms'];
+          return finite(n) && n > 0 ? Math.min(n, 500) : 500;
+        }
+        function fresh(kind) {
+          return !!current && clock() - receivedAt <= 1000 && age(kind) <= limit(kind);
+        }
+        function ageLabel(kind) {
+          return Number.isFinite(age(kind))
+            ? `${(age(kind) / 1000).toFixed(2)} s old · sample ${anchors[kind].id.split(':').at(-1)}`
+            : 'No current sample';
+        }
+        function routeActive() {
+          return ACTIVE.has(current?.review?.state) || ACTIVE.has(current?.agent?.state);
+        }
+        function usable() {
+          return (
+            owned &&
+            !document.hidden &&
+            !stopped &&
+            current?.ready === true &&
+            fresh('camera') &&
+            fresh('scene') &&
+            fresh('hardware') &&
+            current?.scene?.valid === true &&
+            current?.camera?.valid === true
+          );
+        }
+        function expired() {
+          return (
+            !finite(current?.review?.expires_at_ms) || Date.now() >= current.review.expires_at_ms
+          );
+        }
+        function validGoal() {
+          return (
+            $('goal-x').value !== '' &&
+            $('goal-y').value !== '' &&
+            finite(+$('goal-x').value) &&
+            finite(+$('goal-y').value) &&
+            +$('goal-x').value >= 0 &&
+            +$('goal-x').value <= 610 &&
+            +$('goal-y').value >= 0 &&
+            +$('goal-y').value <= 630
+          );
+        }
+        function goalMatchesReview() {
+          const goal = current?.review?.route?.goal;
+          return (
+            validGoal() &&
+            Array.isArray(goal) &&
+            goal.length === 2 &&
+            goal.every(finite) &&
+            +$('goal-x').value === goal[0] &&
+            +$('goal-y').value === goal[1]
+          );
+        }
+        async function request(path, body, { keepalive = false, apply = true } = {}) {
+          const epoch = generation,
+            startedAt = clock();
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4000);
+          try {
+            const response = await fetch(path, {
+              method: body === undefined ? 'GET' : 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-AMR-Session': token },
+              body: body === undefined ? undefined : JSON.stringify(body),
+              cache: 'no-store',
+              keepalive,
+              signal: controller.signal,
+            });
+            const data = await response.json();
+            if (!response.ok)
+              throw Error(data.error || `Local service returned ${response.status}`);
+            if (apply && epoch === generation && data && 'connected' in data)
+              receive(data, clock() - startedAt);
+            return data;
+          } finally {
+            clearTimeout(timeout);
+          }
+        }
+        async function act(path, body) {
+          if (busy) return;
+          busy = true;
+          failure('');
+          render();
+          try {
+            await request(path, body);
+          } catch (error) {
+            failure(error.message);
+          } finally {
+            busy = false;
+            render();
+          }
+        }
+        function revoke({ acknowledge = false } = {}) {
+          owned = false;
+          stopped = true;
+          generation++;
+          request('/api/presence', { active: false }, { keepalive: true, apply: false }).catch(
+            () => {},
+          );
+          const acknowledgement = request('/api/stop', {}, { keepalive: true, apply: acknowledge });
+          if (!acknowledge) acknowledgement.catch(() => {});
+          render();
+          return acknowledgement;
+        }
+        async function stop() {
+          failure('');
+          try {
+            await revoke({ acknowledge: true });
+          } catch (error) {
+            failure(
+              'Stop acknowledgement unavailable. Check the robot and use the local Stop control. ' +
+                error.message,
+            );
+          }
+        }
+        function setStage(name) {
+          for (const key of ['observe', 'plan', 'approve', 'run', 'verify']) {
+            const e = $('step-' + key);
+            if (key === name) e.setAttribute('aria-current', 'step');
+            else e.removeAttribute('aria-current');
+          }
+        }
+        function render() {
+          const c = current?.camera,
+            h = current?.hardware,
+            r = current?.review,
+            cf = fresh('camera'),
+            hf = fresh('hardware'),
+            sf = fresh('scene'),
+            pending = r?.state === 'pending' && !expired(),
+            active = routeActive(),
+            reason = $('reason').value.trim();
+          text(
+            'camera-value',
+            cf && sf && c?.valid
+              ? 'Pose tracked'
+              : cf && c?.valid && !sf
+                ? 'Pose out of date'
+                : cf && c?.connected
+                  ? 'Camera preview'
+                  : c?.connected
+                    ? 'Tracking out of date'
+                    : 'Not connected',
+          );
+          text('camera-age', ageLabel('camera'));
+          text(
+            'hardware-value',
+            hf
+              ? h?.ready
+                ? 'Authenticated · ready'
+                : 'Authenticated · not ready'
+              : h
+                ? 'Feedback out of date'
+                : 'Not connected',
+          );
+          text('hardware-age', ageLabel('hardware'));
+          const voltage = h?.battery_voltage_v;
+          text('battery-value', hf && finite(voltage) ? voltage.toFixed(2) + ' V' : '—');
+          text(
+            'battery-detail',
+            hf
+              ? 'Measured controller supply; voltage is not charge percentage'
+              : 'Awaiting fresh controller feedback',
+          );
+          text(
+            'outputs-value',
+            hf && Number.isInteger(h.left_duty) && Number.isInteger(h.right_duty)
+              ? `L ${h.left_duty} · R ${h.right_duty}`
+              : '—',
+          );
+          text(
+            'outputs-detail',
+            hf
+              ? 'Reported applied PWM; camera verifies motion'
+              : 'Awaiting fresh applied-output feedback',
+          );
+          text(
+            'calibration-label',
+            current?.calibration_ready
+              ? 'Measured profile loaded'
+              : 'Preview until calibration is verified',
+          );
+          text(
+            'camera-message',
+            c?.message ||
+              c?.reason ||
+              'Floor markers 1–4 define the reference frame. Marker 0 identifies the robot.',
+          );
+          const frameFresh =
+            cf && !!imageURL && frameBaseAge + Math.max(0, clock() - frameAt) <= limit('camera');
+          $('camera-media').dataset.fresh = String(frameFresh);
+          $('frame-note').hidden = frameFresh;
+          text(
+            'frame-note',
+            imageURL
+              ? 'Last camera frame · tracking is not current'
+              : owned
+                ? 'Waiting for the first camera frame.'
+                : 'The camera opens after Connect.',
+          );
+          for (let i = 0; i < 5; i++)
+            $('marker-' + i).dataset.seen = String(
+              cf && Array.isArray(c?.ids) && c.ids.includes(i),
+            );
+          text(
+            'checkerboard-count',
+            `${Number.isInteger(c?.checkerboard_views) ? c.checkerboard_views : 0} distinct views captured`,
+          );
+          text(
+            'background-state',
+            c?.background_saved
+              ? 'Background saved; verify the floor remains unchanged'
+              : 'No saved background',
+          );
+          $('connect').disabled = busy;
+          text(
+            'connect',
+            owned
+              ? 'Reconnect local session'
+              : current?.connected
+                ? 'Enable attended session'
+                : 'Connect local session',
+          );
+          $('plan').disabled = busy || !usable() || active || !validGoal();
+          $('approve').disabled = busy || !usable() || !pending || !reason || !goalMatchesReview();
+          for (const id of ['goal-x', 'goal-y']) $(id).disabled = active;
+          $('reject').disabled = busy || !owned || !pending || !reason;
+          $('hold').disabled = busy || !owned || !pending || !reason;
+          $('battery-choice').hidden =
+            r?.state !== 'battery_review' && current?.agent?.state !== 'battery_review';
+          text(
+            'battery-prompt',
+            r?.battery_prompt ||
+              'The controller paused for a battery review. Inspect the measured voltage and choose a response.',
+          );
+          $('battery-continue').disabled =
+            busy ||
+            !owned ||
+            !hf ||
+            !cf ||
+            !sf ||
+            !reason ||
+            current?.battery?.action === 'critical_stop';
+          $('battery-divert').disabled =
+            busy ||
+            !owned ||
+            !hf ||
+            !cf ||
+            !sf ||
+            !reason ||
+            current?.battery?.action === 'critical_stop';
+          for (const id of ['checkerboard', 'intrinsics', 'background', 'save-profile'])
+            $(id).disabled = busy || !owned || !current?.connected || active;
+          const state = r?.state || current?.agent?.state || 'idle';
+          text(
+            'review-age',
+            pending
+              ? `${Math.max(0, Math.ceil((r.expires_at_ms - Date.now()) / 1000))} s to decide`
+              : r
+                ? 'Review ' + r.review_id.slice(0, 8)
+                : 'No route captured',
+          );
+          text(
+            'review-detail',
+            pending && !goalMatchesReview()
+              ? 'Destination changed. Preview a new route before approving.'
+              : r?.reason ||
+                  'Preview a route, inspect it on the map, then decide whether it should run.',
+          );
+          const goal = r?.route?.goal;
+          text(
+            'review-goal',
+            Array.isArray(goal) && goal.length === 2 && goal.every(finite)
+              ? `${goal[0].toFixed(0)}, ${goal[1].toFixed(0)} mm`
+              : '—',
+          );
+          text(
+            'review-length',
+            finite(r?.route?.length_mm)
+              ? `${r.route.length_mm.toFixed(0)} mm · ${r.route.points?.length || 0} waypoints`
+              : '—',
+          );
+          text('run-state', labels[current?.agent?.state] || labels[state] || 'Not reported');
+          text(
+            'arrival-state',
+            state === 'verified'
+              ? 'Verified for this recorded route'
+              : state === 'stopping'
+                ? 'Camera arrival reported; checking stop'
+                : 'Not verified',
+          );
+          let title = 'Start an attended local session',
+            detail =
+              'Connect opens the laptop camera and local ESP32 link. It does not start a route.',
+            tone = '';
+          if (stopped) {
+            title = 'Attended control ended';
+            detail =
+              'Stop was requested. Inspect the controller response; select Connect to start a new attended session.';
+            tone = 'warning';
+          } else if (current?.connected && !owned) {
+            title = 'Observation only';
+            detail = 'Enable an attended session before planning or approving movement.';
+          } else if (owned && !usable() && !active) {
+            title = 'Waiting for usable tracking and feedback';
+            detail =
+              current?.reason ||
+              c?.reason ||
+              'Fresh camera pose, verified setup and authenticated ESP32 feedback are required.';
+            tone = 'warning';
+          } else if (state === 'verified') {
+            title = 'Arrival verified for this route';
+            detail =
+              r?.reason ||
+              'The local controller recorded fresh camera observations and stopped position.';
+            tone = 'success';
+          } else if (active) {
+            title = labels[state] || 'Mission active';
+            detail =
+              current?.agent?.reason ||
+              r?.reason ||
+              'Keep the robot in view. Stop remains available.';
+            if (!cf || !hf || !sf) {
+              title = 'Live evidence is out of date';
+              detail =
+                'Current tracking or controller feedback is unavailable. Inspect the robot and its local Stop control.';
+              tone = 'warning';
+            }
+          } else if (pending) {
+            title = 'Review the planned route';
+            detail =
+              'The route is a preview. Read its target and clearance, give a reason, then approve, reject or hold.';
+          } else if (usable()) {
+            title = 'Ready to plan';
+            detail =
+              'Select a target on the map or enter its coordinates. Planning does not start the robot.';
+          } else if (current?.reason) {
+            detail = current.reason;
+          }
+          text('status-title', title);
+          text('status-detail', detail);
+          $('status').dataset.tone = tone;
+          setStage(
+            state === 'verified' || state === 'stopping'
+              ? 'verify'
+              : active
+                ? 'run'
+                : pending
+                  ? 'approve'
+                  : usable()
+                    ? 'plan'
+                    : 'observe',
+          );
+          drawMap(cf && sf && c?.valid === true && current?.scene?.valid === true);
+        }
+        function svg(tag, attrs, parent) {
+          const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+          for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+          parent.append(n);
+          return n;
+        }
+        function drawMap(valid) {
+          for (const id of [
+            'map-obstacles',
+            'map-route',
+            'map-pose',
+            'map-target',
+            'map-references',
+          ])
+            $(id).replaceChildren();
+          const scene = current?.scene,
+            r = current?.review;
+          if (valid) {
+            for (const o of Array.isArray(scene.obstacles) ? scene.obstacles : []) {
+              if ([o.x, o.y, o.width, o.height].every(finite))
+                svg(
+                  'rect',
+                  {
+                    x: o.x,
+                    y: 630 - o.y - o.height,
+                    width: o.width,
+                    height: o.height,
+                    rx: 2,
+                    fill: '#929fb044',
+                    stroke: '#929fb0',
+                  },
+                  $('map-obstacles'),
+                );
+            }
+            const p = scene.pose;
+            if (p && [p.x, p.y, p.heading].every(finite)) {
+              const g = svg(
+                'g',
+                {
+                  transform: `translate(${p.x},${630 - p.y}) rotate(${(-p.heading * 180) / Math.PI})`,
+                },
+                $('map-pose'),
+              );
+              const len = scene.geometry?.robot_length_mm,
+                wid = scene.geometry?.robot_width_mm;
+              if (finite(len) && finite(wid))
+                svg(
+                  'rect',
+                  {
+                    x: -len / 2,
+                    y: -wid / 2,
+                    width: len,
+                    height: wid,
+                    rx: 8,
+                    fill: '#448eff35',
+                    stroke: 'var(--blue)',
+                    'stroke-width': 2,
+                  },
+                  g,
+                );
+              svg('circle', { r: 6, fill: 'var(--blue)' }, g);
+              svg(
+                'path',
+                {
+                  d: 'M 0 0 L 50 0 M 38 -9 L 50 0 L 38 9',
+                  fill: 'none',
+                  stroke: 'var(--blue)',
+                  'stroke-width': 3,
+                },
+                g,
+              );
+              text(
+                'pose-detail',
+                `Camera pose: X ${p.x.toFixed(0)} mm · Y ${p.y.toFixed(0)} mm · heading ${((p.heading * 180) / Math.PI).toFixed(1)}°. Robot ID 0.`,
+              );
+            } else text('pose-detail', 'No valid robot pose is available.');
+          } else
+            text(
+              'pose-detail',
+              'Robot pose is unavailable or out of date. No current position is drawn.',
+            );
+          const pts = r?.route?.points;
+          if (
+            Array.isArray(pts) &&
+            pts.length >= 2 &&
+            pts.every((p) => Array.isArray(p) && p.length === 2 && p.every(finite))
+          ) {
+            svg(
+              'polyline',
+              {
+                points: pts.map((p) => p[0] + ',' + (630 - p[1])).join(' '),
+                fill: 'none',
+                stroke: 'var(--blue)',
+                'stroke-width': 3,
+                'stroke-dasharray': r.state === 'pending' ? '9 6' : 'none',
+                opacity: valid ? 1 : 0.35,
+              },
+              $('map-route'),
+            );
+          }
+          if (validGoal()) {
+            const x = +$('goal-x').value,
+              y = 630 - +$('goal-y').value;
+            svg(
+              'circle',
+              { cx: x, cy: y, r: 11, fill: 'none', stroke: '#e6a749', 'stroke-width': 3 },
+              $('map-target'),
+            );
+            svg(
+              'path',
+              {
+                d: `M ${x - 17} ${y} h 34 M ${x} ${y - 17} v 34`,
+                stroke: '#e6a749',
+                'stroke-width': 1.5,
+              },
+              $('map-target'),
+            );
+          }
+        }
+        async function loadFrame() {
+          const seq = current?.camera?.seq;
+          if (
+            frameBusy ||
+            !owned ||
+            document.hidden ||
+            !fresh('camera') ||
+            !Number.isInteger(seq) ||
+            seq === lastFrame
+          )
+            return;
+          frameBusy = true;
+          const epoch = generation,
+            startedAt = clock(),
+            sourceAge = age('camera');
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4000);
+          try {
+            const r = await fetch('/api/frame.jpg?frame=' + encodeURIComponent(seq), {
+              cache: 'no-store',
+              headers: { 'X-AMR-Session': token },
+              signal: controller.signal,
+            });
+            if (!r.ok || r.status === 204) return;
+            const blob = await r.blob();
+            if (epoch !== generation || disposed) return;
+            const next = URL.createObjectURL(blob);
+            if (imageURL) URL.revokeObjectURL(imageURL);
+            imageURL = next;
+            lastFrame = seq;
+            frameAt = startedAt;
+            frameBaseAge = sourceAge;
+            $('camera-frame').src = next;
+            $('camera-frame').hidden = false;
+            render();
+          } catch {
+          } finally {
+            clearTimeout(timeout);
+            frameBusy = false;
+          }
+        }
+        async function poll() {
+          if (disposed || polling || document.hidden) return;
+          polling = true;
+          try {
+            await request('/api/status');
+          } catch (error) {
+            if (clock() - receivedAt > 1000) {
+              failure('Local service is unavailable. ' + error.message);
+              render();
+            }
+          } finally {
+            polling = false;
+          }
+        }
+        async function presence() {
+          if (disposed || !owned || stopped || document.hidden || presenceBusy) return;
+          presenceBusy = true;
+          const epoch = generation;
+          try {
+            await request('/api/presence', { active: true }, { apply: false });
+          } catch (error) {
+            if (epoch !== generation) return;
+            owned = false;
+            stopped = true;
+            generation++;
+            failure('Attended presence could not be renewed. ' + error.message);
+            render();
+          } finally {
+            presenceBusy = false;
+          }
+        }
+        $('connect').addEventListener('click', async () => {
+          if (busy) return;
+          busy = true;
+          stopped = false;
+          failure('');
+          const epoch = ++generation;
+          render();
+          try {
+            const s = await request('/api/connect', {});
+            if (epoch !== generation || document.hidden) return;
+            owned = true;
+            receive(s);
+            await presence();
+          } catch (error) {
+            failure(error.message);
+            owned = false;
+          } finally {
+            busy = false;
+            render();
+          }
+        });
+        $('stop').addEventListener('click', stop);
+        $('manual').addEventListener('click', () => {
+          revoke();
+        });
+        $('theme').addEventListener('click', () => {
+          const bright = document.documentElement.dataset.theme !== 'bright';
+          document.documentElement.dataset.theme = bright ? 'bright' : 'dark';
+          text('theme', bright ? 'Dark mode' : 'Bright mode');
+        });
+        for (const id of ['goal-x', 'goal-y', 'reason']) $(id).addEventListener('input', render);
+        $('floor-map').addEventListener('click', (e) => {
+          if (routeActive()) return;
+          const b = e.currentTarget.getBoundingClientRect();
+          if (!b.width || !b.height) return;
+          const scale = Math.min(b.width / 610, b.height / 630),
+            x = (e.clientX - b.left - (b.width - 610 * scale) / 2) / scale,
+            y = 630 - (e.clientY - b.top - (b.height - 630 * scale) / 2) / scale;
+          if (x < 0 || x > 610 || y < 0 || y > 630) return;
+          $('goal-x').value = String(Math.round(x));
+          $('goal-y').value = String(Math.round(y));
+          render();
+        });
+        $('plan-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (!usable() || busy || routeActive() || !validGoal()) return;
+          act('/api/plan', {
+            x: +$('goal-x').value,
+            y: +$('goal-y').value,
+            operator: 'local_operator',
+          });
+        });
+        $('decision-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const decision = e.submitter?.value,
+            reason = $('reason').value.trim(),
+            r = current?.review;
+          if (
+            !['approve', 'reject', 'hold'].includes(decision) ||
+            !owned ||
+            busy ||
+            !reason ||
+            r?.state !== 'pending' ||
+            expired() ||
+            (decision === 'approve' && (!usable() || !goalMatchesReview()))
+          )
+            return;
+          act('/api/decision', { review_id: r.review_id, decision, reason });
+        });
+        for (const choice of ['continue', 'divert'])
+          $('battery-' + choice).addEventListener('click', () => {
+            const r = current?.review,
+              reason = $('reason').value.trim();
+            if (
+              !owned ||
+              !fresh('hardware') ||
+              !fresh('camera') ||
+              !fresh('scene') ||
+              !reason ||
+              current?.battery?.action === 'critical_stop' ||
+              (r?.state !== 'battery_review' && current?.agent?.state !== 'battery_review')
+            )
+              return;
+            act('/api/battery-decision', { review_id: r.review_id, choice, reason });
+          });
+        for (const name of ['checkerboard', 'intrinsics', 'background'])
+          $(name).addEventListener('click', () => {
+            if (owned && !routeActive()) act('/api/' + name, {});
+          });
+        $('load-profile').addEventListener('click', async () => {
+          try {
+            const data = await request('/api/camera-profile', undefined, { apply: false });
+            $('profile-json').value = JSON.stringify(data.profile || data.template || {}, null, 2);
+            $('profile-checks').replaceChildren();
+            for (const check of data.checks || []) {
+              const li = document.createElement('li');
+              li.textContent =
+                String(check).replaceAll('_', ' ') +
+                ': ' +
+                (data.profile?.checks?.[check] === true
+                  ? 'reported verified'
+                  : 'measurement required');
+              $('profile-checks').append(li);
+            }
+            text(
+              'setup-message',
+              'Review every measurement and verification flag before applying this profile.',
+            );
+          } catch (error) {
+            failure(error.message);
+          }
+        });
+        $('profile-file').addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          if (file.size > 100000) {
+            failure('The profile must be a small JSON file under 100 kB.');
+            return;
+          }
+          try {
+            const data = JSON.parse(await file.text());
+            if (!data || typeof data !== 'object' || Array.isArray(data))
+              throw Error('Profile must be a JSON object');
+            $('profile-json').value = JSON.stringify(data, null, 2);
+            text('setup-message', 'Profile loaded for review. It has not been applied.');
+          } catch (error) {
+            failure(error.message);
+          }
+        });
+        $('save-profile').addEventListener('click', () => {
+          if (!owned || routeActive()) return;
+          try {
+            const profile = JSON.parse($('profile-json').value);
+            if (!profile || typeof profile !== 'object' || Array.isArray(profile))
+              throw Error('Profile must be a JSON object');
+            act('/api/camera-profile', { profile });
+          } catch (error) {
+            failure(error.message);
+          }
+        });
+        const timers = [
+          setInterval(poll, 250),
+          setInterval(presence, 500),
+          setInterval(render, 100),
+        ];
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) revoke();
+          else {
+            render();
+            poll();
+          }
+        });
+        window.addEventListener('pagehide', () => {
+          revoke();
+          disposed = true;
+          timers.forEach(clearInterval);
+          if (imageURL) URL.revokeObjectURL(imageURL);
+        });
+        render();
+        poll();
+      })();
+    </script>
+  </body>
+</html>

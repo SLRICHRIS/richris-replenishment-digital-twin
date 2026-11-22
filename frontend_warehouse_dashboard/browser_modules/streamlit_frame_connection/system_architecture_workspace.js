@@ -133,11 +133,11 @@
     },
     vision: {
       label: 'Vision & movement',
-      title: 'Camera routes: a separately commissioned workflow',
+      title: 'ArUco routes: human approval over direct Wi-Fi',
       description:
-        'An overhead webcam can supply a calibrated physical view through the browser tracker or a commissioned Windows agent. Camera routes have their own readiness checks; direct Wi-Fi driving does not enable them.',
+        'The laptop captures the Logitech camera, calculates the measured robot pose and follows an approved route directly over local Wi-Fi. The camera workspace opens inside the dashboard.',
       handoff:
-        'The selected camera transport supplies current scenes to the route service. Its commissioned receiver path uses authenticated EMQX messages, separately from direct Wi-Fi manual control.',
+        'AMR01_LocalTwin sends signed, short-lived HTTP requests to AMR01_Local_Routes at 10.15.213.112. EMQX remains the sensor telemetry path.',
       outcome:
         'When commissioned, route verification requires distinct fresh camera observations and stopped-state evidence. A sent command or controller reply alone is not arrival.',
       nodes: [
@@ -153,37 +153,37 @@
         },
         {
           title: 'Vision processor',
-          where: 'Configured camera service',
+          where: 'Laptop · local service',
           icon: 'i-map',
           brief: 'Finds the AMR pose and occupied floor regions.',
           input:
             'Logitech frames, measured camera configuration and an empty-floor reference image.',
           output:
             'Fresh signed camera scenes with robot pose, obstacles and configuration identity.',
-          role: 'The configured browser/WebRTC processor or Windows agent reads the Logitech webcam. It locates the marker, corrects for height and mounting offset, and checks floor references and image continuity.',
+          role: 'The local ArUco processor reads the Logitech webcam. It locates the marker, corrects for height and mounting offset, and checks floor references and image continuity.',
           gate: 'Camera movement, missing references, obscured robot marker or stale frames invalidate the scene. The Windows Camera app is not required.',
         },
         {
           title: 'Plan + human review',
-          where: 'Website + server',
+          where: 'Dashboard + laptop',
           icon: 'i-check',
           brief: 'Proposes a route and asks the operator to decide.',
           input: 'A trusted current scene, destination and authenticated operator session.',
           output: 'An approved, rejected or held route with an audit record and expiry.',
-          role: 'The server calculates a route with the measured footprint and stopping allowance. The operator checks the proposed path and chooses Approve & run, Reject or Hold.',
+          role: 'The laptop calculates a route with the measured footprint and stopping allowance. The operator checks the proposed path and chooses Approve & run, Reject or Hold.',
           gate: 'Changed evidence, expired proposals or missing readiness prevent execution. Browser drawings and practice decisions cannot authorize physical movement.',
           page: 'vision',
-          mode: 'physical',
+          mode: 'local',
           pageLabel: 'Open camera routes',
         },
         {
           title: 'Route follower',
-          where: 'Configured route service',
+          where: 'Laptop · route follower',
           icon: 'i-motion',
           brief: 'Follows the approved path with camera feedback.',
           input: 'The matching approved route and fresh camera and receiver observations.',
-          output: 'Short-lived authenticated motor requests through EMQX.',
-          role: 'The commissioned browser/server route service or Windows agent follows the approved route. It uses current pose to adjust motion and checks destination and stop observations.',
+          output: 'Signed motor requests over direct Wi-Fi and signed applied-output feedback.',
+          role: 'The local route service follows the approved route. It uses current pose to adjust motion and checks destination and stop observations.',
           gate: 'Stop, lost operator presence, stale evidence, a changed obstacle map or path departure ends the movement grant. A replacement route needs a new review.',
         },
         {
@@ -193,7 +193,7 @@
           brief: 'Checks each request and drives the TB6612.',
           input: 'Valid bounded drive messages and local protection state.',
           output: 'TB6612 direction/PWM, receiver status and measured motion feedback.',
-          role: 'The commissioned ESP32 receiver validates the command context and its lease. TB6612 supplies the left and right motors. The overhead camera observes the resulting movement.',
+          role: 'The local-route ESP32 firmware validates HTTP command signatures, boot identity, sequence and expiry. TB6612 supplies the left and right motors. The overhead camera observes the resulting movement.',
           gate: 'Receiver firmware, wheel polarities, PWM-to-speed response, stopping distance and electrical ratings need attended verification. Emergency protection remains local.',
         },
       ],
@@ -394,7 +394,7 @@
       const target = el('open').dataset.target;
       if (['hardware', 'vision', 'database'].includes(target))
         document.querySelector(`[data-page="${target}"]`)?.click();
-      if (target === 'vision' && ['manual', 'physical'].includes(el('open').dataset.mode))
+      if (target === 'vision' && ['local', 'manual', 'physical'].includes(el('open').dataset.mode))
         document.getElementById('vision-mode-' + el('open').dataset.mode)?.click();
     });
     const badge = (id, label, state) => {

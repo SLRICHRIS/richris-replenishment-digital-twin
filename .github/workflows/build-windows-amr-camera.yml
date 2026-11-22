@@ -7,13 +7,17 @@ on:
     paths:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
+      - 'amr01_local_twin.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
+      - 'project_documentation/direct_wifi_aruco_routes.md'
       - '.github/workflows/build-windows-amr-camera.yml'
   pull_request:
     paths:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
+      - 'amr01_local_twin.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
+      - 'project_documentation/direct_wifi_aruco_routes.md'
       - '.github/workflows/build-windows-amr-camera.yml'
 
 permissions:
@@ -42,6 +46,10 @@ jobs:
         shell: pwsh
         run: |
           python -m PyInstaller --clean --noconfirm --onefile --console --paths . --collect-all cv2 --name AMR01_CameraAgent amr01_camera_agent.py
+      - name: Build direct Wi-Fi ArUco workspace
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --onefile --console --paths . --collect-all cv2 --hidden-import sqlalchemy.dialects.sqlite.pysqlite --add-data "backend_streamlit_and_telemetry/vision_control/local_twin.html;backend_streamlit_and_telemetry/vision_control" --add-data "backend_streamlit_and_telemetry/vision_control/example_camera_config.json;backend_streamlit_and_telemetry/vision_control" --name AMR01_LocalTwin amr01_local_twin.py
       - name: Verify executable entry points without hardware or credentials
         shell: pwsh
         run: |
@@ -49,14 +57,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Setup executable failed' }
           & .\dist\AMR01_CameraAgent.exe --help
           if ($LASTEXITCODE -ne 0) { throw 'Agent executable failed' }
+          & .\dist\AMR01_LocalTwin.exe --help
+          if ($LASTEXITCODE -ne 0) { throw 'Local twin executable failed' }
       - name: Package unsigned tools without credentials or camera files
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path camera-toolkit | Out-Null
           Copy-Item .\dist\AMR01_CameraSetup.exe camera-toolkit\
           Copy-Item .\dist\AMR01_CameraAgent.exe camera-toolkit\
+          Copy-Item .\dist\AMR01_LocalTwin.exe camera-toolkit\
           Copy-Item .\backend_streamlit_and_telemetry\vision_control\example_camera_config.json camera-toolkit\
-          Copy-Item .\project_documentation\windows_camera_agent_no_python.md camera-toolkit\README.md
+          Copy-Item .\project_documentation\direct_wifi_aruco_routes.md camera-toolkit\README.md
+          Copy-Item .\project_documentation\windows_camera_agent_no_python.md camera-toolkit\legacy_mqtt_camera_agent.md
       - uses: actions/upload-artifact@v4
         with:
           name: AMR01-Windows-Camera-Toolkit

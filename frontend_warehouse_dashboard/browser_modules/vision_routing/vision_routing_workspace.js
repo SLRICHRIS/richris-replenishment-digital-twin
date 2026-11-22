@@ -1,3 +1,4 @@
+import { createLocalArUcoPanel } from './local_aruco_control.js';
 import { createManualMotorPanel } from './manual_motor_control.js?v=operator-audit-20261122';
 import { createPhysicalRoutePanel } from './physical_route_execution.js';
 import { createVisionWorkspace } from './overhead_camera_workspace.js';
@@ -8,10 +9,11 @@ export function createVisionRoutingWorkspace(scope) {
     root = d.getElementById('vision-routing-shell');
   if (!root || root.dataset.initialized === 'true') return null;
   root.dataset.initialized = 'true';
-  const manual = createManualMotorPanel(scope),
+  const local = createLocalArUcoPanel(scope),
+    manual = createManualMotorPanel(scope),
     physical = createPhysicalRoutePanel(scope),
     practice = createVisionWorkspace(scope);
-  const modes = ['manual', 'physical', 'practice'],
+  const modes = ['local', 'manual', 'physical', 'practice'],
     listeners = [];
   const on = (target, type, fn) => {
     target.addEventListener(type, fn);
@@ -38,7 +40,9 @@ export function createVisionRoutingWorkspace(scope) {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
       e.preventDefault();
       const visibleModes = modes.filter(
-        (name) => name !== 'practice' || d.documentElement.dataset.amrAdvanced === 'true',
+        (name) =>
+          !['physical', 'practice'].includes(name) ||
+          d.documentElement.dataset.amrAdvanced === 'true',
       );
       const index = visibleModes.indexOf(mode);
       select(
@@ -56,18 +60,21 @@ export function createVisionRoutingWorkspace(scope) {
   });
   d.querySelectorAll('[data-vision-open-setup]').forEach((button) =>
     on(button, 'click', () => {
+      d.documentElement.dataset.amrAdvanced = 'true';
       select('physical');
       physical?.showStage(1);
       d.getElementById('pr-step-1')?.focus();
     }),
   );
-  select('manual');
+  select('local');
   return {
+    local,
     manual,
     physical,
     practice,
     select,
     destroy() {
+      local?.destroy();
       manual?.destroy();
       practice?.destroy();
       physical?.destroy();

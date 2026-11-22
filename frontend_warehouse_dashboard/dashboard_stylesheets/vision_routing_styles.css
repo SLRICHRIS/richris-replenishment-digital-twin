@@ -1376,3 +1376,17 @@ body[data-view='vision'][data-vision-mode='manual'] .vision-page-facts {
     width: 100%;
   }
 }
+
+.local-aruco-frame {
+  width: 100%;
+  height: 1350px;
+  border: 1px solid #263b56;
+  border-radius: 16px;
+  margin-top: 16px;
+  background: #0b1422;
+}
+@media (max-width: 800px) {
+  .local-aruco-frame {
+    height: 2000px;
+  }
+}

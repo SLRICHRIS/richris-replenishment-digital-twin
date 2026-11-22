@@ -63,7 +63,7 @@ el('tab-vision').click();
 assert.doesNotMatch(el('detail-role').textContent, /92 cm|425/);
 assert.match(el('detail-title').textContent, /Logitech/);
 el('next').click();
-assert.match(el('detail-role').textContent, /browser\/WebRTC processor or Windows agent/);
+assert.match(el('detail-role').textContent, /local ArUco processor/);
 assert.match(el('detail-gate').textContent, /Windows Camera app is not required/);
 el('tab-vision').dispatchEvent(new w.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 assert.equal(d.activeElement, el('tab-power'));
