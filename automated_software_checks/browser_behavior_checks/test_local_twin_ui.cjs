@@ -300,6 +300,21 @@ async function main() {
   await tick(500);
   assert.equal(count('/api/presence'), presenceCount, 'Stop ends attended renewal');
   assert.equal(el('plan').disabled, true);
+  state.controller_feedback = {
+    ready: false,
+    reason: 'ESP32 request timed out (250 ms socket limit). Check Wi-Fi.',
+  };
+  await tick(250);
+  assert.equal(el('status-title').textContent, 'Attended control ended');
+  assert.match(
+    el('hardware-detail').textContent,
+    /timed out.*250 ms/,
+    'Ending attended control must not hide the current connection fault',
+  );
+  state.controller_feedback.reason = '<img src=x onerror="alert(1)">';
+  await tick(250);
+  assert.equal(el('hardware-detail').querySelector('img'), null);
+  delete state.controller_feedback;
 
   el('connect').click();
   await flush();

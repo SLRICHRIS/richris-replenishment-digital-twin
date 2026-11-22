@@ -94,6 +94,7 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
     transport.send(hw, "e" * 32, 1, "drive", 60, -60, 10000)
     command = verified(opener.calls[-1][0].data, SECRET, 10)
     assert command[5:8] == ["drive", "60", "-60"]
+    assert int(command[9]) - int(command[8]) == 500
     assert transport.latest["command_seq"] == 0
     with pytest.raises(ValueError, match="limit"):
         transport.send(hw, "e" * 32, 2, "drive", 61, 0, 10000)
@@ -105,9 +106,56 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
         NoRedirect().redirect_request(None, None, 302, "", {}, "http://elsewhere")
 
 
+@pytest.mark.parametrize("connect_s, first_byte_s, total_s", [
+    (.042509, .054612, .056494),
+    (.100634, .110219, .110514),
+    (.153651, .165766, .166216),
+    (.184674, .307124, .307449),
+    (.157272, .247287, .248967),
+])
+def test_observed_hotspot_timings_fit_socket_budget_without_extending_freshness(connect_s, first_byte_s, total_s):
+    # Deterministic replay of measured GET timing, with no real sockets or sleep.
+    # urllib's timeout applies to a blocking operation, not total request time.
+    clock = [10000]
+    calls = []
+
+    class TimedReply(Reply):
+        def read(self, size):
+            clock[0] = 10000 + round(total_s * 1000)
+            return super().read(size)
+
+    class TimedOpener:
+        def open(self, request, timeout):
+            calls.append(request)
+            if any(stage > timeout for stage in (connect_s, first_byte_s - connect_s, total_s - first_byte_s)):
+                raise TimeoutError("Simulated socket operation exceeded its timeout")
+            clock[0] = 10000 + round(first_byte_s * 1000)
+            return TimedReply(heartbeat(stamp=clock[0]))
+
+    transport = DeviceHTTPTransport(SECRET, opener=TimedOpener(), clock=lambda: clock[0])
+    hw = transport.poll()
+    assert hw["ready"] and len(calls) == 1
+    clock[0] = hw["issued_at_ms"] + 501
+    with pytest.raises(ValueError, match="Fresh"):
+        transport.send(hw, "e" * 32, 1, "drive", 20, 20, clock[0])
+    assert len(calls) == 1  # A delayed link never makes expired motion eligible.
+
+
+def test_larger_socket_budget_still_rejects_expired_heartbeats_and_unbounded_timeouts():
+    opener = Opener()
+    opener.body = heartbeat()
+    transport = DeviceHTTPTransport(SECRET, opener=opener, clock=lambda: 10501)
+    with pytest.raises(ValueError, match="Stale"):
+        transport.poll()
+    assert transport.latest is None
+    for timeout in (0, .251, 1):
+        with pytest.raises(ValueError, match="250 milliseconds"):
+            DeviceHTTPTransport(SECRET, timeout=timeout)
+
+
 @pytest.mark.parametrize("failure, expected", [
-    (TimeoutError("private detail"), "timed out.*150 ms"),
-    (urllib.error.URLError(TimeoutError("private detail")), "timed out.*150 ms"),
+    (TimeoutError("private detail"), "timed out.*250 ms"),
+    (urllib.error.URLError(TimeoutError("private detail")), "timed out.*250 ms"),
     (urllib.error.URLError(PermissionError("private detail")), "denied"),
     (urllib.error.URLError(ConnectionRefusedError("private detail")), "Cannot connect.*10.15.213.112:80"),
 ])
@@ -220,6 +268,40 @@ def test_failed_polls_back_off_after_stopping_and_recovery_never_resumes_motion(
     assert [call[3] for call in transport.sent] == ["arm", "stop"]
     assert twin.agent.lease_until == 0 and not twin.pending_acks
     assert not twin.status()["ready"]  # The camera evidence has independently expired.
+
+
+def test_feedback_error_remains_visible_after_session_end_and_clears_on_recovery(rig, monkeypatch):
+    twin, clock, transport, observe = rig
+    failure = "ESP32 request timed out (250 ms socket limit). Check Wi-Fi."
+
+    def poll():
+        twin.stop_event.set()
+        raise ValueError(failure)
+
+    monkeypatch.setattr(transport, "poll", poll, raising=False)
+    twin._hardware_loop()
+    twin.stop("Operator left the local controller")
+    public = twin.status()
+    assert public["controller_feedback"] == dict(ready=False, reason=failure)
+    assert not public["ready"]
+    observe(clock[0] + 1)
+    public = twin.status()
+    assert public["controller_feedback"]["ready"]
+    assert "timed out" not in public["controller_feedback"]["reason"]
+    assert twin.agent.state == "blocked" and not transport.sent
+
+
+@pytest.mark.parametrize("age", [501, 664, 1679])
+def test_expired_feedback_takes_priority_over_missing_camera_profile(rig, age):
+    twin, clock, transport, observe = rig
+    twin.config = None
+    assert "Complete camera calibration" in twin.status()["reason"]
+    clock[0] += age
+    public = twin.status()
+    assert "feedback is out of date" in public["reason"]
+    assert public["reason"] == public["controller_feedback"]["reason"]
+    assert not public["ready"] and not public["hardware"]["ready"]
+    assert not public["calibration_ready"] and not transport.sent
 
 
 def test_local_review_arms_only_after_explicit_approval_and_stops_on_presence_loss(rig):

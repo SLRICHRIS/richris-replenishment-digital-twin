@@ -27,10 +27,13 @@ class DeviceHTTPTransport:
     signed heartbeat's route ID and command sequence before claiming execution.
     """
 
-    def __init__(self, secret, *, timeout=0.15, opener=None, clock=None):
+    def __init__(self, secret, *, timeout=0.25, opener=None, clock=None):
         key(secret)
         if not 0 < timeout <= 0.25:
             raise ValueError("Receiver timeout must be at most 250 milliseconds")
+        # Measured hotspot TCP handshakes exceeded 150 ms while complete H1
+        # exchanges stayed below 310 ms. This bounds each socket operation,
+        # not the whole exchange; signed freshness and drive leases stay 500 ms.
         self._secret = secret
         self.timeout = timeout
         self.clock = clock or (lambda: int(time.time() * 1000))

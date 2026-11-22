@@ -68,6 +68,7 @@ class LocalTwin:
         self.reason = "Connect the laptop camera and local ESP32 to begin"
         self.hardware = None
         self.hardware_ok = False
+        self.hardware_error = ""
         self.camera_status = self.feed.snapshot()
         self.capture = None
         self.latest_frame = None
@@ -167,6 +168,7 @@ class LocalTwin:
                 self.coordinator.history.clear()
             self.hardware = copy.deepcopy(value)
             self.hardware_ok = True
+            self.hardware_error = ""
             if self.agent.job and value.get("route_id") == self.agent.job["review_id"]:
                 while self.pending_acks and self.pending_acks[0][0] <= value.get("command_seq", 0):
                     self.pending_acks.popleft()
@@ -281,7 +283,7 @@ class LocalTwin:
             except Exception as error:
                 with self.lock:
                     self.hardware_ok = False
-                    self.reason = str(error)[:160]
+                    self.hardware_error = self.reason = str(error)[:160]
                     if self.agent.state in RUNNING:
                         self._halt("Direct ESP32 connection failed; approve a new route")
                 # Retire an active approval before waiting. Let the single-client
@@ -319,15 +321,26 @@ class LocalTwin:
             public["ready"] = bool(public["ready"] and camera["valid"] and not self.calibrating
                                    and self._hardware_value(now)["ready"])
             reason = self.reason
+            feedback_reason = self.hardware_error
+            hw = self._hardware_value(now)
+            if not feedback_reason:
+                if not self.hardware:
+                    feedback_reason = "Waiting for the first authenticated ESP32 response"
+                elif hw["age_ms"] > SCENE_FRESH_MS:
+                    feedback_reason = "ESP32 feedback is out of date; waiting for a fresh response"
+                elif not hw["ready"]:
+                    feedback_reason = "Waiting for ready ESP32 feedback; check its physical interlocks and battery"
+                else:
+                    feedback_reason = "Authenticated feedback over direct Wi-Fi"
             if self.connected and self.hardware_ok:
-                if not camera.get("connected"):
+                if not hw["ready"]:
+                    reason = feedback_reason
+                elif not camera.get("connected"):
                     reason = "Waiting for the local camera; check the selected camera index"
                 elif not self.config:
                     reason = "Complete camera calibration and import the measured profile"
                 elif not camera["valid"]:
                     reason = camera["reason"]
-                elif not self._hardware_value(now)["ready"]:
-                    reason = "Waiting for fresh ready ESP32 feedback; check its physical interlocks"
                 elif self.agent.state in RUNNING:
                     reason = self.agent.reason
                 elif public["ready"]:
@@ -335,7 +348,8 @@ class LocalTwin:
                 else:
                     reason = "Keep the robot still while fresh camera and controller evidence is collected"
             public.update(connected=self.connected, issued_at_ms=now, camera=camera,
-                hardware=self._hardware_value(now) if self.hardware else None,
+                hardware=hw if self.hardware else None,
+                controller_feedback=dict(ready=hw["ready"], reason=feedback_reason),
                 reason=reason, camera_index=self.camera_index,
                 agent=dict(state=self.agent.state, reason=self.agent.reason),
                 calibration_ready=bool(self.config and not self.calibrating),

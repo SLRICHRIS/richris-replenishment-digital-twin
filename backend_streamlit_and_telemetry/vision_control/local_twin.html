@@ -765,6 +765,7 @@
           <span>ESP32 feedback</span>
           <strong id="hardware-value">Not connected</strong>
           <small id="hardware-age">No authenticated sample</small>
+          <small id="hardware-detail">Waiting for controller feedback</small>
         </article>
         <article class="signal">
           <span>Measured battery</span>
@@ -1792,6 +1793,12 @@
                 : 'Not connected',
           );
           text('hardware-age', ageLabel('hardware'));
+          text(
+            'hardware-detail',
+            !hf && current?.controller_feedback?.ready
+              ? 'ESP32 feedback is out of date; waiting for a fresh response'
+              : current?.controller_feedback?.reason || 'Waiting for controller feedback',
+          );
           const voltage = h?.battery_voltage_v;
           text('battery-value', hf && finite(voltage) ? voltage.toFixed(2) + ' V' : '—');
           text(

@@ -52,6 +52,10 @@ The local page opens at `http://127.0.0.1:8765/`. In the digital twin, open **Dr
 
 Starting the program does not connect the camera or command the robot. Use **Connect local session** when ready. If the built-in webcam is camera 0, start with `--camera 1` to select the Logitech device.
 
+The local app allows **250 ms per blocking socket operation**. In an isolated hotspot check, all five hardware requests returned HTTP 200, but three TCP handshakes exceeded the previous 150 ms limit; the slowest handshake was 185 ms and the slowest complete response was 308 ms. The socket timeout is not a total-request deadline. Signed feedback must still pass its **500 ms freshness check**, and the ESP32 still expires motor commands after at most **500 ms**. Failed commands are never automatically retried. Install the updated Windows executable for this timeout change; it does not require another firmware upload.
+
+The **ESP32 feedback** card keeps the current connection error visible even after attended control ends. Expired feedback is reported before missing camera calibration so that a setup message cannot imply that the link is ready. A successful HTTP request alone does not establish authenticated readiness, calibration or reliable motion; check the fresh feedback card after restarting the app.
+
 To run from source instead:
 
 ```powershell
