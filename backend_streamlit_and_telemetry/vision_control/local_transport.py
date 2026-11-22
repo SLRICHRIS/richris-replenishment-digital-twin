@@ -59,6 +59,7 @@ class DeviceHTTPTransport:
         )
         self.lock = threading.Lock()
         self.latest = None
+        self.received_at_ms = None
         self.retired = set()
 
     def _request(self, path, body=None):
@@ -96,7 +97,8 @@ class DeviceHTTPTransport:
     def poll(self):
         with self.lock:
             raw = self._request("/api/route/hardware")
-            value = hardware(raw, self._secret, self.clock(), max_pwm=ROUTE_PWM_CAP)
+            received_at = self.clock()
+            value = hardware(raw, self._secret, received_at, max_pwm=ROUTE_PWM_CAP)
             identity = value["boot_id"], value["epoch_id"]
             if identity in self.retired:
                 raise ValueError("A retired controller epoch cannot be reused")
@@ -109,6 +111,7 @@ class DeviceHTTPTransport:
             # H1 has no advertised cap; this route-only firmware is limited to 60.
             value["max_pwm"] = ROUTE_PWM_CAP
             self.latest = value
+            self.received_at_ms = received_at
             return copy.deepcopy(value)
 
     def send(self, observed, route, seq, operation, left, right, now, *, lease_ms=500):
@@ -120,8 +123,17 @@ class DeviceHTTPTransport:
                 not fresh(current["issued_at_ms"], self.clock()) or not current["ready"]
             ):
                 raise ValueError("Fresh ready controller feedback is required")
+            # H1 may be valid while the laptop clock is >100 ms ahead of the
+            # receiver, which would make an unadjusted V1 fail its future-time
+            # check. Anchor V1 to the last authenticated receiver timestamp.
+            # Receiving H1 happens after it was signed, so this is conservative:
+            # response transit shortens the lease; it never grants extra time.
+            # Use the caller's timestamp, not the time after acquiring this lock,
+            # to preserve its attendance/segment deadline if sending was delayed.
+            # H1 freshness remains checked against the original signed UTC time.
+            receiver_now = current["issued_at_ms"] + (now - self.received_at_ms)
             wire = drive(current["boot_id"], current["epoch_id"], route, seq,
-                         operation, left, right, now, self._secret,
+                         operation, left, right, receiver_now, self._secret,
                          max_pwm=ROUTE_PWM_CAP, lease_ms=lease_ms)
             raw = self._request("/api/route/command", wire)
             try:

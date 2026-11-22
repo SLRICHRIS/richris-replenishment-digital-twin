@@ -82,6 +82,9 @@ void leasesAndReadOnlyStatus() {
   amr_vision::Guard guard;
   guard.connection(BOOT, EPOCH);
   auto arm = decoded(packet("arm", 1, 0, 0, UTC, UTC + 500));
+  // A laptop 220 ms ahead can accept fresh H1 but its raw-clock V1 is
+  // future-dated beyond the receiver's unchanged 100 ms tolerance.
+  assert(!guard.accept(decoded(packet("arm", 1, 0, 0, UTC + 220, UTC + 720)), UTC, 0, true, 60));
   assert(!guard.accept(arm, UTC, 0, false, 60));
   assert(!guard.accept(decoded(packet("drive", 1, 20, 20, UTC, UTC + 500)), UTC, 0, true, 60));
   assert(guard.accept(arm, UTC, 0, true, 60));

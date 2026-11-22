@@ -106,6 +106,53 @@ def test_transport_acceptance_does_not_forge_applied_ack_or_allow_stale_motion()
         NoRedirect().redirect_request(None, None, 302, "", {}, "http://elsewhere")
 
 
+@pytest.mark.parametrize("clock_ahead_ms", [-80, 0, 220, 450])
+@pytest.mark.parametrize("lease_ms", [80, 500])
+def test_command_clock_uses_authenticated_receiver_without_extending_caller_deadline(clock_ahead_ms, lease_ms):
+    # H1 is produced at receiver time 10000 and arrives 20 ms later. Its
+    # freshness window can accept a laptop clock that V1 would reject as future.
+    clock, opener = [10020 + clock_ahead_ms], Opener()
+    transport = DeviceHTTPTransport(SECRET, opener=opener, clock=lambda: clock[0])
+    opener.body = heartbeat()
+    hw = transport.poll()
+    requested_at = clock[0] + 10
+    clock[0] = requested_at + 15  # Delay before send acquires the transport lock.
+    opener.body = '{"ok":true}'
+    transport.send(hw, "e" * 32, 1, "arm", 0, 0, requested_at, lease_ms=lease_ms)
+    command = verified(opener.calls[-1][0].data, SECRET, 10)
+    issued, expires = map(int, command[8:10])
+    receiver_at_send = clock[0] - clock_ahead_ms
+    caller_deadline_on_receiver = requested_at - clock_ahead_ms + lease_ms
+    assert issued <= receiver_at_send  # Never future-dated by a laptop offset.
+    assert 0 < expires - receiver_at_send <= lease_ms
+    assert expires <= caller_deadline_on_receiver  # Lock/transit time is not renewed.
+    assert expires - issued == lease_ms
+    assert hw["issued_at_ms"] == 10000  # No synthetic refresh of signed evidence.
+    assert transport.latest["command_seq"] == 0  # Acceptance is not application.
+
+
+def test_rejected_heartbeat_cannot_change_command_clock_and_new_epoch_gets_new_anchor():
+    clock, opener = [10220], Opener()
+    transport = DeviceHTTPTransport(SECRET, opener=opener, clock=lambda: clock[0])
+    opener.body = heartbeat()
+    first = transport.poll()
+    clock[0] += 20
+    opener.body = heartbeat(stamp=10240, seq=2, secret="f" * 64)
+    with pytest.raises(ValueError):
+        transport.poll()
+    opener.body = '{"ok":true}'
+    transport.send(first, "e" * 32, 1, "arm", 0, 0, clock[0])
+    assert int(verified(opener.calls[-1][0].data, SECRET, 10)[8]) == 10020
+    clock[0] += 20
+    opener.body = heartbeat(stamp=10200, seq=1, epoch="d" * 32)
+    current = transport.poll()
+    with pytest.raises(ValueError, match="identity"):
+        transport.send(first, "e" * 32, 1, "arm", 0, 0, clock[0])
+    opener.body = '{"ok":true}'
+    transport.send(current, "e" * 32, 1, "arm", 0, 0, clock[0])
+    assert int(verified(opener.calls[-1][0].data, SECRET, 10)[8]) == 10200
+
+
 def test_explicit_private_receiver_address_is_used_for_both_feedback_and_commands(tmp_path):
     opener = Opener()
     transport = DeviceHTTPTransport(SECRET, device_ip="192.168.4.112", opener=opener, clock=lambda: 10000)

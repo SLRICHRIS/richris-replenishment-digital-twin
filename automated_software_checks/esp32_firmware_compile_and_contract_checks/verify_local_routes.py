@@ -16,7 +16,8 @@ sys.path.insert(0, str(ROOT))
 
 
 def verify(arduino_cli=None, config_file=None):
-    from backend_streamlit_and_telemetry.vision_control.protocol import drive, hardware
+    from backend_streamlit_and_telemetry.vision_control.protocol import drive, hardware, signed, verified
+    from backend_streamlit_and_telemetry.vision_control.local_transport import DeviceHTTPTransport
     key = '0123456789abcdef' * 4
     boot, epoch, route = 'a' * 32, 'b' * 32, 'c' * 32
     now = 1700000000000
@@ -30,6 +31,38 @@ def verify(arduino_cli=None, config_file=None):
         ], check=True)
         run = subprocess.run([str(executable)], input=command + '\n', text=True,
                              capture_output=True, check=True)
+        # Run real Python transport output through the real C++ receiver guard.
+        # The signed sample is 20 ms old in the receiver's time domain. A
+        # laptop may lead by 220 ms or lag by 80 ms and still accept this H1.
+        # No sockets, physical device or motor command is involved.
+        class Reply:
+            status = 200
+            def __init__(self, body): self.body = body
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self, size): return self.body[:size]
+
+        class Receiver:
+            command = None
+            def open(self, request, timeout):
+                if request.data is not None:
+                    self.command = request.data
+                    return Reply(b'{"ok":true}')
+                return Reply(signed(('H1', boot, epoch, 1, '0'*32, 0, 'idle',
+                                     0, 0, 7400, 1, now-20), key).encode())
+
+        for clock_ahead_ms in (-80, 220):
+            receiver = Receiver()
+            transport = DeviceHTTPTransport(key, opener=receiver, clock=lambda: now+clock_ahead_ms)
+            observed = transport.poll()
+            transport.send(observed, route, 1, 'arm', 0, 0, now+clock_ahead_ms)
+            fields = verified(receiver.command, key, 10)
+            assert int(fields[8]) <= now and int(fields[9]) <= now+500
+            aligned = subprocess.run([str(executable)], input=receiver.command.decode()+'\n',
+                                     text=True, capture_output=True, check=True)
+            assert hardware(aligned.stdout.splitlines()[0], key, now, max_pwm=60)['state'] == 'armed'
+        print('PASS: Python HTTP transport commands accepted by production C++ guard with '
+              'opposing clock offsets; unchanged freshness and bounded expiry.')
         # Compile the real receiver and its original local-controller/sensor
         # classes against deterministic hardware substitutes. Fake HMAC APIs
         # call real OpenSSL, and no substitute can open a network/GPIO device.

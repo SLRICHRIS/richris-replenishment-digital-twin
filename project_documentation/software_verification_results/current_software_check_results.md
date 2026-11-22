@@ -1,5 +1,11 @@
 # Software verification record
 
+## Local receiver command clock: 23 November 2026
+
+Fresh H1 feedback can pass its existing age check while a command stamped with a laptop clock 220 ms ahead fails the receiver's 100 ms future-time check. The HTTP transport now derives command time from the last authenticated receiver timestamp and elapsed laptop time since receipt. Reply transit and lock delay shorten the usable command window; the caller's attendance/segment deadline is not renewed. Original feedback timestamps, replay/identity checks, 500 ms maximum lease and receiver protections remain unchanged. No firmware change is required.
+
+Verification: 541 predictive/integration Python tests passed, with 5 skips. The production Python transport's output passed the compiled production C++ parser/guard with both a leading and lagging laptop clock. Tests cover short leases, delayed sends, rejected samples, epoch changes, original freshness and unchanged applied-output evidence. The native receiver runtime checks, both source entry-point HTTP smoke checks, repository/download consistency and whitespace checks passed. The reported hardware HTTP 409 was not captured with a simultaneous clock measurement, so this reproduces and fixes a possible cause, not a confirmed diagnosis of that particular packet or a physical movement result.
+
 ## Attended three-route controller: 23 November 2026
 
 Added camera-free A → B, E → A and B → E timed sequences for the reported 760 × 560 mm floor. The robot front targets and fixed parked headings determine the body-centre path. Three operator-measured motor pulses supply empirical forward/left/right rates. The existing signed Wi-Fi transport, firmware PWM cap and expiry/interlock protections are retained. Camera-route checks remain unchanged.
