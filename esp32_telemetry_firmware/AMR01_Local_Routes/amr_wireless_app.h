@@ -652,6 +652,10 @@ void networkTask(void*) {
       strcmp(MQTT_PASSWORD, "YOUR_NEW_EMQX_PUBLISHER_PASSWORD") != 0;
   Serial.println("Connecting to Wi-Fi. Keep the 2.4 GHz hotspot and its internet connection on.");
   WiFi.mode(WIFI_STA);
+  // Route feedback needs prompt reception. Modem sleep can defer packets to
+  // the hotspot's DTIM interval; keep the radio awake instead of extending
+  // the signed command leases or accepting stale controller feedback.
+  WiFi.setSleep(false);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   // Signed LAN leases need UTC even when telemetry credentials/broker are absent.

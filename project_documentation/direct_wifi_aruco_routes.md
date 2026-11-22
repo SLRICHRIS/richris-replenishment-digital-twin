@@ -34,6 +34,8 @@ Keep that output in the private firmware settings and enter the same value in th
 
 The receiver uses `POST /api/route/command` for signed V1 commands and `GET /api/route/hardware` for signed H1 acknowledgements. Its existing manual page remains available. The route receiver does not subscribe to MQTT motor topics. Its clock still needs valid UTC time; removing EMQX from control does not remove the clock requirement.
 
+The receiver disables Wi-Fi modem sleep with `WiFi.setSleep(false)` before connecting, to reduce hotspot packet delays. This increases radio power consumption; use new current measurements when estimating runtime. Installing this change requires uploading the updated sketch while retaining the existing private settings and route key. The laptop application, feedback freshness checks and motor-command deadlines are unchanged. Keep other robot controller pages closed and measure response timing after the upload; successful compilation alone does not establish a reliable physical link.
+
 ## 3. Start the laptop workspace
 
 For a Windows executable, open this repository's **Actions → Build Windows AMR camera toolkit**, choose a successful build of the current source, download **AMR01-Windows-Camera-Toolkit** and extract it. The artifact contains `AMR01_LocalTwin.exe`, the camera setup utility and the older MQTT camera agent. Use **AMR01_LocalTwin.exe** for this workflow. An executable is available only after its Windows build succeeds.

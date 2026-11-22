@@ -97,13 +97,15 @@ inline int mbedtls_md_hmac(const EVP_MD* info,const unsigned char* key,size_t ke
     assert 'webServer.on("/api/route/hardware", HTTP_GET, amr_route::handleHardware)' in app
     network = app.split('void networkTask(void*) {', 1)[1].split('void setup()', 1)[0]
     assert network.index('configTime(') < network.index('if (mqttConfigured)')
+    assert network.index('WiFi.mode(WIFI_STA)') < network.index('WiFi.setSleep(false)') < network.index('WiFi.begin(')
+    assert 'WiFi.setSleep(true)' not in app
     readiness = receiver.split('static bool networkReady() {', 1)[1].split('}', 1)[0]
     assert 'WiFi.status() == WL_CONNECTED' in readiness and 'utcMs()' in readiness
     assert 'mqtt' not in readiness.lower()
     assert 'guard.stop("local_stop")' in receiver
     assert 'AMR_ROUTE_MAX_PWM <= 60' in receiver
     assert 'Cache-Control' in receiver and 'no-store' in receiver
-    print('PASS: LAN route endpoints, MQTT actuator removal, independent clock setup '
+    print('PASS: LAN route endpoints, awake Wi-Fi startup, MQTT actuator removal, independent clock setup '
           'and preserved local stop integration checks.')
 
 
