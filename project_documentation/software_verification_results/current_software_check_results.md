@@ -1,5 +1,13 @@
 # Software verification record
 
+## Attended three-route controller: 23 November 2026
+
+Added camera-free A → B, E → A and B → E timed sequences for the reported 760 × 560 mm floor. The robot front targets and fixed parked headings determine the body-centre path. Three operator-measured motor pulses supply empirical forward/left/right rates. The existing signed Wi-Fi transport, firmware PWM cap and expiry/interlock protections are retained. Camera-route checks remain unchanged.
+
+Local verification: the full predictive/integration Python suite passed 529 tests with 5 skips; the final focused preset suite passed 22 tests after adding HTTP-origin and stopping-distance rejection cases. All browser behaviour checks, including the new real-DOM preset test, passed. Both camera and preset source entry points passed live loopback HTTP startup checks without contacting a robot. Repository links, file catalog, canonical generated downloads and whitespace checks passed.
+
+Tests simulate receiver feedback and applied outputs. They cover exact front-reference geometry, three-route progression, bounded leases, measured timing, changed identity, battery/freshness/input loss, explicit Stop, no restart after failure and operator-only arrival confirmation. They do not establish actual turn angles, distance accuracy, obstacle response or physical arrival. Windows packaging is separately checked by the build workflow.
+
 ## Physical data study packaging and replay: 22 November 2026
 
 Baseline before this addition: `7f81def53a9cde4b8564a92b0c2e9ff83220d1c3`. Scope: the offline [physical data studies](../../physical_data_studies/README.md), repository navigation, source catalog and study CI. Dashboard and firmware behavior were not changed.

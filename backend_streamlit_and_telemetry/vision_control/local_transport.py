@@ -111,7 +111,7 @@ class DeviceHTTPTransport:
             self.latest = value
             return copy.deepcopy(value)
 
-    def send(self, observed, route, seq, operation, left, right, now):
+    def send(self, observed, route, seq, operation, left, right, now, *, lease_ms=500):
         with self.lock:
             current = self.latest
             if not current or any(observed.get(k) != current[k] for k in ("boot_id", "epoch_id")):
@@ -122,7 +122,7 @@ class DeviceHTTPTransport:
                 raise ValueError("Fresh ready controller feedback is required")
             wire = drive(current["boot_id"], current["epoch_id"], route, seq,
                          operation, left, right, now, self._secret,
-                         max_pwm=ROUTE_PWM_CAP)
+                         max_pwm=ROUTE_PWM_CAP, lease_ms=lease_ms)
             raw = self._request("/api/route/command", wire)
             try:
                 accepted = json.loads(raw)

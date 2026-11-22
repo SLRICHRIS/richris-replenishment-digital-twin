@@ -8,26 +8,62 @@ on:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
       - 'amr01_local_twin.py'
+      - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
+      - 'project_documentation/preset_station_routes.md'
       - '.github/workflows/build-windows-amr-camera.yml'
   pull_request:
     paths:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
       - 'amr01_local_twin.py'
+      - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
+      - 'project_documentation/preset_station_routes.md'
       - '.github/workflows/build-windows-amr-camera.yml'
 
 permissions:
   contents: read
 
 jobs:
+  build-preset-controller:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build camera-free preset controller
+        shell: pwsh
+        run: |
+          python -m pip install "pyinstaller>=6.11,<7"
+          python -m PyInstaller --clean --noconfirm --onefile --console --paths . --add-data "backend_streamlit_and_telemetry/vision_control/preset_routes.html;backend_streamlit_and_telemetry/vision_control" --name AMR01_PresetRoutes amr01_preset_routes.py
+          & .\dist\AMR01_PresetRoutes.exe --help
+          if ($LASTEXITCODE -ne 0) { throw 'Preset executable entry point failed' }
+      - name: Verify packaged preset workspace without robot access
+        shell: pwsh
+        run: |
+          python automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py --preset --executable .\dist\AMR01_PresetRoutes.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Preset controller HTTP smoke check failed' }
+      - name: Package preset controller
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path preset-toolkit | Out-Null
+          Copy-Item .\dist\AMR01_PresetRoutes.exe preset-toolkit\
+          Copy-Item .\project_documentation\preset_station_routes.md preset-toolkit\README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AMR01-Windows-Preset-Routes
+          path: preset-toolkit/
+          retention-days: 14
+          if-no-files-found: error
   build-camera-toolkit:
     runs-on: windows-latest
     timeout-minutes: 40

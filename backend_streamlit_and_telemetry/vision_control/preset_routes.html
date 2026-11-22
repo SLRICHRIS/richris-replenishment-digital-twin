@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMR-01 · Three routes</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #0b1220;
+        color: #f5f8ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 1120px;
+        padding: 28px 24px 100px;
+      }
+      header,
+      .row {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      header {
+        justify-content: space-between;
+      }
+      h1 {
+        margin: 5px 0 10px;
+        font-size: clamp(28px, 4vw, 42px);
+      }
+      h2 {
+        margin: 0 0 16px;
+        font-size: 22px;
+      }
+      p {
+        line-height: 1.55;
+      }
+      .eyebrow {
+        color: #8dbbff;
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .muted {
+        color: #c0d0e9;
+      }
+      .panel {
+        background: #131f32;
+        border: 1px solid #344862;
+        border-radius: 16px;
+        padding: 22px;
+        margin-top: 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 20px;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        border: 1px solid #6982a2;
+        border-radius: 9px;
+        background: #233a58;
+        color: white;
+        padding: 12px 16px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      button.primary {
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      input,
+      select {
+        background: #0b1423;
+        color: #fff;
+        border: 1px solid #6d86a5;
+        border-radius: 6px;
+        padding: 10px;
+      }
+      input[type='number'] {
+        width: 110px;
+      }
+      select {
+        width: 100%;
+        margin-bottom: 14px;
+      }
+      label {
+        display: block;
+        margin: 12px 0;
+        line-height: 1.5;
+      }
+      input[type='checkbox'] {
+        width: 19px;
+        height: 19px;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      #status {
+        border-left: 5px solid #79b2ff;
+        font-weight: 600;
+      }
+      #error {
+        color: #ffd098;
+        min-height: 1.5em;
+      }
+      #stop {
+        position: fixed;
+        bottom: 20px;
+        right: 24px;
+        background: #ce2639;
+        border-color: #ff8794;
+        min-width: 180px;
+        font-size: 20px;
+        z-index: 2;
+      }
+      ol {
+        padding-left: 24px;
+        line-height: 1.9;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #3b506d;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 750;
+        font-size: 21px;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        background: #0e1728;
+        border-radius: 9px;
+        margin-top: 18px;
+      }
+      .note {
+        border-left: 3px solid #ffc773;
+        padding-left: 14px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        body {
+          padding: 18px 14px 110px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <span class="eyebrow">AMR-01 · DIRECT WI-FI</span>
+        <h1>Choose a route. Watch it move.</h1>
+      </div>
+      <button id="connect" class="primary">Connect ESP32</button>
+    </header>
+    <p class="muted">Three fixed routes on your 76 × 56 cm floor. Camera-free, measured timing.</p>
+    <div class="panel" id="status" role="status">Connect ESP32 to begin.</div>
+    <p id="feedback" class="muted">No controller sample</p>
+    <p id="error" role="alert"></p>
+    <div class="grid">
+      <section class="panel">
+        <h2>1. Select start and destination</h2>
+        <label for="route">Available route</label>
+        <select id="route">
+          <option value="E-A">E → A</option>
+          <option value="A-B">A → B</option>
+          <option value="B-E">B → E</option>
+        </select>
+        <p id="placement"></p>
+        <ol id="steps"></ol>
+        <p id="arrival"></p>
+        <label>
+          <input id="placed" type="checkbox" />
+          The front is at the stated starting edge, facing the stated direction. The floor is clear
+          and I will watch.
+        </label>
+        <button id="start" class="primary" disabled>Start selected route</button>
+        <button id="confirm-arrival" hidden>I checked the front at the destination</button>
+        <p class="note">
+          Timing gives an approximate route. This mode cannot detect obstacles or confirm position.
+          Check the front and facing direction after every run; reposition before the next run if
+          needed.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>Your fixed arrival points</h2>
+        <p class="muted">Robot front reaches the paper edge. X from left; Y from bottom.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Station</th>
+              <th>X, Y (cm)</th>
+              <th>Park facing</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td>63, 35</td>
+              <td>Right →</td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td>20.5, 43</td>
+              <td>Up ↑</td>
+            </tr>
+            <tr>
+              <td>E</td>
+              <td>29, 7.5</td>
+              <td>Down ↓</td>
+            </tr>
+          </tbody>
+        </table>
+        <svg
+          viewBox="-65 -45 890 655"
+          role="img"
+          aria-label="Measured floor with selected body-centre path and paper-edge targets"
+        >
+          <rect
+            x="0"
+            y="0"
+            width="760"
+            height="560"
+            fill="none"
+            stroke="#ec6879"
+            stroke-width="9"
+          />
+          <text x="380" y="-18" fill="#c0d0e9" text-anchor="middle">760 mm</text>
+          <g transform="translate(0 560) scale(1 -1)">
+            <path
+              id="route-path"
+              stroke="#8fc1ff"
+              stroke-width="5"
+              fill="none"
+              stroke-dasharray="12 8"
+            />
+            <g fill="#778ca9">
+              <circle cx="45" cy="485" r="9" />
+              <circle cx="45" cy="50" r="9" />
+              <circle cx="690" cy="50" r="9" />
+              <circle cx="690" cy="485" r="9" />
+            </g>
+            <g stroke="#ffd17f" stroke-width="3">
+              <path d="M 545 350 L 630 350 M 205 345 L 205 430 M 290 160 L 290 75" />
+            </g>
+            <g fill="#8fc1ff">
+              <circle cx="545" cy="350" r="9" />
+              <circle cx="205" cy="345" r="9" />
+              <circle cx="290" cy="160" r="9" />
+            </g>
+            <g stroke="#ffd17f" stroke-width="5">
+              <path
+                d="M 620 350 L 640 350 M 630 340 L 630 360 M 195 430 L 215 430 M 205 420 L 205 440 M 280 75 L 300 75 M 290 65 L 290 85"
+              />
+            </g>
+          </g>
+          <g fill="#fff" font-size="24" font-weight="700">
+            <text x="652" y="216">A</text>
+            <text x="226" y="126">B</text>
+            <text x="312" y="492">E</text>
+          </g>
+          <g fill="#b5c7df" font-size="18">
+            <text x="25" y="52">ID 1</text>
+            <text x="15" y="545">ID 2</text>
+            <text x="667" y="545">ID 3</text>
+            <text x="667" y="52">ID 4</text>
+          </g>
+          <text x="0" y="596" fill="#c0d0e9" font-size="18">
+            Blue: body centre path. Gold: front at paper edge.
+          </text>
+        </svg>
+        <p class="muted">Body: 17 × 15.5 cm. Centre to front: 8.5 cm. E is for manual charging.</p>
+      </section>
+    </div>
+    <details id="setup" class="panel" open>
+      <summary>2. One-time movement measurements</summary>
+      <p>
+        Do these three short tests on a larger clear floor with tape marks. Face the robot toward
+        open space. Each button sends a one-second pulse and then stops. Keep the same wheels, load,
+        floor surface and similar battery voltage for routes.
+      </p>
+      <p class="muted">
+        Mark a line through the robot centre before a turn; measure its change in angle with a
+        protractor. For forward travel, measure body-centre displacement. The photograph cannot
+        provide these motor speeds.
+      </p>
+      <div class="row">
+        <label for="pwm">
+          Trial PWM
+          <input id="pwm" type="number" min="1" max="60" value="60" />
+        </label>
+        <span class="muted">Maximum 60, matching installed firmware</span>
+      </div>
+      <label>
+        <input id="test-clear" type="checkbox" />
+        The trial area is clear, I am watching, and only this controller is open.
+      </label>
+      <div class="row">
+        <button data-trial="forward">Forward · 1 second</button>
+        <button data-trial="left">Turn left · 1 second</button>
+        <button data-trial="right">Turn right · 1 second</button>
+      </div>
+      <div id="measurement" hidden>
+        <p id="measurement-label"></p>
+        <label id="amount-label">
+          Measured amount
+          <input id="amount" type="number" min="0.1" step="0.1" />
+        </label>
+        <label id="coast-label">
+          Extra travel after motor cut-off (cm)
+          <input id="coast" type="number" min="0" max="10" step="0.1" />
+        </label>
+        <label>
+          <input id="measured" type="checkbox" />
+          I measured the movement and checked the requested direction. The wheels did not slip or
+          stall.
+        </label>
+        <button id="save-measurement">Save measurement</button>
+      </div>
+      <p id="saved" class="muted">Forward: needed · Left: needed · Right: needed</p>
+      <p class="muted">
+        If a test produces no movement, do not enter a made-up value. The current receiver limits
+        route output to 60 PWM.
+      </p>
+    </details>
+    <button id="stop">STOP ROBOT</button>
+    <script>
+      (() => {
+        const token = '__AMR_SESSION__';
+        const $ = (id) => document.getElementById(id);
+        let state = null,
+          displayedTest = null,
+          fetching = false,
+          presenceBusy = false;
+        const requestId = () => crypto.randomUUID().replaceAll('-', '');
+        async function api(path, data) {
+          const response = await fetch('/api/' + path, {
+            method: data === undefined ? 'GET' : 'POST',
+            cache: 'no-store',
+            headers:
+              data === undefined
+                ? {}
+                : { 'Content-Type': 'application/json', 'X-AMR-Session': token },
+            body: data === undefined ? undefined : JSON.stringify(data),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Local controller request failed');
+          return result;
+        }
+        function routePreview() {
+          const route = state?.routes.find((r) => r.id === $('route').value);
+          if (!route) return;
+          const source = state.stations[route.start];
+          $('placement').textContent =
+            `Start at ${route.start}: front at (${source.front_mm[0] / 10}, ${source.front_mm[1] / 10}) cm, pointing ${route.start_facing}.`;
+          $('steps').replaceChildren();
+          for (const step of route.steps) {
+            const li = document.createElement('li');
+            li.textContent =
+              step.motion === 'forward'
+                ? `Move forward ${(step.amount / 10).toFixed(1)} cm`
+                : `Turn ${step.motion} ${step.amount.toFixed(1)}°`;
+            $('steps').append(li);
+          }
+          $('arrival').textContent = `Stop at ${route.destination}, facing ${route.end_facing}.`;
+          $('route-path').setAttribute(
+            'd',
+            `M ${route.start_centre_mm.join(' ')} L ${route.goal_centre_mm.join(' ')}`,
+          );
+        }
+        function render() {
+          if (!state) return;
+          $('status').textContent = state.message;
+          const hw = state.hardware;
+          $('feedback').textContent = hw
+            ? `${state.controller_ip} · ${hw.battery_voltage_v.toFixed(2)} V · L ${hw.left_duty}, R ${hw.right_duty} · ${hw.age_ms} ms old`
+            : 'No controller sample';
+          const samples = state.measurements.samples;
+          $('saved').textContent = ['forward', 'left', 'right']
+            .map(
+              (k) =>
+                `${k}: ${samples[k] ? samples[k].rate.toFixed(1) + (k === 'forward' ? ' mm/s' : '°/s') + ' at PWM ' + samples[k].pwm : 'needed'}`,
+            )
+            .join(' · ');
+          $('route').disabled = state.busy;
+          $('start').disabled =
+            state.busy ||
+            !state.ready ||
+            !['forward', 'left', 'right'].every((k) => samples[k]) ||
+            !$('placed').checked;
+          document.querySelectorAll('[data-trial]').forEach((b) => {
+            b.disabled = state.busy || !state.ready || !$('test-clear').checked;
+          });
+          $('connect').disabled = state.connected;
+          $('confirm-arrival').hidden = state.state !== 'sequence_complete';
+          const t = state.last_test;
+          $('measurement').hidden = !t || t.saved;
+          if (t && t.id !== displayedTest) {
+            displayedTest = t.id;
+            $('amount').value = '';
+            $('coast').value = '';
+            $('measured').checked = false;
+            $('measurement-label').textContent =
+              t.motion === 'forward'
+                ? 'Measure the forward distance in cm, including the roll after cut-off.'
+                : `Measure the ${t.motion} turn in degrees, including the final settling.`;
+            $('coast-label').hidden = t.motion !== 'forward';
+          }
+          routePreview();
+        }
+        async function act(name, value = {}) {
+          $('error').textContent = '';
+          try {
+            const result = await api(name, value);
+            if (result.state) state = result;
+            render();
+          } catch (error) {
+            $('error').textContent = error.message;
+          }
+        }
+        async function refresh() {
+          if (fetching) return;
+          fetching = true;
+          try {
+            state = await api('status');
+            render();
+          } catch (error) {
+            $('error').textContent = error.message;
+            $('start').disabled = true;
+            document.querySelectorAll('[data-trial]').forEach((b) => {
+              b.disabled = true;
+            });
+          } finally {
+            fetching = false;
+          }
+        }
+        async function presence() {
+          if (presenceBusy || document.hidden) return;
+          presenceBusy = true;
+          try {
+            await api('presence', { active: true });
+          } catch (_) {
+          } finally {
+            presenceBusy = false;
+          }
+        }
+        $('connect').onclick = () => act('connect');
+        $('route').onchange = () => {
+          $('placed').checked = false;
+          render();
+        };
+        $('placed').onchange = render;
+        $('test-clear').onchange = render;
+        $('start').onclick = async () => {
+          if ($('start').disabled || document.hidden) return;
+          const value = {
+            route: $('route').value,
+            request_id: requestId(),
+            confirmed: $('placed').checked,
+          };
+          $('placed').checked = false;
+          $('start').disabled = true;
+          await act('start', value);
+        };
+        document.querySelectorAll('[data-trial]').forEach((button) => {
+          button.onclick = async () => {
+            if (button.disabled || document.hidden) return;
+            const value = {
+              motion: button.dataset.trial,
+              pwm: Number($('pwm').value),
+              request_id: requestId(),
+              confirmed: $('test-clear').checked,
+            };
+            $('test-clear').checked = false;
+            render();
+            await act('trial', value);
+          };
+        });
+        $('save-measurement').onclick = () => {
+          if (
+            !state.last_test ||
+            !$('amount').value ||
+            (state.last_test.motion === 'forward' && !$('coast').value)
+          ) {
+            $('error').textContent = 'Enter the measured values first.';
+            return;
+          }
+          const forward = state.last_test.motion === 'forward';
+          act('measurement', {
+            trial_id: state.last_test.id,
+            amount: Number($('amount').value) * (forward ? 10 : 1),
+            stopping_mm: Number($('coast').value) * 10,
+            verified: $('measured').checked,
+          });
+        };
+        $('confirm-arrival').onclick = () => act('confirm-arrival', { confirmed: true });
+        $('stop').onclick = () => {
+          $('placed').checked = false;
+          $('test-clear').checked = false;
+          act('stop');
+        };
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') $('stop').click();
+        });
+        function leave() {
+          $('placed').checked = false;
+          $('test-clear').checked = false;
+          fetch('/api/presence', {
+            method: 'POST',
+            keepalive: true,
+            headers: { 'Content-Type': 'application/json', 'X-AMR-Session': token },
+            body: JSON.stringify({ active: false }),
+          }).catch(() => {});
+        }
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) leave();
+        });
+        window.addEventListener('pagehide', leave);
+        setInterval(refresh, 300);
+        setInterval(presence, 120);
+        refresh();
+        presence();
+      })();
+    </script>
+  </body>
+</html>

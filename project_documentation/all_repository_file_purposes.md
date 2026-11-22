@@ -431,3 +431,15 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `automated_software_checks/predictive_twin_checks/test_front_edge_stations.py` | Verify paper-edge to body-centre conversion, final-heading control, signed front-reference integrity and independent stopped-arrival evidence using synthetic camera and motor fixtures. |
 | `automated_software_checks/browser_behavior_checks/test_local_station_mission_ui.cjs` | Verify A, B and E selection, active targets, replanning and explicit battery decisions in the local interface without hardware. |
 | `automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py` | Launch the packaged executable or source entry point with synthetic settings and verify UTF-8 HTTP content plus disconnected startup using loopback GET requests only. |
+
+## Camera-free fixed routes
+
+| File | Purpose |
+| --- | --- |
+| `amr01_preset_routes.py` | Launch the attended camera-free three-route controller. |
+| `backend_streamlit_and_telemetry/vision_control/preset_routes.py` | Calculate measured A/B/E routes, record empirical timing and execute bounded authenticated motor segments with explicit operator arrival confirmation. |
+| `backend_streamlit_and_telemetry/vision_control/preset_routes.html` | Provide the three-route selector, starting-direction map, one-second movement measurements and Stop control. |
+| `backend_streamlit_and_telemetry/vision_control/local_session.py` | Share process ownership and private key entry between local camera and preset controllers. |
+| `project_documentation/preset_station_routes.md` | Document exact front-edge geometry, parked directions, calibration, timed-route limitations and Windows use. |
+| `automated_software_checks/predictive_twin_checks/test_preset_routes.py` | Test fixed-route geometry, empirical timing, bounded command leases, signed-output progression and abort conditions with a fake receiver. |
+| `automated_software_checks/browser_behavior_checks/test_preset_routes_ui.cjs` | Check route selection, measurement conversion, attendance cancellation and explicit operator arrival confirmation in the actual preset UI. |
