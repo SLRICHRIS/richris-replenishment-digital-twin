@@ -132,70 +132,68 @@
       ],
     },
     vision: {
-      label: 'Vision & movement',
-      title: 'ArUco routes: human approval over direct Wi-Fi',
+      label: 'Preset movement',
+      title: 'Three measured routes inside the digital twin',
       description:
-        'The laptop captures the Logitech camera, calculates the measured robot pose and follows an approved route directly over local Wi-Fi. The camera workspace opens inside the dashboard.',
+        'The laptop runs A → B, E → A and B → E using measured turn and forward timings. The operator watches the floor and checks arrival.',
       handoff:
-        'AMR01_LocalTwin sends signed, short-lived HTTP requests to AMR01_Local_Routes at 10.55.54.112. EMQX remains the sensor telemetry path.',
+        'AMR01_PresetRoutes.exe runs on the laptop and appears inside Drive & review. Signed commands go directly to the ESP32; EMQX carries sensor telemetry.',
       outcome:
-        'When commissioned, route verification requires distinct fresh camera observations and stopped-state evidence. A sent command or controller reply alone is not arrival.',
+        'The controller confirms stopped motor outputs. The operator separately confirms the robot front reached the paper edge; this mode does not use camera steering or automatic obstacle detection.',
       nodes: [
         {
-          title: 'Logitech webcam',
-          where: 'Above the floor',
-          icon: 'i-focus',
-          brief: 'Views the robot, floor markers and obstacles.',
-          input: 'The measured working floor, reference markers and robot marker.',
-          output: 'USB camera frames on the laptop.',
-          role: 'One overhead camera observes the scene. Use the current measured floor, camera height, marker size and marker height from Camera routes; this guide does not override that configuration.',
-          gate: 'Lens calibration, floor references, marker alignment and a validated obstacle scene are required. A placement preview alone does not establish route readiness.',
-        },
-        {
-          title: 'Vision processor',
-          where: 'Laptop · local service',
+          title: 'Measured stations',
+          where: '76 × 56 cm floor',
           icon: 'i-map',
-          brief: 'Finds the AMR pose and occupied floor regions.',
-          input:
-            'Logitech frames, measured camera configuration and an empty-floor reference image.',
-          output:
-            'Fresh signed camera scenes with robot pose, obstacles and configuration identity.',
-          role: 'The local ArUco processor reads the Logitech webcam. It locates the marker, corrects for height and mounting offset, and checks floor references and image continuity.',
-          gate: 'Camera movement, missing references, obscured robot marker or stale frames invalidate the scene. The Windows Camera app is not required.',
+          brief: 'Defines A, B and the E charging reference.',
+          input: 'Measured paper-edge arrival points and the 17 × 15.5 cm robot body.',
+          output: 'Three fixed paths with a required starting position and heading.',
+          role: 'The robot front reaches the paper edge. Body-centre targets account for the 8.5 cm centre-to-front offset. E is a manual charging reference.',
+          gate: 'Align the robot at the stated source position and direction before every route. The operator checks that the floor is clear.',
         },
         {
-          title: 'Plan + human review',
-          where: 'Dashboard + laptop',
+          title: 'Movement measurements',
+          where: 'Laptop · preset controller',
+          icon: 'i-focus',
+          brief: 'Measures forward travel and both turn directions.',
+          input: 'Three attended one-second trials at the selected PWM.',
+          output: 'Separate forward, left and right rates with measured stopping travel.',
+          role: 'Measure the actual distance and angles, then save them. The current preset maximum is 200 PWM. Each saved rate keeps its trial PWM and battery voltage.',
+          gate: 'Repeat measurements after changing PWM, load or surface. Old timings are not scaled to 200; camera calibration is not required for this mode.',
+        },
+        {
+          title: 'Operator start',
+          where: 'Digital twin · embedded panel',
           icon: 'i-check',
-          brief: 'Proposes a route and asks the operator to decide.',
+          brief: 'Selects one route and explicitly starts movement.',
           input:
-            'Measured A, B and E stations, a trusted current scene, selected start/destination and an attended operator session.',
-          output: 'An approved, rejected or held route with an audit record and expiry.',
-          role: 'The laptop checks the selected start against ArUco and plans with full-body clearance. Obstacle changes stop movement and propose a new path to the active target. Return to start and battery station E each require a new reviewed route.',
-          gate: 'At 6.7–7.0 V the operator decides whether to continue or preview a route to E. Below 6.7 V the mission stops. Changed evidence and expired reviews invalidate approval; practice decisions cannot move the robot.',
+            'A → B, E → A or B → E, valid measurements, correct placement and fresh ESP32 feedback.',
+          output: 'One attended route request to the local controller.',
+          role: 'Connect the ESP32 inside the panel, check readiness, select a route and confirm the starting position. Opening the digital twin or the panel never starts a route.',
+          gate: 'Keep the panel visible and watch the robot. Stop or leaving the control view cancels the route; returning does not resume it.',
           page: 'vision',
           mode: 'local',
-          pageLabel: 'Open camera routes',
+          pageLabel: 'Open preset routes',
         },
         {
-          title: 'Route follower',
-          where: 'Laptop · route follower',
+          title: 'Local route controller',
+          where: 'Windows laptop · direct Wi-Fi',
           icon: 'i-motion',
-          brief: 'Follows the approved path with camera feedback.',
-          input: 'The matching approved route and fresh camera and receiver observations.',
-          output: 'Signed motor requests over direct Wi-Fi and signed applied-output feedback.',
-          role: 'The local route service follows the approved route. It uses current pose to adjust motion and checks destination and stop observations.',
-          gate: 'Stop, lost operator presence, stale evidence, a changed obstacle map or path departure ends the movement grant. A replacement route needs a new review.',
+          brief: 'Executes the measured turn, forward and final-turn sequence.',
+          input: 'The selected route, its measured timings and signed controller feedback.',
+          output: 'Signed wheel requests with bounded expiry and an audit record.',
+          role: 'AMR01_PresetRoutes sends requests from the laptop to 10.55.54.112. The embedded page uses the same local service at 127.0.0.1:8765; cloud telemetry latency does not set motor timing.',
+          gate: 'Authentication, 500 ms maximum command leases, 200 PWM maximum, the 6.0 V cutoff and receiver readiness remain active.',
         },
         {
-          title: 'ESP32 + motors',
-          where: 'On the AMR',
+          title: 'ESP32 and arrival check',
+          where: 'AMR + attending operator',
           icon: 'i-robot',
-          brief: 'Checks each request and drives the TB6612.',
-          input: 'Valid bounded drive messages and local protection state.',
-          output: 'TB6612 direction/PWM, receiver status and measured motion feedback.',
-          role: 'The local-route ESP32 firmware validates HTTP command signatures, boot identity, sequence and expiry. TB6612 supplies the left and right motors. The overhead camera observes the resulting movement.',
-          gate: 'Receiver firmware, wheel polarities, PWM-to-speed response, stopping distance and electrical ratings need attended verification. Emergency protection remains local.',
+          brief: 'Applies motor output, stops, then asks for an arrival check.',
+          input: 'Valid signed requests and local sensor/interlock state.',
+          output: 'TB6612 motor outputs, signed stopped-state feedback and operator confirmation.',
+          role: 'Local Routes r4 validates identity, sequence and expiry before driving the wheels. The app waits for the final command acknowledgement and zero outputs. The operator checks the front position and heading.',
+          gate: 'Reported PWM and elapsed time do not establish location. If the robot misses the point, reposition and remeasure before another route.',
         },
       ],
     },
@@ -403,12 +401,12 @@
       if (el(id).dataset.state !== state) el(id).dataset.state = state;
     };
     function status() {
+      badge('route-status', 'Check readiness inside preset routes', 'pending');
       // Streamlit may memoize identical reports. Preserve known blockers while
       // positive evidence expires below using its own measurement clock.
       if (!payload) {
         badge('raw-status', 'Awaiting server update', 'unknown');
         badge('model-status', 'Awaiting server update', 'unknown');
-        badge('route-status', 'Awaiting server update', 'unknown');
         return;
       }
       const physical = payload.mode === 'live' ? payload.physical_telemetry : null;
@@ -439,36 +437,6 @@
         'model-status',
         modelReady ? 'Valid calibrated outputs' : 'Calibration / valid inputs required',
         modelReady ? 'good' : 'pending',
-      );
-      const route = payload.vision_execution,
-        scene = route?.scene,
-        now = Date.now();
-      const ready =
-        payload.mode === 'live' &&
-        route?.authorized &&
-        route.available &&
-        route.physical_mode &&
-        route.ready &&
-        scene?.valid &&
-        Number.isFinite(scene.floor_width_mm) &&
-        scene.floor_width_mm > 0 &&
-        Number.isFinite(scene.floor_length_mm) &&
-        scene.floor_length_mm > 0 &&
-        typeof scene.captured_at_ms === 'number' &&
-        now - scene.captured_at_ms <= 500 &&
-        now >= scene.captured_at_ms - 100 &&
-        scene.hardware?.ready &&
-        Number.isFinite(scene.hardware.age_ms) &&
-        scene.hardware.age_ms >= 0 &&
-        scene.hardware.age_ms + elapsed * 1000 <= 500;
-      badge(
-        'route-status',
-        ready
-          ? 'Server reports route readiness'
-          : route?.can_unlock
-            ? 'Open Camera routes to check readiness'
-            : 'Physical commissioning required',
-        ready ? 'good' : 'pending',
       );
     }
     document.addEventListener('python-twin:render', (event) => {

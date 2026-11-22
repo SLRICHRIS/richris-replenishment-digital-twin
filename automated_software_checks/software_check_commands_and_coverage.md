@@ -41,6 +41,18 @@ The script creates a temporary placeholder configuration and compiles UART-disab
 
 [Current results](../project_documentation/software_verification_results/current_software_check_results.md) records software scope. Physical trial evidence is collected using [the commissioning guide](../project_documentation/operator_override_channel_and_hardware_commissioning.md).
 
+## Preset controller embedding
+
+The Windows build workflow also runs a real Chromium embedding check. It starts a separate loopback controller with a synthetic key, serves the production parent module under the exact trusted HTTPS origin with a nested component frame, and simulates granting local-app permission. It checks the actual child's loading confirmation, 200 PWM default, disconnected startup, context removal and rejection of an untrusted ancestor. It never selects Connect or sends a device command and refuses to reuse an occupied port 8765.
+
+```sh
+npm install --no-save --package-lock=false playwright@1.62.1
+npx playwright install --with-deps chromium
+node automated_software_checks/browser_behavior_checks/verify_preset_embed_chromium.cjs
+```
+
+This verifies Chromium behaviour in CI. The operator's Windows browser still must allow access to the locally running application.
+
 
 ## Physical route execution
 

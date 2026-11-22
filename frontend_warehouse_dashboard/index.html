@@ -65,11 +65,11 @@
     <link rel="stylesheet" href="./dashboard_stylesheets/system_architecture_styles.css" />
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/system_architecture_workspace.js?v=abe-floor-20261122"
+      src="./browser_modules/streamlit_frame_connection/system_architecture_workspace.js?v=preset-embed-20261123"
     ></script>
     <script
       type="module"
-      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=abe-floor-20261122"
+      src="./browser_modules/vision_routing/vision_routing_workspace.js?v=preset-embed-20261123"
     ></script>
     <script
       defer
@@ -85,7 +85,7 @@
     ></script>
     <script
       defer
-      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=abe-floor-20261122"
+      src="./browser_modules/streamlit_frame_connection/operator_overview.js?v=preset-embed-20261123"
     ></script>
     <link rel="stylesheet" href="./dashboard_stylesheets/interactive_route_map_styles.css" />
     <link
@@ -488,9 +488,9 @@
           </article>
           <article id="operator-control" data-state="neutral">
             <span class="eyebrow">3 · Act and check</span>
-            <strong id="operator-control-title">ArUco camera routes</strong>
+            <strong id="operator-control-title">Preset station routes</strong>
             <p id="operator-control-detail">Apply your response using the local controller.</p>
-            <button id="operator-drive" type="button">Open camera routes</button>
+            <button id="operator-drive" type="button">Open preset routes</button>
           </article>
         </div>
       </section>
@@ -1389,8 +1389,10 @@
               <strong id="arch-model-status" data-state="unknown">Awaiting server update</strong>
             </div>
             <div>
-              <small>Physical route readiness</small>
-              <strong id="arch-route-status" data-state="unknown">Awaiting server update</strong>
+              <small>Preset route readiness</small>
+              <strong id="arch-route-status" data-state="pending">
+                Check readiness inside preset routes
+              </strong>
             </div>
           </div>
           <div class="arch-path-tabs" role="tablist" aria-label="System pipeline">
@@ -1424,7 +1426,7 @@
               data-arch-path="vision"
               tabindex="-1"
             >
-              Vision &amp; movement
+              Preset movement
             </button>
             <button
               id="arch-tab-models"
@@ -1731,7 +1733,7 @@
           </details>
           <div id="vision-routing-shell" data-mode="local">
             <div class="vision-page-toolbar">
-              <div role="tablist" aria-label="Vision routing mode" class="vision-mode-tabs">
+              <div role="tablist" aria-label="Robot control mode" class="vision-mode-tabs">
                 <button
                   id="vision-mode-local"
                   role="tab"
@@ -1739,7 +1741,7 @@
                   aria-selected="true"
                   type="button"
                 >
-                  Camera routes
+                  Preset routes
                 </button>
                 <button
                   id="vision-mode-manual"
@@ -1778,8 +1780,8 @@
                   <strong>760 × 560 mm</strong>
                 </span>
                 <span>
-                  Camera
-                  <strong>130 cm · reported</strong>
+                  Routes
+                  <strong>A → B · E → A · B → E</strong>
                 </span>
               </div>
             </div>
@@ -4406,7 +4408,7 @@
     </dialog>
     <script
       type="module"
-      src="./browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js?v=abe-floor-20261122"
+      src="./browser_modules/dashboard_navigation_and_appearance/warehouse_simulation_and_dashboard_controller.js?v=preset-embed-20261123"
     ></script>
   </body>
 </html>

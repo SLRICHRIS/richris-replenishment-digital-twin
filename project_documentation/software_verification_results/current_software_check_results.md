@@ -1,5 +1,11 @@
 # Software verification record
 
+## Preset controller inside the digital twin: 23 November 2026
+
+The default Drive & review panel now embeds AMR01_PresetRoutes.exe for A → B, E → A and B → E. The local server permits framing only by itself and this twin's exact HTTPS origin; its Host, Origin and session-token checks remain unchanged. A verified source/origin message confirms page loading only. Opening never connects or drives, leaving the view removes its attended context, and the cloud architecture guide directs readiness checks to the local panel. Existing r4 firmware, 200 PWM limit, 6.00 V cutoff and command timing are unchanged.
+
+Local verification: 571 predictive/integration Python checks passed with 5 skips, all 29 browser behaviour suites passed, and the actual source process passed loopback HTTP startup checks. New checks cover the exact frame policy, cloud-origin mutation rejection even with the session token, untrusted loading messages, fallback help, timer cleanup and disconnected startup. Repository links, canonical downloads and whitespace checks passed. A separate Chromium test is included in the Windows build workflow because the local execution environment disallows launching Chromium. Packaged Windows and Chromium results are recorded in the matching CI run; these tests do not establish physical travel or fix intermittent Wi-Fi or supply drops.
+
 ## Operator-requested 200 PWM preset support: 23 November 2026
 
 Raised the preset trial default and application maximum to 200, and supplied Local Routes r4 with a configurable receiver cap up to 200. The local receiver's V1 parser now accepts signed 8-bit duty values; its configured guard still rejects commands above 200. The HTTP transport takes an explicit preset cap so signed 200 PWM output feedback is accepted, while the camera controller keeps its default 60 PWM policy. The 6.0 V cutoff, authentication, freshness, 500 ms leases, Stop, reversal interlock and final-command expiry fix remain. Firmware upload with `AMR_ROUTE_MAX_PWM 200` is required. Existing measured rates retain their original PWM; routes at 200 require new measurements rather than scaling old timings.

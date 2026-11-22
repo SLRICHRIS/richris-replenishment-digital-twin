@@ -1,4 +1,4 @@
-import { createLocalArUcoPanel } from './local_aruco_control.js?v=abe-floor-20261122';
+import { createLocalArUcoPanel } from './local_aruco_control.js?v=preset-embed-20261123';
 import { createManualMotorPanel } from './manual_motor_control.js?v=abe-floor-20261122';
 import { createPhysicalRoutePanel } from './physical_route_execution.js?v=abe-floor-20261122';
 import { createVisionWorkspace } from './overhead_camera_workspace.js?v=abe-floor-20261122';

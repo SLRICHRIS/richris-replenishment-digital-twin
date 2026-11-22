@@ -102,7 +102,9 @@ export function createPhysicalRoutePanel(scope) {
   const active = () => d.body.dataset.view === 'vision' && !d.hidden && modeIsPhysical();
   let localCameraStream = null;
   let localCameraGeneration = 0;
-  function stopLocalCamera(message = 'Preview stopped. The USB camera is available for the tracking agent.') {
+  function stopLocalCamera(
+    message = 'Preview stopped. The USB camera is available for the tracking agent.',
+  ) {
     localCameraGeneration += 1;
     localCameraStream?.getTracks().forEach((track) => track.stop());
     localCameraStream = null;
@@ -124,7 +126,8 @@ export function createPhysicalRoutePanel(scope) {
     el('laptop-camera-start').disabled = true;
     el('laptop-camera-stop').disabled = false;
     el('laptop-camera-status').textContent = 'Requesting camera';
-    el('laptop-camera-detail').textContent = 'Allow the Logitech webcam in Chrome. Close Windows Camera if it is open.';
+    el('laptop-camera-detail').textContent =
+      'Allow the Logitech webcam in Chrome. Close Windows Camera if it is open.';
     try {
       const received = await scope.navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -142,8 +145,11 @@ export function createPhysicalRoutePanel(scope) {
       el('laptop-camera-status').textContent = 'Live on laptop';
       el('laptop-camera-detail').textContent =
         'Local camera preview only. Stop preview before starting the Streamlit WebRTC tracker or the Windows camera agent.';
-      received.getVideoTracks().forEach((track) =>
-        on(track, 'ended', () => stopLocalCamera('Camera disconnected or permission revoked.')));
+      received
+        .getVideoTracks()
+        .forEach((track) =>
+          on(track, 'ended', () => stopLocalCamera('Camera disconnected or permission revoked.')),
+        );
     } catch (error) {
       if (generation !== localCameraGeneration) return;
       stopLocalCamera(
@@ -167,7 +173,10 @@ export function createPhysicalRoutePanel(scope) {
   observer.observe(d.body, { attributes: true, attributeFilter: ['data-view'] });
   on(d, 'visibilitychange', viewChanged);
   on(d, 'vision-routing:mode', viewChanged);
-  on(scope, 'pagehide', () => { stopLocalCamera(); send('view', { active: false }); });
+  on(scope, 'pagehide', () => {
+    stopLocalCamera();
+    send('view', { active: false });
+  });
   function showStage(value, manual = false) {
     const running = ACTIVE.includes(payload?.review?.state);
     if (running && value !== 5) return;
@@ -221,10 +230,13 @@ export function createPhysicalRoutePanel(scope) {
   });
   on(el('lock'), 'click', () => send('logout'));
   on(el('open-streamlit-camera'), 'click', () => {
-    if (localCameraStream) stopLocalCamera('Local USB preview released for Streamlit WebRTC tracking.');
-    d.dispatchEvent(new scope.CustomEvent('python-twin:action', {
-      detail: { action: 'camera_panel', open: true },
-    }));
+    if (localCameraStream)
+      stopLocalCamera('Local USB preview released for Streamlit WebRTC tracking.');
+    d.dispatchEvent(
+      new scope.CustomEvent('python-twin:action', {
+        detail: { action: 'camera_panel', open: true },
+      }),
+    );
     el('laptop-camera-detail').textContent =
       'Opening Streamlit WebRTC camera panel. Stop this local preview before pressing START in WebRTC.';
   });
@@ -232,9 +244,11 @@ export function createPhysicalRoutePanel(scope) {
   for (const choice of ['continue', 'divert'])
     on(el('battery-' + choice), 'click', () =>
       send('battery_decision', {
-        review_id: payload?.review?.review_id, choice,
+        review_id: payload?.review?.review_id,
+        choice,
         reason: el('battery-reason').value,
-      }));
+      }),
+    );
   on(el('battery-reason'), 'input', () => {
     if (payload) render(payload, false);
   });
@@ -244,7 +258,8 @@ export function createPhysicalRoutePanel(scope) {
   for (const rack of ['A', 'B', 'E']) {
     const label = d.createElement('label');
     label.textContent = rack === 'E' ? 'Charging stop E (x, y)' : 'Rack ' + rack + ' (x, y)';
-    const x = d.createElement('input'), y = d.createElement('input');
+    const x = d.createElement('input'),
+      y = d.createElement('input');
     for (const input of [x, y]) {
       input.type = 'number';
       input.min = '0';
@@ -256,7 +271,8 @@ export function createPhysicalRoutePanel(scope) {
     rackCoordinates.append(label);
     stationInputs[rack] = [x, y];
   }
-  const rackStart = el('rack-start'), rackDestination = el('rack-destination');
+  const rackStart = el('rack-start'),
+    rackDestination = el('rack-destination');
   function stationPoint(rack) {
     if (rack === 'CURRENT') {
       const s = payload?.scene;
@@ -267,22 +283,36 @@ export function createPhysicalRoutePanel(scope) {
     const inputs = stationInputs[rack];
     if (!inputs || inputs.some((input) => input.value.trim() === '')) return null;
     const point = inputs.map((input) => Number(input.value));
-    if (!point.every(Number.isFinite) || point[0] < 0 || point[0] > 760 || point[1] < 0 || point[1] > 560) return null;
+    if (
+      !point.every(Number.isFinite) ||
+      point[0] < 0 ||
+      point[0] > 760 ||
+      point[1] < 0 ||
+      point[1] > 560
+    )
+      return null;
     return point;
   }
   function rackSelectionChanged() {
-    const start = rackStart.value, destination = rackDestination.value;
+    const start = rackStart.value,
+      destination = rackDestination.value;
     const point = stationPoint(destination);
     const valid = start && destination && start !== destination && stationPoint(start) && point;
-    el('rack-status').textContent = !start || !destination
-      ? 'Choose start and destination racks, then enter measured stopping coordinates.'
-      : start === destination
-        ? 'Starting rack and destination must differ.'
-        : !valid
-          ? 'Enter valid measured stopping coordinates for both selected racks.'
-          : 'Route ' + start + ' to ' + destination + '. ' +
-            (start === 'CURRENT' ? 'The live ArUco position is the start.' :
-              'Confirm the camera shows the robot at rack ' + start + '.');
+    el('rack-status').textContent =
+      !start || !destination
+        ? 'Choose start and destination racks, then enter measured stopping coordinates.'
+        : start === destination
+          ? 'Starting rack and destination must differ.'
+          : !valid
+            ? 'Enter valid measured stopping coordinates for both selected racks.'
+            : 'Route ' +
+              start +
+              ' to ' +
+              destination +
+              '. ' +
+              (start === 'CURRENT'
+                ? 'The live ArUco position is the start.'
+                : 'Confirm the camera shows the robot at rack ' + start + '.');
     if (valid) {
       el('goal-x').value = String(point[0]);
       el('goal-y').value = String(point[1]);
@@ -307,8 +337,15 @@ export function createPhysicalRoutePanel(scope) {
         'Robot not verified at the selected start rack (within 25 mm). Check live camera pose and measured rack coordinates.';
       return;
     }
-    if (!rackStart.value || !rackDestination.value || rackStart.value === rackDestination.value || !stationPoint(rackStart.value) || !stationPoint(rackDestination.value)) {
-      el('rack-status').textContent = 'Select two different racks with measured coordinates before planning.';
+    if (
+      !rackStart.value ||
+      !rackDestination.value ||
+      rackStart.value === rackDestination.value ||
+      !stationPoint(rackStart.value) ||
+      !stationPoint(rackDestination.value)
+    ) {
+      el('rack-status').textContent =
+        'Select two different racks with measured coordinates before planning.';
       return;
     }
     send('capture', { goal_x: Number(el('goal-x').value), goal_y: Number(el('goal-y').value) });
@@ -407,10 +444,10 @@ export function createPhysicalRoutePanel(scope) {
             : p.commissioned === false
               ? 'Check connections before commissioning'
               : !freshCamera(p.scene)
-              ? 'Start calibrated Streamlit WebRTC or Windows camera tracking'
-              : !receiverReady(p.scene)
-                ? 'Bring the ESP32 receiver online'
-                : 'Connection ready for a stationary route capture';
+                ? 'Start calibrated Streamlit WebRTC or Windows camera tracking'
+                : !receiverReady(p.scene)
+                  ? 'Bring the ESP32 receiver online'
+                  : 'Connection ready for a stationary route capture';
       copy = p.missing?.length
         ? p.missing[0]
         : !p.authorized
@@ -517,7 +554,17 @@ export function createPhysicalRoutePanel(scope) {
     el('unlock').disabled = !p.can_unlock || !live;
     el('source').hidden = live;
     el('to-plan').disabled = !canPlan(p);
-    el('capture').disabled = !(canPlan(p) && selectedGoal() && !running && rackStart.value && rackDestination.value && rackStart.value !== rackDestination.value && stationPoint(rackStart.value) && stationPoint(rackDestination.value) && startRackMatchesCamera());
+    el('capture').disabled = !(
+      canPlan(p) &&
+      selectedGoal() &&
+      !running &&
+      rackStart.value &&
+      rackDestination.value &&
+      rackStart.value !== rackDestination.value &&
+      stationPoint(rackStart.value) &&
+      stationPoint(rackDestination.value) &&
+      startRackMatchesCamera()
+    );
     el('capture').textContent = r ? 'Calculate a new route' : 'Calculate physical route';
     el('plan-help').textContent = canPlan(p)
       ? 'Only a proposal is calculated. Movement starts after your separate approval.'
@@ -584,16 +631,25 @@ export function createPhysicalRoutePanel(scope) {
     if (batteryReview) {
       const battery = p.battery;
       el('battery-detail').textContent = battery
-        ? 'Measured pack ' + battery.voltage_v.toFixed(2) + ' V; advisory ' +
-          Number(battery.advisory_v).toFixed(2) + ' V; critical cutoff ' +
-          battery.critical_v.toFixed(2) + ' V. Motor command: zero PWM.'
+        ? 'Measured pack ' +
+          battery.voltage_v.toFixed(2) +
+          ' V; advisory ' +
+          Number(battery.advisory_v).toFixed(2) +
+          ' V; critical cutoff ' +
+          battery.critical_v.toFixed(2) +
+          ' V. Motor command: zero PWM.'
         : 'Low-battery decision required. Motor command: zero PWM.';
     }
     for (const choice of ['continue', 'divert'])
-      el('battery-' + choice).disabled = !(batteryReview && r.battery_prompt &&
-        fresh && hardware && !!p.available &&
+      el('battery-' + choice).disabled = !(
+        batteryReview &&
+        r.battery_prompt &&
+        fresh &&
+        hardware &&
+        !!p.available &&
         p.battery?.action === 'ask_human' &&
-        el('battery-reason').value.trim().length > 0);
+        el('battery-reason').value.trim().length > 0
+      );
     el('run-title').textContent =
       r?.state === 'verified' ? 'Arrival verified' : 'Watch the approved journey';
     const motorReport =
@@ -614,8 +670,10 @@ export function createPhysicalRoutePanel(scope) {
     el('feedback').textContent = p.feedback || '';
     el('feedback').hidden = !p.feedback;
     const brokerStatus = {
-      connecting: 'Connecting to EMQX', subscribing: 'Subscribing to route feedback',
-      subscribed: 'Subscribed to route feedback', disconnected: 'Disconnected',
+      connecting: 'Connecting to EMQX',
+      subscribing: 'Subscribing to route feedback',
+      subscribed: 'Subscribed to route feedback',
+      disconnected: 'Disconnected',
       login_rejected: 'Broker rejected the route login',
       subscription_rejected: 'Broker rejected the route feedback subscriptions',
     };
@@ -626,34 +684,56 @@ export function createPhysicalRoutePanel(scope) {
     else if (directReceiver && p.transport.connected) {
       if (receiver?.fresh) {
         const voltage = Number(receiver.battery_voltage_v).toFixed(2) + ' V';
-        receiverText = receiver.protocol === 'H2'
-          ? 'Signed H2 manual receiver · ' + voltage + '. Upload the H1 route receiver for missions.'
-          : 'Signed H1 route receiver · ' + voltage + (receiver.ready ? ' · ready' : ' · onboard interlock active');
+        receiverText =
+          receiver.protocol === 'H2'
+            ? 'Signed H2 manual receiver · ' +
+              voltage +
+              '. Upload the H1 route receiver for missions.'
+            : 'Signed H1 route receiver · ' +
+              voltage +
+              (receiver.ready ? ' · ready' : ' · onboard interlock active');
       } else {
-        receiverText = receiver ? 'Last signed receiver heartbeat is stale' : 'Listening for a signed ESP32 heartbeat';
+        receiverText = receiver
+          ? 'Last signed receiver heartbeat is stale'
+          : 'Listening for a signed ESP32 heartbeat';
       }
-    } else if (p.transport?.connected) receiverText = 'Waiting for receiver feedback from the camera controller';
+    } else if (p.transport?.connected)
+      receiverText = 'Waiting for receiver feedback from the camera controller';
     const readiness = [
       ['Physical source', live ? 'Selected' : 'Select physical source', live],
       [
         'Operator session',
-        auth ? (p.commissioned === false ? 'Connection checks only' : 'Enabled')
-          : p.can_unlock ? 'Access code required' : 'Connection setup required',
+        auth
+          ? p.commissioned === false
+            ? 'Connection checks only'
+            : 'Enabled'
+          : p.can_unlock
+            ? 'Access code required'
+            : 'Connection setup required',
         auth,
       ],
-      ['Route broker', directReceiver && p.transport.connected ? 'Subscribed to ESP32 feedback'
-        : brokerStatus[p.transport?.state] || 'Awaiting operator connection',
-        p.transport?.connected === true],
+      [
+        'Route broker',
+        directReceiver && p.transport.connected
+          ? 'Subscribed to ESP32 feedback'
+          : brokerStatus[p.transport?.state] || 'Awaiting operator connection',
+        p.transport?.connected === true,
+      ],
       [
         'Camera scene',
-        fresh ? 'Fresh calibrated observations' : p.transport?.connected
-          ? 'Waiting for calibrated camera tracking' : 'Awaiting route connection',
+        fresh
+          ? 'Fresh calibrated observations'
+          : p.transport?.connected
+            ? 'Waiting for calibrated camera tracking'
+            : 'Awaiting route connection',
         fresh,
       ],
       [
         'ESP32 receiver',
         receiverText,
-        Boolean(hardware && fresh || receiver?.fresh && receiver.protocol === 'H1' && receiver.ready),
+        Boolean(
+          (hardware && fresh) || (receiver?.fresh && receiver.protocol === 'H1' && receiver.ready),
+        ),
       ],
     ];
     el('readiness').replaceChildren(

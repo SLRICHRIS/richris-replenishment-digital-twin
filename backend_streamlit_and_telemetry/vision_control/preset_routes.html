@@ -556,6 +556,13 @@
         setInterval(presence, 120);
         refresh();
         presence();
+        if (window.parent !== window) {
+          // Loading status only: never share the key, session token or commands.
+          window.parent.postMessage(
+            { type: 'amr-preset:ready', version: 1 },
+            '__AMR_DASHBOARD_ORIGIN__',
+          );
+        }
       })();
     </script>
   </body>

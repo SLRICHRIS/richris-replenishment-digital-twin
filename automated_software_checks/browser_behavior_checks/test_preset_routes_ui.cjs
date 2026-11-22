@@ -5,16 +5,26 @@ const html = fs.readFileSync(
   'backend_streamlit_and_telemetry/vision_control/preset_routes.html',
   'utf8',
 );
-const dom = new JSDOM(html.replace('__AMR_SESSION__', 'test-only'), {
-  url: 'http://127.0.0.1:8765/',
-  runScripts: 'outside-only',
-  pretendToBeVisual: true,
-});
+const dashboard = 'https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app';
+const dom = new JSDOM(
+  html.replace('__AMR_SESSION__', 'test-only').replace('__AMR_DASHBOARD_ORIGIN__', dashboard),
+  {
+    url: 'http://127.0.0.1:8765/',
+    runScripts: 'outside-only',
+    pretendToBeVisual: true,
+  },
+);
 const w = dom.window,
   d = w.document,
   $ = (id) => d.getElementById(id);
 const intervals = new Map(),
-  calls = [];
+  calls = [],
+  parentMessages = [];
+Object.defineProperty(w, 'parent', {
+  value: {
+    postMessage: (value, origin) => parentMessages.push({ value, origin }),
+  },
+});
 let hidden = false;
 Object.defineProperty(d, 'hidden', { get: () => hidden });
 w.setInterval = (f, n) => {
@@ -90,6 +100,12 @@ const change = (id) => $(id).dispatchEvent(new w.Event('change'));
 (async () => {
   w.eval(d.querySelector('script').textContent);
   await flush();
+  assert.equal(parentMessages.length, 1);
+  assert.equal(parentMessages[0].origin, dashboard);
+  assert.deepEqual(JSON.parse(JSON.stringify(parentMessages[0].value)), {
+    type: 'amr-preset:ready',
+    version: 1,
+  });
   assert(calls.every((c) => ['/api/status', '/api/presence'].includes(c.path)));
   assert($('start').disabled);
   assert.match($('placement').textContent, /E.*29, 7.5.*DOWN/);

@@ -23,6 +23,7 @@ from .local_session import ProcessLock, read_route_key
 from .local_transport import DeviceHTTPTransport, DEVICE_IP, PRESET_PWM_CAP, receiver_ip
 
 HOST, PORT = "127.0.0.1", 8765
+DASHBOARD_ORIGIN = "https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app"
 PRESENCE_MS = 700
 MIN_VOLTAGE = 6.0
 STATIONS = {
@@ -477,7 +478,9 @@ def handler_for(controller):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'; connect-src 'self'; base-uri 'none'")
+            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'unsafe-inline'; "
+                             "style-src 'unsafe-inline'; frame-ancestors 'self' " + DASHBOARD_ORIGIN +
+                             "; connect-src 'self'; base-uri 'none'")
             self.end_headers()
             self.wfile.write(body)
 
@@ -496,7 +499,8 @@ def handler_for(controller):
                 return
             if self.path == "/":
                 html = Path(__file__).with_name("preset_routes.html").read_text(encoding="utf-8")
-                self.reply(200, html.replace("__AMR_SESSION__", controller.session).encode(), "text/html; charset=utf-8")
+                html = html.replace("__AMR_SESSION__", controller.session).replace("__AMR_DASHBOARD_ORIGIN__", DASHBOARD_ORIGIN)
+                self.reply(200, html.encode(), "text/html; charset=utf-8")
             elif self.path == "/api/status":
                 self.reply(200, controller.status())
             else:

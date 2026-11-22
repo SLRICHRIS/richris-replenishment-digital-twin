@@ -416,8 +416,9 @@ Generated catalog of the current source tree. Historical names and removed evide
 | `esp32_telemetry_firmware/AMR01_Local_Routes/amr_mqtt_transport.h` | Support the retained EMQX telemetry publisher without making the broker the route-command transport. |
 | `esp32_telemetry_firmware/AMR01_Local_Routes/example_private_amr_settings.h` | Provide placeholder Wi-Fi, telemetry and distinct route-key settings for the locally excluded private configuration. |
 | `project_documentation/direct_wifi_aruco_routes.md` | Explain Windows startup, one-time receiver upload, local calibration, measured configuration, route decisions and verification limits. |
-| `frontend_warehouse_dashboard/browser_modules/vision_routing/local_aruco_control.js` | Embed the laptop route workspace and end its session when the operator leaves or hides the dashboard view. |
-| `automated_software_checks/browser_behavior_checks/test_local_aruco_embed.mjs` | Check local-workspace embedding, explicit launch and session teardown without connecting to a robot. |
+| `frontend_warehouse_dashboard/browser_modules/vision_routing/local_aruco_control.js` | Embed the laptop preset controller, verify its loading message and end its session when the operator leaves or hides the dashboard view. |
+| `automated_software_checks/browser_behavior_checks/test_local_aruco_embed.mjs` | Check explicit preset launch, trusted loading messages, fallback help and session teardown without connecting to a robot. |
+| `automated_software_checks/browser_behavior_checks/verify_preset_embed_chromium.cjs` | Use Chromium and a synthetic local service to verify nested HTTPS embedding, loading confirmation, disconnected startup and rejection of untrusted framing. |
 | `frontend_warehouse_dashboard/downloadable_hardware_kits_and_guides/AMR01_Local_Routes.zip` | Reproducible local-route firmware kit containing canonical source, placeholder settings and setup guidance without private credentials. |
 | `esp32_telemetry_firmware/AMR01_Local_Routes/.gitignore` | Exclude the private Wi-Fi, telemetry and route-key header from the firmware source tree. |
 | `automated_software_checks/esp32_firmware_compile_and_contract_checks/check_local_route_protocol.cpp` | Exercise signed route-command framing, expiry and rejection boundaries without physical actuation. |

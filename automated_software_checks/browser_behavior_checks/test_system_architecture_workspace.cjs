@@ -61,10 +61,10 @@ assert.equal(manualNavigation, 1, 'Direct-control explanation opens the correct 
 assert.equal(commands, 0);
 el('tab-vision').click();
 assert.doesNotMatch(el('detail-role').textContent, /92 cm|425/);
-assert.match(el('detail-title').textContent, /Logitech/);
+assert.match(el('detail-title').textContent, /Measured stations/);
 el('next').click();
-assert.match(el('detail-role').textContent, /local ArUco processor/);
-assert.match(el('detail-gate').textContent, /Windows Camera app is not required/);
+assert.match(el('detail-role').textContent, /actual distance and angles/);
+assert.match(el('detail-gate').textContent, /camera calibration is not required/);
 el('tab-vision').dispatchEvent(new w.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
 assert.equal(d.activeElement, el('tab-power'));
 assert.equal(nodes().length, 3);
@@ -99,8 +99,13 @@ const payload = {
 };
 const render = () => d.dispatchEvent(new w.CustomEvent('python-twin:render', { detail: payload }));
 render();
-for (const id of ['raw-status', 'model-status', 'route-status'])
-  assert.equal(el(id).dataset.state, 'good');
+for (const id of ['raw-status', 'model-status']) assert.equal(el(id).dataset.state, 'good');
+assert.equal(
+  el('route-status').dataset.state,
+  'pending',
+  'Cloud camera evidence cannot establish local preset readiness',
+);
+assert.match(el('route-status').textContent, /inside preset routes/);
 now += 3600000;
 timers[0]();
 assert.equal(
@@ -121,7 +126,7 @@ timers[0]();
 assert.equal(
   el('route-status').dataset.state,
   'pending',
-  'Old scenes cannot keep a readiness badge',
+  'Preset readiness remains inside the local controller',
 );
 now += 2000;
 monotonic += 2000;

@@ -10,6 +10,8 @@ on:
       - 'amr01_local_twin.py'
       - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
+      - 'automated_software_checks/browser_behavior_checks/verify_preset_embed_chromium.cjs'
+      - 'frontend_warehouse_dashboard/browser_modules/vision_routing/local_aruco_control.js'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'esp32_telemetry_firmware/AMR01_Local_Routes/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
@@ -23,6 +25,8 @@ on:
       - 'amr01_local_twin.py'
       - 'amr01_preset_routes.py'
       - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
+      - 'automated_software_checks/browser_behavior_checks/verify_preset_embed_chromium.cjs'
+      - 'frontend_warehouse_dashboard/browser_modules/vision_routing/local_aruco_control.js'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'esp32_telemetry_firmware/AMR01_Local_Routes/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
@@ -34,6 +38,24 @@ permissions:
   contents: read
 
 jobs:
+  verify-preset-embedding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test runtime
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Verify trusted embedding without robot access
+        run: node automated_software_checks/browser_behavior_checks/verify_preset_embed_chromium.cjs
   build-preset-controller:
     runs-on: windows-latest
     timeout-minutes: 15

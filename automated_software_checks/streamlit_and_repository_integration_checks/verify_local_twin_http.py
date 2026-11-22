@@ -83,6 +83,11 @@ def verify(command, *, preset=False):
                     assert expected in html, "Packaged HTML lost an intended Unicode label or placeholder"
                 assert "__AMR_SESSION_TOKEN__" not in html, "The live page was not rendered by LocalTwin"
                 assert "__AMR_SESSION__" not in html, "The controller session token was not rendered"
+                if preset:
+                    dashboard = "https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app"
+                    assert "frame-ancestors 'self' " + dashboard in headers["Content-Security-Policy"]
+                    assert "__AMR_DASHBOARD_ORIGIN__" not in html and dashboard in html
+                    assert "amr-preset:ready" in html
 
                 for _ in range(2):
                     headers, body = get("/api/status")

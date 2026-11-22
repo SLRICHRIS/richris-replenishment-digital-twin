@@ -1,12 +1,15 @@
 """Camera-free route geometry and bounded real-command state machine, fake MCU only."""
 import copy
+import http.client
 import json
 import math
+import threading
+from http.server import ThreadingHTTPServer
 
 import pytest
 
 from backend_streamlit_and_telemetry.vision_control.preset_routes import (
-    PresetController, STATIONS, centre, layout, timed_plan, handler_for,
+    PresetController, STATIONS, centre, layout, timed_plan, handler_for, DASHBOARD_ORIGIN,
 )
 
 
@@ -429,6 +432,45 @@ def test_local_http_mutations_require_exact_origin_host_and_session(tmp_path):
     handler.headers = valid
     assert handler.allowed(mutation=True)
     assert not receiver.calls
+
+
+def test_preset_http_allows_only_own_dashboard_frame_without_cloud_command_access(tmp_path):
+    receiver = Receiver([10000])
+    app = PresetController(receiver, tmp_path, clock=lambda:10000)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler_for(app))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def request(method, path, payload=None, **headers):
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+        connection.request(method, path, body=json.dumps(payload) if payload is not None else None,
+                           headers={"Host":"127.0.0.1:8765", **headers})
+        response = connection.getresponse()
+        result = response.status, response.read(), dict(response.getheaders())
+        connection.close()
+        return result
+
+    try:
+        code, body, headers = request("GET", "/")
+        assert code == 200 and app.session.encode() in body
+        assert b"__AMR_DASHBOARD_ORIGIN__" not in body and DASHBOARD_ORIGIN.encode() in body
+        ancestors = next(s.strip() for s in headers["Content-Security-Policy"].split(';')
+                         if s.strip().startswith('frame-ancestors'))
+        assert ancestors == "frame-ancestors 'self' " + DASHBOARD_ORIGIN
+        assert not any(k.lower() in ("access-control-allow-origin", "x-frame-options") for k in headers)
+        assert request("GET", "/api/status", Host="attacker.example")[0] == 403
+        proper = {"Origin":"http://127.0.0.1:8765", "X-AMR-Session":app.session,
+                  "Content-Type":"application/json"}
+        for origin in (DASHBOARD_ORIGIN, "https://attacker.example", "null"):
+            assert request("POST", "/api/connect", {}, **{**proper, "Origin":origin})[0] == 403
+        assert request("POST", "/api/connect", {}, **{**proper, "X-AMR-Session":"wrong"})[0] == 403
+        assert request("POST", "/api/presence", {"active":True}, **proper)[0] == 200
+        assert json.loads(request("GET", "/api/status")[1])["connected"] is False
+        assert not receiver.calls and app.job is None
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(1)
 
 
 def test_forward_roll_cannot_exceed_total_measured_travel(tmp_path):

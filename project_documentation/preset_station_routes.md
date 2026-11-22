@@ -1,8 +1,20 @@
 # AMR-01: three camera-free routes
 
-Open **AMR01_PresetRoutes.exe**, paste the same private `AMR_ROUTE_KEY`, and keep the console open. Close LocalTwin and other motor controller pages first. Open the local page at `http://127.0.0.1:8765` and select **Connect ESP32**. No camera calibration is needed for this mode. The current receiver address is `10.55.54.112`; use `--device-ip` if the hotspot assigns a different address.
+Open **AMR01_PresetRoutes.exe**, paste the same private `AMR_ROUTE_KEY`, and keep the console open. Close LocalTwin and other motor controller pages first. No camera calibration is needed for this mode. The current receiver address is `10.55.54.112`; use `--device-ip` if the hotspot assigns a different address.
 
-## Install 200 PWM with the existing 6.0 V cutoff
+## Open inside the digital twin
+
+This update lets the existing preset controller appear inside the digital twin. If **Local Routes r4**, **200 PWM** and **6.00 V** are already installed, keep that ESP32 firmware; no reupload is required for embedding.
+
+1. Close the old preset application and run the updated **AMR01_PresetRoutes.exe** with your existing key. Keep its console open. Close the separate controller browser tab it opens, leaving the console running.
+2. Open [the digital twin](https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app/) on the same Windows laptop. Refresh with **Ctrl+F5**, then choose **Drive & review → Preset routes → Open preset routes here**. The overview's **Open preset routes** shortcut opens this same panel.
+3. Allow access to apps on this device or the local network if the browser prompts. The panel reports that the controller loaded only after receiving its loading confirmation. Check ESP32 readiness inside the panel, then use its **Connect ESP32**, measurements, route selection and Stop controls.
+
+The Windows application must stay running because the ESP32 connection is made from the laptop. The old executable blocks embedding and must be replaced even if its separate tab works. **Open on laptop** remains available at `http://127.0.0.1:8765` if browser policy blocks the embedded panel; it closes the embedded view first.
+
+Opening the panel never connects or starts movement automatically. Leaving Preset routes, closing the panel or hiding the dashboard ends its attended session; returning never resumes it. The loading confirmation contains no key, session token or motor command. Only this digital twin's exact web origin and the local app itself may frame the controller. Existing local Host, Origin and session-token checks still reject cloud-origin API commands.
+
+## First installation of 200 PWM with the existing 6.0 V cutoff
 
 The preset trial now defaults to **200 PWM**, and the application and supplied **Local Routes r4** receiver support values up to 200. The **6.0 V** pack cutoff remains. Updating the application alone cannot raise the cap in the ESP32's existing firmware.
 

@@ -1995,11 +1995,11 @@ function updateSourceUI() {
     const content =
       mode === 'local'
         ? [
-            'Camera routes',
-            'ArUco + direct Wi-Fi',
-            'Human-approved local routes',
-            'Camera-guided AMR',
-            'Choose A, B and E start and destination in the laptop workspace. Review and approve each route, including obstacle detours and battery-station visits. Fresh camera observations verify arrival.',
+            'Preset routes',
+            'Three routes · direct Wi-Fi',
+            'Attended preset routes',
+            'Measured timing',
+            'Run A → B, E → A or B → E inside the digital twin. Complete the movement measurements, align the source position, watch the robot and confirm arrival.',
             'Human approval required',
             'EMQX carries telemetry. The laptop sends route commands directly over Wi-Fi.',
           ]

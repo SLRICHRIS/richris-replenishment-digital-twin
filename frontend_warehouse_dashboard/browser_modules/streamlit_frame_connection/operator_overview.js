@@ -45,7 +45,7 @@
         'Waiting for data',
         window.parent === window
           ? 'Open the full dashboard for sensor readings and protected reviews.'
-          : 'Waiting for the server. Camera routes use the separate local laptop connection.',
+          : 'Waiting for the server. Preset routes use the local laptop connection.',
         'waiting',
       );
     else if (p.mode === 'demo')
@@ -80,7 +80,7 @@
       card(
         'review',
         'Fresh evidence needed',
-        'Sensor recommendations need new telemetry. Route approval uses the local camera workspace and ESP32 feedback.',
+        'Sensor recommendations need new telemetry. Preset movement uses the local controller and ESP32 feedback.',
         'waiting',
       );
     else if (!review.authorized)
@@ -102,10 +102,10 @@
     const open = !!$('lc-frame');
     card(
       'control',
-      open ? 'Camera workspace open' : 'ArUco camera routes',
+      open ? 'Preset routes panel open' : 'Preset station routes',
       open
-        ? 'Check camera, receiver and approval readiness inside the workspace. Opening it does not authorize motion.'
-        : 'Start AMR01_LocalTwin on the laptop. Choose A, B and E start and destination, review the route and approve movement.',
+        ? 'Check ESP32 readiness and measured timing inside the panel. Opening it does not authorize motion.'
+        : 'Keep AMR01_PresetRoutes.exe open on the laptop. Use A → B, E → A or B → E here and confirm arrival yourself.',
       'neutral',
     );
   }
@@ -118,6 +118,7 @@
     $('operator-drive').addEventListener('click', () => {
       $('tab-vision')?.click();
       $('vision-mode-local')?.click();
+      $('lc-open')?.click();
     });
     $('operator-connect').addEventListener('click', () => {
       $('tab-vision')?.click();
