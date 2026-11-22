@@ -142,7 +142,23 @@ class PresetController:
             h = copy.deepcopy(self.hardware)
             if h:
                 h["age_ms"] = max(0, self.clock()-h["issued_at_ms"])
-            return dict(state=self.state, message=self.hardware_error or self.message,
+            message = self.hardware_error or self.message
+            if self.connected and self.state == "idle" and not self.hardware_error:
+                if not h:
+                    message = "Waiting for the first authenticated ESP32 response"
+                elif not fresh(h["issued_at_ms"], self.clock()):
+                    message = "ESP32 feedback is out of date; waiting for a fresh sample"
+                elif h["battery_voltage_v"] < MIN_VOLTAGE:
+                    message = "ESP32 connected; battery is below the 6.7 V movement minimum"
+                elif not h["ready"]:
+                    message = "ESP32 connected; controller is not ready. Keep the robot still during startup and check its interlocks."
+                elif h["left_duty"] or h["right_duty"]:
+                    message = "ESP32 connected; wait for zero motor outputs and close other controllers"
+                elif set(self.measurements["samples"]) == set(DUTIES):
+                    message = "ESP32 connected and ready. Select a route and confirm its starting position."
+                else:
+                    message = "ESP32 connected and ready. Complete the one-time movement measurements below."
+            return dict(state=self.state, message=message,
                         connected=self.connected, ready=self.ready(zero=True), hardware=h,
                         controller_ip=self.transport.device_ip, busy=bool(self.job),
                         measurements=copy.deepcopy(self.measurements), last_test=copy.deepcopy(self.last_test),

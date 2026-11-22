@@ -102,6 +102,8 @@ def test_timing_requires_real_measurements_and_checks_layout_and_battery():
 def test_start_is_explicit_and_no_camera_profile_is_required(tmp_path):
     app,receiver,clock=rig(tmp_path)
     assert not receiver.calls
+    assert app.status()["ready"] is True
+    assert "connected and ready" in app.status()["message"]
     assert app.status()["camera_required"] is False
     assert app.status()["automatic_obstacle_detection"] is False
     with pytest.raises(ValueError,match="Confirm"):
@@ -114,6 +116,21 @@ def test_start_is_explicit_and_no_camera_profile_is_required(tmp_path):
     assert receiver.calls[0]["operation"] == "arm"
     assert not receiver.h["left_duty"] and not receiver.h["right_duty"]
     with pytest.raises(ValueError,match="already ended"): start_trial(app)
+
+
+def test_idle_banner_tracks_receiver_readiness_without_changing_completed_outcomes(tmp_path):
+    app, receiver, clock = rig(tmp_path)
+    receiver.h["ready"] = False
+    app.tick(receiver.poll())
+    assert "not ready" in app.status()["message"] and not app.status()["ready"]
+    receiver.h["ready"] = True
+    app.tick(receiver.poll())
+    clock[0] += 501
+    assert "out of date" in app.status()["message"] and not app.status()["ready"]
+    app.tick(receiver.poll())
+    app.state, app.message = "sequence_complete", "Check the destination"
+    assert app.status()["message"] == "Check the destination"
+    assert not receiver.calls
 
 
 def test_calibration_saved_only_after_completed_acknowledged_trial(tmp_path):
