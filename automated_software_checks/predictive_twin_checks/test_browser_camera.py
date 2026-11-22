@@ -54,13 +54,14 @@ def test_config_requires_measured_floor_positions_even_when_all_checks_claimed()
          "backend_streamlit_and_telemetry/vision_control/example_camera_config.json").read_text()
     )
     example["checks"] = {key: True for key in example["checks"]}
+    example["floor_reference_positions_mm"] = {str(i): [None, None] for i in range(1, 5)}
     with pytest.raises(ValueError, match="measured floor (marker|reference)"):
         load_config(example)
     example["floor_reference_positions_mm"] = {
-        "1": [40, 590], "2": [40, 40], "3": [570, 40], "4": [570, 590],
+        "1": [45, 485], "2": [45, 50], "3": [690, 50], "4": [690, 485],
     }
     with pytest.raises(ValueError, match="Invalid"):
-        example["floor_reference_positions_mm"]["4"] = [float("nan"), 590]
+        example["floor_reference_positions_mm"]["4"] = [float("nan"), 485]
         load_config(example)
 
 

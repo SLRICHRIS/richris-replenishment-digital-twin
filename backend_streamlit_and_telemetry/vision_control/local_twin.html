@@ -596,6 +596,12 @@
         gap: 10px;
         margin-top: 10px;
       }
+      .station-heading-field {
+        grid-column: 2 / -1;
+      }
+      .station-heading-field[hidden] {
+        display: none;
+      }
       .station-row > strong {
         padding-bottom: 11px;
       }
@@ -874,12 +880,28 @@
               <summary id="stations-title">Measured stations A, B and E</summary>
               <div class="panel-body">
                 <p>
-                  Enter measured robot-centre positions on the calibrated floor. Printed station
-                  labels do not determine reachable coordinates. A and B are work stations. E is the
-                  charging stop. Connect the charger manually after the robot has stopped at E.
-                  Measure X from the left inner tape edge and Y from the bottom inner tape edge.
+                  Choose what reaches each measured point: the robot centre, or its front at a paper
+                  edge. Front targets also need the direction the robot faces when it stops. A and B
+                  are work stations. E is a reference stop for manual charging. Measure X from the
+                  left inner tape edge and Y from the bottom inner tape edge.
                 </p>
                 <form id="stations-form">
+                  <label class="field">
+                    <span>Point reached at arrival</span>
+                    <select id="station-reference">
+                      <option value="centre">Robot centre reaches point</option>
+                      <option value="front">Robot front reaches paper edge</option>
+                    </select>
+                  </label>
+                  <p>Arrival direction: 0° = right, 90° = up, −90° = down, 180° = left.</p>
+                  <button id="station-reported" type="button">
+                    Load reported A/B/E paper-edge points
+                  </button>
+                  <p>
+                    Reported-point directions are proposed: A faces right, B faces up, E faces down.
+                    Check each direction before saving.
+                  </p>
+                  <p id="station-draft-detail">Choose the point reference before saving.</p>
                   <div class="station-row">
                     <strong>A</strong>
                     <label class="field">
@@ -904,6 +926,17 @@
                         step="0.1"
                         required
                         placeholder="Measured Y"
+                      />
+                    </label>
+                    <label class="field station-heading-field" hidden>
+                      <span>A arrival direction (degrees)</span>
+                      <input
+                        id="station-A-heading"
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="0.1"
+                        value="0"
                       />
                     </label>
                   </div>
@@ -933,6 +966,17 @@
                         placeholder="Measured Y"
                       />
                     </label>
+                    <label class="field station-heading-field" hidden>
+                      <span>B arrival direction (degrees)</span>
+                      <input
+                        id="station-B-heading"
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="0.1"
+                        value="90"
+                      />
+                    </label>
                   </div>
                   <div class="station-row">
                     <strong>E · charging</strong>
@@ -960,10 +1004,24 @@
                         placeholder="Measured Y"
                       />
                     </label>
+                    <label class="field station-heading-field" hidden>
+                      <span>E arrival direction (degrees)</span>
+                      <input
+                        id="station-E-heading"
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="0.1"
+                        value="-90"
+                      />
+                    </label>
                   </div>
                   <label class="station-check">
                     <input id="station-verified" type="checkbox" required />
-                    <span>I measured these three robot-centre positions in this camera setup.</span>
+                    <span>
+                      I checked these points, the selected robot reference and the arrival
+                      directions in this setup.
+                    </span>
                   </label>
                   <div class="actions">
                     <button id="station-save" type="submit" class="primary" disabled>
@@ -1363,23 +1421,37 @@
         }
         function pointLabel(label, point) {
           return point && finite(point.x) && finite(point.y)
-            ? `${label || point.label || 'Goal'} · ${point.x.toFixed(1)}, ${point.y.toFixed(1)} mm`
+            ? point.front_target
+              ? `${label || point.label || 'Goal'} · front ${point.front_target.x.toFixed(1)}, ${point.front_target.y.toFixed(1)} mm; centre ${point.x.toFixed(1)}, ${point.y.toFixed(1)} mm; facing ${((point.front_target.heading * 180) / Math.PI).toFixed(1)}°`
+              : `${label || point.label || 'Goal'} · ${point.x.toFixed(1)}, ${point.y.toFixed(1)} mm`
             : '—';
         }
         function syncStations(config, force = false) {
           if (!config || (stationDraftDirty && !force)) return;
           const fingerprint = JSON.stringify(config);
           if (!force && stationFingerprint === fingerprint) return;
-          for (const label of STATIONS)
+          $('station-reference').value = config.reference === 'front' ? 'front' : 'centre';
+          for (const label of STATIONS) {
             for (const axis of ['x', 'y']) {
-              const value = config.stations?.[label]?.[axis];
+              const value = (config.measured_points?.[label] || config.stations?.[label])?.[axis];
               $('station-' + label + '-' + axis).value = finite(value) ? String(value) : '';
             }
+            const heading = config.headings_deg?.[label];
+            if (finite(heading)) $('station-' + label + '-heading').value = String(heading);
+          }
           $('station-verified').checked = config.verified === true;
           stationFingerprint = fingerprint;
           stationDraftDirty = false;
         }
         function validStationDraft() {
+          if (
+            $('station-reference').value === 'front' &&
+            !STATIONS.every((label) => {
+              const v = $('station-' + label + '-heading').value;
+              return v !== '' && finite(+v) && +v >= -180 && +v <= 180;
+            })
+          )
+            return false;
           return STATIONS.every((label) =>
             ['x', 'y'].every((axis) => {
               const value = $('station-' + label + '-' + axis).value;
@@ -1391,6 +1463,31 @@
               );
             }),
           );
+        }
+        function renderStationDraft(active, pending) {
+          const front = $('station-reference').value === 'front';
+          for (const field of document.querySelectorAll('.station-heading-field'))
+            field.hidden = !front;
+          for (const id of [
+            'station-reference',
+            'station-reported',
+            ...STATIONS.map((s) => 'station-' + s + '-heading'),
+          ])
+            $(id).disabled = active || pending;
+          const offset = current?.stations?.front_offset_mm;
+          let detail = front
+            ? 'Front arrival uses the measured body length and selected direction. The centre remains behind the paper edge.'
+            : 'Coordinates identify the robot body centre.';
+          if (front && finite(offset) && validStationDraft()) {
+            const points = STATIONS.map((name) => {
+              const heading = (+$('station-' + name + '-heading').value * Math.PI) / 180;
+              const x = +$('station-' + name + '-x').value - offset * Math.cos(heading);
+              const y = +$('station-' + name + '-y').value - offset * Math.sin(heading);
+              return `${name} (${x.toFixed(1)}, ${y.toFixed(1)})`;
+            });
+            detail = `Centre-to-front distance ${offset.toFixed(1)} mm. Calculated centre goals: ${points.join('; ')} mm. Saving checks the measured clearance.`;
+          }
+          text('station-draft-detail', detail);
         }
         function validMissionSelection() {
           const start = $('mission-start').value,
@@ -1420,6 +1517,7 @@
           const m = current?.mission,
             config = current?.stations,
             r = current?.review;
+          renderStationDraft(active, pending);
           const goalName = m?.active_goal?.label || 'current goal';
           text('mission-original-start', pointLabel(m?.start_station, m?.original_start));
           text(
@@ -1445,7 +1543,7 @@
           const stationMessage = config?.verified
             ? 'Measured stations saved for this camera setup.'
             : config?.reason ||
-              'Measure all three robot-centre positions before planning. Coordinates are never guessed.';
+              'Measure all three station points and choose their arrival reference before planning.';
           const boundsMessage =
             bounds && [bounds.x_min, bounds.x_max, bounds.y_min, bounds.y_max].every(finite)
               ? ` Robot-centre limits: X ${bounds.x_min.toFixed(1)}–${bounds.x_max.toFixed(1)} mm, Y ${bounds.y_min.toFixed(1)}–${bounds.y_max.toFixed(1)} mm.`
@@ -1475,7 +1573,9 @@
           text(
             'approve',
             singlePointTarget()
-              ? 'Approve stopped-position verification'
+              ? r?.route?.front_target && !frontAtTarget()
+                ? 'Approve final alignment'
+                : 'Approve stopped-position verification'
               : m?.proposal_kind === 'obstacle_replan'
                 ? 'Approve detour'
                 : m?.proposal_kind === 'return_start'
@@ -1555,7 +1655,7 @@
             title = 'Measure stations before planning';
             detail =
               config?.reason ||
-              'Save measured robot-centre coordinates for A, B and charging stop E.';
+              'Save the measured station points and selected arrival reference for A, B and E.';
           } else if (pending) {
             title = 'Review the mission before movement';
             detail =
@@ -1600,12 +1700,46 @@
             point[1] === goal[1]
           );
         }
+        function frontAtTarget() {
+          const route = current?.review?.route,
+            target = route?.front_target,
+            pose = current?.scene?.pose;
+          if (!target) return true;
+          if (
+            !pose ||
+            ![
+              pose.x,
+              pose.y,
+              pose.heading,
+              target.x,
+              target.y,
+              target.heading,
+              route.front_offset_mm,
+              route.front_tolerance_mm,
+              route.goal_heading_tolerance_rad,
+            ].every(finite)
+          )
+            return false;
+          const yaw = Math.abs(
+            Math.atan2(
+              Math.sin(pose.heading - target.heading),
+              Math.cos(pose.heading - target.heading),
+            ),
+          );
+          const x = pose.x + route.front_offset_mm * Math.cos(pose.heading);
+          const y = pose.y + route.front_offset_mm * Math.sin(pose.heading);
+          return (
+            yaw <= route.goal_heading_tolerance_rad &&
+            Math.hypot(x - target.x, y - target.y) <= route.front_tolerance_mm
+          );
+        }
         function alreadyAtTarget() {
           const p = current?.scene?.pose,
             goal = current?.review?.route?.goal,
             tolerance = current?.review?.route?.goal_tolerance_mm;
           return (
             singlePointTarget() &&
+            frontAtTarget() &&
             fresh('scene') &&
             current?.scene?.valid === true &&
             p &&
@@ -1883,7 +2017,9 @@
               : pending && alreadyAtTarget()
                 ? 'Already at target; approve stopped-position verification. No travel path is proposed.'
                 : pending && singlePointTarget()
-                  ? 'Single-point target: approve a stopped-position check. Arrival still requires fresh camera and stopped-output verification.'
+                  ? r?.route?.front_target && !frontAtTarget()
+                    ? 'Centre is at target. Approval permits turning to the selected arrival direction. The camera must verify the front at the paper edge and stopped outputs.'
+                    : 'Single-point target: approve a stopped-position check. Arrival still requires fresh camera and stopped-output verification.'
                   : r?.reason ||
                     'Preview a route, inspect it on the map, then decide whether it should run.',
           );
@@ -1891,7 +2027,7 @@
           text(
             'review-goal',
             Array.isArray(goal) && goal.length === 2 && goal.every(finite)
-              ? `${goal[0].toFixed(0)}, ${goal[1].toFixed(0)} mm`
+              ? pointLabel('Target', { x: goal[0], y: goal[1], front_target: r.route.front_target })
               : '—',
           );
           text(
@@ -1904,7 +2040,9 @@
           text(
             'arrival-state',
             state === 'verified'
-              ? 'Verified for this recorded route'
+              ? r?.route?.front_target
+                ? 'Front position, facing direction and stopped state verified'
+                : 'Verified for this recorded route'
               : state === 'stopping'
                 ? 'Camera arrival reported; checking stop'
                 : 'Not verified',
@@ -2045,7 +2183,38 @@
                 { x: p.x + 12, y: 560 - p.y - 10, fill: 'var(--green)', 'font-weight': '700' },
                 $('map-stations'),
               );
-              name.textContent = label === 'E' ? 'E · charging' : label;
+              name.textContent =
+                (label === 'E' ? 'E · charging' : label) + (p.front_target ? ' · centre' : '');
+              if (p.front_target && [p.front_target.x, p.front_target.y].every(finite)) {
+                const edge = p.front_target;
+                svg(
+                  'line',
+                  {
+                    x1: p.x,
+                    y1: 560 - p.y,
+                    x2: edge.x,
+                    y2: 560 - edge.y,
+                    stroke: 'var(--green)',
+                    'stroke-dasharray': '4 3',
+                  },
+                  $('map-stations'),
+                );
+                svg(
+                  'path',
+                  {
+                    d: `M${edge.x - 5},${560 - edge.y - 5}l10,10m-10,0l10,-10`,
+                    stroke: 'var(--green)',
+                    'stroke-width': 2,
+                  },
+                  $('map-stations'),
+                );
+                const caption = svg(
+                  'text',
+                  { x: edge.x + 8, y: 560 - edge.y - 8, fill: 'var(--green)' },
+                  $('map-stations'),
+                );
+                caption.textContent = label + ' · front';
+              }
             }
           if (valid) {
             for (const o of Array.isArray(scene.obstacles) ? scene.obstacles : []) {
@@ -2293,6 +2462,25 @@
               $('station-verified').checked = false;
               render();
             });
+        function changeStationDraft() {
+          stationDraftDirty = true;
+          $('station-verified').checked = false;
+          render();
+        }
+        $('station-reference').addEventListener('change', changeStationDraft);
+        for (const name of STATIONS)
+          $('station-' + name + '-heading').addEventListener('input', changeStationDraft);
+        $('station-reported').addEventListener('click', () => {
+          if (routeActive() || (current?.review?.state === 'pending' && !expired())) return;
+          const points = { A: [630, 350, 0], B: [205, 430, 90], E: [290, 75, -90] };
+          $('station-reference').value = 'front';
+          for (const name of STATIONS) {
+            $('station-' + name + '-x').value = String(points[name][0]);
+            $('station-' + name + '-y').value = String(points[name][1]);
+            $('station-' + name + '-heading').value = String(points[name][2]);
+          }
+          changeStationDraft();
+        });
         $('station-verified').addEventListener('change', render);
         $('stations-form').addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -2312,11 +2500,19 @@
               { x: +$('station-' + label + '-x').value, y: +$('station-' + label + '-y').value },
             ]),
           );
-          await act('/api/stations', { stations, verified: true });
+          const payload = { stations, verified: true };
+          if ($('station-reference').value === 'front') {
+            payload.reference = 'front';
+            payload.headings_deg = Object.fromEntries(
+              STATIONS.map((name) => [name, +$('station-' + name + '-heading').value]),
+            );
+          }
+          await act('/api/stations', payload);
         });
         $('station-reload').addEventListener('click', async () => {
           try {
             const config = await request('/api/stations', undefined, { apply: false });
+            if (current) current.stations = config;
             syncStations(config, true);
             render();
           } catch (error) {

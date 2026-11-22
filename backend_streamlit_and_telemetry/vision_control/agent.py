@@ -2,7 +2,7 @@
 import copy
 from .contracts import (unseal, seal, digest, map_digest, ready, plan, fresh,
                         Follower, identifier, angle, APPROVAL_LEASE_MS, MAX_ROUTE_MS,
-                        scene_stop_cause, stopped_for_route)
+                        scene_stop_cause, stopped_for_route, goal_reached)
 from .battery_policy import (battery_action, MISSION_REALERT_DROP_V, MISSION_RECOVERY_V)
 
 
@@ -87,7 +87,7 @@ class Agent:
         import math
         if math.dist((s['pose']['x'],s['pose']['y']),(reviewed['pose']['x'],reviewed['pose']['y']))>10:
             raise ValueError('Robot moved after review')
-        if plan(reviewed,route['goal'])!=route:
+        if plan(reviewed,route['goal'],front_target=route.get('front_target'))!=route:
             raise ValueError('Route no longer matches the physical scene')
         consent=p.get('battery_consent') if self.battery_mode=='mission' else None
         consent_voltage=None
@@ -182,7 +182,7 @@ class Agent:
             else: self.command('drive',left,right,now)
         else:
             import math
-            near=math.dist((s['pose']['x'],s['pose']['y']),self.job['route']['goal'])<=15
+            near=goal_reached(self.job['route'],s['pose'])
             quiet=stopped_for_route(s,now,self.job['review_id'],self.stop_command_seq)
             if near and quiet and s['captured_at_ms']>self.stop_at:
                 if not self.stop_samples or s['seq']>self.stop_samples[-1][0]:

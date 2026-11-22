@@ -453,11 +453,11 @@ def test_camera_route_arrival_requires_new_observations_and_signed_output_ack(ri
     assert all(call[3] in ("arm", "stop") for call in transport.sent)
 
 
-def test_profile_template_never_claims_measurement_and_calibration_invalidates_old_scene(rig):
+def test_reported_profile_never_claims_verification_and_calibration_invalidates_old_scene(rig):
     twin, clock, transport, observe = rig
     profile = twin.profile()
     assert not any(profile["template"]["checks"].values())
-    assert profile["template"]["floor_reference_positions_mm"]["1"] == [None, None]
+    assert profile["template"]["floor_reference_positions_mm"]["1"] == [45, 485]
     twin.calibration("checkerboard", {})
     assert twin.config is None and not twin.status()["calibration_ready"]
     assert twin.coordinator.current is None

@@ -235,12 +235,46 @@ def segment_clear(a,b,rects,r):
     return True
 
 
-def plan(s, goal):
+def front_goal(target, config):
+    """Convert a measured paper-edge point to a body-centre goal at a fixed yaw."""
+    if not isinstance(target, dict) or set(target) != {'x', 'y', 'heading'}:
+        raise ValueError('Measure the front-edge point and choose its arrival direction')
+    target = dict(x=numeric(target['x'], 0, WIDTH), y=numeric(target['y'], 0, HEIGHT),
+                  heading=angle(numeric(target['heading'], -math.pi, math.pi)))
+    offset = geometry(config)['robot_length_mm'] / 2
+    goal = [target['x'] - offset * math.cos(target['heading']),
+            target['y'] - offset * math.sin(target['heading'])]
+    return goal, target, offset
+
+
+def goal_reached(route, pose):
+    """Arrival checks use the same measured reference in follower and verifiers."""
+    if math.dist((pose['x'], pose['y']), route['goal']) > route['goal_tolerance_mm']:
+        return False
+    target = route.get('front_target')
+    if target is None:
+        return True
+    if abs(angle(pose['heading'] - target['heading'])) > route['goal_heading_tolerance_rad']:
+        return False
+    offset = route['front_offset_mm']
+    front = (pose['x'] + offset * math.cos(pose['heading']),
+             pose['y'] + offset * math.sin(pose['heading']))
+    return math.dist(front, (target['x'], target['y'])) <= route['front_tolerance_mm']
+
+
+def plan(s, goal, *, front_target=None):
     if not isinstance(goal,(list,tuple)) or len(goal)!=2:
         raise ValueError('Choose a destination on the measured floor')
     # Measured station coordinates are authoritative. The grid supplies only
     # intermediate nodes; rounding must never change clearance or arrival.
     goal=(numeric(goal[0],0,WIDTH),numeric(goal[1],0,HEIGHT))
+    arrival = None
+    if front_target is not None:
+        centre, target, offset = front_goal(front_target, s['geometry'])
+        if math.dist(centre, goal) > 1e-6:
+            raise ValueError('Front-edge point, arrival direction and centre goal disagree')
+        arrival = dict(front_target=target, front_offset_mm=offset,
+                       front_tolerance_mm=15, goal_heading_tolerance_rad=min(.05, 5/offset))
     actual=(s['pose']['x'],s['pose']['y'])
     start=tuple(round(v/GRID)*GRID for v in actual)
     r=radius(s['geometry']); rects=s['obstacles']
@@ -250,9 +284,13 @@ def plan(s, goal):
     def result(points):
         if len(points)>300:
             raise ValueError('Route exceeds the bounded floor job size')
-        return dict(points=[list(p) for p in points],goal=list(goal),
+        route = dict(points=[list(p) for p in points],goal=list(goal),
                     length_mm=sum(math.dist(a,b) for a,b in zip(points,points[1:])),
                     clearance_radius_mm=r,goal_tolerance_mm=15,grid_mm=GRID)
+        if arrival:
+            # At most 10 mm centre error plus 5 mm from final yaw error.
+            route.update(arrival, goal_tolerance_mm=10)
+        return route
 
     if start==tuple(round(v/GRID)*GRID for v in goal) and segment_clear(actual,goal,rects,r):
         return result([actual] if actual==goal else [actual,goal])
@@ -313,21 +351,25 @@ class Follower:
         if not segment_clear(p,p,s['obstacles'],radius(self.g)):
             raise ValueError('Robot clearance is no longer valid')
         distance=math.dist(p,self.route['goal'])
-        if distance <= self.route['goal_tolerance_mm']:
+        if goal_reached(self.route, s['pose']):
             return 0,0,True
         # Camera displacement OR heading progress counts, including detours.
         if self.last_pose is None or math.dist(p,self.last_pose[:2])>=5 or abs(angle(s['pose']['heading']-self.last_pose[2]))>=.08:
             self.last_pose=(*p,s['pose']['heading']); self.progress_at=now_ms
         if now_ms-self.progress_at>5000:
             raise ValueError('No route progress; inspect wheels and motor calibration')
-        while self.index<len(pts)-1 and math.dist(p,pts[self.index])<min(15,self.g['tracking_tolerance_mm']):
-            self.index+=1
-        target=pts[self.index]
-        if not segment_clear(p,target,s['obstacles'],radius(self.g)):
-            raise ValueError('Next route segment no longer has clearance')
-        error=angle(math.atan2(target[1]-p[1],target[0]-p[0])-s['pose']['heading'])
+        aligning = distance <= self.route['goal_tolerance_mm'] and self.route.get('front_target') is not None
+        if aligning:
+            error = angle(self.route['front_target']['heading'] - s['pose']['heading'])
+        else:
+            while self.index<len(pts)-1 and math.dist(p,pts[self.index])<min(15,self.g['tracking_tolerance_mm']):
+                self.index+=1
+            target=pts[self.index]
+            if not segment_clear(p,target,s['obstacles'],radius(self.g)):
+                raise ValueError('Next route segment no longer has clearance')
+            error=angle(math.atan2(target[1]-p[1],target[0]-p[0])-s['pose']['heading'])
         omega=max(-self.g['max_angular_rad_s'],min(self.g['max_angular_rad_s'],2*error))
-        speed=0 if abs(error)>.35 else min(self.g['max_speed_mm_s'],distance)*max(0,math.cos(error))
+        speed=0 if aligning or abs(error)>.35 else min(self.g['max_speed_mm_s'],distance)*max(0,math.cos(error))
         wheels=(speed-omega*self.g['wheel_track_mm']/2,speed+omega*self.g['wheel_track_mm']/2)
         result=[]
         for side,v in zip(('left','right'),wheels):

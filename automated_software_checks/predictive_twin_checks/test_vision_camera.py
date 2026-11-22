@@ -148,7 +148,7 @@ def test_reported_height_is_not_verified_calibration(tmp_path):
     assert p['marker_center_to_robot_center_mm']==[None,None]
     assert p['floor_reference_rotations_deg']=={str(i):-90 for i in REFS}
     assert p['floor_reference_marker_edge_mm']==30
-    assert p['floor_reference_positions_mm']=={str(i):[None,None] for i in REFS}
+    assert p['floor_reference_positions_mm']=={'1':[45,485],'2':[45,50],'3':[690,50],'4':[690,485]}
     assert p['marker_forward_offset_rad'] is None
     assert not any(p['checks'].values())
     p['checks']={c:True for c in CHECKS};p['floor_width_mm']=841

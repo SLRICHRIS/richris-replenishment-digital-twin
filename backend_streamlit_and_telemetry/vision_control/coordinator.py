@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy import MetaData, Table, Column, String, Text, BigInteger, select, update
 from .contracts import (scene, unseal, seal, canonical, fresh, ready, map_digest,
                         plan, digest, angle, APPROVAL_LEASE_MS, OPERATOR_PRESENCE_MS,
-                        SCENE_FRESH_MS, scene_stop_cause)
+                        SCENE_FRESH_MS, scene_stop_cause, goal_reached)
 from .battery_policy import battery_action, MISSION_MINIMUM_V, MISSION_ADVISORY_V
 
 metadata=MetaData()
@@ -61,7 +61,7 @@ class Coordinator:
                    and math.dist((p['pose']['x'],p['pose']['y']),(s['pose']['x'],s['pose']['y']))<=5
                    and abs(angle(p['pose']['heading']-s['pose']['heading']))<=.05 for p in h)
 
-    def capture(self,owner,operator,goal,*,battery_consent=False,battery_consent_voltage=None):
+    def capture(self,owner,operator,goal,*,battery_consent=False,battery_consent_voltage=None,front_target=None):
         with self.lock:
             if type(battery_consent) is not bool: raise ValueError('Explicit route battery consent required')
             if battery_consent_voltage is not None and (type(battery_consent_voltage) not in (int,float)
@@ -69,7 +69,7 @@ class Coordinator:
                 raise ValueError('Invalid reviewed battery voltage')
             if self.row and self.row['state'] in ACTIVE: raise ValueError('Stop the current route before reviewing another')
             if not self.connected or not self.stationary(): raise ValueError('Fresh stationary camera and ESP32 feedback are required')
-            route=plan(self.current,goal); now=self.clock()
+            route=plan(self.current,goal,front_target=front_target); now=self.clock()
             self.approved_scene=copy.deepcopy(self.current)
             self.row=dict(review_id=uuid.uuid4().hex,owner_id=owner,operator=operator,created_at_ms=now,
                 expires_at_ms=now+60000,state='pending',route=route,route_hash=digest(route),
@@ -213,7 +213,9 @@ class Coordinator:
                 if r.get(name)!=value: r[name]=value; changed=True
             if state=='verified':
                 s=self.current
-                if not ready(s,now) or map_digest(s)!=r['map_id'] or math.dist((s['pose']['x'],s['pose']['y']),r['route']['goal'])>15 or s['hardware']['left_duty'] or s['hardware']['right_duty']: return
+                if not ready(s,now) or map_digest(s)!=r['map_id'] or not goal_reached(r['route'],s['pose']) or s['hardware']['left_duty'] or s['hardware']['right_duty']:
+                    self.verification=[]
+                    return
                 if not self.verification or s['seq']>self.verification[-1][0]: self.verification.append((s['seq'],s['captured_at_ms'],s['pose']))
                 if len(self.verification)<3 or self.verification[-1][1]-self.verification[0][1]<300: return
                 if max(math.dist((v[2]['x'],v[2]['y']),(s['pose']['x'],s['pose']['y'])) for v in self.verification)>5 or max(abs(angle(v[2]['heading']-s['pose']['heading'])) for v in self.verification)>.05: self.verification=[]; return

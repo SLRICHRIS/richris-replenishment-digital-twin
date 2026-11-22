@@ -24,7 +24,7 @@ def mission_rig(tmp_path):
     twin.config = dict(geometry=copy.deepcopy(G), resolution=[1280, 720])
     twin.config_id = "f" * 64
 
-    def frame(stamp, *, x=210, y=180, obstacles=(), voltage=7.4, valid=True,
+    def frame(stamp, *, x=210, y=180, heading=math.pi/2, obstacles=(), voltage=7.4, valid=True,
               route=None, ack=None, state=None, left=0, right=0, epoch=EPOCH, presence=True):
         clock[0] = stamp
         if presence:
@@ -37,7 +37,7 @@ def mission_rig(tmp_path):
             command_seq=ack, state=state, left_duty=left, right_duty=right,
             battery_voltage_v=voltage, ready=True, issued_at_ms=stamp))
         obs = Observation(stamp, (0, 1, 2, 3, 4), valid, "Synthetic camera sample",
-                          dict(x=x, y=y, heading=math.pi/2) if valid else None, tuple(obstacles), stamp)
+                          dict(x=x, y=y, heading=heading) if valid else None, tuple(obstacles), stamp)
         twin.camera_status.update(connected=True, valid=valid, captured_at_ms=stamp, seq=stamp)
         twin.accept_observation(obs, twin.config, twin.config_id, stamp)
         twin.supervise()

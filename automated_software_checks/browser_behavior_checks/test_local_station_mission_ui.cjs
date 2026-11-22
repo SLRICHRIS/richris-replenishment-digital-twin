@@ -723,7 +723,104 @@ async function singlePointReturn() {
     await h.close();
   }
 }
+
+async function frontReferenceStops() {
+  const h = harness();
+  try {
+    await h.start();
+    await h.click('connect');
+    h.state.stations.front_offset_mm = 85;
+    await h.tick(250);
+    const decisions = h.count('/api/decision');
+    const saves = h.requests.filter((r) => r.path === '/api/stations' && r.body).length;
+    await h.click('station-reported');
+    assert.equal(h.el('station-reference').value, 'front');
+    assert.equal(h.el('station-B-x').value, '205');
+    assert.equal(h.el('station-B-y').value, '430');
+    assert.equal(h.el('station-verified').checked, false);
+    assert.equal(h.el('station-save').disabled, true);
+    assert.equal(h.requests.filter((r) => r.path === '/api/stations' && r.body).length, saves);
+    assert.match(h.el('station-draft-detail').textContent, /85\.0 mm/);
+    assert.match(
+      h.el('station-draft-detail').textContent,
+      /A \(545\.0, 350\.0\).*B \(205\.0, 345\.0\).*E \(290\.0, 160\.0\)/,
+    );
+    h.set('station-B-heading', '');
+    h.el('station-verified').checked = true;
+    h.el('station-verified').dispatchEvent(new h.w.Event('change'));
+    assert.equal(h.el('station-save').disabled, true, 'Missing heading cannot save a front target');
+    h.set('station-B-heading', 90);
+    h.el('station-verified').checked = true;
+    h.el('station-verified').dispatchEvent(new h.w.Event('change'));
+    await h.click('station-save');
+    const body = h.requests.filter((r) => r.path === '/api/stations' && r.body).at(-1).body;
+    assert.deepEqual(body, {
+      verified: true,
+      reference: 'front',
+      headings_deg: { A: 0, B: 90, E: -90 },
+      stations: { A: { x: 630, y: 350 }, B: { x: 205, y: 430 }, E: { x: 290, y: 75 } },
+    });
+    // A synthetic server response distinguishes the raw edge from the computed centre.
+    const centres = { A: { x: 545, y: 350 }, B: { x: 205, y: 345 }, E: { x: 290, y: 160 } };
+    h.state.stations = {
+      verified: true,
+      reference: 'front',
+      measured_points: body.stations,
+      headings_deg: body.headings_deg,
+      front_offset_mm: 85,
+      stations: {},
+    };
+    for (const name of ['A', 'B', 'E'])
+      h.state.stations.stations[name] = {
+        ...centres[name],
+        front_target: {
+          ...body.stations[name],
+          heading: (body.headings_deg[name] * Math.PI) / 180,
+        },
+      };
+    await h.click('station-reload');
+    assert.equal(h.el('station-A-x').value, '630', 'Reload keeps measured edge coordinates');
+    assert.equal(h.el('station-E-y').value, '75');
+    assert.match(h.el('map-stations').textContent, /A · centre/);
+    assert.match(h.el('map-stations').textContent, /A · front/);
+    h.set('mission-start', 'E');
+    h.set('mission-destination', 'A');
+    h.newMission('E', 'A');
+    const route = h.state.review.route;
+    Object.assign(route, {
+      goal: [545, 350],
+      points: [[545, 350]],
+      length_mm: 0,
+      goal_tolerance_mm: 10,
+      front_target: { x: 630, y: 350, heading: 0 },
+      front_offset_mm: 85,
+      front_tolerance_mm: 15,
+      goal_heading_tolerance_rad: 0.05,
+    });
+    h.state.scene.pose = { x: 545, y: 350, heading: Math.PI / 2 };
+    await h.tick(250);
+    h.set('reason', 'Review final front alignment');
+    assert.equal(h.el('approve').disabled, false);
+    assert.match(h.el('approve').textContent, /final alignment/);
+    assert.match(h.el('review-detail').textContent, /turning to the selected arrival direction/);
+    assert.equal(h.count('/api/decision'), decisions, 'Alignment must never approve itself');
+    h.state.scene.pose.heading = 0;
+    await h.tick(250);
+    assert.match(h.el('approve').textContent, /stopped-position verification/);
+    assert.match(
+      h.el('review-goal').textContent,
+      /front 630\.0, 350\.0 mm; centre 545\.0, 350\.0 mm/,
+    );
+    console.log(
+      'Front-edge UI: raw measurements, corrected B, centre conversion, explicit heading and alignment review passed (mock only).',
+    );
+  } finally {
+    await h.close();
+  }
+}
+
 main()
+  .then(frontReferenceStops)
   .then(movingReturn)
   .then(singlePointReturn)
   .catch((error) => {

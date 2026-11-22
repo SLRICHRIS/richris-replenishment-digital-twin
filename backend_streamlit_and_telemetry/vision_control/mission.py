@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy import BigInteger, Column, MetaData, String, Table, Text, select, update
 
-from .contracts import HEIGHT, WIDTH, OPERATOR_PRESENCE_MS, angle, canonical, map_digest, radius, ready, stopped_for_route
+from .contracts import HEIGHT, WIDTH, OPERATOR_PRESENCE_MS, angle, canonical, map_digest, radius, ready, stopped_for_route, front_goal
 
 STATIONS = tuple("ABE")
 MISSION_METADATA = MetaData()
@@ -63,11 +63,15 @@ class Mission:
             else:
                 connection.execute(MISSIONS.insert().values(**record))
 
-    def _coordinates(self, data):
+    def _coordinates(self, data, reference="centre", headings=None):
         if not isinstance(data, dict) or set(data) != set(STATIONS):
             raise ValueError("Measure station centres A, B and charging stop E in floor millimetres")
         if not self.twin.config or not self.twin.config_id:
             raise ValueError("Load the measured camera profile before verifying stations")
+        if reference not in ("centre", "front"):
+            raise ValueError("Choose robot centre or robot front as the station reference")
+        if reference == "front" and (not isinstance(headings, dict) or set(headings) != set(STATIONS)):
+            raise ValueError("Choose an arrival direction for A, B and E")
         margin = radius(self.twin.config["geometry"])
         result = {}
         for label in STATIONS:
@@ -77,9 +81,20 @@ class Mission:
             x, y = point["x"], point["y"]
             if any(type(v) not in (int, float) or not math.isfinite(v) for v in (x, y)):
                 raise ValueError("Station coordinates must be finite measured millimetres")
+            target = None
+            if reference == "front":
+                heading = headings[label]
+                if type(heading) not in (int, float) or not math.isfinite(heading) or not -180 <= heading <= 180:
+                    raise ValueError("Arrival direction must be finite degrees from -180 to 180")
+                (x, y), target, _ = front_goal(dict(x=x, y=y, heading=math.radians(heading)),
+                                               self.twin.config["geometry"])
             if not margin <= x <= WIDTH - margin or not margin <= y <= HEIGHT - margin:
-                raise ValueError("Station " + label + " lacks the measured footprint and stopping clearance")
+                detail = (f"; its front target gives centre ({x:.1f}, {y:.1f}) mm, requiring {margin:.1f} mm edge clearance"
+                          if target else "")
+                raise ValueError("Station " + label + " lacks the measured footprint and stopping clearance" + detail)
             result[label] = dict(x=float(x), y=float(y))
+            if target:
+                result[label]["front_target"] = target
         points = [(p["x"], p["y"]) for p in result.values()]
         if any(math.dist(a, b) <= 30 for index, a in enumerate(points) for b in points[index+1:]):
             raise ValueError("Station centres must be more than 30 mm apart so 15 mm arrival zones do not overlap")
@@ -87,16 +102,21 @@ class Mission:
 
     def stations(self):
         output = dict(verified=False, stations={s: dict(x=None, y=None) for s in STATIONS},
-                      config_id=None, reason="Enter and verify measured station centres")
+                      config_id=None, reference="centre", measured_points={}, headings_deg={},
+                      reason="Enter and verify measured station positions and their reference")
         if self.twin.config:
             margin = radius(self.twin.config["geometry"])
             output.update(required_clearance_mm=margin,
+                front_offset_mm=self.twin.config["geometry"]["robot_length_mm"] / 2,
                 usable_bounds=dict(x_min=margin, x_max=WIDTH-margin, y_min=margin, y_max=HEIGHT-margin))
         if self.station_error:
             output["reason"] = self.station_error
         elif isinstance(self.station_data, dict):
             try:
-                output["stations"] = self._coordinates(self.station_data.get("stations"))
+                output["reference"] = self.station_data.get("reference", "centre")
+                output["headings_deg"] = copy.deepcopy(self.station_data.get("headings_deg", {}))
+                output["measured_points"] = copy.deepcopy(self.station_data.get("stations", {}))
+                output["stations"] = self._coordinates(output["measured_points"], output["reference"], output["headings_deg"])
                 output["config_id"] = self.station_data.get("config_id")
                 output["verified"] = (self.station_data.get("verified") is True
                                       and output["config_id"] == self.twin.config_id)
@@ -110,10 +130,15 @@ class Mission:
         if self.twin.agent.state in ("arming", "running", "battery_review", "stopping"):
             raise ValueError("Stop the route before changing station measurements")
         if payload.get("verified") is not True:
-            raise ValueError("Confirm that all three station centres were physically measured")
-        coordinates = self._coordinates(payload.get("stations"))
+            raise ValueError("Confirm that all three station points and their reference were physically checked")
+        reference = payload.get("reference", "centre")
+        headings = payload.get("headings_deg")
+        self._coordinates(payload.get("stations"), reference, headings)
         self.twin.stop("Station measurements changed; preview a new mission")
-        data = dict(verified=True, stations=coordinates, config_id=self.twin.config_id)
+        data = dict(verified=True, stations=copy.deepcopy(payload["stations"]), config_id=self.twin.config_id,
+                    reference=reference)
+        if reference == "front":
+            data["headings_deg"] = copy.deepcopy(headings)
         temporary = self.station_path.with_suffix(".tmp")
         temporary.write_text(json.dumps(data, indent=2))
         temporary.replace(self.station_path)
@@ -166,7 +191,8 @@ class Mission:
         e_intent = mission["intent"] == "battery_station"
         t.coordinator.capture(t.owner, "local_operator", (goal["x"], goal["y"]),
                               battery_consent=e_intent,
-                              battery_consent_voltage=self.diversion_baseline if e_intent else None)
+                              battery_consent_voltage=self.diversion_baseline if e_intent else None,
+                              front_target=goal.get("front_target"))
         mission.update(state="review", proposal_kind=kind, review_id=t.coordinator.row["review_id"],
             reason=("Obstacle change: review this new route to " + goal["label"] if kind == "obstacle_replan" else
                     "Review the new route to " + goal["label"] + "; approval is required before movement"))
