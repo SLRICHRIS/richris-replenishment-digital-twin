@@ -256,6 +256,121 @@ def test_packet_expiry_cannot_extend_presence_or_segment_deadline(tmp_path):
     assert app.state=="trial_complete"
 
 
+@pytest.mark.parametrize("transit_ms", [40, 70, 110])
+def test_delayed_http_does_not_send_expired_renewals_at_end_of_pulse(tmp_path, transit_ms):
+    # The real receiver rejects an expired packet, including a Stop after the
+    # prior lease already disarmed it. Reproduce with virtual HTTP transit.
+    clock = [10000]
+
+    class DelayedReceiver(Receiver):
+        rejected = 0
+
+        def send(self, observed, route, seq, operation, left, right, now, *, lease_ms=500):
+            clock[0] += transit_ms
+            if self.h["state"] in ("armed", "moving") and clock[0] >= self.expiry:
+                self.h.update(state="expired", left_duty=0, right_duty=0)
+            if now+lease_ms <= clock[0] or (operation != "arm" and self.h["state"] == "expired"):
+                self.rejected += 1
+                raise ValueError("ESP32 returned HTTP 409; check the local receiver")
+            return super().send(observed, route, seq, operation, left, right, now, lease_ms=lease_ms)
+
+    receiver = DelayedReceiver(clock)
+    app = PresetController(receiver, tmp_path, clock=lambda:clock[0])
+    app.action("connect", {})
+    app.action("presence", {"active":True})
+    app.tick(receiver.poll())
+    start_trial(app)
+    pulse(app, receiver, clock, 25)
+    assert app.state == "trial_complete", app.message
+    assert receiver.rejected == 0
+    assert receiver.h["state"] == "expired"
+    assert receiver.h["left_duty"] == receiver.h["right_duty"] == 0
+
+
+def finishing_trial(tmp_path):
+    app, receiver, clock = rig(tmp_path)
+    start_trial(app)
+    for _ in range(10):
+        pulse(app, receiver, clock)
+        if app.job["segment"]["phase"] == "finishing":
+            return app, receiver, clock
+    pytest.fail("Final bounded command was not accepted")
+
+
+@pytest.mark.parametrize("failure", ["stop", "hidden", "presence", "not_ready", "external_stop", "bad_output"])
+def test_final_lease_still_obeys_cancellation_and_receiver_guards(tmp_path, failure):
+    app, receiver, clock = finishing_trial(tmp_path)
+    if failure == "stop": app.action("stop", {})
+    elif failure == "hidden": app.action("presence", {"active":False})
+    elif failure == "presence": app.presence_at = clock[0]-701
+    elif failure == "not_ready": receiver.h["ready"] = False
+    elif failure == "external_stop": receiver.h.update(state="stopped", left_duty=0, right_duty=0)
+    elif failure == "bad_output": receiver.h["left_duty"] = -50
+    app.tick(receiver.poll())
+    assert app.job is None and app.state == "stopped" and app.last_test is None
+    assert receiver.calls[-1]["operation"] == "stop"
+    count = len(receiver.calls)
+    pulse(app, receiver, clock, 15)
+    assert len(receiver.calls) == count  # Never restart the expired/disarmed route.
+
+
+def test_final_lease_completion_requires_its_sequence_and_actual_zero_outputs(tmp_path):
+    app, receiver, clock = finishing_trial(tmp_path)
+    final_seq = receiver.calls[-1]["seq"]
+    clock[0] = receiver.expiry+1
+    app.action("presence", {"active":True})
+    h = receiver.poll()
+    h["left_duty"] = 50  # MCU guard expired before motor task applied zero.
+    app.tick(h)
+    assert app.job and app.last_test is None
+    h.update(left_duty=0, command_seq=final_seq-1)
+    app.tick(h)
+    assert app.job and app.last_test is None
+    app.tick(receiver.poll())
+    assert app.state == "trial_complete" and app.last_test
+    assert receiver.calls[-1]["operation"] == "drive"  # No Stop sent to an expired route.
+
+
+def test_missing_final_acknowledgement_times_out_without_valid_measurement(tmp_path):
+    app, receiver, clock = finishing_trial(tmp_path)
+    count = len(receiver.calls)
+    final_seq = receiver.calls[-1]["seq"]
+    for _ in range(20):
+        clock[0] += 100
+        app.action("presence", {"active":True})
+        h = receiver.poll()
+        h["command_seq"] = final_seq-1
+        app.tick(h)
+        if app.job is None:
+            break
+        assert len(receiver.calls) == count
+    assert app.state == "stopped" and app.last_test is None
+    assert "final command" in app.message
+
+
+def test_failed_command_details_survive_the_best_effort_stop(tmp_path):
+    app, receiver, clock = rig(tmp_path)
+    start_trial(app)
+    pulse(app, receiver, clock, 3)
+    send = receiver.send
+
+    def reject_drive(*args, **kwargs):
+        if args[3] == "drive":
+            clock[0] += 70
+            raise ValueError("ESP32 returned HTTP 409; check the local receiver")
+        return send(*args, **kwargs)
+
+    receiver.send = reject_drive
+    pulse(app, receiver, clock)
+    command = app.status()["last_stop"]["last_command"]
+    assert command["operation"] == "drive" and command["accepted"] is False
+    assert command["returned_at_ms"]-command["sent_at_ms"] == 70
+    assert command["command_seq"] == app.last_stop["hardware"]["command_seq"]+1
+    assert receiver.calls[-1]["operation"] == "stop"
+    pulse(app, receiver, clock, 10)
+    assert app.last_stop["last_command"] == command
+
+
 def test_unacknowledged_motion_cannot_create_measurement(tmp_path):
     app,receiver,clock=rig(tmp_path);start_trial(app);pulse(app,receiver,clock,2)
     for _ in range(8):

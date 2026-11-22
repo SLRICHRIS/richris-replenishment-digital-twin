@@ -1,5 +1,11 @@
 # Software verification record
 
+## Final preset command expiry: 23 November 2026
+
+Fixed unnecessary drive renewals near a timed segment's deadline. Once an accepted command covers the intended end, the preset controller waits for signed feedback with that command's sequence, an expired state and zero applied motor outputs. It does not send progressively shorter renewals or a normal Stop to the already expired route. Cancellation, attendance, freshness, receiver readiness, ownership and output checks remain active during this wait. Other command rejections still stop the job without retrying or restarting it. Stop records now preserve the attempted command's sequence, timing, lease and HTTP acceptance result before any best-effort Stop overwrites the current request.
+
+Verification: a fake receiver with 70 ms command transit reproduced HTTP 409 with the previous controller. The corrected controller completes with 40, 70 and 110 ms transit, with no rejected commands. Tests require the final sequence and actual zero outputs, reject missing final acknowledgement, retain cancellation/interlock handling and preserve failed-command diagnostics. The full predictive/integration Python suite passed 559 tests with 5 skips. Compiled production receiver protocol/runtime checks, source preset HTTP startup, repository/download consistency and whitespace checks passed. No firmware, cutoff, 500 ms lease or 60 PWM cap change is required. This reproduces a code defect consistent with the reported late-command failure; the user's precise rejected packet and physical pulse outcome still need the updated application trial. Windows packaging is checked separately in CI.
+
 ## Operator-requested 6.0 V preset cutoff: 23 November 2026
 
 Changed the preset application's pack threshold to 6.0 V and the Local Routes receiver's supported minimum and example setting to 6.0 V. Firmware revision r3 prints its configured cutoff at startup, while the preset page displays its own threshold. The Windows preset bundle now includes the matching firmware source without private credentials. Existing installations must retain their private settings, set `AMR_ROUTE_MIN_PACK_V` to `6.0`, and upload r3; replacing the Windows application alone does not change the running ESP32. Camera mission voltage policies remain separate.

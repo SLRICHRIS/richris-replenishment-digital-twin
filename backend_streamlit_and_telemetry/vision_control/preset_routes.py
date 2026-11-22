@@ -284,8 +284,19 @@ class PresetController:
             raise ValueError("Movement permission ended")
         seq = max(segment.get("seq", 0), self.hardware["command_seq"]) + 1
         segment["seq"] = seq
-        self.transport.send(self.hardware, segment["id"], seq, operation, left, right, now, lease_ms=int(lease))
+        command = segment["last_command"] = dict(operation=operation, command_seq=seq,
+            sent_at_ms=now, lease_ms=int(lease), deadline_ms=deadline, accepted=False)
+        try:
+            self.transport.send(self.hardware, segment["id"], seq, operation, left, right, now, lease_ms=int(lease))
+            command["accepted"] = True
+        finally:
+            command["returned_at_ms"] = self.clock()
         segment["last_sent"] = now
+        if operation == "drive" and segment.get("confirmed") and now+int(lease) == deadline:
+            # This accepted lease already covers the intended end. Further
+            # renewals only shrink the transit budget and can arrive expired.
+            # Wait for its signed expiry and actual zero motor outputs instead.
+            segment.update(phase="finishing", final_lease_seq=seq)
         return seq
 
     def _abort(self, reason):
@@ -302,7 +313,8 @@ class PresetController:
             if observed:
                 observed["age_ms"] = at-observed["issued_at_ms"]
             self.last_stop = dict(at_ms=at, reason=reason, hardware=observed,
-                                  step=job["index"]+1, phase=(segment or {}).get("phase", "before_arm"))
+                                  step=job["index"]+1, phase=(segment or {}).get("phase", "before_arm"),
+                                  last_command=copy.deepcopy((segment or {}).get("last_command")))
             if segment and self.hardware and all(job[k] == self.hardware[k] for k in ("boot_id", "epoch_id")):
                 try:
                     self._send(segment, "stop")
@@ -398,6 +410,16 @@ class PresetController:
                         segment["confirmed"] = True
                 elif not segment["confirmed"] and not (hardware["left_duty"] or hardware["right_duty"]):
                     segment["last_zero_stamp"] = max(segment["last_zero_stamp"], hardware["issued_at_ms"])
+                if segment["phase"] == "finishing":
+                    if hardware["state"] not in ("armed", "moving", "interlock", "expired"):
+                        raise ValueError("Controller stopped unexpectedly; route ended")
+                    if (hardware["command_seq"] == segment["final_lease_seq"] and
+                            hardware["state"] == "expired" and
+                            not (hardware["left_duty"] or hardware["right_duty"])):
+                        self._finish_segment(now)
+                    elif now-segment["deadline"] > 1000:
+                        raise ValueError("No signed zero-output acknowledgement for the final command")
+                    return
                 if segment["phase"] == "stopping":
                     if not (hardware["left_duty"] or hardware["right_duty"]) and hardware["state"] in ("stopped", "expired"):
                         self._finish_segment(now)
