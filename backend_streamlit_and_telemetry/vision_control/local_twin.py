@@ -292,8 +292,11 @@ class LocalTwin:
             now = self.clock()
             public = self.coordinator.public(self.owner)
             camera = copy.deepcopy(self.camera_status)
-            camera["age_ms"] = max(0, now - camera.get("captured_at_ms", 0))
-            if camera["age_ms"] > SCENE_FRESH_MS:
+            captured_at = camera.get("captured_at_ms")
+            camera["age_ms"] = max(0, now - captured_at) if captured_at and captured_at > 0 else None
+            if camera["age_ms"] is None:
+                camera.update(valid=False, pose=None, reason="Waiting for the first local camera frame")
+            elif camera["age_ms"] > SCENE_FRESH_MS:
                 camera.update(valid=False, pose=None, reason="Waiting for fresh local camera frames")
             if public["scene"]:
                 public["scene"]["age_ms"] = max(0, now - public["scene"]["captured_at_ms"])
@@ -333,7 +336,7 @@ class LocalTwin:
             return public
 
     def profile(self):
-        template = json.loads(Path(__file__).with_name("example_camera_config.json").read_text())
+        template = json.loads(Path(__file__).with_name("example_camera_config.json").read_text(encoding="utf-8"))
         with self.feed.lock:
             if self.feed.intrinsics:
                 template.update(copy.deepcopy(self.feed.intrinsics))
@@ -487,9 +490,9 @@ def handler_for(twin):
             if not self.allowed():
                 return
             if self.path == "/":
-                html = Path(__file__).with_name("local_twin.html").read_text()
+                html = Path(__file__).with_name("local_twin.html").read_text(encoding="utf-8")
                 html = html.replace("__AMR_SESSION_TOKEN__", twin.session).replace("__AMR_SESSION__", twin.session)
-                self.reply(200, html.encode(), "text/html; charset=utf-8")
+                self.reply(200, html.encode("utf-8"), "text/html; charset=utf-8")
             elif self.path == "/api/status":
                 self.reply(200, twin.status())
             elif self.path.split("?", 1)[0] == "/api/frame.jpg":

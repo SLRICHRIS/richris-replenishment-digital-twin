@@ -84,6 +84,7 @@ function harness() {
     if (camera)
       state.camera = {
         seq,
+        captured_at_ms: w.Date.now(),
         age_ms: 0,
         valid: true,
         connected: true,

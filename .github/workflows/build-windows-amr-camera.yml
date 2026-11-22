@@ -8,6 +8,7 @@ on:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
       - 'amr01_local_twin.py'
+      - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
@@ -17,6 +18,7 @@ on:
       - 'amr01_camera_setup.py'
       - 'amr01_camera_agent.py'
       - 'amr01_local_twin.py'
+      - 'automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py'
       - 'backend_streamlit_and_telemetry/vision_control/**'
       - 'project_documentation/direct_wifi_aruco_routes.md'
       - 'project_documentation/local_station_missions.md'
@@ -61,6 +63,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Agent executable failed' }
           & .\dist\AMR01_LocalTwin.exe --help
           if ($LASTEXITCODE -ne 0) { throw 'Local twin executable failed' }
+      - name: Verify packaged local HTTP workspace without connecting hardware
+        shell: pwsh
+        run: |
+          python automated_software_checks/streamlit_and_repository_integration_checks/verify_local_twin_http.py --executable .\dist\AMR01_LocalTwin.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Local twin HTTP smoke check failed' }
       - name: Package unsigned tools without credentials or camera files
         shell: pwsh
         run: |

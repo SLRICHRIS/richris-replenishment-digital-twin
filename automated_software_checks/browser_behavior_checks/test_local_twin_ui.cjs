@@ -38,7 +38,7 @@ let state = {
   calibration_ready: false,
   ready: false,
   freshness: { camera_ms: 500, hardware_ms: 500 },
-  camera: null,
+  camera: { seq: 0, captured_at_ms: 0, age_ms: w.Date.now(), connected: false, valid: false },
   scene: null,
   hardware: null,
   review: null,
@@ -63,6 +63,7 @@ function refresh({ camera = true, scene = true, hardware = true } = {}) {
   if (camera)
     state.camera = {
       seq: sample,
+      captured_at_ms: w.Date.now(),
       age_ms: 0,
       connected: true,
       valid: true,
@@ -177,6 +178,21 @@ async function main() {
     'Opening the UI does not connect or command a device',
   );
   assert.equal(el('plan').disabled, true);
+  assert.equal(
+    el('camera-age').textContent,
+    'No current sample',
+    'A never-captured timestamp zero is not a decades-old frame',
+  );
+  for (const captured_at_ms of [null, undefined, 0]) {
+    state.camera = { seq: 0, captured_at_ms, age_ms: 0, connected: true, valid: true };
+    await tick(250);
+    assert.equal(
+      el('camera-age').textContent,
+      'No current sample',
+      'Null, missing or zero capture time cannot claim a current frame',
+    );
+    assert.notEqual(el('camera-value').textContent, 'Pose tracked');
+  }
   assert.equal(el('manual').href, 'http://10.15.213.112/');
   el('connect').click();
   await flush();
@@ -190,6 +206,19 @@ async function main() {
     'inert-test-token',
   );
   assert.equal(el('camera-value').textContent, 'Pose tracked');
+  assert.match(
+    el('camera-age').textContent,
+    /^0\.00 s old · sample /,
+    'A subsequent real capture has a fresh sample age',
+  );
+  state.hardware.seq = 0;
+  await tick(250);
+  assert.equal(
+    el('hardware-age').textContent,
+    '0.00 s old · sample 0',
+    'Authenticated H1 sequence zero remains a valid sample',
+  );
+  assert.equal(el('hardware-value').textContent, 'Authenticated · ready');
   assert.equal(el('battery-value').textContent, '7.40 V');
   assert.ok(el('map-pose').children.length > 0);
   assert.equal(el('camera-media').dataset.fresh, 'true');

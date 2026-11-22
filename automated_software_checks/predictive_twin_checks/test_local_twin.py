@@ -4,6 +4,7 @@ import http.client
 import json
 import math
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -282,7 +283,32 @@ def test_profile_template_never_claims_measurement_and_calibration_invalidates_o
     assert not transport.sent
 
 
-def test_loopback_http_origin_csrf_and_host_guards_without_camera_or_device_io(tmp_path):
+@pytest.mark.parametrize("captured_at", [None, 0])
+def test_camera_without_a_capture_has_no_age_and_cannot_be_ready(tmp_path, captured_at):
+    transport = FakeTransport()
+    twin = LocalTwin(transport, tmp_path, clock=lambda: 1795338640100)
+    try:
+        twin.camera_status.update(captured_at_ms=captured_at, valid=True)
+        public = twin.status()
+        assert public["camera"]["age_ms"] is None
+        assert not public["camera"]["valid"] and public["camera"]["pose"] is None
+        assert not public["ready"] and not transport.sent
+        twin.camera_status.update(captured_at_ms=1795338640000)
+        assert twin.status()["camera"]["age_ms"] == 100
+        twin.camera_status.update(captured_at_ms=1795338639500, valid=True)
+        public = twin.status()
+        assert public["camera"]["age_ms"] == 600 and not public["camera"]["valid"]
+    finally:
+        twin.engine.dispose()
+
+
+def test_loopback_http_origin_csrf_and_host_guards_without_camera_or_device_io(tmp_path, monkeypatch):
+    read_text = Path.read_text
+
+    def windows_default_read(path, encoding=None, errors=None):
+        return read_text(path, encoding=encoding or "cp1252", errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", windows_default_read)
     transport = FakeTransport()
     twin = LocalTwin(transport, tmp_path)
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler_for(twin))
@@ -304,6 +330,11 @@ def test_loopback_http_origin_csrf_and_host_guards_without_camera_or_device_io(t
         code, body, headers = request("GET", "/")
         assert code == 200 and twin.session.encode() in body
         assert b"__AMR_SESSION" not in body
+        html = body.decode("utf-8")
+        assert "AMR-01 · Local camera mission" in html
+        assert "610 × 630 mm" in html
+        assert "Â" not in html and "â€" not in html
+        assert ("Content-Type", "text/html; charset=utf-8") in headers
         assert not any(k.lower() == "access-control-allow-origin" for k, _ in headers)
         csp = next(value for name, value in headers if name.lower() == "content-security-policy")
         assert "frame-ancestors 'self'" in csp and "https://richris-replenishment-digital-twin-s99b4letmnfusbbh6sjab9.streamlit.app" in csp

@@ -1290,7 +1290,10 @@
         }
         function sampleId(kind, s) {
           if (!s) return null;
-          if (kind === 'camera') return Number.isInteger(s.seq) ? String(s.seq) : null;
+          if (kind === 'camera')
+            return Number.isInteger(s.seq) && finite(s.captured_at_ms) && s.captured_at_ms > 0
+              ? String(s.seq)
+              : null;
           if (kind === 'scene')
             return Number.isInteger(s.seq) && s.agent_boot_id
               ? `${s.agent_boot_id}:${s.seq}`
