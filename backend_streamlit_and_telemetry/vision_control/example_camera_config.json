@@ -21,13 +21,13 @@
   "marker_height_mm": 150,
   "reported_marker_offset_robot_frame_mm": {
     "reference": "robot_body_center",
-    "forward": 0,
-    "left": 0,
-    "source": "operator_confirmed_centered_marker"
+    "forward": null,
+    "left": null,
+    "source": "remeasure_marker_offset_before_tracking"
   },
   "marker_center_to_robot_center_mm": [
-    0,
-    0
+    null,
+    null
   ],
   "marker_forward_offset_rad": null,
   "max_obstacle_height_mm": null,
@@ -52,5 +52,30 @@
   },
   "floor_width_mm": 610,
   "floor_length_mm": 630,
-  "reported_measurements_note": "Updated 20 November 2026: measured floor 610 mm wide x 630 mm long, Logitech lens 1310 mm vertically above floor, AMR body 170 mm long x 155 mm wide x 150 mm high. Robot marker ID 0 is nominally 40 mm; floor corner markers IDs 1-4 are nominally 30 mm. Marker surface height and marker-to-axle offset are NOT remeasured; camera intrinsics, floor reference positions, motor calibration, and clearance remain unverified. Previous axle front/rear body outline (147/40 mm) is superseded and must not be used for route clearance. Operator confirms ArUco ID 0 centred on robot body; marker forward direction relative to robot remains unverified."
+  "reported_measurements_note": "Reported floor 610 mm wide x 630 mm long, Logitech lens height 1310 mm, AMR body 170 x 155 x 150 mm. Camera image inspected 22 November 2026: DICT_4X4_50 robot ID 0 and floor IDs 1 top-left, 2 bottom-left, 3 bottom-right, 4 top-right detected. All four floor tags have their decoded axes rotated -90 degrees relative to the floor frame; confirm this against the current live layout. Robot tag black edge is nominally 40 mm and floor tags nominally 30 mm; physically measure them. The robot tag appears offset from the chassis centre, so the former zero-offset assumption is removed. Measure tag height, tag-to-tracked-centre offset and forward alignment, floor marker centres, wheel geometry, motor response and stopping distance. This template does not establish calibration or route readiness.",
+  "floor_reference_marker_edge_mm": 30,
+  "floor_reference_rotations_deg": {
+    "1": -90,
+    "2": -90,
+    "3": -90,
+    "4": -90
+  },
+  "floor_reference_positions_mm": {
+    "1": [
+      null,
+      null
+    ],
+    "2": [
+      null,
+      null
+    ],
+    "3": [
+      null,
+      null
+    ],
+    "4": [
+      null,
+      null
+    ]
+  }
 }

@@ -73,6 +73,22 @@ Use the local workspace's calibration tools; do not restart the cloud camera pre
 
 Measure the four marker centres, marker size/height/orientation, robot centre offset, wheel track and polarity, PWM-to-speed gains, minimum movement duty, stopping distance and validated obstacle height. The reference IDs are **1 top-left, 2 bottom-left, 3 bottom-right, 4 top-right**. Do not substitute nominal corner offsets for measured coordinates.
 
+The supplied camera layout has these identities and labels:
+
+| Camera location | Floor marker | Nearby station label |
+| --- | --- | --- |
+| Upper left | 1 | C |
+| Upper right | 4 | D |
+| Lower left | 2 | B |
+| Lower right | 3 | A |
+| Right side, between upper and lower markers | No extra floor marker | E |
+
+Robot marker **0** is separate from the four floor references. The printed A–E labels do not automatically supply robot-centre stopping coordinates.
+
+The current template includes `floor_reference_rotations_deg` with **−90** for each floor ID, matching the decoded marker orientation in the supplied camera image. Angles are counterclockwise in the floor frame (+X right, +Y up). Measure `floor_reference_marker_edge_mm` across the black square; the template's **30 mm** is nominal. Floor tag orientation is separate from `marker_forward_offset_rad`, which establishes the robot's forward direction. Existing profiles without these new fields retain the old 0° / 30 mm assumptions; update and verify them if using this layout.
+
+The robot tag appears displaced from the chassis centre in this view. The template now leaves `marker_center_to_robot_center_mm` unset. Measure that vector **from the marker centre to the tracked robot centre**, expressed along the decoded marker's right and top axes. Do not enter image-pixel offsets or set `[0, 0]` without checking. A screenshot verifies visibility and marker identities; it does not establish metric calibration.
+
 The profile has nine explicit checks: intrinsics, floor-reference positions, empty floor, marker mount, wheel polarities, measured PWM/speed, stopping distance, motor voltage/current, and obstacle detection. Set a check to true only after its measurement or test. The local route profile must stay within the receiver's **60 PWM** limit. Manual movement at a higher duty does not establish a valid route calibration.
 
 Applying a valid profile saves `camera_profile.json` and `empty_floor.png` in the local state folder, alongside `route_audit.sqlite3`. The default folder is `%USERPROFILE%\.amr-local-twin`; `--state-dir` selects another location. Later launches automatically validate and restore this pair. Restoring calibration does not connect the camera, arm the robot or replay an approval. If either saved file is missing or invalid, startup reports the problem; restore the matching pair or move both aside before recalibrating.

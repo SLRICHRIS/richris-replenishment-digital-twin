@@ -22,9 +22,14 @@ CHECKS=('intrinsics_verified','floor_reference_positions_verified','empty_floor_
 REFS={1:(40,HEIGHT-40),2:(40,40),3:(WIDTH-40,40),4:(WIDTH-40,HEIGHT-40)}
 
 
-def square(edge):
+def square(edge,rotation_deg=0):
+    """ArUco canonical corner order, rotated counterclockwise in floor X/Y."""
     h=edge/2
-    return np.array([[-h,h,0],[h,h,0],[h,-h,0],[-h,-h,0]],np.float64)
+    corners=np.array([[-h,h,0],[h,h,0],[h,-h,0],[-h,-h,0]],np.float64)
+    yaw=math.radians(rotation_deg)
+    rotation=np.array([[math.cos(yaw),-math.sin(yaw),0],
+                       [math.sin(yaw),math.cos(yaw),0],[0,0,1]],np.float64)
+    return corners@rotation.T
 
 
 def load_config(path):
@@ -51,6 +56,18 @@ def load_config(path):
             refs[2][0] < refs[3][0] and refs[3][1] < refs[4][1]):
         raise ValueError('Floor reference ID ordering disagrees with observed corners')
     p['floor_reference_positions_mm']={str(i):list(refs[i]) for i in refs}
+    # OpenCV corners follow the decoded marker orientation, not the image's
+    # top-left corner. Each physical floor marker therefore needs its own yaw.
+    rotations=p.get('floor_reference_rotations_deg',{str(i):0 for i in refs})
+    if not isinstance(rotations,dict) or set(rotations)!={'1','2','3','4'}:
+        raise ValueError('Enter measured rotations for all four floor reference markers')
+    if any(type(v) not in (int,float) or not math.isfinite(v) for v in rotations.values()):
+        raise ValueError('Floor reference rotations must be finite degrees')
+    p['floor_reference_rotations_deg']={str(i):float((rotations[str(i)]+180)%360-180) for i in refs}
+    edge=p.get('floor_reference_marker_edge_mm',30)
+    if type(edge) not in (int,float) or not math.isfinite(edge) or not 15<=edge<=120:
+        raise ValueError('Measure the floor reference marker edge from 15 to 120 mm')
+    p['floor_reference_marker_edge_mm']=float(edge)
 
     p['geometry']=geometry(p.get('geometry'))
     for name,lo,hi in (('camera_height_mm',200,3000),('marker_edge_mm',15,120),
@@ -74,6 +91,8 @@ class Camera:
         self.background=background.copy() if isinstance(background,np.ndarray) else cv2.imread(str(background))
         if self.background is None or self.background.shape[1::-1]!=tuple(config['resolution']): raise ValueError('Capture the empty floor at the calibrated resolution')
         self.refs={int(i):tuple(v) for i,v in config.get('floor_reference_positions_mm',{}).items()} or REFS
+        self.ref_rotations={int(i):v for i,v in config.get('floor_reference_rotations_deg',{str(i):0 for i in self.refs}).items()}
+        self.ref_edge=config.get('floor_reference_marker_edge_mm',30)
         self.dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         self.detector=cv2.aruco.ArucoDetector(self.dictionary,cv2.aruco.DetectorParameters())
         self.held=np.zeros((HEIGHT,WIDTH),np.float64); self.last_hash=None; self.same_at=0
@@ -96,7 +115,7 @@ class Camera:
     def reference_pose(self,image):
         found=self.detect(image)
         if any(i not in found for i in self.refs): raise ValueError('All four floor reference markers must be visible')
-        world=np.concatenate([square(30)+np.array([*self.refs[i],0]) for i in self.refs])
+        world=np.concatenate([square(self.ref_edge,self.ref_rotations[i])+np.array([*self.refs[i],0]) for i in self.refs])
         pixels=np.concatenate([found[i] for i in self.refs]).astype(float)
         ok,r,t=cv2.solvePnP(world,pixels,self.k,None,flags=cv2.SOLVEPNP_ITERATIVE)
         if not ok: raise ValueError('Floor camera calibration failed')
